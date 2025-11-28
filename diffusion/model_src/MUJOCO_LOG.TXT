@@ -1,0 +1,126 @@
+Wed Jun 18 00:46:11 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 00:48:59 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 00:49:39 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 00:57:28 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 00:57:31 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:07:31 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:12:19 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:12:22 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:14:48 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:14:52 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:17:11 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:17:16 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:17:44 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:17:49 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:17:57 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:02 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:09 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:14 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:27 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:32 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:37 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:42 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:47 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:53 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:18:58 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:19:03 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:19:08 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:19:13 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:25:24 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:25:29 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:26:06 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:30:05 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:32:08 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:32:57 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:34:54 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:49:27 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:51:00 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:52:15 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 01:53:14 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 02:05:08 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 02:05:25 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
+Wed Jun 18 02:11:23 2025
+WARNING: OpenGL error 0x502 in or before mjr_makeContext
+
