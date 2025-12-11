@@ -75,3 +75,7 @@ diffusion/models/
 tmp/
 temp/
 *.tmp
+
+# Isaac Sim specific
+leisaac/
+${data}/
