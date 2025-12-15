@@ -6,6 +6,7 @@ os.environ["ISAAC_SUPPRESS_WARNINGS"] = "1"
 os.environ["CARB_LOGGING_MAX_LEVEL"] = "ERROR"
 warnings.filterwarnings("ignore")
 
+
 import torch
 import numpy as np
 import argparse
@@ -27,18 +28,12 @@ args_cli, unknown_args = parser.parse_known_args()
 # -----------------------------
 # setup streaming and cameras
 
-# args_cli.headless = True
-# args_cli.livestream = 2       # 2 = WebRTC
-# args_cli.enable_cameras = True
-#
-# sys.argv.append("--/app/livestream/publicEndpointAddress=100.115.105.111")
-# sys.argv.append("--/app/livestream/port=49100")
-
-
-
-args_cli.headless = False
-args_cli.livestream = 0       # 2 = WebRTC
+args_cli.headless = True
+args_cli.livestream = 2       # 2 = WebRTC
 args_cli.enable_cameras = True
+
+sys.argv.append("--/app/livestream/publicEndpointAddress=100.115.105.111")
+sys.argv.append("--/app/livestream/port=49100")
 
 
 print(f"[DEBUG] enable_cameras = {args_cli.enable_cameras}")
@@ -101,7 +96,7 @@ cube_cfg = sim_utils.CuboidCfg(
     ),
     mass_props=sim_utils.MassPropertiesCfg(mass=0.1),
     collision_props=sim_utils.CollisionPropertiesCfg(),
-    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0)),  # Red cube
+    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),  # Red cube
 )
 
 cube_cfg.func("/World/Cube", cube_cfg, translation=(0.4, 0.0, 0.5))
@@ -259,13 +254,7 @@ leader_config = SO101LeaderConfig(
 # ====================================================
 
 print("[INFO] Loading SmolVLA model...")
-# model_id = "lerobot/smolvla_base"
-
-# model_id = "hbseong/internvla_pick_and_place_so101"  # some bugs internalvla
-
-model_id = "msmandelbrot/smolvla_so101_pick_and_place_green_cube_black_box_from_scrtch_300000"
-
-
+model_id = "lerobot/smolvla_base"
 policy = SmolVLAPolicy.from_pretrained(model_id)
 
 # Create preprocessor and postprocessor
@@ -322,20 +311,11 @@ while sim_app.is_running():
 
     # Prepare observation dictionary for SmolVLA
     observation = {
-        "observation.images.up": front_rgb_temporal,
-        "observation.images.wrist": gripper_rgb_temporal,
+        "observation.images.camera1": front_rgb_temporal,
+        "observation.images.camera2": gripper_rgb_temporal,
         "observation.state": state_temporal,
         "task": instruction,  # Add task instruction
     }
-
-
-
-    # # Prepare observation dictionary for SmolVLA
-    # observation = {
-    #     "observation.images.camera1": front_rgb_temporal,
-    #     "observation.images.camera2": gripper_rgb_temporal,
-    #     "observation.state": state_temporal,
-    #     "task": instruction,  # Add task instruction
 
     # Preprocess observation
     preprocessed_obs = preprocessor(observation)
