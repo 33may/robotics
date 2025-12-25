@@ -1,8 +1,8 @@
 """
-Script to test trained ACT policy in Isaac Lab simulation.
+Script to test trained SmolVLA policy in Isaac Lab simulation.
 
 This script:
-1. Loads a trained ACT policy checkpoint
+1. Loads a trained SmolVLA policy checkpoint
 2. Initializes Isaac Lab lift_cube environment
 3. Runs inference episodes with visualization
 4. Evaluates success rate
@@ -11,8 +11,10 @@ import os
 import warnings
 from pathlib import Path
 
+# CUDA memory management
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 # Set leisaac assets root to work from any directory
-# This assumes script is run from /home/may33/projects/robotics
 leisaac_assets = Path("/home/may33/projects/ml_portfolio/robotics/leisaac/assets")
 if leisaac_assets.exists():
     os.environ["LEISAAC_ASSETS_ROOT"] = str(leisaac_assets)
@@ -28,29 +30,38 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import json
+import gc
+import cv2
 
 # LeRobot imports
-from lerobot.policies.act.modeling_act import ACTPolicy
+from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
+from lerobot.policies.smolvla.configuration_smolvla import SmolVLAConfig
+from lerobot.policies.smolvla.processor_smolvla import make_smolvla_pre_post_processors
+from lerobot.datasets.lerobot_dataset import LeRobotDatasetMetadata
 
 # Isaac Lab imports
 from isaaclab.app import AppLauncher
 
 # Parse arguments
-parser = argparse.ArgumentParser(description="Test ACT policy in Isaac Lab")
+parser = argparse.ArgumentParser(description="Test SmolVLA policy in Isaac Lab")
 parser.add_argument(
     "--checkpoint",
     type=str,
-    default="outputs/train/act_so101_test/checkpoints/last/pretrained_model",
+    default="outputs/finetune/smolvla_pick_place/checkpoints/best/pretrained_model",
     help="Path to the trained policy checkpoint",
 )
-parser.add_argument("--num_episodes", type=int, default=10, help="Number of test episodes")
-parser.add_argument("--max_steps", type=int, default=5000, help="Maximum steps per episode")
+parser.add_argument("--num_episodes", type=int, default=1, help="Number of test episodes")
+parser.add_argument("--max_steps", type=int, default=500, help="Maximum steps per episode")
 parser.add_argument("--headless", action="store_true", help="Run without GUI")
-parser.add_argument("--livestream", type=int, default=0, help="Livestream mode (0=off 2=WebRTC)")
+parser.add_argument("--livestream", type=int, default=2, help="Livestream mode (0=off 2=WebRTC)")
+parser.add_argument("--video_path", type=str, default="smolvla_test.mp4", help="Path to save video")
 
 args_cli = parser.parse_args()
 args_cli.enable_cameras = True
-args_cli.headless = False
+
+# Force headless if not specified
+if not hasattr(args_cli, 'headless') or not args_cli.headless:
+    args_cli.headless = True
 
 # -----------------------------
 # Setup streaming and cameras
@@ -76,7 +87,8 @@ from leisaac.tasks.lift_cube.lift_cube_env_cfg import LiftCubeEnvCfg
 
 
 # Load normalization stats from dataset
-STATS_PATH = Path.home() / ".cache/huggingface/lerobot/eternalmay33/pick_place_test/meta/stats.json"
+dataset_id = "eternalmay33/pick_place_test"
+STATS_PATH = Path.home() / f".cache/huggingface/lerobot/{dataset_id}/meta/stats.json"
 with open(STATS_PATH, 'r') as f:
     STATS = json.load(f)
 
@@ -123,16 +135,16 @@ def preprocess_isaac_to_lerobot(joint_pos: np.ndarray) -> np.ndarray:
     # Step 1: Convert radians to degrees
     joint_pos = joint_pos / np.pi * 180
 
-    # Step 2: Map from Isaac range to LeRobot range
-    for i in range(6):
-        isaaclab_min, isaaclab_max = ISAACLAB_JOINT_POS_LIMIT_RANGE[i]
-        lerobot_min, lerobot_max = LEROBOT_JOINT_POS_LIMIT_RANGE[i]
-        isaac_range = isaaclab_max - isaaclab_min
-        lerobot_range = lerobot_max - lerobot_min
-        joint_pos[i] = (joint_pos[i] - isaaclab_min) / isaac_range * lerobot_range + lerobot_min
+    # # Step 2: Map from Isaac range to LeRobot range
+    # for i in range(6):
+    #     isaaclab_min, isaaclab_max = ISAACLAB_JOINT_POS_LIMIT_RANGE[i]
+    #     lerobot_min, lerobot_max = LEROBOT_JOINT_POS_LIMIT_RANGE[i]
+    #     isaac_range = isaaclab_max - isaaclab_min
+    #     lerobot_range = lerobot_max - lerobot_min
+    #     joint_pos[i] = (joint_pos[i] - isaaclab_min) / isaac_range * lerobot_range + lerobot_min
 
-    # Step 3: Apply MEAN_STD normalization
-    joint_pos = (joint_pos - OBS_STATE_MEAN) / OBS_STATE_STD
+    # # Step 3: Apply MEAN_STD normalization
+    # joint_pos = (joint_pos - OBS_STATE_MEAN) / OBS_STATE_STD
 
     return joint_pos
 
@@ -141,17 +153,18 @@ def postprocess_lerobot_to_isaac(joint_pos: np.ndarray) -> np.ndarray:
     """
     Convert joint positions from LeRobot to Isaac Lab format.
 
-    Policy already outputs denormalized LeRobot degrees, so we only need:
+    SmolVLA postprocessor already denormalizes, so we receive LeRobot degrees.
+    We only need:
     1. Map from LeRobot range to Isaac range
     2. Convert from degrees to radians
     """
     # Step 1: Map from LeRobot range to Isaac range
-    for i in range(6):
-        isaaclab_min, isaaclab_max = ISAACLAB_JOINT_POS_LIMIT_RANGE[i]
-        lerobot_min, lerobot_max = LEROBOT_JOINT_POS_LIMIT_RANGE[i]
-        isaac_range = isaaclab_max - isaaclab_min
-        lerobot_range = lerobot_max - lerobot_min
-        joint_pos[i] = (joint_pos[i] - lerobot_min) / lerobot_range * isaac_range + isaaclab_min
+    # for i in range(6):
+    #     isaaclab_min, isaaclab_max = ISAACLAB_JOINT_POS_LIMIT_RANGE[i]
+    #     lerobot_min, lerobot_max = LEROBOT_JOINT_POS_LIMIT_RANGE[i]
+    #     isaac_range = isaaclab_max - isaaclab_min
+    #     lerobot_range = lerobot_max - lerobot_min
+    #     joint_pos[i] = (joint_pos[i] - lerobot_min) / lerobot_range * isaac_range + isaaclab_min
 
     # Step 2: Convert from degrees to radians
     joint_pos = joint_pos / 180 * np.pi
@@ -163,6 +176,8 @@ def prepare_observation(obs_dict: dict, device: torch.device) -> dict:
     """
     Prepare observation from Isaac Lab format to LeRobot format.
 
+    IMPORTANT: Immediately copies data to CPU/numpy to avoid GPU memory accumulation.
+
     Args:
         obs_dict: Observation dictionary from Isaac Lab environment
         device: Device to move tensors to
@@ -173,24 +188,25 @@ def prepare_observation(obs_dict: dict, device: torch.device) -> dict:
     # Extract observations from policy group
     policy_obs = obs_dict["policy"]
 
-    # Get joint positions (shape: [num_envs, 6])
-    joint_pos = policy_obs["joint_pos"].cpu().numpy()[0]  # Take first environment
+    # Get joint positions (shape: [num_envs, 6]) - copy to CPU immediately
+    joint_pos = policy_obs["joint_pos"].cpu().numpy()[0].copy()
 
     # Convert to LeRobot format
     joint_pos_lerobot = preprocess_isaac_to_lerobot(joint_pos)
 
-    # Get camera images (shape: [num_envs, height, width, channels])
-    # Isaac Lab returns uint8 0-255, but ACT was trained on float32 0-1
-    front_img = policy_obs["front"].cpu().numpy()[0].astype(np.float32) / 255.0
-    third_person_img = policy_obs["front_cam_cfg"].cpu().numpy()[0].astype(np.float32) / 255.0
-    gripper_img = policy_obs["gripper_cam_cfg"].cpu().numpy()[0].astype(np.float32) / 255.0
+    # Get camera images and copy to CPU/numpy immediately to free GPU memory
+    # Isaac Lab returns uint8 0-255, LeRobot uses float32 0-1
+    front_img = policy_obs["front"].cpu().numpy()[0].copy().astype(np.float32) / 255.0
+    third_person_img = policy_obs["front_cam_cfg"].cpu().numpy()[0].copy().astype(np.float32) / 255.0
+    gripper_img = policy_obs["gripper_cam_cfg"].cpu().numpy()[0].copy().astype(np.float32) / 255.0
 
-    # Prepare LeRobot observation batch
+    # Prepare LeRobot observation batch (fresh tensors, no reference to obs_dict)
     observation = {
         "observation.state": torch.from_numpy(joint_pos_lerobot).float().unsqueeze(0).to(device),
         "observation.images.front": torch.from_numpy(front_img).permute(2, 0, 1).float().unsqueeze(0).to(device),
         "observation.images.third_person": torch.from_numpy(third_person_img).permute(2, 0, 1).float().unsqueeze(0).to(device),
         "observation.images.gripper": torch.from_numpy(gripper_img).permute(2, 0, 1).float().unsqueeze(0).to(device),
+        "task": "Pick up the cube and lift it",  # Task description for SmolVLA
     }
 
     return observation
@@ -204,15 +220,32 @@ def run_inference():
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
 
-    print(f"Loading policy from: {checkpoint_path}")
-    policy = ACTPolicy.from_pretrained(str(checkpoint_path))
+    print(f"Loading SmolVLA policy from: {checkpoint_path}")
+    policy = SmolVLAPolicy.from_pretrained(str(checkpoint_path))
     policy.eval()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     policy.to(device)
 
+    # Clear any leftover GPU memory before starting
+    # gc.collect()
+    # torch.cuda.empty_cache()
+    # torch.cuda.reset_peak_memory_stats()
+
     print(f"Policy loaded successfully on {device}")
     print(f"Policy type: {type(policy).__name__}")
+    print(f"GPU memory allocated: {torch.cuda.memory_allocated(device) / 1024**3:.2f} GB")
+
+    # Load dataset metadata for stats
+    dataset_meta = LeRobotDatasetMetadata(repo_id=dataset_id)
+
+    # Create preprocessor/postprocessor
+    preprocessor, postprocessor = make_smolvla_pre_post_processors(
+        policy.config,
+        dataset_stats=dataset_meta.stats
+    )
+
+    print(f"Preprocessor and postprocessor created")
 
     # Create Isaac Lab environment
     print("\nInitializing Isaac Lab environment...")
@@ -232,6 +265,15 @@ def run_inference():
     successes = []
     episode_lengths = []
 
+    # Video recording setup
+    video_writer = None
+    if args_cli.video_path:
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fps = 30
+        frame_size = (640, 480)  # Front camera size
+        video_writer = cv2.VideoWriter(args_cli.video_path, fourcc, fps, frame_size)
+        print(f"Recording video to: {args_cli.video_path}")
+
     # Run episodes
     for episode_idx in range(args_cli.num_episodes):
         print(f"\n{'='*60}")
@@ -245,90 +287,85 @@ def run_inference():
         step_count = 0
         done = False
 
-        # Debug: Collect images from first 10 steps
-        debug_images = {'front': [], 'third_person': [], 'gripper': []}
-
         while not done and step_count < args_cli.max_steps:
-            # Prepare observation for policy
-            observation = prepare_observation(obs_dict, device)
+            # Record frame to video
+            if video_writer is not None:
+                front_frame = obs_dict["policy"]["front"].cpu().numpy()[0]
+                # Convert RGB to BGR for OpenCV
+                front_frame_bgr = cv2.cvtColor(front_frame, cv2.COLOR_RGB2BGR)
+                video_writer.write(front_frame_bgr)
 
-            # Debug: Collect images from first 10 steps of first episode
-            if episode_idx == 0 and step_count < 10:
-                front_img = observation["observation.images.front"].cpu().numpy()[0].transpose(1, 2, 0)
-                third_img = observation["observation.images.third_person"].cpu().numpy()[0].transpose(1, 2, 0)
-                gripper_img = observation["observation.images.gripper"].cpu().numpy()[0].transpose(1, 2, 0)
-
-                debug_images['front'].append(front_img)
-                debug_images['third_person'].append(third_img)
-                debug_images['gripper'].append(gripper_img)
-
-                if step_count < 10:
-                    obs_state = observation['observation.state'].cpu().numpy()[0]
-                    if step_count == 0:
-                        print(f"\n[DEBUG] Front image shape: {front_img.shape}, min/max: {front_img.min():.3f}/{front_img.max():.3f}")
-                    print(f"[DEBUG] Step {step_count} observation.state: {obs_state}")
-
-            # # Plot after collecting 10 steps
-            # if episode_idx == 0 and step_count == 10:
-            #     fig, axes = plt.subplots(3, 10, figsize=(30, 9))
-
-            #     for step_idx in range(10):
-            #         # Row 0: Front camera
-            #         axes[0, step_idx].imshow(debug_images['front'][step_idx])
-            #         axes[0, step_idx].set_title(f'Step {step_idx}', fontsize=8)
-            #         axes[0, step_idx].axis('off')
-
-            #         # Row 1: Third person camera
-            #         axes[1, step_idx].imshow(debug_images['third_person'][step_idx])
-            #         axes[1, step_idx].axis('off')
-
-            #         # Row 2: Gripper camera
-            #         axes[2, step_idx].imshow(debug_images['gripper'][step_idx])
-            #         axes[2, step_idx].axis('off')
-
-            #     # Add row labels
-            #     axes[0, 0].set_ylabel('Front', fontsize=10)
-            #     axes[1, 0].set_ylabel('Third Person', fontsize=10)
-            #     axes[2, 0].set_ylabel('Gripper', fontsize=10)
-
-            #     plt.tight_layout()
-            #     # plt.savefig('debug_cameras_first10steps.png', dpi=120, bbox_inches='tight')
-            #     plt.show()
-            #     plt.close()
-            #     print("\n[DEBUG] Saved first 10 steps to debug_cameras_first10steps.png")
-
-            # Get action from policy
+            # Wrap entire inference in no_grad to prevent memory accumulation
             with torch.no_grad():
-                action_lerobot = policy.select_action(observation)
+                # Prepare observation for policy
+                observation = prepare_observation(obs_dict, device)
 
-            # Convert action from LeRobot to Isaac Lab format
-            action_np = action_lerobot.cpu().numpy()[0]  # [6]
+                # Apply preprocessor (normalizes images, etc.)
+                observation_processed = preprocessor(observation)
 
+                # Delete original observation to free memory
+                del observation
+
+                # Get action from policy
+                action_lerobot = policy.select_action(observation_processed)
+
+                # CRITICAL: Immediately clear GPU cache after vision encoder
+                # gc.collect()
+                # torch.cuda.empty_cache()
+
+                # Delete processed observation
+                del observation_processed
+
+                # Postprocessor denormalizes actions
+                action_lerobot = postprocessor(action_lerobot)
+
+                # Convert action from LeRobot to Isaac Lab format
+                action_np = action_lerobot.cpu().numpy()[0]  # [6]
+
+                # Delete action tensor
+                del action_lerobot
+
+                # Clear again after all tensors deleted
+                gc.collect()
+                torch.cuda.empty_cache()
+
+            # Convert to Isaac format (outside no_grad)
             action_rad = postprocess_lerobot_to_isaac(action_np.copy())
 
-            # Debug output
+            # Debug output (copy data before deleting obs_dict)
             if step_count < 10 or step_count % 50 == 0:
-                current_joint_pos = obs_dict["policy"]["joint_pos"].cpu().numpy()[0]
+                current_joint_pos = obs_dict["policy"]["joint_pos"].cpu().numpy()[0].copy()
                 print(f"\n  Step {step_count}:")
-                print(f"predicted actions: {action_np}")
                 print(f"    Current joints (rad): {current_joint_pos}")
-                # print(f"    Action from policy: {action_np}")
-                # print(f"    Action min/max from policy: {action_np.min():.3f} / {action_np.max():.3f}")
+                print(f"    Predicted action (deg): {action_np}")
+                print(f"    Action (rad): {action_rad}")
 
+            # Delete old obs_dict BEFORE env.step to free GPU memory
+            del obs_dict
 
-                print(f"Action in rad: {action_rad}")
-                print(f"    Action min/max in rad: {action_rad.min():.3f} / {action_rad.max():.3f}")
-
-            # Try using action directly without conversion first
+            # Execute action
             action_tensor = torch.from_numpy(action_rad).float().unsqueeze(0).to(env.device)
+
+            # Clean up numpy arrays immediately
+            del action_rad, action_np
+
             obs_dict, reward, terminated, truncated, info = env.step(action_tensor)
+
+            # Clean up action tensor
+            del action_tensor
 
             done = terminated[0] or truncated[0]
             episode_reward += reward[0].item()
             step_count += 1
 
-            if step_count % 50 == 0:
-                print(f"  Step {step_count}: reward={episode_reward:.3f}")
+            # # Clear CUDA cache and collect garbage every 5 steps to prevent OOM
+            # if step_count % 5 == 0:
+            #     gc.collect()
+            #     torch.cuda.empty_cache()
+
+            # if step_count % 50 == 0:
+            #     mem_allocated = torch.cuda.memory_allocated(device) / 1024**3
+            #     print(f"  Step {step_count}: reward={episode_reward:.3f}, GPU mem={mem_allocated:.2f}GB")
 
         # Episode finished
         success = terminated[0].item()  # Assuming termination means success
@@ -339,6 +376,15 @@ def run_inference():
         print(f"  Steps: {step_count}")
         print(f"  Total reward: {episode_reward:.3f}")
         print(f"  Success: {success}")
+
+        # Clear CUDA cache and garbage after episode
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    # Close video writer
+    if video_writer is not None:
+        video_writer.release()
+        print(f"\nVideo saved to: {args_cli.video_path}")
 
     # Print summary
     print(f"\n{'='*60}")
