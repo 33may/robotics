@@ -27,40 +27,59 @@ from lerobot.configs.types import FeatureType
 from lerobot.datasets.lerobot_dataset import LeRobotDatasetMetadata, LeRobotDataset
 from lerobot.datasets.utils import dataset_to_policy_features
 
+from smolvla_in_isaac.common import (
+    DEFAULT_DATASET_REPO_ID,
+    DEFAULT_DATASET_ROOT,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_NUM_WORKERS,
+)
+from smolvla_in_isaac.common.isaac_utils import setup_isaac_environment, create_app_launcher
 
-# Isaac Lab imports
-from isaaclab.app import AppLauncher
+
+
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Test SmolVLA policy in Isaac Lab")
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=DEFAULT_DATASET_REPO_ID,
+        help="Dataset repository ID",
+    )
+
+    parser.add_argument("--headless", action="store_true", help="Run without GUI")
+    parser.add_argument("--livestream", type=int, default=2, help="Livestream mode (0=off 2=WebRTC)")
+
+    args_cli = parser.parse_args()
+
+    # Force headless if not specified
+    if not hasattr(args_cli, 'headless') or not args_cli.headless:
+        args_cli.headless = True
+
+    # -----------------------------
+    # Setup streaming and cameras
+    if args_cli.livestream == 2:
+        args_cli.headless = True
+
+        sys.argv.append("--/app/livestream/publicEndpointAddress=100.115.105.111")
+        sys.argv.append("--/app/livestream/port=49100")
+
+        print(f"[DEBUG] Livestream enabled (WebRTC mode)")
+        print(f"[DEBUG] Stream address: 100.115.105.111:49100")
+        print(f"[DEBUG] headless = {args_cli.headless}")
+
+    return args_cli
+
 
 # Parse arguments
-parser = argparse.ArgumentParser(description="Test SmolVLA policy in Isaac Lab")
-
-
-parser.add_argument("--headless", action="store_true", help="Run without GUI")
-parser.add_argument("--livestream", type=int, default=2, help="Livestream mode (0=off 2=WebRTC)")
-
-
-args_cli = parser.parse_args()
+args_cli = parse_args()
 args_cli.enable_cameras = True
 
-# Force headless if not specified
-if not hasattr(args_cli, 'headless') or not args_cli.headless:
-    args_cli.headless = True
 
-# -----------------------------
-# Setup streaming and cameras
-if args_cli.livestream == 2:
-    args_cli.headless = True
+setup_isaac_environment()
 
-    sys.argv.append("--/app/livestream/publicEndpointAddress=100.115.105.111")
-    sys.argv.append("--/app/livestream/port=49100")
+app_launcher = create_app_launcher()
 
-    print(f"[DEBUG] Livestream enabled (WebRTC mode)")
-    print(f"[DEBUG] Stream address: 100.115.105.111:49100")
-    print(f"[DEBUG] headless = {args_cli.headless}")
-
-# Launch Isaac Sim
-app_launcher = AppLauncher(args_cli)
-simulation_app = app_launcher.app
 
 # Isaac Lab imports (must be after AppLauncher)
 from isaaclab.envs import ManagerBasedRLEnv

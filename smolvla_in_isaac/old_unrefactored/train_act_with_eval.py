@@ -1,21 +1,3 @@
-"""
-Training script for ACT policy with automatic validation every 2k steps.
-
-This script:
-1. Splits dataset: episodes 0-30 (train) and 31-38 (val)
-2. Evaluates on validation set every 2000 steps
-3. Logs both train and val loss to WandB
-4. Saves best checkpoint based on validation loss
-
-Usage:
-    # Start new training
-    python train_act_with_eval.py
-
-    # Resume from checkpoint
-    python train_act_with_eval.py --resume outputs/train/act_pick_place_eval/checkpoints/005000/pretrained_model
-    python train_act_with_eval.py --resume outputs/train/act_pick_place_eval/checkpoints/best/pretrained_model
-"""
-
 import argparse
 import torch
 from pathlib import Path
@@ -34,12 +16,9 @@ from lerobot.policies.factory import make_policy
 
 def evaluate_on_validation(policy, val_loader, device):
     """Compute validation loss."""
-    # policy.eval()  <-- CAUSES ERROR because it disables VAE encoder outputs needed for loss
     
     val_losses = []
 
-    # torch.no_grad() is sufficient to prevent learning; we don't need .eval() 
-    # if we want to compute the full VAE loss (Reconstruction + KL).
     with torch.no_grad():
         for batch in val_loader:
             batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
@@ -53,9 +32,6 @@ def evaluate_on_validation(policy, val_loader, device):
 
             loss, _ = policy.forward(batch)
             val_losses.append(loss.item())
-
-    # REMOVE this line too since we never left train mode
-    # policy.train() 
     
     return np.mean(val_losses)
 
@@ -73,11 +49,11 @@ def train_with_validation(resume_from=None):
     batch_size = 8
     num_workers = 4
     total_steps = 25000
-    eval_freq = 1000
+    eval_freq = 400
     save_freq = 5000
     log_freq = 200
-    learning_rate = 1e-4
-    lr_backbone = 1e-5
+    learning_rate = 1e-6
+    lr_backbone = 1e-6
     weight_decay = 1e-4
 
     print("="*80)
@@ -151,7 +127,6 @@ def train_with_validation(resume_from=None):
         delta_timestamps=delta_timestamps,
     )
 
-    # Validation dataset (episodes 31-38)
     val_dataset = LeRobotDataset(
         dataset_repo_id,
         root=dataset_root,

@@ -124,12 +124,12 @@ def preprocess_isaac_to_lerobot(joint_pos: np.ndarray) -> np.ndarray:
     joint_pos = joint_pos / np.pi * 180
 
     # Step 2: Map from Isaac range to LeRobot range
-    for i in range(6):
-        isaaclab_min, isaaclab_max = ISAACLAB_JOINT_POS_LIMIT_RANGE[i]
-        lerobot_min, lerobot_max = LEROBOT_JOINT_POS_LIMIT_RANGE[i]
-        isaac_range = isaaclab_max - isaaclab_min
-        lerobot_range = lerobot_max - lerobot_min
-        joint_pos[i] = (joint_pos[i] - isaaclab_min) / isaac_range * lerobot_range + lerobot_min
+    # for i in range(6):
+    #     isaaclab_min, isaaclab_max = ISAACLAB_JOINT_POS_LIMIT_RANGE[i]
+    #     lerobot_min, lerobot_max = LEROBOT_JOINT_POS_LIMIT_RANGE[i]
+    #     isaac_range = isaaclab_max - isaaclab_min
+    #     lerobot_range = lerobot_max - lerobot_min
+    #     joint_pos[i] = (joint_pos[i] - isaaclab_min) / isaac_range * lerobot_range + lerobot_min
 
     # Step 3: Apply MEAN_STD normalization
     joint_pos = (joint_pos - OBS_STATE_MEAN) / OBS_STATE_STD
@@ -145,13 +145,15 @@ def postprocess_lerobot_to_isaac(joint_pos: np.ndarray) -> np.ndarray:
     1. Map from LeRobot range to Isaac range
     2. Convert from degrees to radians
     """
+    joint_pos = joint_pos * ACTION_STD + ACTION_MEAN
+
     # Step 1: Map from LeRobot range to Isaac range
-    for i in range(6):
-        isaaclab_min, isaaclab_max = ISAACLAB_JOINT_POS_LIMIT_RANGE[i]
-        lerobot_min, lerobot_max = LEROBOT_JOINT_POS_LIMIT_RANGE[i]
-        isaac_range = isaaclab_max - isaaclab_min
-        lerobot_range = lerobot_max - lerobot_min
-        joint_pos[i] = (joint_pos[i] - lerobot_min) / lerobot_range * isaac_range + isaaclab_min
+    # for i in range(6):
+    #     isaaclab_min, isaaclab_max = ISAACLAB_JOINT_POS_LIMIT_RANGE[i]
+    #     lerobot_min, lerobot_max = LEROBOT_JOINT_POS_LIMIT_RANGE[i]
+    #     isaac_range = isaaclab_max - isaaclab_min
+    #     lerobot_range = lerobot_max - lerobot_min
+    #     joint_pos[i] = (joint_pos[i] - lerobot_min) / lerobot_range * isaac_range + isaaclab_min
 
     # Step 2: Convert from degrees to radians
     joint_pos = joint_pos / 180 * np.pi
