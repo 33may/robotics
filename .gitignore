@@ -79,3 +79,7 @@ temp/
 # Isaac Sim specific
 leisaac/
 ${data}/
+
+# VBTI large directories
+vbti/data/
+vbti/libs/
