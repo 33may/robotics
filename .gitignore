@@ -83,3 +83,18 @@ ${data}/
 # VBTI large directories
 vbti/data/
 vbti/libs/
+
+# Tool config files
+.polyscope.ini
+imgui.ini
+
+# Node modules
+node_modules/
+
+# Embedded git repos (cloned, not submodules)
+old/diffusion/robosuite_src/
+robots/SO-ARM101/
+robots/roarm-m3-assets/
+
+# Old demonstration data
+old/diffusion/data/robot_demonstrations/

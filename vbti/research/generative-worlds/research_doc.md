@@ -1,9 +1,5 @@
 # From Gaussian Splats to Interactive Worlds: Automated Physics-Ready Scene Construction for Robot Manipulation
 
-**Status:** Ongoing | **Target venue:** CoRL 2026 (May 28) | **Hardware:** SO-101 6-DOF, RTX 4070 Ti SUPER, Isaac Sim
-
----
-
 ## Motivation
 
 Training robust manipulation policies in simulation requires interactive environments where the robot physically grasps, pushes, and collides with objects. Current approaches either hand-author these scenes (expensive, weeks per environment) or use Gaussian Splatting reconstructions as visual backdrops without physics interaction (SplatSim, RoboSplat). The result: visually rich but physically inert worlds that cannot train contact-rich skills. Meanwhile, the individual tools to bridge this gap -- semantic GS segmentation, differentiable mesh extraction, VLM-based physics estimation, and generative 3D asset creation -- now exist but have never been connected into a single automated pipeline for robotics.
@@ -14,15 +10,15 @@ Training robust manipulation policies in simulation requires interactive environ
 
 ## The Gap
 
-| What exists | What's missing |
-|------------|----------------|
-| GS visual augmentation achieves 86-88% sim2real (SplatSim, RoboSplat RSS'25) | Visual-only -- no collision, no grasping, no force feedback |
-| LangSplatV2 segments GS scenes at 384 FPS (NeurIPS'25) | Never used for per-object mesh extraction in robotics |
-| MILo extracts meshes 10x more efficiently during GS training (SIGGRAPH Asia'25) | Never evaluated for physics simulation quality |
-| PhysSplat estimates material properties via VLM in zero-shot (ICCV'25) | Uses custom MPM solver, not PhysX; accuracy unvalidated |
-| PhysX-Anything generates sim-ready URDF from images (Nov'25) | No grasp success evaluation; image-only, no text input |
-| World Labs Marble exports collider meshes to Isaac Sim (Jan'26) | No per-object physics properties; coarse geometry |
-| RoboSimGS builds hybrid GS+mesh scenes with VLM physics (Oct'25) | Slow pipeline, no structured DR framework, no scaling analysis |
+| What exists                                                                     | What's missing                                                 |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| GS visual augmentation achieves 86-88% sim2real (SplatSim, RoboSplat RSS'25)    | Visual-only -- no collision, no grasping, no force feedback    |
+| LangSplatV2 segments GS scenes at 384 FPS (NeurIPS'25)                          | Never used for per-object mesh extraction in robotics          |
+| MILo extracts meshes 10x more efficiently during GS training (SIGGRAPH Asia'25) | Never evaluated for physics simulation quality                 |
+| PhysSplat estimates material properties via VLM in zero-shot (ICCV'25)          | Uses custom MPM solver, not PhysX; accuracy unvalidated        |
+| PhysX-Anything generates sim-ready URDF from images (Nov'25)                    | No grasp success evaluation; image-only, no text input         |
+| World Labs Marble exports collider meshes to Isaac Sim (Jan'26)                 | No per-object physics properties; coarse geometry              |
+| RoboSimGS builds hybrid GS+mesh scenes with VLM physics (Oct'25)                | Slow pipeline, no structured DR framework, no scaling analysis |
 
 **The central finding:** every component exists in isolation. Nobody has connected them end-to-end and measured whether the result supports contact-rich robot learning.
 
@@ -74,12 +70,12 @@ Zero-Shot Transfer → SO-101 Real Robot
 
 ## Timeline
 
-| Phase | Weeks | Deliverable |
-|-------|-------|-------------|
-| Mesh quality threshold study | 1-4 | Go/no-go on mesh extraction approach |
-| Full pipeline integration + DR comparison | 5-10 | Pipeline vs hand-authored baseline |
-| Generative variation experiment | 11-14 | Parametric diversity ablation |
-| Paper writing | 14-16 | CoRL 2026 submission (May 28) |
+| Phase                                     | Weeks | Deliverable                          |
+| ----------------------------------------- | ----- | ------------------------------------ |
+| Mesh quality threshold study              | 1-4   | Go/no-go on mesh extraction approach |
+| Full pipeline integration + DR comparison | 5-10  | Pipeline vs hand-authored baseline   |
+| Generative variation experiment           | 11-14 | Parametric diversity ablation        |
+| Paper writing                             | 14-16 | Paper                                |
 
 ## Key References
 
