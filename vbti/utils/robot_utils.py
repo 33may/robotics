@@ -254,18 +254,16 @@ def inspect_robot(robot_path: str, joint_info: bool = True):
 
 
 def create_no_robot_scene(scene_path: str, robot_prim_path: str = "/World/so101_simready_follower_leisaac",
-                          save_path: str = None, remove_cameras: bool = False):
-    """Strip robot and GUI render config from a scene USD.
+                          save_path: str = None):
+    """Strip robot, cameras, and GUI render config from a scene USD.
 
     Produces a clean scene that LeIsaac can load — it spawns
-    the robot separately, so it must not be in the scene USD.
-    Cameras are kept by default so LeIsaac can reference them via spawn=None.
+    the robot and cameras separately from the env config.
 
     Args:
         scene_path: Path to the input scene USD.
         robot_prim_path: Prim path of the robot to remove.
         save_path: Output path. Defaults to <scene>_no_robot.usda.
-        remove_cameras: If True, also remove Camera prims under /World.
     """
     from pathlib import Path
 
@@ -275,12 +273,11 @@ def create_no_robot_scene(scene_path: str, robot_prim_path: str = "/World/so101_
     stage.RemovePrim(robot_prim_path)
     print(f"  [OK] Removed robot: {robot_prim_path}")
 
-    # 2. Optionally remove world-level cameras
-    if remove_cameras:
-        for prim in stage.GetPrimAtPath("/World").GetChildren():
-            if prim.GetTypeName() == "Camera":
-                stage.RemovePrim(prim.GetPath())
-                print(f"  [OK] Removed camera: {prim.GetPath()}")
+    # 2. Remove world-level cameras (spawned from env config instead)
+    for prim in list(stage.GetPrimAtPath("/World").GetChildren()):
+        if prim.GetTypeName() == "Camera":
+            stage.RemovePrim(prim.GetPath())
+            print(f"  [OK] Removed camera: {prim.GetPath()}")
 
     # 3. Remove /Render (GUI viewport render products)
     if stage.GetPrimAtPath("/Render"):
@@ -372,6 +369,9 @@ def extract_scene_config(scene_path: str, robot_prim_path=None) -> dict:
             focal = prim.GetAttribute("focalLength").Get()
             if focal:
                 cam["focal_length"] = float(focal)
+            aperture = prim.GetAttribute("horizontalAperture").Get()
+            if aperture:
+                cam["horizontal_aperture"] = float(aperture)
             clip = prim.GetAttribute("clippingRange").Get()
             if clip:
                 cam["clipping_range"] = list(clip)
@@ -550,13 +550,39 @@ def create_task_boilerplate(task_name: str, tasks_root: str = LEISAAC_ROOT + "/s
     print(f"\n  Task '{task_name}' ready — next: implement {task_name}_env_cfg.py")
 
 
-def _cam_field(cam_name: str, width: int = 640, height: int = 480) -> str:
-    """Generate a TiledCameraCfg field that references an existing camera in the scene USD."""
+def _cam_field(cam_name: str, cam_cfg: dict, width: int = 640, height: int = 480,
+               cosmos_sensors: bool = False) -> str:
+    """Generate a TiledCameraCfg field with full spawn config and offset.
+
+    Camera is spawned from code (not from USD), enabling depth/seg capture
+    and camera position randomization for domain randomization.
+    """
+    pos = tuple(cam_cfg.get("position", (0, 0, 0)))
+    rot = tuple(cam_cfg.get("orientation", (1, 0, 0, 0)))
+    focal = cam_cfg.get("focal_length", 24.0)
+    aperture = cam_cfg.get("horizontal_aperture", 36.0)
+    clip = tuple(cam_cfg.get("clipping_range", [0.01, 50.0]))
+    focus = cam_cfg.get("focus_distance", 400.0)
+
+    if cosmos_sensors:
+        data_types = '["rgb", "distance_to_camera", "instance_segmentation_fast"]'
+    else:
+        data_types = '["rgb"]'
+
     return (
         f'    {cam_name}: TiledCameraCfg = TiledCameraCfg(\n'
         f'        prim_path="{{ENV_REGEX_NS}}/Scene/{cam_name}",\n'
-        f'        spawn=None,\n'
-        f'        data_types=["rgb"],\n'
+        f'        offset=TiledCameraCfg.OffsetCfg(\n'
+        f'            pos={pos}, rot={rot}, convention="opengl"\n'
+        f'        ),\n'
+        f'        spawn=sim_utils.PinholeCameraCfg(\n'
+        f'            focal_length={focal},\n'
+        f'            focus_distance={focus},\n'
+        f'            horizontal_aperture={aperture},\n'
+        f'            clipping_range={clip},\n'
+        f'            lock_camera=True,\n'
+        f'        ),\n'
+        f'        data_types={data_types},\n'
         f'        width={width},\n'
         f'        height={height},\n'
         f'        update_period=1 / 30.0,\n'
@@ -608,9 +634,9 @@ def _discover_subassets(scene_usda_path: str) -> list:
     return assets
 
 
-def _obs_cam_field(cam_name: str) -> str:
-    """Generate an ObsTerm for a camera image — name must match SceneCfg field."""
-    return (
+def _obs_cam_field(cam_name: str, cosmos_sensors: bool = False) -> str:
+    """Generate ObsTerms for a camera — name must match SceneCfg field."""
+    lines = (
         f'        {cam_name} = ObsTerm(\n'
         f'            func=mdp.image,\n'
         f'            params={{\n'
@@ -620,10 +646,31 @@ def _obs_cam_field(cam_name: str) -> str:
         f'            }}\n'
         f'        )\n'
     )
+    if cosmos_sensors:
+        lines += (
+            f'        {cam_name}_depth = ObsTerm(\n'
+            f'            func=mdp.image,\n'
+            f'            params={{\n'
+            f'                "sensor_cfg": SceneEntityCfg("{cam_name}"),\n'
+            f'                "data_type": "distance_to_camera",\n'
+            f'                "normalize": False\n'
+            f'            }}\n'
+            f'        )\n'
+            f'        {cam_name}_seg = ObsTerm(\n'
+            f'            func=mdp.image,\n'
+            f'            params={{\n'
+            f'                "sensor_cfg": SceneEntityCfg("{cam_name}"),\n'
+            f'                "data_type": "instance_segmentation_fast",\n'
+            f'                "normalize": False\n'
+            f'            }}\n'
+            f'        )\n'
+        )
+    return lines
 
 
 def generate_env_cfg(scene_usda_path: str, task_name: str,
                      no_robot_usda_path: str = None,
+                     cosmos_sensors: bool = False,
                      tasks_root: str = LEISAAC_ROOT + "/source/leisaac/leisaac/tasks"):
     """Generate a leisaac env config file from a scene USDA.
 
@@ -636,6 +683,7 @@ def generate_env_cfg(scene_usda_path: str, task_name: str,
         task_name: Snake_case task name, e.g. 'vbti_table'.
         no_robot_usda_path: Path to the no-robot scene USDA (for subasset discovery).
                             Defaults to {scene}_no_robot.usda.
+        cosmos_sensors: If True, cameras also capture depth + segmentation for Cosmos Transfer.
         tasks_root: Path to leisaac/tasks/ directory.
     """
     from pathlib import Path
@@ -670,6 +718,8 @@ def generate_env_cfg(scene_usda_path: str, task_name: str,
 
     # --- Imports ---
     imports = (
+        f'import math\n'
+        f'\n'
         f'import isaaclab.sim as sim_utils\n'
         f'from isaaclab.assets import AssetBaseCfg\n'
         f'from isaaclab.managers import ObservationGroupCfg as ObsGroup\n'
@@ -679,6 +729,11 @@ def generate_env_cfg(scene_usda_path: str, task_name: str,
         f'from isaaclab.sensors import TiledCameraCfg\n'
         f'from isaaclab.utils import configclass\n'
         f'from leisaac.assets.scenes.{task_name} import {task_upper}_CFG, {task_upper}_USD_PATH\n'
+        f'from leisaac.utils.domain_randomization import (\n'
+        f'    domain_randomization,\n'
+        f'    randomize_light_rotation_uniform,\n'
+        f'    randomize_object_uniform,\n'
+        f')\n'
         f'from leisaac.utils.env_utils import delete_attribute\n'
         f'from leisaac.utils.general_assets import parse_usd_and_create_subassets\n'
         f'\n'
@@ -692,7 +747,8 @@ def generate_env_cfg(scene_usda_path: str, task_name: str,
     )
 
     # --- SceneCfg ---
-    scene_cameras = "\n".join(_cam_field(name) for name in cam_names)
+    cameras_cfg = cfg.get("cameras", {})
+    scene_cameras = "\n".join(_cam_field(name, cameras_cfg[name], cosmos_sensors=cosmos_sensors) for name in cam_names)
     scene_lights = "\n".join(_light_field(name, lcfg) for name, lcfg in lights.items())
     scene_cfg = (
         f'\n\n@configclass\n'
@@ -708,11 +764,16 @@ def generate_env_cfg(scene_usda_path: str, task_name: str,
         f'        delete_attribute(self, "front")\n'
         f'        delete_attribute(self, "light")  # remove template default light\n'
     )
+    if cosmos_sensors:
+        scene_cfg += (
+            f'        # Patch wrist camera (inherited from template) with cosmos sensors\n'
+            f'        self.wrist.data_types = ["rgb", "distance_to_camera", "instance_segmentation_fast"]\n'
+        )
 
     # --- ObservationsCfg ---
     # Joint states (always needed) + camera images for each camera.
     # Camera ObsTerm names must match SceneCfg field names.
-    obs_cam_terms = "\n".join(_obs_cam_field(name) for name in all_cam_names)
+    obs_cam_terms = "\n".join(_obs_cam_field(name, cosmos_sensors=cosmos_sensors) for name in all_cam_names)
     obs_cfg = (
         f'\n\n@configclass\n'
         f'class ObservationsCfg(SingleArmObservationsCfg):\n'
@@ -789,7 +850,8 @@ def generate_env_cfg(scene_usda_path: str, task_name: str,
 
 
 def pipeline(scene_usda_path: str, task_name: str,
-             robot_prim_path: str = "/World/robot"):
+             robot_prim_path: str = "/World/robot",
+             cosmos_sensors: bool = False):
     """Run the full scene→task pipeline end-to-end.
 
     Takes a composed scene USDA (with robot, cameras, lights) and produces
@@ -805,9 +867,11 @@ def pipeline(scene_usda_path: str, task_name: str,
         scene_usda_path: Path to the original scene USDA (with robot).
         task_name: Snake_case task name, e.g. 'vbti_mesh_table'.
         robot_prim_path: Prim path of the robot in the scene.
+        cosmos_sensors: If True, cameras capture depth + segmentation for Cosmos Transfer.
 
     Usage:
         python robot_utils.py pipeline vbti/data/vbti_table/scene/scene_v3.usda vbti_mesh_table
+        python robot_utils.py pipeline scene.usda my_task --cosmos_sensors
     """
     from pathlib import Path
 
@@ -838,13 +902,16 @@ def pipeline(scene_usda_path: str, task_name: str,
 
     # Step 4: Generate env config (reads original scene for config extraction)
     print(f"\n--- Step 4: generate_env_cfg ---")
-    generate_env_cfg(scene_usda_path, task_name, no_robot_usda_path=no_robot_path)
+    generate_env_cfg(scene_usda_path, task_name, no_robot_usda_path=no_robot_path,
+                     cosmos_sensors=cosmos_sensors)
 
     # Summary
     pascal = "".join(w.capitalize() for w in task_name.split("_"))
     print(f"\n{'='*60}")
     print(f"  DONE — task '{task_name}' is ready")
     print(f"  Gym ID: LeIsaac-SO101-{pascal}-v0")
+    if cosmos_sensors:
+        print(f"  Cosmos sensors: depth + segmentation enabled on all cameras")
     print(f"")
     print(f"  Run with:")
     print(f"    python leisaac/scripts/environments/teleoperation/teleop_se3_agent.py \\")
