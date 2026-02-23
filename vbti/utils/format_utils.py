@@ -83,48 +83,6 @@ def splat_to_pointcloud(input_path: str, output_path: str,
     print(f"Saved colored point cloud to {output_path}")
 
 
-def splat_to_mesh(input_path: str, output_path: str,
-                  opacity_threshold: float = 0.5,
-                  scale_percentile: float = 95.0,
-                  outlier_nb: int = 20, outlier_std: float = 2.0,
-                  poisson_depth: int = 10,
-                  normal_radius: float = 0.014,
-                  density_quantile: float = 0.05,
-                  target_faces: int = 0):
-    """Step 2: Convert a filtered 3DGS PLY to a vertex-colored mesh via Poisson.
-
-    Run splat_to_pointcloud first to verify filtering params look good.
-    """
-    pcd = _load_and_filter_splat(input_path, opacity_threshold, scale_percentile,
-                                 outlier_nb, outlier_std)
-
-    # --- Normal estimation ---
-    pcd.estimate_normals(
-        search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=normal_radius, max_nn=30)
-    )
-    pcd.orient_normals_consistent_tangent_plane(k=100)
-    print("Normals estimated and oriented")
-
-    # --- Poisson reconstruction ---
-    mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-        pcd, depth=poisson_depth
-    )
-    print(f"Raw Poisson mesh: {len(mesh.vertices)} verts, {len(mesh.triangles)} tris")
-
-    # --- Remove low-density (hallucinated) regions ---
-    densities = np.asarray(densities)
-    mesh.remove_vertices_by_mask(densities < np.quantile(densities, density_quantile))
-    print(f"After density cleanup: {len(mesh.vertices)} verts, {len(mesh.triangles)} tris")
-
-    # --- Decimation ---
-    if target_faces > 0 and len(mesh.triangles) > target_faces:
-        mesh = mesh.simplify_quadric_decimation(target_number_of_triangles=target_faces)
-        print(f"After decimation: {len(mesh.vertices)} verts, {len(mesh.triangles)} tris")
-
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    o3d.io.write_triangle_mesh(output_path, mesh, write_vertex_colors=True)
-    print(f"Saved to {output_path}")
-
 
 def glb_to_usd(input_path: str, output_path: str, collision: str = "convexDecomposition", rigid_body: bool = True):
     """Convert a GLB (glTF binary) file to USD with materials and textures.
@@ -242,11 +200,157 @@ def glb_to_usd(input_path: str, output_path: str, collision: str = "convexDecomp
     print(f"Saved to {output_path}")
 
 
+COLMAP_TO_USD = np.array([
+    [-1.,  0.,  0.,  0.],
+    [ 0.,  0., -1.,  0.],
+    [ 0., -1.,  0.,  0.],
+    [ 0.,  0.,  0.,  1.],
+])
+
+
+def _transform_vertices(verts: np.ndarray, matrix: np.ndarray) -> np.ndarray:
+    """Apply a 4x4 homogeneous transform to Nx3 vertices."""
+    rot = matrix[:3, :3]
+    trans = matrix[:3, 3]
+    return verts @ rot.T + trans
+
+
+def _srgb_to_linear(c: np.ndarray) -> np.ndarray:
+    """Convert sRGB [0,1] to linear [0,1]. Matches the IEC 61966-2-1 standard."""
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def _transform_normals(normals: np.ndarray, matrix: np.ndarray) -> np.ndarray:
+    """Transform normals using the inverse-transpose of the rotation."""
+    rot = matrix[:3, :3]
+    transformed = normals @ rot.T
+    norms = np.linalg.norm(transformed, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    return transformed / norms
+
+
+def mesh_to_usd(
+    mesh_path: str,
+    output_path: str,
+    static_friction: float = 0.7,
+    dynamic_friction: float = 0.5,
+    restitution: float = 0.1,
+    apply_colmap_transform: bool = True,
+    apply_srgb_conversion: bool = True,
+):
+    """Convert a MILo vertex-colored mesh PLY to a USD scene.
+
+    Single mesh prim serves as both visual (vertex colors) and collision
+    (convex decomposition). No NuRec/USDZ — fully TiledCamera compatible.
+
+    Args:
+        mesh_path: path to MILo mesh PLY (mesh_learnable_sdf.ply)
+        output_path: output .usda path
+        apply_colmap_transform: Apply COLMAP→USD axis swap (x→-x, y→-z, z→-y).
+            Set False if mesh is already in USD Z-up space.
+        apply_srgb_conversion: Apply sRGB→linear. Set False if colors already linear.
+    """
+    mesh_path = str(Path(mesh_path).resolve())
+    output_path = str(Path(output_path).resolve())
+
+    # --- 1. Load mesh ---
+    mesh: o3d.geometry.TriangleMesh = o3d.io.read_triangle_mesh(mesh_path)
+    mesh.compute_vertex_normals()
+
+    verts = np.asarray(mesh.vertices)
+    faces = np.asarray(mesh.triangles)
+    colors = np.asarray(mesh.vertex_colors)
+    normals = np.asarray(mesh.vertex_normals)
+
+    print(f"Loaded: {len(verts)} verts, {len(faces)} faces, colors={colors.shape}")
+
+    if apply_srgb_conversion:
+        colors = _srgb_to_linear(colors)
+    else:
+        print("Skipping sRGB→linear (colors assumed already linear)")
+
+    # --- 2. COLMAP → USD coordinate transform ---
+    if apply_colmap_transform:
+        verts = _transform_vertices(verts, COLMAP_TO_USD)
+        normals = _transform_normals(normals, COLMAP_TO_USD)
+    else:
+        print("Skipping COLMAP→USD transform (mesh already in USD space)")
+
+    print(f"Bounds: {verts.min(axis=0)} → {verts.max(axis=0)}")
+
+    # --- 3. Create USD stage ---
+    stage: Usd.Stage = Usd.Stage.CreateNew(output_path)
+    UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
+    UsdGeom.SetStageMetersPerUnit(stage, 1.0)
+
+    UsdGeom.Xform.Define(stage, "/World")
+    UsdGeom.Xform.Define(stage, "/World/Environment")
+
+    # --- 4. Mesh prim: geometry + vertex colors ---
+    mesh_prim = UsdGeom.Mesh.Define(stage, "/World/Environment/Mesh")
+
+    mesh_prim.GetPointsAttr().Set(Vt.Vec3fArray([Gf.Vec3f(*v) for v in verts]))
+    mesh_prim.GetFaceVertexCountsAttr().Set(Vt.IntArray([3] * len(faces)))
+    mesh_prim.GetFaceVertexIndicesAttr().Set(Vt.IntArray(faces.flatten().tolist()))
+    mesh_prim.GetNormalsAttr().Set(Vt.Vec3fArray([Gf.Vec3f(*n) for n in normals]))
+    mesh_prim.SetNormalsInterpolation("vertex")
+
+    UsdGeom.PrimvarsAPI(mesh_prim).CreatePrimvar(
+        "displayColor", Sdf.ValueTypeNames.Color3fArray, UsdGeom.Tokens.vertex
+    ).Set(Vt.Vec3fArray([Gf.Vec3f(*c) for c in colors]))
+
+    mesh_prim.GetDoubleSidedAttr().Set(True)
+
+    # --- 5. Vertex color material (UsdPreviewSurface reading displayColor) ---
+    material = UsdShade.Material.Define(stage, "/World/Environment/VertexColorMaterial")
+
+    shader = UsdShade.Shader.Define(stage, "/World/Environment/VertexColorMaterial/Shader")
+    shader.CreateIdAttr("UsdPreviewSurface")
+    shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(1.0)
+    shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
+
+    primvar_reader = UsdShade.Shader.Define(stage, "/World/Environment/VertexColorMaterial/PrimvarReader")
+    primvar_reader.CreateIdAttr("UsdPrimvarReader_float3")
+    primvar_reader.CreateInput("varname", Sdf.ValueTypeNames.Token).Set("displayColor")
+    primvar_reader.CreateOutput("result", Sdf.ValueTypeNames.Float3)
+
+    shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).ConnectToSource(
+        primvar_reader.GetOutput("result")
+    )
+    material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+
+    prim = mesh_prim.GetPrim()
+    UsdShade.MaterialBindingAPI.Apply(prim).Bind(material)
+
+    # --- 6. Collision: convex decomposition ---
+    UsdPhysics.CollisionAPI.Apply(prim)
+    UsdPhysics.MeshCollisionAPI.Apply(prim).GetApproximationAttr().Set("convexDecomposition")
+
+    # --- 7. Physics material ---
+    phys_material = UsdShade.Material.Define(stage, "/World/Environment/PhysicsMaterial")
+    physics_mat = UsdPhysics.MaterialAPI.Apply(phys_material.GetPrim())
+    physics_mat.GetStaticFrictionAttr().Set(static_friction)
+    physics_mat.GetDynamicFrictionAttr().Set(dynamic_friction)
+    physics_mat.GetRestitutionAttr().Set(restitution)
+
+    UsdShade.MaterialBindingAPI.Apply(prim).Bind(
+        phys_material, UsdShade.Tokens.weakerThanDescendants, "physics"
+    )
+
+    # --- 8. Save ---
+    stage.SetDefaultPrim(stage.GetPrimAtPath("/World"))
+    stage.GetRootLayer().Save()
+
+    print(f"\nSaved: {output_path}")
+    print(f"  /World/Environment/Mesh            — visual + collision (convexDecomposition)")
+    print(f"  /World/Environment/PhysicsMaterial  — friction={static_friction}/{dynamic_friction}")
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
     fire.Fire({
         "glb_to_usd": glb_to_usd,
+        "mesh_to_usd": mesh_to_usd,
         "splat_to_pointcloud": splat_to_pointcloud,
-        "splat_to_mesh": splat_to_mesh,
     })

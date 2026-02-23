@@ -23,13 +23,16 @@ Commands:
     python vbti/utils/cosmos_transfer.py reassemble --episode=33 --variant=kitchen
 """
 
+import base64
 import json
+import os
 from pathlib import Path
 
 import cv2
 import fire
 import h5py
 import numpy as np
+import requests
 from tqdm import tqdm
 
 
@@ -257,20 +260,110 @@ def config(
 # Step 4: Run Cosmos Transfer inference
 # ──────────────────────────────────────────────
 
-def transfer(episode: int = 33, variant: str = "default"):
-    """Run Cosmos Transfer 2.5 on a prepared config.
+COSMOS_TRANSFER1_ENDPOINT = "https://ai.api.nvidia.com/v1/cosmos/nvidia/cosmos-transfer1-7b"
 
-    TODO: Wire up the actual Cosmos Transfer inference call.
-    This depends on how you install it — either:
-      a) cosmos-transfer2.5 CLI from the GitHub repo
-      b) Python API from the cosmos package
-      c) NVIDIA NGC container
+
+def transfer(
+    config_file: str = "",
+    api_key: str = "",
+    output_dir: str = str(COSMOS_DIR / "output"),
+    guidance: float = 7,
+    steps: int = 35,
+    seed: int = 42,
+):
+    """Run Cosmos Transfer 1 via NVIDIA hosted API.
+
+    Args:
+        config_file: Path to a config JSON from prepare_cosmos or config().
+        api_key: NVIDIA API key (nvapi-...). Falls back to NVIDIA_API_KEY env var.
+        output_dir: Where to save output video.
+        guidance: Classifier-free guidance scale (1-20).
+        steps: Diffusion steps (1-50).
+        seed: Random seed.
     """
-    raise NotImplementedError(
-        "TODO: Wire up Cosmos Transfer 2.5 inference.\n"
-        "Config files are in cosmos/configs/.\n"
-        "Output should go to cosmos/output/episode_NNN/variant_NAME/\n"
+    api_key = api_key or os.environ.get("NVIDIA_API_KEY", "") or os.environ.get("NGC_API_KEY", "")
+    if not api_key:
+        raise ValueError("Provide --api_key or set NVIDIA_API_KEY / NGC_API_KEY env var")
+
+    if not config_file:
+        raise ValueError("Provide --config_file path to a Cosmos config JSON")
+
+    cfg_path = Path(config_file)
+    with open(cfg_path) as f:
+        cfg = json.load(f)
+
+    # Resolve video paths relative to config's parent dir
+    base_dir = cfg_path.parent.parent  # configs/ -> cosmos_ready/
+    video_path = base_dir / cfg["video_path"]
+
+    print(f"\n=== Cosmos Transfer 1 API ===")
+    print(f"Config: {cfg_path}")
+    print(f"Input:  {video_path}")
+    print(f"Prompt: {cfg['prompt'][:80]}...")
+
+    def _read_b64(path: Path) -> str:
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+
+    # Build payload
+    payload = {
+        "prompt": cfg["prompt"],
+        "video": _read_b64(video_path),
+        "guidance_scale": guidance,
+        "steps": steps,
+        "seed": seed,
+    }
+
+    # Add control signals if present in config
+    if "edge" in cfg:
+        edge_path = base_dir / cfg["edge"]["control_path"]
+        payload["edge"] = {
+            "input_control": _read_b64(edge_path),
+            "control_weight": cfg["edge"]["control_weight"],
+        }
+        print(f"Edge:   {edge_path} (weight={cfg['edge']['control_weight']})")
+
+    if "depth" in cfg:
+        depth_path = base_dir / cfg["depth"]["control_path"]
+        payload["depth"] = {
+            "input_control": _read_b64(depth_path),
+            "control_weight": cfg["depth"]["control_weight"],
+        }
+        print(f"Depth:  {depth_path} (weight={cfg['depth']['control_weight']})")
+
+    # Call API
+    print(f"\nCalling NVIDIA API (this may take a few minutes)...")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    response = requests.post(
+        COSMOS_TRANSFER1_ENDPOINT,
+        json=payload,
+        headers=headers,
+        timeout=600,
     )
+
+    if response.status_code != 200:
+        print(f"ERROR {response.status_code}: {response.text[:500]}")
+        return None
+
+    result = response.json()
+
+    # Save output video
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    name = cfg.get("name", "output")
+    out_path = out / f"{name}.mp4"
+
+    video_bytes = base64.b64decode(result["b64_video"])
+    with open(out_path, "wb") as f:
+        f.write(video_bytes)
+
+    print(f"\nDone! Seed={result.get('seed', '?')}")
+    print(f"Output: {out_path}")
+    return out_path
 
 
 # ──────────────────────────────────────────────
