@@ -15,6 +15,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from loguru import logger
+
 
 def run_colmap(
     frames_dir: str,
@@ -38,7 +40,7 @@ def run_colmap(
         "--matching-method", matching_method,
     ]
 
-    print(f"Running COLMAP via nerfstudio: {' '.join(cmd)}")
+    logger.info(f"Running COLMAP via nerfstudio: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
 
     sparse_dir = Path(output_dir) / "colmap" / "sparse"
@@ -46,7 +48,7 @@ def run_colmap(
         raise RuntimeError(f"COLMAP failed — no sparse directory at {sparse_dir}")
 
     models = sorted(sparse_dir.iterdir())
-    print(f"COLMAP finished. Found {len(models)} model(s) in {sparse_dir}")
+    logger.success(f"COLMAP finished. Found {len(models)} model(s) in {sparse_dir}")
 
 
 def validate_models(colmap_dir: str) -> int:
@@ -70,16 +72,16 @@ def validate_models(colmap_dir: str) -> int:
         images_bin = model_dir / "images.bin"
         if images_bin.exists():
             models[model_dir.name] = images_bin.stat().st_size
-            print(f"  Model {model_dir.name}: images.bin = {images_bin.stat().st_size:,} bytes")
+            logger.debug(f"Model {model_dir.name}: images.bin = {images_bin.stat().st_size:,} bytes")
 
     if not models:
         raise RuntimeError(f"No valid models found in {sparse_dir}")
 
     best_model = max(models, key=lambda k: models[k])
-    print(f"Best model: {best_model} ({models[best_model]:,} bytes)")
+    logger.info(f"Best model: {best_model} ({models[best_model]:,} bytes)")
 
     if best_model != "0":
-        print(f"Swapping model {best_model} into slot 0...")
+        logger.warning(f"Swapping model {best_model} into slot 0...")
         slot_0 = sparse_dir / "0"
         backup = sparse_dir / "0_original"
 
@@ -87,7 +89,7 @@ def validate_models(colmap_dir: str) -> int:
             shutil.move(str(slot_0), str(backup))
         shutil.move(str(sparse_dir / best_model), str(slot_0))
 
-        print(f"Done. Old model 0 backed up to {backup}")
+        logger.info(f"Old model 0 backed up to {backup}")
 
     return len(models)
 
@@ -124,7 +126,7 @@ def undistort(
         "--output_type", "COLMAP",
     ]
 
-    print(f"Running: {' '.join(cmd)}")
+    logger.info(f"Running: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
 
     # Verify output
@@ -139,11 +141,10 @@ def undistort(
         sparse_0.mkdir()
         for f in out_sparse.glob("*.bin"):
             f.rename(sparse_0 / f.name)
-        print(f"  Moved sparse bins into sparse/0/ (MILo convention)")
+        logger.debug("Moved sparse bins into sparse/0/ (MILo convention)")
 
     n_images = len(list(out_images.glob("*")))
-    print(f"Undistorted {n_images} images → {output_dir}")
-    print(f"Camera model converted to PINHOLE. Ready for MILo.")
+    logger.success(f"Undistorted {n_images} images -> {output_dir} (PINHOLE)")
 
 
 def process_colmap(
@@ -166,27 +167,16 @@ def process_colmap(
     colmap_dir = str(output_path / "colmap")
     undistorted_dir = str(output_path / "undistorted")
 
-    print("=" * 50)
-    print("Phase 2a: Running COLMAP")
-    print("=" * 50)
+    logger.info("Running COLMAP")
     run_colmap(frames_dir, colmap_dir, matching_method)
 
-    print()
-    print("=" * 50)
-    print("Phase 2b: Validating models")
-    print("=" * 50)
+    logger.info("Validating models")
     validate_models(colmap_dir)
 
-    print()
-    print("=" * 50)
-    print("Phase 2c: Undistorting images (OPENCV → PINHOLE)")
-    print("=" * 50)
+    logger.info("Undistorting images (OPENCV -> PINHOLE)")
     undistort(colmap_dir, undistorted_dir)
 
-    print()
-    print("=" * 50)
-    print(f"Done. MILo-ready output at: {undistorted_dir}")
-    print("=" * 50)
+    logger.success(f"MILo-ready output at: {undistorted_dir}")
 
 
 if __name__ == "__main__":

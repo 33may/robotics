@@ -109,6 +109,49 @@ def set_drives(robot_path: str, save_path: str = None,
         print(f"  Saved (overwritten) {robot_path}")
 
 
+def extract_robot_config(robot_path: str) -> dict:
+    """Extract joint drive and limit config from a robot USD.
+
+    Reads all PhysicsRevoluteJoint prims and returns per-joint:
+    stiffness, damping, effort/velocity limits, angle limits, axis.
+
+    Args:
+        robot_path: Path to the robot USD file.
+
+    Returns:
+        Dict with "joints" mapping joint name to its config.
+        Angle limits are in degrees (as stored in USD).
+    """
+    stage = Usd.Stage.Open(robot_path)
+
+    joints = {}
+    for prim in stage.Traverse():
+        if prim.GetTypeName() != "PhysicsRevoluteJoint":
+            continue
+
+        name = prim.GetName()
+        joint = {}
+
+        attr_map = {
+            "axis":         "physics:axis",
+            "lower_limit":  "physics:lowerLimit",
+            "upper_limit":  "physics:upperLimit",
+            "stiffness":    "drive:angular:physics:stiffness",
+            "damping":      "drive:angular:physics:damping",
+            "max_force":    "drive:angular:physics:maxForce",
+            "max_velocity": "physxJoint:maxJointVelocity",
+        }
+        for key, attr_name in attr_map.items():
+            attr = prim.GetAttribute(attr_name)
+            if attr and attr.Get() is not None:
+                val = attr.Get()
+                joint[key] = float(val) if isinstance(val, float) else str(val)
+
+        joints[name] = joint
+
+    return {"joints": joints}
+
+
 def make_ready(robot_path: str, save_path: str = None,
                stiffness: float = 17.8, damping: float = 0.60,
                max_force: float = 10.0, max_velocity: float = 10.0):
@@ -257,5 +300,6 @@ if __name__ == "__main__":
         "inspect": inspect_robot,
         "fix_base": fix_articulation_base,
         "set_drives": set_drives,
+        "extract": extract_robot_config,
         "make_ready": make_ready,
     })

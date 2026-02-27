@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import cv2
+from loguru import logger
 
 
 def get_video_info(video_path: str) -> dict:
@@ -32,12 +33,13 @@ def print_video_stats(video_path: str):
     mins = int(info["duration_sec"] // 60)
     secs = info["duration_sec"] % 60
 
-    print(f"Video:       {Path(info['path']).name}")
-    print(f"Resolution:  {info['width']}x{info['height']}")
-    print(f"FPS:         {info['fps']:.2f}")
-    print(f"Frames:      {info['total_frames']}")
-    print(f"Duration:    {mins}m {secs:.1f}s")
-    print(f"File size:   {info['filesize_mb']:.1f} MB")
+    logger.info(
+        f"Video: {Path(info['path']).name} | "
+        f"{info['width']}x{info['height']} @ {info['fps']:.2f}fps | "
+        f"{info['total_frames']} frames | "
+        f"{mins}m {secs:.1f}s | "
+        f"{info['filesize_mb']:.1f} MB"
+    )
 
 
 def calculate_frame_count(video_path: str, percentage: float) -> int:
@@ -51,7 +53,7 @@ def calculate_frame_count(video_path: str, percentage: float) -> int:
     info = get_video_info(video_path)
     count = int(info["total_frames"] * percentage)
 
-    print(f"{info['total_frames']} total frames x {percentage:.0%} = {count} frames")
+    logger.info(f"{info['total_frames']} total frames x {percentage:.0%} = {count} frames")
     return count
 
 
@@ -81,9 +83,9 @@ def fix_rotation(video_path: str, output_path: str = None) -> str:
         output_path,
     ]
 
-    print(f"Fixing rotation: {Path(video_path).name} → {Path(output_path).name}")
+    logger.info(f"Fixing rotation: {Path(video_path).name} -> {Path(output_path).name}")
     subprocess.run(cmd, check=True)
-    print(f"Saved to {output_path}")
+    logger.success(f"Saved to {output_path}")
     return output_path
 
 
@@ -123,13 +125,13 @@ def extract_frames(
     else:
         raise ValueError(f"Unknown mode '{mode}'. Use 'count', 'every', or 'percentage'")
 
-    print(f"Running: {' '.join(cmd)}")
+    logger.info(f"Running: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
 
     # Report results
     out_path = Path(output_dir) / Path(video_path).stem
     frames = sorted(out_path.glob("*.png"))
-    print(f"\nExtracted {len(frames)} frames to {out_path}")
+    logger.success(f"Extracted {len(frames)} frames to {out_path}")
     return len(frames)
 
 

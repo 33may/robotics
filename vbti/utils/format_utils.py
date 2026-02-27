@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import open3d as o3d
 from plyfile import PlyData
+from loguru import logger
 
 import trimesh
 from PIL import Image
@@ -38,14 +39,14 @@ def _load_and_filter_splat(input_path: str, opacity_threshold: float = 0.5,
 
     # --- Filter: opacity ---
     mask = opacities > opacity_threshold
-    print(f"Opacity filter: {mask.sum()}/{n_total} kept (threshold={opacity_threshold})")
+    logger.info(f"Opacity filter: {mask.sum()}/{n_total} kept (threshold={opacity_threshold})")
 
     # --- Filter: scale (remove floaters) ---
     if scale_percentile < 100.0:
         scale_cutoff = np.percentile(max_scale[mask], scale_percentile)
         scale_mask = max_scale <= scale_cutoff
         mask = mask & scale_mask
-        print(f"Scale filter: {mask.sum()}/{n_total} kept (percentile={scale_percentile}, cutoff={scale_cutoff:.6f})")
+        logger.info(f"Scale filter: {mask.sum()}/{n_total} kept (percentile={scale_percentile}, cutoff={scale_cutoff:.6f})")
 
     positions = positions[mask]
     colors = colors[mask]
@@ -60,9 +61,9 @@ def _load_and_filter_splat(input_path: str, opacity_threshold: float = 0.5,
         pcd, inlier_idx = pcd.remove_statistical_outlier(
             nb_neighbors=outlier_nb, std_ratio=outlier_std
         )
-        print(f"Outlier removal: {len(inlier_idx)}/{len(positions)} kept (nb={outlier_nb}, std={outlier_std})")
+        logger.info(f"Outlier removal: {len(inlier_idx)}/{len(positions)} kept (nb={outlier_nb}, std={outlier_std})")
 
-    print(f"Final point cloud: {len(pcd.points)} points")
+    logger.success(f"Final point cloud: {len(pcd.points)} points")
     return pcd
 
 
@@ -80,7 +81,7 @@ def splat_to_pointcloud(input_path: str, output_path: str,
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     o3d.io.write_point_cloud(output_path, pcd)
-    print(f"Saved colored point cloud to {output_path}")
+    logger.success(f"Saved colored point cloud to {output_path}")
 
 
 
@@ -107,7 +108,7 @@ def glb_to_usd(input_path: str, output_path: str, collision: str = "convexDecomp
 
     vertices = mesh.vertices
     faces = mesh.faces
-    print(f"Vertices: {vertices.shape}, Faces: {faces.shape}")
+    logger.info(f"Vertices: {vertices.shape}, Faces: {faces.shape}")
 
     # Create USD stage
     stage = Usd.Stage.CreateNew(output_path)
@@ -129,7 +130,7 @@ def glb_to_usd(input_path: str, output_path: str, collision: str = "convexDecomp
         uvs = mesh.visual.uv
         uv_primvar = UsdGeom.PrimvarsAPI(mesh_prim).CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex)
         uv_primvar.Set([Gf.Vec2f(*uv) for uv in uvs])
-        print(f"UVs: {uvs.shape}")
+        logger.debug(f"UVs: {uvs.shape}")
 
     # Normals
     if mesh.vertex_normals is not None and len(mesh.vertex_normals) > 0:
@@ -148,7 +149,7 @@ def glb_to_usd(input_path: str, output_path: str, collision: str = "convexDecomp
         if hasattr(mat, 'baseColorTexture') and mat.baseColorTexture is not None:
             tex_path = output_dir / "texture.png"
             Image.fromarray(np.array(mat.baseColorTexture)).save(tex_path)
-            print(f"Texture saved: {tex_path}")
+            logger.debug(f"Texture saved: {tex_path}")
 
             # Create texture reader shader
             tex_reader = UsdShade.Shader.Define(stage, "/World/Material/TextureReader")
@@ -183,21 +184,21 @@ def glb_to_usd(input_path: str, output_path: str, collision: str = "convexDecomp
         # Connect shader to material and bind
         usd_mat.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
         UsdShade.MaterialBindingAPI(mesh_prim).Bind(usd_mat)
-        print("Material bound to mesh")
+        logger.debug("Material bound to mesh")
 
     # Physics
     if rigid_body:
         UsdPhysics.RigidBodyAPI.Apply(world.GetPrim())
-        print("Rigid body applied to /World")
+        logger.debug("Rigid body applied to /World")
 
     if collision != "none":
         UsdPhysics.CollisionAPI.Apply(mesh_prim.GetPrim())
         mesh_collision = UsdPhysics.MeshCollisionAPI.Apply(mesh_prim.GetPrim())
         mesh_collision.CreateApproximationAttr().Set(collision)
-        print(f"Collision: {collision}")
+        logger.debug(f"Collision: {collision}")
 
     stage.GetRootLayer().Save()
-    print(f"Saved to {output_path}")
+    logger.success(f"Saved to {output_path}")
 
 
 COLMAP_TO_USD = np.array([
@@ -227,6 +228,61 @@ def _transform_normals(normals: np.ndarray, matrix: np.ndarray) -> np.ndarray:
     norms = np.linalg.norm(transformed, axis=1, keepdims=True)
     norms[norms == 0] = 1.0
     return transformed / norms
+
+
+def _rotation_between_vectors(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Compute 3x3 rotation matrix that rotates unit vector a onto unit vector b."""
+    a = a / np.linalg.norm(a)
+    b = b / np.linalg.norm(b)
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    if c < -0.9999:
+        # Nearly opposite — pick an arbitrary perpendicular axis
+        perp = np.array([1, 0, 0]) if abs(a[0]) < 0.9 else np.array([0, 1, 0])
+        perp = perp - np.dot(perp, a) * a
+        perp = perp / np.linalg.norm(perp)
+        return 2 * np.outer(perp, perp) - np.eye(3)
+    skew = np.array([[0, -v[2], v[1]],
+                      [v[2], 0, -v[0]],
+                      [-v[1], v[0], 0]])
+    return np.eye(3) + skew + skew @ skew / (1 + c)
+
+
+def _align_and_center(verts: np.ndarray, normals: np.ndarray):
+    """Align mesh so the flat surface faces Z-up, centered with bottom at Z=0.
+
+    Uses PCA: the smallest variance direction is the surface normal of a flat
+    object (table). Rotates that to Z-up, then centers the bounding box.
+    """
+    centroid = verts.mean(axis=0)
+    centered = verts - centroid
+
+    # PCA — smallest eigenvalue = thinnest axis = surface normal
+    cov = np.cov(centered.T)
+    eigenvalues, eigenvectors = np.linalg.eigh(cov)
+    surface_normal = eigenvectors[:, 0]
+
+    # Make sure normal points "up" (positive Z after rotation)
+    if surface_normal[2] < 0:
+        surface_normal = -surface_normal
+
+    # Rotate normal -> Z-up
+    z_up = np.array([0.0, 0.0, 1.0])
+    rot = _rotation_between_vectors(surface_normal, z_up)
+    verts = (rot @ centered.T).T
+    normals = (rot @ normals.T).T
+
+    # Center XY at origin, bottom at Z=0
+    bbox_min = verts.min(axis=0)
+    bbox_max = verts.max(axis=0)
+    center = (bbox_min + bbox_max) / 2
+    center[2] = bbox_min[2]  # shift so bottom sits at Z=0
+    verts = verts - center
+
+    logger.info(f"Aligned to Z-up, centered at origin, bottom at Z=0")
+    logger.debug(f"Surface normal was: {surface_normal}")
+
+    return verts, normals
 
 
 def mesh_to_usd(
@@ -262,23 +318,25 @@ def mesh_to_usd(
     colors = np.asarray(mesh.vertex_colors)
     normals = np.asarray(mesh.vertex_normals)
 
-    print(f"Loaded: {len(verts)} verts, {len(faces)} faces, colors={colors.shape}")
+    logger.info(f"Loaded: {len(verts)} verts, {len(faces)} faces, colors={colors.shape}")
 
     if apply_srgb_conversion:
         colors = _srgb_to_linear(colors)
     else:
-        print("Skipping sRGB→linear (colors assumed already linear)")
+        logger.debug("Skipping sRGB->linear (colors assumed already linear)")
 
     # --- 2. COLMAP → USD coordinate transform ---
     if apply_colmap_transform:
         verts = _transform_vertices(verts, COLMAP_TO_USD)
         normals = _transform_normals(normals, COLMAP_TO_USD)
     else:
-        print("Skipping COLMAP→USD transform (mesh already in USD space)")
+        logger.debug("Skipping COLMAP->USD transform (mesh already in USD space)")
 
-    print(f"Bounds: {verts.min(axis=0)} → {verts.max(axis=0)}")
+    # --- 3. Align to ground plane + center at origin ---
+    verts, normals = _align_and_center(verts, normals)
+    logger.info(f"Bounds: {verts.min(axis=0)} -> {verts.max(axis=0)}")
 
-    # --- 3. Create USD stage ---
+    # --- 4. Create USD stage ---
     stage: Usd.Stage = Usd.Stage.CreateNew(output_path)
     UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
     UsdGeom.SetStageMetersPerUnit(stage, 1.0)
@@ -286,7 +344,7 @@ def mesh_to_usd(
     UsdGeom.Xform.Define(stage, "/World")
     UsdGeom.Xform.Define(stage, "/World/Environment")
 
-    # --- 4. Mesh prim: geometry + vertex colors ---
+    # --- 5. Mesh prim: geometry + vertex colors ---
     mesh_prim = UsdGeom.Mesh.Define(stage, "/World/Environment/Mesh")
 
     mesh_prim.GetPointsAttr().Set(Vt.Vec3fArray([Gf.Vec3f(*v) for v in verts]))
@@ -301,7 +359,7 @@ def mesh_to_usd(
 
     mesh_prim.GetDoubleSidedAttr().Set(True)
 
-    # --- 5. Vertex color material (UsdPreviewSurface reading displayColor) ---
+    # --- 6. Vertex color material (UsdPreviewSurface reading displayColor) ---
     material = UsdShade.Material.Define(stage, "/World/Environment/VertexColorMaterial")
 
     shader = UsdShade.Shader.Define(stage, "/World/Environment/VertexColorMaterial/Shader")
@@ -322,11 +380,11 @@ def mesh_to_usd(
     prim = mesh_prim.GetPrim()
     UsdShade.MaterialBindingAPI.Apply(prim).Bind(material)
 
-    # --- 6. Collision: convex decomposition ---
+    # --- 7. Collision: convex decomposition ---
     UsdPhysics.CollisionAPI.Apply(prim)
     UsdPhysics.MeshCollisionAPI.Apply(prim).GetApproximationAttr().Set("convexDecomposition")
 
-    # --- 7. Physics material ---
+    # --- 8. Physics material ---
     phys_material = UsdShade.Material.Define(stage, "/World/Environment/PhysicsMaterial")
     physics_mat = UsdPhysics.MaterialAPI.Apply(phys_material.GetPrim())
     physics_mat.GetStaticFrictionAttr().Set(static_friction)
@@ -337,13 +395,13 @@ def mesh_to_usd(
         phys_material, UsdShade.Tokens.weakerThanDescendants, "physics"
     )
 
-    # --- 8. Save ---
+    # --- 9. Save ---
     stage.SetDefaultPrim(stage.GetPrimAtPath("/World"))
     stage.GetRootLayer().Save()
 
-    print(f"\nSaved: {output_path}")
-    print(f"  /World/Environment/Mesh            — visual + collision (convexDecomposition)")
-    print(f"  /World/Environment/PhysicsMaterial  — friction={static_friction}/{dynamic_friction}")
+    logger.success(f"Saved: {output_path}")
+    logger.info(f"  /World/Environment/Mesh           — visual + collision (convexDecomposition)")
+    logger.info(f"  /World/Environment/PhysicsMaterial — friction={static_friction}/{dynamic_friction}")
 
 
 if __name__ == "__main__":
