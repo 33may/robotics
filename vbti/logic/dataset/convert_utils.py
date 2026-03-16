@@ -308,11 +308,45 @@ def roundtrip_test():
     print("PASS")
 
 
+def verify(dataset_path: str):
+    """Verify joint ranges in a converted LeRobot dataset.
+
+    Checks body joints are in [-100, 100] and gripper in [0, 100].
+    """
+    import pandas as pd
+    data_dir = Path(dataset_path) / "data"
+    all_actions = []
+    all_states = []
+    for pq in sorted(data_dir.rglob("*.parquet")):
+        df = pd.read_parquet(pq)
+        if "action" in df.columns:
+            all_actions.append(np.stack(df["action"].values))
+        if "observation.state" in df.columns:
+            all_states.append(np.stack(df["observation.state"].values))
+
+    for label, arrs in [("action", all_actions), ("state", all_states)]:
+        if not arrs:
+            continue
+        data = np.concatenate(arrs)
+        print(f"\n{label} ranges ({data.shape[0]} frames):")
+        for i, name in enumerate(JOINT_NAMES):
+            lo, hi = data[:, i].min(), data[:, i].max()
+            expected_lo = 0 if i == GRIPPER_IDX else -100
+            ok = lo >= expected_lo - 0.5 and hi <= 100.5
+            status = "OK" if ok else "FAIL"
+            print(f"  {name:20s} [{lo:7.2f}, {hi:7.2f}]  {status}")
+
+        grip = data[:, GRIPPER_IDX]
+        if (grip < -0.5).any():
+            print(f"  WARNING: gripper has negative values (min={grip.min():.2f})")
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
     fire.Fire({
         "convert":        convert,
         "discover":       discover_cameras,
+        "verify":         verify,
         "roundtrip_test": roundtrip_test,
     })
