@@ -1,8 +1,8 @@
-# Simulation-Driven Robotics — VBTI
+# Simulation-Driven Robotics
 
 End-to-end framework for developing and deploying robotic manipulation systems through 3D simulation. Reconstructs real environments into physically accurate digital scenes, enabling scalable data generation, policy training, and sim-to-real transfer.
 
-Built during a full-time research project at [VBTI](https://vbti.nl) (Eindhoven, NL) with the SO-101 6-DOF robot arm, NVIDIA Isaac Sim, and HuggingFace LeRobot.
+Built with the SO-101 6-DOF robot arm, NVIDIA Isaac Sim, and HuggingFace LeRobot.
 
 ## Pipeline
 

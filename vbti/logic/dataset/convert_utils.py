@@ -52,15 +52,21 @@ JOINT_NAMES = [
     "gripper.pos",
 ]
 
+# Gripper (index 5) uses RANGE_0_100 [0, 100] on real robot,
+# body joints (0-4) use RANGE_M100_100 [-100, 100].
+GRIPPER_IDX = 5
+
 
 # ── Conversion functions ────────────────────────────────────────
 
 
 def sim_to_normalized(joint_pos_rad: np.ndarray) -> np.ndarray:
-    """Convert sim joint positions from radians to [-100, 100] normalized.
+    """Convert sim joint positions from radians to normalized.
 
     Pipeline per joint:
-        sim_radians → sim_degrees → real_degrees → [-100, 100]
+        sim_radians → sim_degrees → real_degrees → normalized
+    Body joints (0-4): [-100, 100] (RANGE_M100_100)
+    Gripper (5):       [0, 100]    (RANGE_0_100)
     """
     result = np.empty_like(joint_pos_rad)
     for i in range(joint_pos_rad.shape[-1]):
@@ -74,25 +80,35 @@ def sim_to_normalized(joint_pos_rad: np.ndarray) -> np.ndarray:
         t = (sim_deg - sim_lo) / (sim_hi - sim_lo)
         real_deg = t * (real_hi - real_lo) + real_lo
 
-        # Step 3: real degrees → [-100, 100]
-        result[..., i] = ((real_deg - real_lo) / (real_hi - real_lo)) * 200 - 100
+        # Step 3: real degrees → normalized
+        frac = (real_deg - real_lo) / (real_hi - real_lo)
+        if i == GRIPPER_IDX:
+            result[..., i] = frac * 100          # [0, 100]
+        else:
+            result[..., i] = frac * 200 - 100    # [-100, 100]
 
     return result
 
 
 def normalized_to_sim(joint_pos_norm: np.ndarray) -> np.ndarray:
-    """Convert [-100, 100] normalized back to sim radians.
+    """Convert normalized back to sim radians.
 
     Pipeline per joint:
-        [-100, 100] → real_degrees → sim_degrees → sim_radians
+        normalized → real_degrees → sim_degrees → sim_radians
+    Body joints (0-4): [-100, 100] (RANGE_M100_100)
+    Gripper (5):       [0, 100]    (RANGE_0_100)
     """
     result = np.empty_like(joint_pos_norm)
     for i in range(joint_pos_norm.shape[-1]):
         sim_lo, sim_hi = SIM_LIMITS_DEG[i]
         real_lo, real_hi = REAL_LIMITS_DEG[i]
 
-        # Step 1: [-100, 100] → real degrees
-        real_deg = (joint_pos_norm[..., i] + 100) / 200 * (real_hi - real_lo) + real_lo
+        # Step 1: normalized → real degrees
+        if i == GRIPPER_IDX:
+            frac = joint_pos_norm[..., i] / 100               # [0, 100] → [0, 1]
+        else:
+            frac = (joint_pos_norm[..., i] + 100) / 200       # [-100, 100] → [0, 1]
+        real_deg = frac * (real_hi - real_lo) + real_lo
 
         # Step 2: real degrees → sim degrees
         t = (real_deg - real_lo) / (real_hi - real_lo)
