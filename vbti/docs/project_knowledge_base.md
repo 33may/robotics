@@ -3,7 +3,7 @@
 **Author:** Anton Novokhatskyi
 **Organization:** VBTI (robotics automation company) + Fontys University of Applied Sciences
 **Date:** February 2026
-**Status:** Active R&D — Phase 2 (Digital Twin Creation) nearing completion
+**Status:** Active R&D — Phase 2 complete, Phase 3 (Sprint 3) in progress — real teleop data collection
 
 ---
 
@@ -21,14 +21,15 @@
 10. [Current State — What Works Today](#10-current-state--what-works-today)
 11. [Key Technical Decisions & Pivots](#11-key-technical-decisions--pivots)
 12. [The Data Flow — End to End](#12-the-data-flow--end-to-end)
-13. [Research Direction — CoRL 2026](#13-research-direction--corl-2026)
-14. [Literature & Prior Work](#14-literature--prior-work)
-15. [Timeline & Milestones](#15-timeline--milestones)
-16. [Metrics & Success Criteria](#16-metrics--success-criteria)
-17. [Risks & Mitigations](#17-risks--mitigations)
-18. [Glossary & Key Concepts](#18-glossary--key-concepts)
-19. [Key Files & Entry Points](#19-key-files--entry-points)
-20. [Presentation System Prompt](#20-presentation-system-prompt)
+13. [Process Notes & Code Health](#13-process-notes--code-health)
+14. [Research Direction — CoRL 2026](#14-research-direction--corl-2026)
+15. [Literature & Prior Work](#15-literature--prior-work)
+16. [Timeline & Milestones](#16-timeline--milestones)
+17. [Metrics & Success Criteria](#17-metrics--success-criteria)
+18. [Risks & Mitigations](#18-risks--mitigations)
+19. [Glossary & Key Concepts](#19-glossary--key-concepts)
+20. [Key Files & Entry Points](#20-key-files--entry-points)
+21. [Presentation System Prompt](#21-presentation-system-prompt)
 
 ---
 
@@ -136,27 +137,6 @@ Every new client site means:
 
 Tomato sorting — a real agricultural manipulation task that VBTI works on. The framework will be validated on this task, comparing BC-only baseline against simulation-enhanced models.
 
----
-
-## 6. Stakeholders & Collaboration
-
-| Stakeholder | Role | Involvement |
-|---|---|---|
-| **VBTI** | Robotics company | Hosts the project, defines practical requirements, provides hardware and domain expertise |
-| **Fontys University** | Academic institution | Assesses the project as part of the ICT internship programme |
-| **Anton Novokhatskyi** | Fontys ICT intern at VBTI | Responsible for the simulation framework — 3D reconstruction, digital twin pipeline, simulation-ready asset creation |
-| **TU/e Collaborator** | Master thesis student at VBTI | Develops RL algorithms and training strategies that consume the simulation environments produced by this project |
-
-### The Two-Sided Collaboration
-
-This project sits at the intersection of two parallel efforts:
-- **Anton's work:** The simulation infrastructure — environments, digital twins, scene creation
-- **TU/e collaborator:** The learning algorithms — RL strategies, reward engineering, training optimization
-
-The simulation framework provides the environments; the RL research provides the training methods. Both depend on each other.
-
----
-
 ## 7. Technical Architecture — Full Pipeline
 
 ### The Complete Data Flow
@@ -167,11 +147,15 @@ The simulation framework provides the environments; the RL research provides the
 ├─────────────────────────────────────────────────────────────────┤
 │  iPhone video / photos of workspace                             │
 │  ↓                                                              │
+│  master.py video_processing → sharp-frame-extractor (best       │
+│  frames)                                                        │
+│  ↓                                                              │
 │  COLMAP (Structure from Motion) → camera poses + sparse cloud   │
+│  ↓ (exhaustive matching for <500 images, vocab tree for more)   │
 │  ↓                                                              │
 │  Nerfstudio splatfacto → Gaussian Splat (PLY)                   │
 │  ↓                                                              │
-│  SuperSplat → clean floating artifacts                          │
+│  SuperSplat → clean floating artifacts (optional)               │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -181,11 +165,13 @@ The simulation framework provides the environments; the RL research provides the
 │  ↓                                                              │
 │  MILo (SIGGRAPH Asia 2025) — learnable SDF from GS             │
 │  ↓ Train: ~57 min on RTX 4070 Ti SUPER                          │
-│  ↓ Quality: PSNR 31.2, SSIM 0.89                                │
+│  ↓ Quality: PSNR 31.2, SSIM 0.89, 243K Gaussians               │
 │  ↓                                                              │
 │  mesh_extract_sdf.py → mesh_learnable_sdf.ply                   │
 │  ↓                                                              │
 │  clean_mesh.py (Polyscope GUI) → crop OBB, remove artifacts     │
+│  ↓                                                              │
+│  PCA-based alignment + center-at-origin                         │
 │  ↓                                                              │
 │  Decimate for collision (configurable simplification)            │
 └─────────────────────────────────────────────────────────────────┘
@@ -231,6 +217,23 @@ The simulation framework provides the environments; the RL research provides the
 │                                                                 │
 │  Controls: B=start, N=success+reset, R=discard+reset            │
 │  Output: HDF5 dataset (joints + camera images per timestep)     │
+│  Domain randomization: objects, lighting, cameras, physics       │
+│  100+ episodes collected, ~85 GB uncompressed                    │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    DATA AUGMENTATION (Cosmos Transfer 2.5)       │
+├─────────────────────────────────────────────────────────────────┤
+│  cosmos_transfer.py:                                            │
+│  1. extract  → HDF5 episode → PNG frames (per camera)           │
+│  2. process  → frames → MP4 (RGB + depth + edge)                │
+│  3. config   → generate Cosmos spec JSON                        │
+│  4. transfer → run inference (RunPod A40, ~5 min/93-frame chunk)│
+│  5. reassemble → augmented frames → HDF5                        │
+│                                                                 │
+│  Controls: depth weight 0.5, edge weight 0.3-1.0               │
+│  NVIDIA benchmark: 54% → 91% (+68.5%) with mixed data          │
+│  Deployment: RunPod A40 48GB, ~$0.76/hr, 136h for 109 episodes │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -281,51 +284,69 @@ The simulation framework provides the environments; the RL research provides the
 
 **Status:** COMPLETED
 
-### Phase 2: Digital Twin Creation (Feb 11 - Mar 30)
+### Phase 2: Digital Twin Creation (Feb 9 - Feb 27)
 
 **Goal:** Construct a high-fidelity digital twin of the real workspace.
 
 Sub-tasks completed:
-- Scene reconstruction via Gaussian Splatting (nerfstudio splatfacto)
-- Mesh extraction via MILo (PSNR 31.2, SSIM 0.89)
-- Interactive mesh cleaning tool (Polyscope GUI)
+- Scene reconstruction: Video → COLMAP → Gaussian Splatting (nerfstudio splatfacto)
+- **Pivot (Feb 13):** NuRec GS incompatible with TiledCamera → switched to MILo mesh extraction
+- Mesh extraction via MILo (PSNR 31.2, SSIM 0.89, 243K Gaussians)
+- Interactive mesh cleaning tool (Polyscope GUI with OBB cropping)
 - sRGB→Linear color space conversion for Isaac Sim rendering
-- GLB→USD asset pipeline with materials and physics
-- Scene composition with HDRI lighting
-- USDA→LeIsaac automated pipeline (single CLI command)
+- GLB→USD asset pipeline with materials and physics (SAM3D object extraction)
+- Scene composition with custom HDRI (phone panorama → Hugin → EXR)
+- USDA→LeIsaac automated pipeline (`robot_utils.py pipeline` single CLI)
+- Parallel IsaacLab standalone export (`isaac_cfg_utils.py generate_isaaclab_env`)
 - Teleoperation working with physical leader arm
-- Data collection MVP operational
+- Domain randomization configured (objects, lighting, cameras, physics)
+- 100+ demonstration episodes collected in HDF5 format
+- Cosmos Transfer 2.5 data preparation pipeline built (`cosmos_transfer.py`)
 
-**Status:** NEARLY COMPLETE — collecting first simulation datasets
+**Status:** COMPLETED
 
-### Phase 3: Simulation Training / RL (Mar 1 - Mar 30)
+### Phase 3: Real Data Collection + Cosmos Augmentation (Mar 1 - ongoing)
 
-**Goal:** Use RL to improve the pre-trained model inside the digital twin.
+**Goal:** Collect real-world teleop data and augment sim data with Cosmos Transfer.
 
+Sprint 3 (current):
+- Real hardware setup: SO101 leader (/dev/ttyACM2) + follower (/dev/ttyACM1)
+- 4× RealSense D405 cameras (640×480@15fps, USB 2.1 bandwidth limit)
+- Calibration debugging (Koen's offsets restored after experimental recalibration)
+- Cosmos Transfer running on RunPod (A40 GPU, ~$0.76/hr, 136 hrs for 109 episodes)
+- Master pipeline CLI (`master.py`) for end-to-end automation
+- Dataset viewer TUI for episode inspection
+
+**Status:** IN PROGRESS
+
+### Phase 4: Model Training + RL (Mar 15 - Mar 30)
+
+**Goal:** Train SmolVLA on augmented dataset, then use RL to improve.
+
+- SmolVLA training on mixed original + Cosmos-augmented data
 - Reward engineering for task completion
-- Parallel training in Isaac Lab
+- Parallel RL training in Isaac Lab
 - Metric recording: task success rate in simulation vs BC baseline
-- Runs in parallel with Phase 2 refinement
 
 **Status:** UPCOMING
 
-### Phase 4: Sim-to-Real Transfer & Validation (Apr 1 - Apr 15)
+### Phase 5: Sim-to-Real Transfer & Validation (Apr 1 - Apr 15)
 
 **Goal:** Deploy simulation-improved model to physical robot.
 
 - Run optimized model on real SO-101
 - Validate camera input similarity (sim vs real)
 - Record final task success rate
-- Calculate pure method gains (Phase 4 - Phase 1)
+- Calculate pure method gains (Phase 5 - Phase 1)
 - Gap analysis if transfer degrades performance
 
 **Status:** PLANNED
 
-### Phase 5: Infrastructure Scaling (Apr 16 - Jun 30)
+### Phase 6: Infrastructure Scaling (Apr 16 - Jun 30)
 
 **Goal:** Solidify pipeline for real production use.
 
-- Reusable scripts and tools from Phases 1-4
+- Reusable scripts and tools from Phases 1-5
 - Scale to real agricultural manipulation (tomato sorting)
 - Shift from training-from-scratch to utilizing foundation models
 - Deliverable: working PoC + complete documented pipeline
@@ -357,11 +378,20 @@ Sub-tasks completed:
 ### Format Conversion & Scene Authoring
 | Tool | Purpose |
 |---|---|
-| **3DGRUT** (NVIDIA) | PLY→USDZ conversion for NuRec neural rendering |
+| **3DGRUT** (NVIDIA) | PLY→USDZ conversion for NuRec neural rendering (legacy — NuRec path abandoned) |
 | **USD (Universal Scene Description)** | Scene format for Isaac Sim |
 | **Custom create_scene_usd.py** | MILo mesh→USD with vertex colors + collision |
 | **Custom format_utils.py** | GLB→USD with materials + physics |
 | **Custom robot_utils.py** | USDA→LeIsaac pipeline automation |
+| **Custom isaac_cfg_utils.py** | IsaacLab standalone env generation (no LeIsaac dependency) |
+| **Custom master.py** | Pipeline orchestrator CLI (video→GS→mesh→USD→env) |
+
+### Data Augmentation
+| Tool | Purpose |
+|---|---|
+| **NVIDIA Cosmos Transfer 2.5** | Sim→photorealistic video augmentation (2.36B params, BF16) |
+| **Custom cosmos_transfer.py** | HDF5→frames→MP4→spec JSON preparation pipeline |
+| **RunPod** | Cloud GPU for Cosmos inference (A40 48GB, ~$0.76/hr) |
 
 ### Training & Inference
 | Tool | Purpose |
@@ -369,13 +399,15 @@ Sub-tasks completed:
 | **LeRobot** (HuggingFace) | Behavioral cloning framework, dataset management |
 | **SmolVLA** | Small Vision-Language-Action model (policy network) |
 | **Custom run_smolvla_inference.py** | Isaac Sim inference loop with proper unit conversion |
+| **Custom dataset_utils.py** | HDF5 dataset inspection, video grid export |
 
 ### Hardware
 | Component | Specs |
 |---|---|
-| **Robot** | SO-ARM100/101 (6-DOF arm + gripper, 7 joints) |
+| **Robot** | SO-ARM101 leader + follower (6-DOF arm + gripper, 7 joints) |
+| **Cameras** | 4× Intel RealSense D405 (640×480@15fps, USB 2.1) |
 | **GPU** | NVIDIA RTX 4070 Ti SUPER (16GB VRAM, SM 89) |
-| **OS** | Fedora 42 (Linux 6.17) |
+| **OS** | Fedora 42 (Linux 6.18) |
 | **CUDA** | 12.9 (patched for glibc 2.41 compatibility) |
 | **GCC** | 14 (system GCC 15 unsupported by CUDA) |
 
@@ -392,9 +424,13 @@ Sub-tasks completed:
 5. **Scene composition** — MILo mesh + collision geometry + HDRI lighting + interactive objects in USD
 6. **USDA→LeIsaac automated pipeline** — Single CLI command: `python robot_utils.py pipeline scene.usda task_name`
 7. **Teleoperation working** — Physical SO-101 leader arm controlling simulated robot
-8. **Data collection MVP** — Recording trajectories with multiple cameras in simulation
+8. **Data collection** — 100+ demonstration episodes collected with 3 cameras (side, table, wrist) in HDF5
 9. **SmolVLA inference in Isaac Sim** — Debugged: postprocessor loading, degree→radian conversion, image format conversion
 10. **GLB→USD asset pipeline** — SAM3D objects converted with materials, physics, collision
+11. **Domain randomization** — Object positions/rotations, lighting, camera jitter, physics properties randomized per reset
+12. **Cosmos Transfer data prep** — `cosmos_transfer.py` extracts HDF5 → frames → MP4 + generates spec JSON
+13. **Master pipeline CLI** — `master.py` orchestrates video_processing → gs_reconstruction → ply_to_usda → scene_composition
+14. **Real hardware setup** — SO101 leader+follower arms, 4× RealSense D405 cameras configured
 
 ### Key Results
 
@@ -403,9 +439,13 @@ Sub-tasks completed:
 | MILo PSNR | 31.2 dB | High reconstruction fidelity (target >30) |
 | MILo SSIM | 0.89 | Close to target of 0.9 |
 | MILo LPIPS | 0.17 | Perceptual similarity |
+| MILo Gaussians | 243K | Table scene |
 | BC success rate | ~80% | Real-world baseline on SO-101 |
 | MILo train time | 57 min | On RTX 4070 Ti SUPER |
 | Pipeline time | ~1 hour | Video → runnable LeIsaac task |
+| Episodes collected | 100+ | With domain randomization, 3 cameras |
+| Dataset size | ~85 GB | Uncompressed HDF5, 480×640 RGB+depth+seg |
+| Cosmos aug cost | ~$103 | 136 hrs × $0.76/hr for 109 episodes |
 
 ---
 
@@ -447,11 +487,41 @@ Sub-tasks completed:
 
 **Rationale:** NVIDIA is the leading institution for embodied AI tooling. Keeping the entire stack native (Isaac Sim, Isaac Lab, CUDA, USD) prevents integration issues when transitioning between project phases. This matters because the project spans reconstruction → simulation → training → deployment.
 
+### Decision 6: Exhaustive Matching for Small Datasets (Feb 9)
+
+**Problem:** COLMAP vocab tree format changed (flann → faiss). Nerfstudio downloads old version, crashes on newer COLMAP.
+
+**Solution:** Use exhaustive matching for datasets <500 images (no vocab tree needed). For larger sets, replace cached vocab tree with faiss version.
+
+### Decision 7: Instance Proxies Deferred (Feb 12-16)
+
+**Problem:** Instance proxies optimize VRAM for multi-env cloning but make material editing, camera placement, and scene iteration difficult.
+
+**Solution:** Use non-instanced copies for composition and initial development. Switch to instanced versions only for parallel RL training.
+
+### Decision 8: Cosmos Transfer — Depth+Edge Only (Feb 20)
+
+**Problem:** Segmentation renders black in Cosmos Transfer 2.5 (known limitation).
+
+**Decision:** Use only depth (weight 0.5) + edge (weight 1.0) controls. This preserves 3D structure while allowing appearance transformation.
+
+---
+
+## Known Technical Issues
+
+### PhysX Replay Nondeterminism
+
+PhysX replay from in-contact states is nondeterministic. Some episodes (e.g., ep33) show different trajectories on replay vs original recording. State-driven replay didn't fix it. **Impact:** Affects Cosmos augmentation pipeline (needs deterministic replay to capture depth/seg from same trajectory). **Workaround:** Best-effort — some episodes work (ep59, ep75), others drift.
+
+### USB Bandwidth Contention
+
+Multiple RealSense cameras on USB 2.1 contend for bandwidth. 4 cameras @30fps exceeds limits. **Solution:** 4 cameras @15fps or 2 cameras @30fps. May need `usbfs_memory_mb` tuning.
+
 ---
 
 ## 12. The Data Flow — End to End
 
-### Training Data Format
+### Training Data Format (LeRobot)
 
 ```
 Dataset (LeRobot HDF5):
@@ -461,6 +531,28 @@ Dataset (LeRobot HDF5):
 ├── observation.images.wrist_cam: (H, W, 3) uint8
 └── action: [6 joint positions] (DEGREES)
 ```
+
+### Raw Collection Format (Isaac Sim HDF5)
+
+```
+data/
+  demo_000/
+    obs/
+      side_cam_rgb        (T, H, W, 3) uint8     — 480×640 RGB
+      side_cam_depth      (T, H, W) float32       — depth in meters
+      side_cam_seg        (T, H, W, 4) uint8      — RGBA segmentation
+      table_cam_rgb       (T, H, W, 3) uint8
+      table_cam_depth     (T, H, W) float32
+      table_cam_seg       (T, H, W, 4) uint8
+      wrist_rgb           (T, H, W, 3) uint8
+      wrist_depth         (T, H, W) float32
+      wrist_seg           (T, H, W, 4) uint8
+      joint_pos           (T, 6) float32           — radians
+      joint_vel           (T, 6) float32
+    actions               (T, 6) float32           — radians
+```
+
+**Episode sizes:** ~294–426 frames per camera. **Total:** ~85 GB uncompressed for 100+ episodes.
 
 ### Normalization Pipeline
 
@@ -498,7 +590,84 @@ Inference:
 
 ---
 
-## 13. Research Direction — CoRL 2026
+## 13. Process Notes & Code Health
+
+### Things That Need Attention
+
+1. **`cosmos_transfer.py transfer()` calls Transfer 1 API**, not 2.5 — endpoint is `nvidia/cosmos-transfer1-7b`. The actual 2.5 deployment on RunPod uses the `cosmos-transfer2.5` repo directly. Script needs updating to match.
+
+2. **`cosmos_transfer.py reassemble()` is NOT IMPLEMENTED** — marked TODO. Currently there's no code path to write Cosmos output frames back into HDF5.
+
+3. **Domain randomization is commented out** in `vbti_so_v1_env_cfg.py` — the imports and wiring exist (`leisaac.utils.domain_randomization`), but the actual randomization events are not active. Need to uncomment/enable per task variant.
+
+4. **Missing HDF5→LeRobot format converter** — Training uses LeRobot datasets but collection produces HDF5. There's no automated converter in the codebase. The existing 51-episode real dataset (`may33/so101_pick_place`) was manually converted.
+
+5. **Robot joint initialization hardcoded to zero** in `generate_isaaclab_env()` — doesn't use the joint_targets from scene_config.json.
+
+6. **`LEISAAC_ROOT` hardcoded** in `isaac_cfg_utils.py` to `/home/may33/projects/ml_portfolio/robotics/leisaac` — not portable.
+
+7. **format_utils.py: no texture support** on vertex-colored meshes — only displayColor primvar, no UV-mapped textures.
+
+### Dataset Discrepancy
+
+The Obsidian notes mention **217 episodes / 154 GB** in `vbti_so_v1_mix_v1.hdf5` (the full sim dataset with DR), while the knowledge base previously said "100+ episodes / 85 GB". Both may be accurate for different dataset versions:
+- `vbti_so_v1_mix_v1.hdf5`: 217 episodes, 154 GB (full DR dataset)
+- `vbti_table_v2_cosmos/raw.hdf5`: 3 episodes (Cosmos prep subset)
+
+### Cross-Module Data Contracts
+
+| From | To | Format | Units |
+|------|-----|--------|-------|
+| Isaac Sim collection | HDF5 | uint8 images + float32 joints | **radians** |
+| HDF5 | LeRobot dataset | Parquet + video | **degrees** (converted) |
+| LeRobot dataset | SmolVLA training | Normalized tensors | **normalized** (mean/std) |
+| SmolVLA inference | Postprocessor | Normalized actions | **normalized** → **degrees** |
+| Postprocessor output | Isaac Sim env.step | float32 | **degrees** → **radians** |
+| HDF5 | Cosmos extract | PNG frames + depth NPY | **uint8 RGB** + **float32 meters** |
+| Cosmos output | Reassemble | MP4 video | **uint8 RGB** |
+
+### Key Magic Numbers
+
+| Value | Where | Why |
+|-------|-------|-----|
+| `stiffness=17.8, damping=0.60` | robot_utils.py | Matches LeIsaac ImplicitActuatorCfg defaults |
+| `SH_C0 = 0.28209` | format_utils.py | Spherical harmonics coefficient 1/(2√π) |
+| `COLMAP_TO_USD` matrix | format_utils.py | x→-x, y→-z, z→-y coordinate transform |
+| `depth_min=0.01, depth_max=2.0` | cosmos_transfer.py | Depth normalization range (meters) |
+| `Canny (50, 150)` | cosmos_transfer.py | Edge detection thresholds |
+| `opacity > 0.5` | format_utils.py | GS point cloud opacity filter threshold |
+| `chunk_size=50` | train_smolvla_custom.py | SmolVLA predicts 50 future actions |
+| `CRF 18` | video_utils.py | ffmpeg quality for rotation fix |
+| `18.1mm focal length` | vbti_so_v1_env_cfg.py | Camera focal length in sim |
+| `25s episode` | env_cfg template | Termination timeout |
+
+### Observation Specification (Isaac Sim → Policy)
+
+```
+Isaac Sim env.get_observations() returns:
+  "policy": {
+    "joint_pos":      (6,)          float32 radians
+    "joint_vel":      (6,)          float32 rad/s
+    "joint_pos_rel":  (6,)          float32 radians (relative to init)
+    "joint_vel_rel":  (6,)          float32 rad/s
+    "actions":        (6,)          float32 (last action)
+    "cam_top":        (480, 640, 3) uint8
+    "cam_right":      (480, 640, 3) uint8
+    "cam_left":       (480, 640, 3) uint8
+    "wrist":          (480, 640, 3) uint8
+  }
+
+SmolVLA policy expects:
+  "observation.state":                 float32 DEGREES
+  "observation.images.front":          (C, H, W) float32 [0,1]
+  "observation.images.third_person":   (C, H, W) float32 [0,1]
+  "observation.images.gripper":        (C, H, W) float32 [0,1]
+  "task":                              string
+```
+
+---
+
+## 14. Research Direction — CoRL 2026
 
 ### Target Conference
 
@@ -569,17 +738,18 @@ We are **not** inventing new algorithms. We are connecting existing tools into a
 
 ---
 
-## 15. Timeline & Milestones
+## 16. Timeline & Milestones
 
 **Project duration:** February 1 – June 30, 2026
 
 | Phase | Dates | Status | Key Deliverable |
 |---|---|---|---|
 | Phase 1: BC Baseline | Feb 3-20 | DONE | ~80% success rate baseline |
-| Phase 2: Digital Twin | Feb 11 - Mar 30 | 90% DONE | Working sim environment + data collection |
-| Phase 3: RL Training | Mar 1-30 | UPCOMING | RL-improved policy in simulation |
-| Phase 4: Sim2Real | Apr 1-15 | PLANNED | Real-world validation + method gains |
-| Phase 5: Infrastructure | Apr 16 - Jun 30 | PLANNED | Reusable pipeline + tomato sorting PoC |
+| Phase 2: Digital Twin | Feb 9 - Feb 27 | DONE | Working sim environment + 100+ episodes + DR |
+| Phase 3: Real Data + Cosmos | Mar 1 - ongoing | IN PROGRESS | Real teleop data + Cosmos-augmented dataset |
+| Phase 4: Model Training + RL | Mar 15 - Mar 30 | UPCOMING | SmolVLA on augmented data + RL improvement |
+| Phase 5: Sim2Real | Apr 1-15 | PLANNED | Real-world validation + method gains |
+| Phase 6: Infrastructure | Apr 16 - Jun 30 | PLANNED | Reusable pipeline + tomato sorting PoC |
 
 ### Research Timeline (CoRL 2026)
 
@@ -625,6 +795,8 @@ We are **not** inventing new algorithms. We are connecting existing tools into a
 | Results indifferent or worse than BC-only | Hypothesis not validated | Document as negative result; analyze which components failed |
 | Mesh quality insufficient for grasping | Pipeline fails at foundation | This is the universal gate — evaluating first |
 | Compute constraints limit training scale | Can't run enough parallel envs | Optimize scene complexity; prioritize critical scenarios |
+| PhysX replay nondeterminism | Cosmos augmentation pipeline can't capture consistent depth/seg | Best-effort per episode; some work, some drift |
+| Cosmos augmentation cost | ~$103 per full dataset pass | Batch processing on RunPod; optimize control weights to minimize re-runs |
 
 ---
 
@@ -646,7 +818,9 @@ We are **not** inventing new algorithms. We are connecting existing tools into a
 | **COLMAP** | Structure from Motion tool — estimates camera poses from images |
 | **USD (Universal Scene Description)** | Pixar's scene description format used by Isaac Sim and Omniverse |
 | **PhysX** | NVIDIA's physics simulation engine — rigid body dynamics, collisions, joints |
-| **NuRec** | NVIDIA's neural rendering for GS in Omniverse — renders GS natively in viewport but NOT in data passes |
+| **NuRec** | NVIDIA's neural rendering for GS in Omniverse — renders GS natively in viewport but NOT in data passes (**abandoned in this project**) |
+| **Cosmos Transfer 2.5** | NVIDIA's video-to-video generative model — converts synthetic renders to photorealistic video while preserving structure |
+| **RunPod** | Cloud GPU provider used for Cosmos Transfer inference |
 | **SO-101 / SO-ARM100** | The robot arm used in this project — 6-DOF + gripper (7 joints total) |
 | **Convex Decomposition (CoACD)** | Breaking complex meshes into convex pieces for physics simulation |
 | **HDRI** | High Dynamic Range Image — used for realistic environment lighting |
@@ -656,14 +830,20 @@ We are **not** inventing new algorithms. We are connecting existing tools into a
 
 ## 19. Key Files & Entry Points
 
-### Pipeline Scripts
+### Pipeline Scripts (vbti/utils/)
 | File | Purpose |
 |---|---|
-| `vbti/utils/robot_utils.py` | Master CLI: `pipeline`, `no_robot_scene`, `gen_scene`, `gen_task_folders`, `gen_env_cfg` |
-| `vbti/utils/create_scene_usd.py` | MILo mesh → USD with vertex colors + collision geometry |
-| `vbti/utils/format_utils.py` | GLB→USD conversion with materials + physics |
-| `vbti/utils/clean_mesh.py` | Interactive Polyscope GUI for mesh cleaning |
-| `vbti/utils/video_utils.py` | Video processing utilities |
+| `master.py` | **Pipeline orchestrator** CLI: `video_processing`, `gs_reconstruction`, `ply_to_usda`, `scene_composition` |
+| `robot_utils.py` | USDA→LeIsaac CLI: `pipeline`, `no_robot_scene`, `gen_scene`, `gen_task_folders`, `gen_env_cfg` |
+| `isaac_cfg_utils.py` | IsaacLab standalone env generation (no LeIsaac dependency) |
+| `video_utils.py` | Video processing: frame extraction, FPS info, rotation fix |
+| `colmap_utils.py` | COLMAP reconstruction via nerfstudio's ns-process-data |
+| `gs_milo_utils.py` | MILo GS training + mesh extraction |
+| `format_utils.py` | GLB→USD, mesh→USD with materials + physics |
+| `create_scene_usd.py` | MILo mesh → USD with vertex colors + collision geometry |
+| `clean_mesh.py` | Interactive Polyscope GUI for mesh cleaning |
+| `cosmos_transfer.py` | Cosmos Transfer 2.5: extract, process, config, transfer, reassemble |
+| `dataset_utils.py` | HDF5 inspection, video grid export, frame extraction |
 
 ### Training & Inference
 | File | Purpose |
@@ -676,8 +856,12 @@ We are **not** inventing new algorithms. We are connecting existing tools into a
 ### Documentation
 | File | Purpose |
 |---|---|
-| `vbti/docs/project.md` | Project plan with timeline |
-| `vbti/docs/gaussian_splatting_to_isaac_sim.md` | Complete GS pipeline guide |
+| `vbti/docs/project_knowledge_base.md` | This file — complete project knowledge |
+| `vbti/docs/project.md` | Original project plan with timeline |
+| `vbti/docs/gaussian_splatting_to_isaac_sim.md` | GS→Isaac pipeline guide (legacy — pre-MILo pivot) |
+| `vbti/docs/domain_randomization.md` | DR configuration reference |
+| `vbti/docs/cosmos_transfer_guide.md` | Cosmos Transfer 2.5 pipeline guide |
+| `vbti/docs/hardware_setup.md` | Physical hardware, cameras, calibration |
 | `vbti/research/generative-worlds/research_doc.md` | CoRL 2026 research proposal |
 | `vbti/research/generative-worlds/research_results.md` | Literature review (40+ papers) |
 
@@ -787,3 +971,30 @@ Mesh quality threshold for grasping. MILo meshes look beautiful, but nobody has 
 - Teleoperation with physical leader arm working
 - Data collection MVP operational
 - Video recorded of working demo
+
+### Feb 18-20 — Domain Randomization & Cosmos Prep
+- Comprehensive DR configuration: objects, lighting, cameras, physics per reset
+- Built `cosmos_transfer.py` with extract/process/config/transfer/reassemble commands
+- Discovered PhysX replay nondeterminism from in-contact states
+- RunPod deployment plan for Cosmos Transfer (A40 GPU, cost analysis)
+
+### Feb 20-24 — Cosmos Transfer 2.5 Deep Dive
+- Full Cosmos Transfer 2.5 deployment reference documented
+- Spec JSON format for depth + edge control (seg renders black — known limitation)
+- RunPod setup: A40 48GB for 480p, model license gating requires HF acceptance
+- Data prep pipeline produces per-camera MP4s from HDF5 episodes
+
+### Feb 25-27 — Master Pipeline & Automation
+- Created `master.py` — unified CLI for entire video→env pipeline
+- `gs_milo_utils.py create_config` — interactive reconstruction param CLI
+- `sharp-frame-extractor` integration for quality-based frame selection
+- PCA-based mesh alignment + center-at-origin for USD export
+- Custom HDRI from phone panorama (Hugin → TIF → EXR, sRGB→Linear)
+- 100+ demonstration episodes collected
+
+### Mar 1-13 — Sprint 3: Real Hardware
+- SO101 leader (/dev/ttyACM2) + follower (/dev/ttyACM1) configured
+- 4× RealSense D405 cameras (640×480@15fps, USB 2.1 bandwidth limit)
+- Camera config: 2 cameras @30fps or 4 @15fps (USB 2.1 contention)
+- Calibration debugging — Koen's offsets restored
+- Cosmos Transfer running on RunPod (~136 hrs for full dataset)
