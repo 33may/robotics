@@ -26,22 +26,22 @@ Converts Isaac Sim synthetic renders into photorealistic video while preserving 
 
 ```bash
 # 1. Extract frames from HDF5
-python vbti/utils/cosmos_transfer.py extract --episode=33
+python vbti/logic/reconstruct/cosmos_transfer.py extract --episode=33
 
 # 2. Compose frames into MP4 (RGB + depth + edge)
-python vbti/utils/cosmos_transfer.py process --episode=33
+python vbti/logic/reconstruct/cosmos_transfer.py process --episode=33
 
 # 3. Generate Cosmos spec JSON
-python vbti/utils/cosmos_transfer.py config --episode=33
+python vbti/logic/reconstruct/cosmos_transfer.py config --episode=33
 
 # 4. Run Cosmos inference
-python vbti/utils/cosmos_transfer.py transfer --episode=33
+python vbti/logic/reconstruct/cosmos_transfer.py transfer --episode=33
 
 # 5. Write augmented frames back to HDF5
-python vbti/utils/cosmos_transfer.py reassemble --episode=33
+python vbti/logic/reconstruct/cosmos_transfer.py reassemble --episode=33
 
 # End-to-end for all episodes:
-python vbti/utils/cosmos_transfer.py prepare
+python vbti/logic/reconstruct/cosmos_transfer.py prepare
 ```
 
 ### Data Flow

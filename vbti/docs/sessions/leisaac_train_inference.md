@@ -115,7 +115,7 @@ if _leisaac_assets.exists():
     os.environ["LEISAAC_ASSETS_ROOT"] = str(_leisaac_assets)
 ```
 
-**Location:** `vbti/utils/inference/run_smolvla_inference.py:25-27`
+**Location:** `vbti/logic/inference/run_smolvla_inference.py:25-27`
 
 ---
 
@@ -139,7 +139,7 @@ if _leisaac_src.exists() and str(_leisaac_src) not in sys.path:
     sys.path.insert(0, str(_leisaac_src))
 ```
 
-**Location:** `vbti/utils/inference/run_smolvla_inference.py:21-23`
+**Location:** `vbti/logic/inference/run_smolvla_inference.py:21-23`
 
 ---
 
@@ -193,7 +193,7 @@ preprocessor = PolicyProcessorPipeline.from_pretrained(
 )
 ```
 
-**Location:** `vbti/utils/inference/run_smolvla_inference.py:69-82`
+**Location:** `vbti/logic/inference/run_smolvla_inference.py:69-82`
 
 ---
 
@@ -243,7 +243,7 @@ if img.dim() == 4 and img.shape[-1] == 3:
     img = img.permute(0, 3, 1, 2)  # NHWC → NCHW
 ```
 
-**Location:** `vbti/utils/inference/run_smolvla_inference.py:127-131`
+**Location:** `vbti/logic/inference/run_smolvla_inference.py:127-131`
 
 ---
 
@@ -287,7 +287,7 @@ actions_dict = {"action": actions_normalized}
 actions_denorm = postprocessor(actions_dict)["action"]  # Denormalize!
 ```
 
-**Location:** `vbti/utils/inference/run_smolvla_inference.py:67-91, 235-237`
+**Location:** `vbti/logic/inference/run_smolvla_inference.py:67-91, 235-237`
 
 ---
 
@@ -315,7 +315,7 @@ actions_rad = actions_denorm * (math.pi / 180.0)
 env.step(actions_rad)
 ```
 
-**Location:** `vbti/utils/inference/run_smolvla_inference.py:240-241`
+**Location:** `vbti/logic/inference/run_smolvla_inference.py:240-241`
 
 ---
 
@@ -350,7 +350,7 @@ if "joint_pos" in obs_dict:
     policy_input["observation.state"] = state_deg
 ```
 
-**Location:** `vbti/utils/inference/run_smolvla_inference.py:115-119`
+**Location:** `vbti/logic/inference/run_smolvla_inference.py:115-119`
 
 **Result:** Sawtooth pattern eliminated after this fix
 
@@ -398,8 +398,8 @@ env.step(radians)
 
 | File | Changes |
 |------|---------|
-| `vbti/utils/inference/run_smolvla_inference.py` | Main inference script - sys.path, env var, preprocessor/postprocessor loading, unit conversions, debug output, action plotting |
-| `vbti/utils/datasets/check_converted_dataset.py` | Added image dtype checking via LeRobot API |
+| `vbti/logic/inference/run_smolvla_inference.py` | Main inference script - sys.path, env var, preprocessor/postprocessor loading, unit conversions, debug output, action plotting |
+| `vbti/logic/dataset/check_converted_dataset.py` | Added image dtype checking via LeRobot API |
 | `leisaac/.../assets/__init__.py` | Created - package init |
 | `leisaac/.../assets/robots/__init__.py` | Created - robot configs export |
 | `leisaac/.../assets/scenes/__init__.py` | Created - scene configs export |

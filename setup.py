@@ -1,13 +1,14 @@
-"""Setup script for smolvla_in_isaac package."""
+"""Setup script for vbti robotics package."""
 from setuptools import setup, find_packages
 
 setup(
-    name="smolvla_in_isaac",
-    version="0.1.0",
+    name="vbti",
+    version="0.2.0",
     packages=find_packages(),
     install_requires=[
-        # Note: numpy<2.0 required for Isaac Sim compatibility
-        # torch and lerobot installed separately to avoid dependency conflicts
+        "pyyaml",
+        "fire",
+        "tqdm",
     ],
     python_requires=">=3.10",
 )

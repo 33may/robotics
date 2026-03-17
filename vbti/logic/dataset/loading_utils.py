@@ -37,10 +37,16 @@ def load_and_split_dataset(
         Tuple of (full_dataset, train_dataset, val_dataset)
     """
     if root is None:
-        root = Path.home() / ".cache/huggingface/lerobot"
+        # Check if dataset exists in local cache (possibly symlinked)
+        cache_path = Path.home() / ".cache/huggingface/lerobot" / repo_id
+        if cache_path.exists():
+            root = cache_path.resolve()
 
     # Load dataset metadata for episode count
-    dataset_meta = LeRobotDatasetMetadata(repo_id=repo_id)
+    kwargs = {"repo_id": repo_id}
+    if root:
+        kwargs["root"] = root
+    dataset_meta = LeRobotDatasetMetadata(**kwargs)
 
     print(dataset_meta)
     

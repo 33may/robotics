@@ -104,21 +104,21 @@ After cloning, install with pip (see Environment Setup above). MILo requires add
 conda activate gsplat-pt25
 
 # 1. Extract frames from video
-python vbti/utils/master.py video_processing \
+python -m vbti.logic.reconstruct.master video_processing \
   --video_path data/scene.mp4 --output_dir data/frames --mode count --value 200
 
 # 2. COLMAP + MILo reconstruction → mesh
-python vbti/utils/master.py gs_reconstruction \
+python -m vbti.logic.reconstruct.master gs_reconstruction \
   --frames_dir data/frames --output_dir data/gs
 
 # 3. Mesh → USD with physics
-python vbti/utils/master.py ply_to_usda \
+python -m vbti.logic.reconstruct.master ply_to_usda \
   --mesh_path data/gs/milo/mesh_learnable_sdf.ply --output_path data/scene.usda
 
 # 4. Compose scene in Isaac Sim GUI (place robot, cameras, objects, lights)
 # Then generate LeIsaac task:
 conda activate isaac
-python vbti/utils/master.py scene_composition \
+python -m vbti.logic.reconstruct.master scene_composition \
   --scene_usda_path data/scene_composed.usda --task_name my_task
 ```
 
@@ -136,14 +136,14 @@ python teleop_se3_agent.py \
 
 ```bash
 conda activate isaac
-python vbti/utils/train/train_smolvla_custom.py
+python -m vbti.logic.train.train_smolvla_custom
 ```
 
 ### Inference
 
 ```bash
 conda activate isaac
-python -m vbti.utils.inference.run_smolvla_inference \
+python -m vbti.logic.inference.run_smolvla_inference \
   --checkpoint outputs/train/smolvla_lift_cube_3cams/best \
   --task LeIsaac-SO101-LiftCube-v0 --enable_cameras
 ```
@@ -154,25 +154,22 @@ python -m vbti.utils.inference.run_smolvla_inference \
 
 ```
 vbti/
-├── utils/                  # Core pipeline modules
-│   ├── master.py           # Pipeline orchestrator CLI
-│   ├── video_utils.py      # Frame extraction, rotation fix
-│   ├── colmap_utils.py     # COLMAP SfM reconstruction
-│   ├── gs_milo_utils.py    # MILo GS training + mesh extraction
-│   ├── format_utils.py     # PLY/GLB → USD conversion
-│   ├── clean_mesh.py       # Interactive Polyscope mesh cleaner
-│   ├── robot_utils.py      # Robot USD preparation + LeIsaac pipeline
-│   ├── isaac_cfg_utils.py  # IsaacLab/LeIsaac code generation
-│   ├── cosmos_transfer.py  # Cosmos Transfer data augmentation (experimental)
-│   ├── dataset_utils.py    # Dataset loading & splitting
-│   ├── datasets/           # Dataset inspection, conversion, loading
-│   ├── inference/          # SmolVLA inference in Isaac Sim
-│   └── train/              # SmolVLA training scripts
-│
-├── scripts/                # Standalone utility scripts
-│   ├── 3d/                 # Mesh processing, deformable bodies
-│   ├── cameras/            # RealSense camera utilities
-│   └── servos/             # Feetech servo management
+├── logic/                      # Core pipeline modules
+│   ├── reconstruct/            # 3D reconstruction pipeline
+│   │   ├── master.py           # Pipeline orchestrator CLI
+│   │   ├── video_utils.py      # Frame extraction, rotation fix
+│   │   ├── colmap_utils.py     # COLMAP SfM reconstruction
+│   │   ├── gs_milo_utils.py    # MILo GS training + mesh extraction
+│   │   ├── format_utils.py     # PLY/GLB → USD conversion
+│   │   ├── clean_mesh.py       # Interactive Polyscope mesh cleaner
+│   │   ├── robot_utils.py      # Robot USD preparation + LeIsaac pipeline
+│   │   ├── isaac_cfg_utils.py  # IsaacLab/LeIsaac code generation
+│   │   └── cosmos_transfer.py  # Cosmos Transfer data augmentation (experimental)
+│   ├── dataset/                # Dataset inspection, conversion, loading
+│   ├── inference/              # SmolVLA inference in Isaac Sim
+│   ├── train/                  # Training scripts + experiment management
+│   ├── cameras/                # Camera utilities
+│   └── servos/                 # Servo utilities
 │
 ├── data/                   # Scene data (not in git)
 │   ├── so_v1/              # SO-ARM101 v1 scene (COLMAP, MILo, configs)
@@ -202,16 +199,16 @@ vbti/
 
 | Module | What it does | Entry point |
 |--------|-------------|-------------|
-| `master.py` | Orchestrates full pipeline | `python master.py <command>` |
-| `video_utils.py` | Extract frames, fix phone rotation | Called by master |
-| `colmap_utils.py` | COLMAP SfM + model validation + undistortion | Called by master |
-| `gs_milo_utils.py` | MILo GS training + learnable SDF mesh extraction | Called by master |
-| `format_utils.py` | PLY→USD (sRGB→linear, COLMAP→USD coords, PCA align) | Called by master |
-| `clean_mesh.py` | Interactive Polyscope GUI for mesh artifact removal | Standalone |
-| `robot_utils.py` | Robot USD prep (drives, kinematic base, joint config) | `python robot_utils.py <command>` |
-| `isaac_cfg_utils.py` | Generate LeIsaac/IsaacLab task code from composed USDA | Called by master or robot_utils |
-| `cosmos_transfer.py` | Cosmos Transfer augmentation (experimental, not production) | `python cosmos_transfer.py <command>` |
-| `datasets/inspect_dataset.py` | Dataset inspection reports (LeRobot + HDF5) | Standalone |
+| `reconstruct/master.py` | Orchestrates full pipeline | `python -m vbti.logic.reconstruct.master <command>` |
+| `reconstruct/video_utils.py` | Extract frames, fix phone rotation | Called by master |
+| `reconstruct/colmap_utils.py` | COLMAP SfM + model validation + undistortion | Called by master |
+| `reconstruct/gs_milo_utils.py` | MILo GS training + learnable SDF mesh extraction | Called by master |
+| `reconstruct/format_utils.py` | PLY→USD (sRGB→linear, COLMAP→USD coords, PCA align) | Called by master |
+| `reconstruct/clean_mesh.py` | Interactive Polyscope GUI for mesh artifact removal | Standalone |
+| `reconstruct/robot_utils.py` | Robot USD prep (drives, kinematic base, joint config) | `python -m vbti.logic.reconstruct.robot_utils <command>` |
+| `reconstruct/isaac_cfg_utils.py` | Generate LeIsaac/IsaacLab task code from composed USDA | Called by master or robot_utils |
+| `reconstruct/cosmos_transfer.py` | Cosmos Transfer augmentation (experimental, not production) | `python -m vbti.logic.reconstruct.cosmos_transfer <command>` |
+| `dataset/inspect_dataset.py` | Dataset inspection reports (LeRobot + HDF5) | Standalone |
 
 ---
 

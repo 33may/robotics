@@ -19,7 +19,7 @@ Step-by-step process flows for every major pipeline in VBTI, with exact function
 
 ## 1. Video → Mesh Reconstruction
 
-**Entry point:** `python vbti/utils/master.py video_processing` → `gs_reconstruction` → `ply_to_usda`
+**Entry point:** `python -m vbti.logic.reconstruct.master video_processing` → `gs_reconstruction` → `ply_to_usda`
 
 ### Step 1a: Frame Extraction
 
@@ -101,7 +101,7 @@ format_utils.mesh_to_usd(mesh_path, output_path, static_friction=0.7, ...)
 
 ## 2. Scene Composition → LeIsaac Task
 
-**Entry point:** `python vbti/utils/master.py scene_composition` or `python vbti/utils/robot_utils.py pipeline`
+**Entry point:** `python -m vbti.logic.reconstruct.master scene_composition` or `python -m vbti.logic.reconstruct.robot_utils pipeline`
 
 ### Prerequisites
 
@@ -214,7 +214,7 @@ data/demo_NNN/
 
 ## 4. Cosmos Transfer Augmentation
 
-**Entry point:** `python vbti/utils/cosmos_transfer.py <command>`
+**Entry point:** `python -m vbti.logic.reconstruct.cosmos_transfer <command>`
 
 ### ⚠ STATUS NOTE
 
@@ -252,7 +252,7 @@ depth_uint8 = ((depth_normalized - 0.01) / (2.0 - 0.01) * 255).astype(uint8)
 
 ## 5. SmolVLA Training
 
-**Entry point:** `python vbti/utils/train/train_smolvla_custom.py`
+**Entry point:** `python -m vbti.logic.train.train_smolvla_custom`
 
 ### Config
 
@@ -295,7 +295,7 @@ checkpoint_dir/
 
 ## 6. SmolVLA Inference in Isaac Sim
 
-**Entry point:** `python -m vbti.utils.inference.run_smolvla_inference --checkpoint=... --task=... --enable_cameras`
+**Entry point:** `python -m vbti.logic.inference.run_smolvla_inference --checkpoint=... --task=... --enable_cameras`
 
 ### Unit Conversion Chain (CRITICAL)
 
@@ -345,7 +345,7 @@ State std:   [8.69, 24.58, 33.84, 19.99, 11.22, 10.80]
 
 ## 7. Robot USD Preparation
 
-**Entry point:** `python vbti/utils/robot_utils.py <command>`
+**Entry point:** `python -m vbti.logic.reconstruct.robot_utils <command>`
 
 ### Commands
 
@@ -390,7 +390,7 @@ object_0.ply → reconstruct_mesh.py → object_0.glb
 
 ### Mesh Cleaning
 
-**Script:** `vbti/utils/clean_mesh.py` (Polyscope GUI)
+**Script:** `vbti/logic/reconstruct/clean_mesh.py` (Polyscope GUI)
 
 Operations:
 1. Connected component filter (min_ratio=0.01)
@@ -403,7 +403,7 @@ All operations preview live before committing. Output: `mesh_cleaned.ply`.
 
 ## Dataset Inspection
 
-**Entry point:** `python vbti/utils/datasets/inspect_dataset.py`
+**Entry point:** `python -m vbti.logic.dataset.inspect_dataset`
 
 ### Unit Detection Logic
 

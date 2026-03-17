@@ -1,1 +1,1 @@
-"""VBTI utilities for robotics data processing."""
+"""VBTI logic modules."""

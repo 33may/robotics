@@ -830,7 +830,7 @@ We are **not** inventing new algorithms. We are connecting existing tools into a
 
 ## 19. Key Files & Entry Points
 
-### Pipeline Scripts (vbti/utils/)
+### Pipeline Scripts (vbti/logic/reconstruct/)
 | File | Purpose |
 |---|---|
 | `master.py` | **Pipeline orchestrator** CLI: `video_processing`, `gs_reconstruction`, `ply_to_usda`, `scene_composition` |
@@ -848,10 +848,10 @@ We are **not** inventing new algorithms. We are connecting existing tools into a
 ### Training & Inference
 | File | Purpose |
 |---|---|
-| `vbti/utils/inference/run_smolvla_inference.py` | SmolVLA inference in Isaac Sim (debugged) |
-| `vbti/utils/train/train_smolvla_custom.py` | SmolVLA fine-tuning |
-| `vbti/utils/datasets/loading.py` | LeRobot dataset loading |
-| `vbti/utils/datasets/check_converted_dataset.py` | Dataset integrity inspection |
+| `vbti/logic/inference/run_smolvla_inference.py` | SmolVLA inference in Isaac Sim (debugged) |
+| `vbti/logic/train/train_smolvla_custom.py` | SmolVLA fine-tuning |
+| `vbti/logic/dataset/loading.py` | LeRobot dataset loading |
+| `vbti/logic/dataset/check_converted_dataset.py` | Dataset integrity inspection |
 
 ### Documentation
 | File | Purpose |

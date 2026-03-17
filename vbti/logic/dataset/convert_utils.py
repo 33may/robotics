@@ -341,6 +341,58 @@ def verify(dataset_path: str):
             print(f"  WARNING: gripper has negative values (min={grip.min():.2f})")
 
 
+def link(dataset_path: str, repo_id: str):
+    """Create a symlink from the HF lerobot cache to a local dataset.
+
+    After linking, lerobot tools (lerobot-dataset-viz, LeRobotDataset) can
+    find the dataset by repo_id without HF Hub access.
+
+    Args:
+        dataset_path: Path to the actual dataset directory.
+        repo_id: HF-style repo ID, e.g. "may33/so101_sim_duck_cup".
+
+    Usage:
+        python vbti/logic/dataset/convert_utils.py link datasets/so101_v1_mix/sim/duck_cup_130eps may33/so101_sim_duck_cup
+    """
+    import os
+    from lerobot.utils.constants import HF_LEROBOT_HOME
+
+    dataset_path = Path(dataset_path).resolve()
+    if not (dataset_path / "meta" / "info.json").exists():
+        print(f"ERROR: {dataset_path} is not a valid LeRobot dataset (no meta/info.json)")
+        return
+
+    link_path = HF_LEROBOT_HOME / repo_id
+    link_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if link_path.is_symlink():
+        os.remove(link_path)
+    elif link_path.exists():
+        print(f"ERROR: {link_path} already exists and is not a symlink")
+        return
+
+    os.symlink(dataset_path, link_path)
+    print(f"Linked: {link_path} → {dataset_path}")
+
+
+def ls():
+    """List all linked/cached LeRobot datasets."""
+    from lerobot.utils.constants import HF_LEROBOT_HOME
+
+    print(f"HF_LEROBOT_HOME: {HF_LEROBOT_HOME}\n")
+    for user_dir in sorted(HF_LEROBOT_HOME.iterdir()):
+        if not user_dir.is_dir() or user_dir.name.startswith("."):
+            continue
+        for ds_dir in sorted(user_dir.iterdir()):
+            info = ds_dir / "meta" / "info.json"
+            if info.exists():
+                import json, os
+                d = json.load(open(info))
+                sym = f" → {os.readlink(ds_dir)}" if ds_dir.is_symlink() else ""
+                print(f"  {user_dir.name}/{ds_dir.name}  "
+                      f"({d.get('total_episodes', '?')} eps, {d.get('total_frames', '?')} frames){sym}")
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
@@ -349,4 +401,6 @@ if __name__ == "__main__":
         "discover":       discover_cameras,
         "verify":         verify,
         "roundtrip_test": roundtrip_test,
+        "link":           link,
+        "ls":             ls,
     })

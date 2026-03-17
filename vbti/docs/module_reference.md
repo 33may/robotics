@@ -4,7 +4,7 @@ Per-file function index for all vbti modules. Use this as a checklist for the co
 
 ---
 
-## vbti/utils/master.py
+## vbti/logic/reconstruct/master.py
 
 Pipeline orchestrator. CLI via `fire.Fire()`.
 
@@ -18,7 +18,7 @@ Pipeline orchestrator. CLI via `fire.Fire()`.
 
 ---
 
-## vbti/utils/video_utils.py
+## vbti/logic/reconstruct/video_utils.py
 
 Video processing. OpenCV + ffmpeg + sharp-frame-extractor.
 
@@ -32,7 +32,7 @@ Video processing. OpenCV + ffmpeg + sharp-frame-extractor.
 
 ---
 
-## vbti/utils/colmap_utils.py
+## vbti/logic/reconstruct/colmap_utils.py
 
 COLMAP reconstruction. Wraps nerfstudio + colmap CLI.
 
@@ -45,7 +45,7 @@ COLMAP reconstruction. Wraps nerfstudio + colmap CLI.
 
 ---
 
-## vbti/utils/gs_milo_utils.py
+## vbti/logic/reconstruct/gs_milo_utils.py
 
 MILo GS training + mesh extraction.
 
@@ -62,7 +62,7 @@ MILo GS training + mesh extraction.
 
 ---
 
-## vbti/utils/format_utils.py
+## vbti/logic/reconstruct/format_utils.py
 
 3D format conversions. open3d + trimesh + pxr.
 
@@ -81,7 +81,7 @@ MILo GS training + mesh extraction.
 
 ---
 
-## vbti/utils/isaac_cfg_utils.py (~1300 lines)
+## vbti/logic/reconstruct/isaac_cfg_utils.py (~1300 lines)
 
 LeIsaac/IsaacLab code generation from USDA scenes.
 
@@ -101,7 +101,7 @@ LeIsaac/IsaacLab code generation from USDA scenes.
 
 ---
 
-## vbti/utils/robot_utils.py
+## vbti/logic/reconstruct/robot_utils.py
 
 USD robot manipulation.
 
@@ -115,7 +115,7 @@ USD robot manipulation.
 
 ---
 
-## vbti/utils/clean_mesh.py
+## vbti/logic/reconstruct/clean_mesh.py
 
 Interactive Polyscope GUI mesh cleaner.
 
@@ -132,7 +132,7 @@ Interactive Polyscope GUI mesh cleaner.
 
 ---
 
-## vbti/utils/cosmos_transfer.py
+## vbti/logic/reconstruct/cosmos_transfer.py
 
 Cosmos Transfer data augmentation.
 
@@ -149,7 +149,7 @@ Cosmos Transfer data augmentation.
 
 ---
 
-## vbti/utils/dataset_utils.py
+## vbti/logic/dataset/dataset_utils.py
 
 Dataset loading & splitting.
 
@@ -160,7 +160,7 @@ Dataset loading & splitting.
 
 ---
 
-## vbti/utils/datasets/inspect_dataset.py
+## vbti/logic/dataset/inspect_dataset.py
 
 Dataset inspection & reports.
 
@@ -191,7 +191,7 @@ Dataset inspection & reports.
 
 ---
 
-## vbti/utils/inference/run_smolvla_inference.py
+## vbti/logic/inference/run_smolvla_inference.py
 
 SmolVLA inference in Isaac Sim.
 
@@ -205,7 +205,7 @@ SmolVLA inference in Isaac Sim.
 
 ---
 
-## vbti/utils/train/train_smolvla_custom.py
+## vbti/logic/train/train_smolvla_custom.py
 
 SmolVLA training script.
 

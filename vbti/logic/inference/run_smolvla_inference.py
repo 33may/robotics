@@ -12,7 +12,7 @@ import os
 import sys
 from pathlib import Path
 
-# __file__ is vbti/utils/inference/run_smolvla_inference.py
+# __file__ is vbti/logic/inference/run_smolvla_inference.py
 # parents[3] is the robotics directory
 _robotics_root = Path(__file__).parents[3]
 
