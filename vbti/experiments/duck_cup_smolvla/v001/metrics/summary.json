@@ -1,0 +1,10 @@
+{
+  "final_train_loss": 0.0244,
+  "best_val_loss": 0.0347,
+  "best_val_step": 1500,
+  "total_steps": 5776,
+  "target_steps": 10000,
+  "status": "stopped_by_user",
+  "reason": "Ctrl+C \u2014 val loss diverging, testing inference",
+  "duration": "36m"
+}

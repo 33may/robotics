@@ -1,0 +1,7 @@
+{
+  "final_train_loss": 0.0025175749324262142,
+  "best_val_loss": 0.0024379401467740534,
+  "total_steps": 10000,
+  "duration": "1h 0m 29s",
+  "duration_seconds": 3629.53347325325
+}
