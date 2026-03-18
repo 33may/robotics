@@ -235,48 +235,7 @@ def _get_state(robot) -> np.ndarray:
     return np.array([obs[f"{name}.pos"] for name in JOINT_NAMES])
 
 
-# ── Robot utils ───────────────────────────────────────────────────────────────
-
-# Resting pose in degrees — arm tucked back, gripper open
-REST_POSITION = {
-    "shoulder_pan":  0.0,
-    "shoulder_lift": -95.0,
-    "elbow_flex":    100.0,
-    "wrist_flex":    45.0,
-    "wrist_roll":    0.0,
-    "gripper":       0.0,
-}
-
-def move_to_rest(robot, speed_deg_per_step: float = 3.0, fps: int = 30):
-    """Move robot smoothly to resting position before starting inference.
-
-    Interpolates from current position to REST_POSITION over multiple steps
-    so the arm doesn't snap. Blocks until complete.
-
-    Args:
-        robot: connected SO101Follower instance
-        speed_deg_per_step: max degrees to move per joint per step
-        fps: control rate during the movement
-    """
-    current = _get_state(robot)
-    target = np.array([REST_POSITION[n] for n in JOINT_NAMES])
-    step_dt = 1.0 / fps
-
-    print(f"Moving to rest position...")
-    while True:
-        diff = target - current
-        max_diff = np.abs(diff).max()
-        if max_diff < 0.5:
-            break
-
-        step = np.clip(diff, -speed_deg_per_step, speed_deg_per_step)
-        current = current + step
-
-        action_dict = {f"{name}.pos": float(current[j]) for j, name in enumerate(JOINT_NAMES)}
-        robot.send_action(action_dict)
-        time.sleep(step_dt)
-
-    print(f"  At rest: {np.round(target, 1)}")
+from vbti.logic.servos.rest import move_to_rest
 
 
 # ── Policy loading ────────────────────────────────────────────────────────────
@@ -554,8 +513,7 @@ def eval(
             # Move to rest before each run
             if robot:
                 move_to_rest(robot, fps=fps)
-                print("Ready. Starting inference in 3s...")
-                time.sleep(3)
+            input("\nPress Enter to start inference...")
 
             record_path = eval_videos_dir / f"eval_{version}_{ckpt_path.name}"
 

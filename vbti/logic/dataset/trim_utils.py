@@ -303,10 +303,118 @@ def trim(dataset_path: str, repo_id: str, output_repo_id: str,
     return str(output.root)
 
 
+# ── Plotting utilities ────────────────────────────────────────────────────────
+
+def trajectories(dataset_path: str, episodes: list[int] = None, n_episodes: int = 6, save: str = None):
+    """Plot joint trajectories for episodes, with rest regions shaded."""
+    import matplotlib.pyplot as plt
+    from vbti.logic.dataset.check_utils import lerobot_info
+
+    dataset_path = str(dataset_path)
+    all_episodes = _load_episodes_from_parquet(Path(dataset_path).expanduser().resolve())
+    info_d = lerobot_info(dataset_path)
+    joint_names = info_d.get("features", {}).get("action", {}).get("names", [])
+    n_joints = all_episodes[0].shape[1] if all_episodes else 0
+    if len(joint_names) < n_joints:
+        joint_names = [f"joint_{i}" for i in range(n_joints)]
+
+    ep_indices = episodes if episodes is not None else list(range(min(n_episodes, len(all_episodes))))
+    ep_indices = [i for i in ep_indices if i < len(all_episodes)]
+
+    fig, axes = plt.subplots(len(ep_indices), 1, figsize=(16, 3 * len(ep_indices)), sharex=False)
+    if len(ep_indices) == 1:
+        axes = [axes]
+    fig.suptitle(f"Joint Trajectories — {Path(dataset_path).name}", fontsize=14, fontweight="bold")
+    colors = ["#2196F3", "#FF5722", "#4CAF50", "#9C27B0", "#FF9800", "#795548"]
+
+    for row, ep_i in enumerate(ep_indices):
+        ax = axes[row]
+        actions = all_episodes[ep_i]
+        n_frames = len(actions)
+        trim_start, trim_end = _detect_rest_frames(actions)
+        if trim_start > 0:
+            ax.axvspan(0, trim_start, alpha=0.15, color="red", label="rest" if row == 0 else None)
+        if trim_end < n_frames:
+            ax.axvspan(trim_end, n_frames, alpha=0.15, color="red")
+        for j in range(n_joints):
+            ax.plot(actions[:, j], color=colors[j % len(colors)], alpha=0.7,
+                    linewidth=0.8, label=joint_names[j] if row == 0 else None)
+        ax.set_ylabel(f"ep {ep_i}")
+        ax.set_xlim(0, n_frames)
+        ax.text(0.01, 0.95, f"{n_frames}f, active={trim_start}:{trim_end}",
+                transform=ax.transAxes, fontsize=8, va="top",
+                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+
+    axes[0].legend(loc="upper right", fontsize=7, ncol=n_joints)
+    axes[-1].set_xlabel("frame")
+    plt.tight_layout()
+    if save:
+        plt.savefig(save, dpi=150, bbox_inches="tight")
+        print(f"Saved to {save}")
+    else:
+        plt.show()
+
+
+def compare_trimmed(datasets: dict[str, str], dist_thresh: float = 5.0,
+                    bins: int = 80, save: str = None):
+    """Compare action distributions after trimming rest poses."""
+    import matplotlib.pyplot as plt
+    from vbti.logic.dataset.check_utils import lerobot_info
+
+    loaded = {}
+    for label, path in datasets.items():
+        episodes = _load_episodes_from_parquet(Path(path).expanduser().resolve())
+        all_trimmed = []
+        total_frames = 0
+        trimmed_frames = 0
+        for ep in episodes:
+            total_frames += len(ep)
+            start, end = _detect_rest_frames(ep, dist_thresh=dist_thresh)
+            if end > start:
+                all_trimmed.append(ep[start:end])
+                trimmed_frames += end - start
+        loaded[label] = np.concatenate(all_trimmed, axis=0)
+        pct = 100 * trimmed_frames / total_frames if total_frames else 0
+        print(f"  {label}: {trimmed_frames}/{total_frames} frames kept ({pct:.0f}%)")
+
+    n_joints = next(iter(loaded.values())).shape[1]
+    info_d = lerobot_info(next(iter(datasets.values())))
+    joint_names = info_d.get("features", {}).get("action", {}).get("names", [])
+    if len(joint_names) < n_joints:
+        joint_names = [f"joint_{i}" for i in range(n_joints)]
+
+    colors = ["#2196F3", "#FF5722", "#4CAF50", "#9C27B0", "#FF9800"]
+    fig, axes = plt.subplots(2, 3, figsize=(16, 9))
+    fig.suptitle("Action Distributions (rest trimmed)", fontsize=14, fontweight="bold")
+
+    for i, ax in enumerate(axes.flat):
+        if i >= n_joints:
+            ax.set_visible(False)
+            continue
+        for j, (label, actions) in enumerate(loaded.items()):
+            col = actions[:, i]
+            color = colors[j % len(colors)]
+            ax.hist(col, bins=bins, alpha=0.45, label=f"{label} (μ={col.mean():.1f})",
+                    color=color, edgecolor=color, linewidth=0.5)
+        ax.set_title(joint_names[i], fontsize=11)
+        ax.set_xlabel("value")
+        ax.set_ylabel("count")
+        ax.legend(fontsize=8)
+
+    plt.tight_layout()
+    if save:
+        plt.savefig(save, dpi=150, bbox_inches="tight")
+        print(f"Saved to {save}")
+    else:
+        plt.show()
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
     fire.Fire({
-        "preview": preview,
-        "trim":    trim,
+        "preview":         preview,
+        "trim":            trim,
+        "trajectories":    trajectories,
+        "compare_trimmed": compare_trimmed,
     })
