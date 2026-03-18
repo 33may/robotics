@@ -235,6 +235,50 @@ def _get_state(robot) -> np.ndarray:
     return np.array([obs[f"{name}.pos"] for name in JOINT_NAMES])
 
 
+# ── Robot utils ───────────────────────────────────────────────────────────────
+
+# Resting pose in degrees — arm tucked back, gripper open
+REST_POSITION = {
+    "shoulder_pan":  0.0,
+    "shoulder_lift": -95.0,
+    "elbow_flex":    100.0,
+    "wrist_flex":    45.0,
+    "wrist_roll":    0.0,
+    "gripper":       0.0,
+}
+
+def move_to_rest(robot, speed_deg_per_step: float = 3.0, fps: int = 30):
+    """Move robot smoothly to resting position before starting inference.
+
+    Interpolates from current position to REST_POSITION over multiple steps
+    so the arm doesn't snap. Blocks until complete.
+
+    Args:
+        robot: connected SO101Follower instance
+        speed_deg_per_step: max degrees to move per joint per step
+        fps: control rate during the movement
+    """
+    current = _get_state(robot)
+    target = np.array([REST_POSITION[n] for n in JOINT_NAMES])
+    step_dt = 1.0 / fps
+
+    print(f"Moving to rest position...")
+    while True:
+        diff = target - current
+        max_diff = np.abs(diff).max()
+        if max_diff < 0.5:
+            break
+
+        step = np.clip(diff, -speed_deg_per_step, speed_deg_per_step)
+        current = current + step
+
+        action_dict = {f"{name}.pos": float(current[j]) for j, name in enumerate(JOINT_NAMES)}
+        robot.send_action(action_dict)
+        time.sleep(step_dt)
+
+    print(f"  At rest: {np.round(target, 1)}")
+
+
 # ── Policy loading ────────────────────────────────────────────────────────────
 
 def _load_policy(checkpoint: str, device: torch.device):
@@ -445,6 +489,149 @@ def run(
     print(f"Done — {step} steps, {frame_drops} frame drops.")
 
 
+def eval(
+    checkpoint: str,
+    task: str = "pick up the duck and place it in the cup",
+    port: str = "/dev/ttyACM0",
+    experiment: str = None,
+    version: str = None,
+    max_steps: int = 500,
+    fps: int = 30,
+    dry_run: bool = False,
+):
+    """Run evaluation on one or all checkpoints of the active experiment version.
+
+    Automatically resolves checkpoint paths and saves videos to eval/videos/.
+    Between checkpoints, moves robot back to resting position.
+
+    Args:
+        checkpoint: checkpoint name ("step_002000", "best", "all")
+        task: language instruction for the policy
+        port: serial port for robot
+        experiment: experiment name (uses active if not given)
+        version: version id (uses active if not given)
+        max_steps: steps per eval run
+        fps: control rate
+        dry_run: cameras + model only, no robot
+    """
+    import sys
+    sys.path.insert(0, str(Path(__file__).parents[3]))
+    from vbti.logic.train.experiment_utils import resolve_checkpoint, _resolve_experiment, _resolve_version, _version_dir
+
+    experiment = _resolve_experiment(experiment)
+    version = _resolve_version(experiment, version)
+    checkpoint_paths = resolve_checkpoint(checkpoint, experiment, version)
+
+    eval_videos_dir = _version_dir(experiment, version) / "eval" / "videos"
+    eval_videos_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\nEval: {experiment}/{version}")
+    print(f"Checkpoints to run: {len(checkpoint_paths)}")
+    for p in checkpoint_paths:
+        print(f"  {p.name}")
+    print()
+
+    # Init hardware once, reuse across checkpoints
+    cameras = _init_cameras(DEFAULT_CAMERAS, fps=fps)
+    camera_names = list(DEFAULT_CAMERAS.keys())
+
+    robot = None
+    if not dry_run:
+        print(f"Connecting to robot on {port}...")
+        robot = _init_robot(port, robot_id="frodeo-test")
+
+    if torch.cuda.is_available():
+        dev = torch.device("cuda")
+    else:
+        dev = torch.device("cpu")
+
+    try:
+        for ckpt_path in checkpoint_paths:
+            print(f"\n{'='*60}")
+            print(f"Checkpoint: {ckpt_path.name}")
+            print(f"{'='*60}")
+
+            # Move to rest before each run
+            if robot:
+                move_to_rest(robot, fps=fps)
+                print("Ready. Starting inference in 3s...")
+                time.sleep(3)
+
+            record_path = eval_videos_dir / f"eval_{version}_{ckpt_path.name}"
+
+            # Load policy for this checkpoint
+            policy, preprocessor, postprocessor = _load_policy(str(ckpt_path), dev)
+
+            # Run inference loop inline (reusing open cameras + robot)
+            recorded_frames = []
+            step = 0
+            last_action = None
+            frame_drops = 0
+            step_dt = 1.0 / fps
+
+            try:
+                while step < max_steps:
+                    t_loop = time.perf_counter()
+
+                    state_deg = _get_state(robot) if robot else np.zeros(6)
+                    images = _capture_frames(cameras)
+                    if len(images) < len(camera_names):
+                        frame_drops += 1
+
+                    key = _show_camera_grid(images, camera_names, step, last_action)
+                    if key == ord("q"):
+                        print("Quit via camera window.")
+                        break
+
+                    grid = _build_grid_frame(images, camera_names, step, last_action)
+                    recorded_frames.append(grid)
+
+                    with torch.inference_mode():
+                        obs = _build_observation(state_deg, images, camera_names,
+                                                 task, preprocessor, dev)
+                        actions_normalized = policy.select_action(obs)
+                        actions_deg = postprocessor({"action": actions_normalized})["action"]
+                        actions_deg = actions_deg.cpu().numpy()
+
+                    for i in range(min(10, len(actions_deg))):
+                        t_step = time.perf_counter()
+                        action = actions_deg[i]
+                        last_action = action
+                        if robot:
+                            action_dict = {f"{name}.pos": float(action[j])
+                                           for j, name in enumerate(JOINT_NAMES)}
+                            robot.send_action(action_dict)
+                        step += 1
+                        elapsed = time.perf_counter() - t_step
+                        if elapsed < step_dt:
+                            time.sleep(step_dt - elapsed)
+                        if step >= max_steps:
+                            break
+
+                    if step % 30 == 0:
+                        print(f"  step {step}/{max_steps}  drops={frame_drops}")
+
+            except KeyboardInterrupt:
+                print(f"\nCheckpoint {ckpt_path.name} interrupted — saving video and continuing.")
+
+            if recorded_frames:
+                _save_video_ffmpeg(recorded_frames, record_path.with_suffix(".mp4"), fps)
+
+            # Clean up policy GPU memory before next checkpoint
+            del policy, preprocessor, postprocessor
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+    finally:
+        _stop_cameras(cameras)
+        cv2.destroyAllWindows()
+        if robot:
+            robot.disconnect()
+            print("Robot disconnected.")
+
+    print(f"\nEval complete. Videos saved to: {eval_videos_dir}")
+
+
 def preview(camera_config: dict = None, width: int = 640, height: int = 480, fps: int = 30):
     """Live camera preview — no model, no robot. Press 'q' to quit."""
     if camera_config is None:
@@ -479,5 +666,6 @@ if __name__ == "__main__":
     fire.core.Display = lambda lines, out: print(*lines, file=out)
     fire.Fire({
         "run":     run,
+        "eval":    eval,
         "preview": preview,
     })

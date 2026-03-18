@@ -297,6 +297,95 @@ def get_version_dir(experiment: str | None = None, version: str | None = None) -
     return _version_dir(experiment, version)
 
 
+def list_checkpoints(experiment: str | None = None, version: str | None = None,
+                     include_named: bool = True) -> list[dict]:
+    """List all checkpoints for a version, sorted by step number.
+
+    Returns list of dicts: [{"name": "step_001000", "step": 1000, "path": Path(...)}, ...]
+    Named checkpoints (best, final) are appended at the end if include_named=True.
+    """
+    experiment = _resolve_experiment(experiment)
+    version = _resolve_version(experiment, version)
+    ckpt_dir = _version_dir(experiment, version) / "checkpoints"
+
+    if not ckpt_dir.exists():
+        return []
+
+    step_ckpts = []
+    named_ckpts = []
+
+    for d in ckpt_dir.iterdir():
+        if not d.is_dir():
+            continue
+        # Must have model.safetensors to be a valid checkpoint
+        if not (d / "model.safetensors").exists():
+            continue
+
+        if d.name.startswith("step_") and d.name[5:].isdigit():
+            step_ckpts.append({
+                "name": d.name,
+                "step": int(d.name[5:]),
+                "path": d,
+            })
+        elif include_named:
+            named_ckpts.append({
+                "name": d.name,
+                "step": None,
+                "path": d,
+            })
+
+    step_ckpts.sort(key=lambda c: c["step"])
+    named_ckpts.sort(key=lambda c: c["name"])
+    return step_ckpts + named_ckpts
+
+
+def print_checkpoints(experiment: str | None = None, version: str | None = None):
+    """Print all checkpoints for a version in a readable format."""
+    ckpts = list_checkpoints(experiment, version)
+    if not ckpts:
+        print("No checkpoints found.")
+        return
+    for c in ckpts:
+        print(f"---")
+        print(f"  name: {c['name']}")
+        print(f"  path: {c['path']}")
+    print("---")
+
+
+def resolve_checkpoint(checkpoint: str, experiment: str | None = None,
+                       version: str | None = None) -> list[Path]:
+    """Resolve a checkpoint specifier to one or more paths.
+
+    checkpoint can be:
+        - "all": all step checkpoints (no best/final)
+        - "best", "final", "step_002000": specific checkpoint by name
+        - "2000": shorthand for step_002000
+    """
+    experiment = _resolve_experiment(experiment)
+    version = _resolve_version(experiment, version)
+    ckpt_dir = _version_dir(experiment, version) / "checkpoints"
+
+    if checkpoint == "all":
+        ckpts = list_checkpoints(experiment, version, include_named=False)
+        if not ckpts:
+            raise ValueError(f"No checkpoints found in {ckpt_dir}")
+        return [c["path"] for c in ckpts]
+
+    # Direct name match (best, final, step_002000)
+    direct = ckpt_dir / checkpoint
+    if direct.exists() and (direct / "model.safetensors").exists():
+        return [direct]
+
+    # Shorthand: "2000" -> "step_002000"
+    if checkpoint.isdigit():
+        step_name = f"step_{int(checkpoint):06d}"
+        step_path = ckpt_dir / step_name
+        if step_path.exists() and (step_path / "model.safetensors").exists():
+            return [step_path]
+
+    raise ValueError(f"Checkpoint '{checkpoint}' not found in {ckpt_dir}")
+
+
 def status(experiment: str | None = None) -> dict:
     """Get a quick overview: active experiment, version, all versions with status."""
     experiment = _resolve_experiment(experiment)
@@ -330,4 +419,5 @@ if __name__ == "__main__":
         "summary":    save_summary,
         "config":     load_config,
         "dir":        get_version_dir,
+        "ckpts":      print_checkpoints,
     })
