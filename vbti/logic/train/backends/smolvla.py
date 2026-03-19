@@ -18,6 +18,7 @@ from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
 from lerobot.policies.factory import make_pre_post_processors
 
 from vbti.logic.dataset import load_and_split_dataset, create_dataloaders
+from vbti.logic.dataset.loading_utils import _resolve_root
 from vbti.logic.train.backends.base import TrainingBackend, ModelBundle
 
 
@@ -29,10 +30,10 @@ class SmolVLABackend(TrainingBackend):
         dataset_cfg = config.dataset
         training_cfg = config.training
 
-        # Use first source's repo_id for metadata
+        # Use first source — engine handles aggregation before calling this
         repo_id = dataset_cfg.sources[0].repo_id
-        root = dataset_cfg.sources[0].root
-        meta = LeRobotDatasetMetadata(repo_id, root=root) if root else LeRobotDatasetMetadata(repo_id)
+        root = _resolve_root(repo_id, dataset_cfg.sources[0].root)
+        meta = LeRobotDatasetMetadata(repo_id, root=str(root)) if root else LeRobotDatasetMetadata(repo_id)
 
         # Build feature maps from dataset
         features = dataset_to_policy_features(meta.features)
@@ -92,14 +93,13 @@ class SmolVLABackend(TrainingBackend):
         )
 
     def make_dataloaders(self, config, dataset_meta) -> tuple:
-        """Create dataloaders with proper delta_timestamps for SmolVLA."""
+        """Create dataloaders with proper delta_timestamps for SmolVLA.
+
+        Supports single and multi-source datasets. Multi-source uses
+        WeightedRandomSampler to respect per-source weights.
+        """
         dataset_cfg = config.dataset
         training_cfg = config.training
-
-        # Get the SmolVLA config from the model to compute delta timestamps
-        # We need the policy config that was used during load_model
-        repo_id = dataset_cfg.sources[0].repo_id
-        root = dataset_cfg.sources[0].root
         meta = dataset_meta
         fps = meta.fps
 
@@ -118,8 +118,8 @@ class SmolVLABackend(TrainingBackend):
         # Build delta_timestamps from model config
         chunk_size = config.model.chunk_size
         n_obs_steps = config.model.n_obs_steps
-        obs_indices = list(range(1 - n_obs_steps, 1))  # e.g. [0] for n_obs_steps=1
-        action_indices = list(range(chunk_size))         # e.g. [0..49] for chunk_size=50
+        obs_indices = list(range(1 - n_obs_steps, 1))
+        action_indices = list(range(chunk_size))
 
         delta_timestamps = {
             "observation.state": [i / fps for i in obs_indices],
@@ -129,15 +129,17 @@ class SmolVLABackend(TrainingBackend):
                 delta_timestamps[key] = [i / fps for i in obs_indices]
         delta_timestamps["action"] = [i / fps for i in action_indices]
 
-        # Load and split
+        # Use first source — engine handles aggregation before calling this
+        repo_id = dataset_cfg.sources[0].repo_id
+        root = _resolve_root(repo_id, dataset_cfg.sources[0].root)
+
         _, train_dataset, val_dataset = load_and_split_dataset(
             repo_id=repo_id,
-            root=root,
+            root=str(root) if root else None,
             delta_timestamps=delta_timestamps,
             train_ratio=dataset_cfg.train_ratio,
         )
 
-        # Create dataloaders
         if val_dataset is not None:
             train_loader, val_loader = create_dataloaders(
                 train_dataset, val_dataset,
@@ -180,14 +182,47 @@ class SmolVLABackend(TrainingBackend):
             return {"val_loss": sum(val_losses) / len(val_losses)}
         return {"val_loss": float("inf")}
 
-    def save_checkpoint(self, bundle: ModelBundle, path: Path, is_best: bool = False):
-        """Save SmolVLA checkpoint: model + preprocessor + postprocessor."""
+    def save_checkpoint(self, bundle: ModelBundle, path: Path, is_best: bool = False,
+                        optimizer=None, scheduler=None, step: int = None):
+        """Save SmolVLA checkpoint: model + preprocessor + postprocessor + training state."""
         path.mkdir(parents=True, exist_ok=True)
         bundle.model.save_pretrained(path)
         bundle.preprocessor.save_pretrained(path)
         bundle.postprocessor.save_pretrained(path)
+
+        # Save training state for resume
+        if optimizer is not None:
+            state = {"optimizer": optimizer.state_dict()}
+            if scheduler is not None:
+                state["scheduler"] = scheduler.state_dict()
+            if step is not None:
+                state["step"] = step
+            torch.save(state, path / "training_state.pt")
+
         label = "best" if is_best else str(path.name)
         print(f"  Saved checkpoint: {label} → {path}")
+
+    def load_checkpoint_for_resume(self, bundle: ModelBundle, path: Path,
+                                   optimizer, scheduler) -> int:
+        """Load model weights + training state from checkpoint. Returns the step to resume from."""
+        # Load model weights
+        bundle.model = SmolVLAPolicy.from_pretrained(path, config=bundle.model.config)
+        bundle.model.train()
+        bundle.model.to(next(iter(optimizer.param_groups[0]['params'])).device)
+
+        # Load training state
+        state_path = path / "training_state.pt"
+        if not state_path.exists():
+            raise FileNotFoundError(f"No training_state.pt in {path} — checkpoint was saved without resume support")
+
+        state = torch.load(state_path, weights_only=False)
+        optimizer.load_state_dict(state["optimizer"])
+        if "scheduler" in state and scheduler is not None:
+            scheduler.load_state_dict(state["scheduler"])
+
+        step = state.get("step", 0)
+        print(f"  Resumed from checkpoint: {path.name} (step {step})")
+        return step
 
     def get_optimizer(self, bundle: ModelBundle, config) -> tuple:
         """Create optimizer and scheduler using SmolVLA's presets."""

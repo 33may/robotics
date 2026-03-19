@@ -5,14 +5,9 @@ Features:
     - Live camera feed display during inference
     - Resilient frame capture (retries on timeout, uses last good frame)
     - Safety clamp on joint deltas
-    - Dry run mode (cameras + model, no robot)
+    - Periodic action printing for debugging
 
 Usage:
-    # Dry run with camera display
-    python vbti/logic/inference/run_real_inference.py run \
-        --checkpoint=vbti/experiments/duck_cup_smolvla/v001/checkpoints/best \
-        --dry_run
-
     # Real robot
     python vbti/logic/inference/run_real_inference.py run \
         --checkpoint=vbti/experiments/duck_cup_smolvla/v001/checkpoints/best \
@@ -46,12 +41,21 @@ JOINT_NAMES = [
 
 # ── Camera setup ──────────────────────────────────────────────────────────────
 
-DEFAULT_CAMERAS = {
-    "top":     {"type": "realsense", "serial": "123622270073"},
-    "left":    {"type": "realsense", "serial": "123622270367"},
-    "right":   {"type": "realsense", "serial": "126122270644"},
-    "gripper": {"type": "opencv",    "path": "/dev/video11"},
+CAMERA_PRESETS = {
+    "realsense": {
+        "top":     {"type": "realsense", "serial": "123622270073"},
+        "left":    {"type": "realsense", "serial": "123622270367"},
+        "right":   {"type": "realsense", "serial": "126122270644"},
+        "gripper": {"type": "opencv",    "path": "/dev/video11"},
+    },
+    "opencv": {
+        "top":     {"type": "opencv", "path": "/dev/video3"},
+        "left":    {"type": "opencv", "path": "/dev/video21"},
+        "right":   {"type": "opencv", "path": "/dev/video15"},
+        "gripper": {"type": "opencv", "path": "/dev/video11"},
+    },
 }
+DEFAULT_CAMERAS = CAMERA_PRESETS["realsense"]
 
 
 def _init_cameras(camera_config: dict = None, width: int = 640, height: int = 480, fps: int = 30):
@@ -295,6 +299,7 @@ def _build_observation(state_deg: np.ndarray, images: dict[str, np.ndarray],
 def run(
     checkpoint: str,
     port: str = "/dev/ttyACM0",
+    cameras: str = "realsense",
     camera_config: dict = None,
     camera_names: list = None,
     task: str = "pick up the object",
@@ -303,17 +308,18 @@ def run(
     action_horizon: int = 10,
     fps: int = 30,
     max_steps: int = 500,
-    dry_run: bool = False,
     show_cameras: bool = True,
     record: str = "",
     device: str = "auto",
+    print_actions_every: int = 0,
 ):
     """Run SmolVLA inference on real robot with live camera display.
 
     Args:
         checkpoint: path to checkpoint directory
         port: serial port for SO-101 follower
-        camera_config: camera config dict (see DEFAULT_CAMERAS)
+        cameras: camera preset ("realsense" or "opencv")
+        camera_config: camera config dict (overrides preset)
         camera_names: ordered camera names matching training
         task: language task description for SmolVLA
         robot_id: robot identifier for calibration
@@ -321,13 +327,13 @@ def run(
         action_horizon: how many actions to execute per inference call
         fps: control loop frequency
         max_steps: maximum total steps before stopping
-        dry_run: cameras + model active, no robot connection
         show_cameras: display live camera grid window
         record: path to save video (e.g. "inference_run.mp4"). Empty = no recording
         device: "auto", "cuda", "cpu"
+        print_actions_every: print action values every N steps (0 = disabled)
     """
     if camera_config is None:
-        camera_config = DEFAULT_CAMERAS
+        camera_config = CAMERA_PRESETS.get(cameras, CAMERA_PRESETS["realsense"])
     if camera_names is None:
         camera_names = list(camera_config.keys())
 
@@ -343,14 +349,10 @@ def run(
     print(f"\nInitializing cameras...")
     cameras = _init_cameras(camera_config, fps=fps)
 
-    robot = None
-    if not dry_run:
-        print(f"Connecting to robot on {port}...")
-        robot = _init_robot(port, robot_id, max_relative_target)
-        state = _get_state(robot)
-        print(f"Current position (deg): {np.round(state, 1)}")
-    else:
-        print("[DRY RUN] — cameras + model, no robot")
+    print(f"Connecting to robot on {port}...")
+    robot = _init_robot(port, robot_id, max_relative_target)
+    state = _get_state(robot)
+    print(f"Current position (deg): {np.round(state, 1)}")
 
     # ── Inference loop ────────────────────────────────────────
     print(f"\nTask: '{task}'")
@@ -372,10 +374,8 @@ def run(
 
     try:
         while step < max_steps:
-            t_loop = time.perf_counter()
-
             # Read state
-            state_deg = _get_state(robot) if robot else np.zeros(6)
+            state_deg = _get_state(robot)
 
             # Capture images (resilient — retries, uses last frame on timeout)
             images = _capture_frames(cameras)
@@ -409,12 +409,16 @@ def run(
                 action = actions_deg[i]
                 last_action = action
 
-                if robot:
-                    action_dict = {f"{name}.pos": float(action[j])
-                                   for j, name in enumerate(JOINT_NAMES)}
-                    robot.send_action(action_dict)
+                action_dict = {f"{name}.pos": float(action[j])
+                               for j, name in enumerate(JOINT_NAMES)}
+                robot.send_action(action_dict)
 
                 step += 1
+
+                # Print actions at configured interval
+                if print_actions_every > 0 and step % print_actions_every == 0:
+                    action_str = "  ".join(f"{n[:8]}={action[j]:7.1f}" for j, n in enumerate(JOINT_NAMES))
+                    print(f"  step {step}/{max_steps}  {action_str}")
 
                 # Rate limiting
                 elapsed = time.perf_counter() - t_step
@@ -424,12 +428,6 @@ def run(
                 if step >= max_steps:
                     break
 
-            # Progress
-            if step % 30 == 0:
-                inference_ms = (time.perf_counter() - t_loop) * 1000
-                pos_str = f"pos: {np.round(state_deg, 1)}" if robot else ""
-                print(f"  step {step}/{max_steps}  {inference_ms:.0f}ms  drops={frame_drops}  {pos_str}")
-
     except KeyboardInterrupt:
         print("\n\nStopped by user.")
     finally:
@@ -437,9 +435,8 @@ def run(
         _stop_cameras(cameras)
         if show_cameras:
             cv2.destroyAllWindows()
-        if robot:
-            robot.disconnect()
-            print("Robot disconnected.")
+        robot.disconnect()
+        print("Robot disconnected.")
 
         # Save video via ffmpeg (produces proper mp4 Obsidian can play)
         if record and recorded_frames:
@@ -452,11 +449,14 @@ def eval(
     checkpoint: str,
     task: str = "pick up the duck and place it in the cup",
     port: str = "/dev/ttyACM0",
+    cameras: str = "realsense",
     experiment: str = None,
     version: str = None,
+    action_horizon: int = 10,
     max_steps: int = 500,
     fps: int = 30,
-    dry_run: bool = False,
+    move_to_start: bool = True,
+    print_actions_every: int = 0,
 ):
     """Run evaluation on one or all checkpoints of the active experiment version.
 
@@ -467,15 +467,20 @@ def eval(
         checkpoint: checkpoint name ("step_002000", "best", "all")
         task: language instruction for the policy
         port: serial port for robot
+        cameras: camera preset ("realsense" or "opencv")
         experiment: experiment name (uses active if not given)
         version: version id (uses active if not given)
+        action_horizon: how many actions to execute per inference call
         max_steps: steps per eval run
         fps: control rate
-        dry_run: cameras + model only, no robot
+        move_to_start: move robot to rest position before each checkpoint
+        print_actions_every: print action values every N steps (0 = disabled)
     """
     import sys
     sys.path.insert(0, str(Path(__file__).parents[3]))
     from vbti.logic.train.experiment_utils import resolve_checkpoint, _resolve_experiment, _resolve_version, _version_dir
+
+    cam_config = CAMERA_PRESETS.get(cameras, CAMERA_PRESETS["realsense"])
 
     experiment = _resolve_experiment(experiment)
     version = _resolve_version(experiment, version)
@@ -485,19 +490,18 @@ def eval(
     eval_videos_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\nEval: {experiment}/{version}")
+    print(f"Cameras: {cameras}")
     print(f"Checkpoints to run: {len(checkpoint_paths)}")
     for p in checkpoint_paths:
         print(f"  {p.name}")
     print()
 
     # Init hardware once, reuse across checkpoints
-    cameras = _init_cameras(DEFAULT_CAMERAS, fps=fps)
-    camera_names = list(DEFAULT_CAMERAS.keys())
+    cam_devices = _init_cameras(cam_config, fps=fps)
+    camera_names = list(cam_config.keys())
 
-    robot = None
-    if not dry_run:
-        print(f"Connecting to robot on {port}...")
-        robot = _init_robot(port, robot_id="frodeo-test")
+    print(f"Connecting to robot on {port}...")
+    robot = _init_robot(port, robot_id="frodeo-test")
 
     if torch.cuda.is_available():
         dev = torch.device("cuda")
@@ -511,11 +515,11 @@ def eval(
             print(f"{'='*60}")
 
             # Move to rest before each run
-            if robot:
+            if robot and move_to_start:
                 move_to_rest(robot, fps=fps)
             input("\nPress Enter to start inference...")
 
-            record_path = eval_videos_dir / f"eval_{version}_{ckpt_path.name}"
+            record_path = eval_videos_dir / f"eval_{version}_{ckpt_path.name}_ah{action_horizon}_{cameras}"
 
             # Load policy for this checkpoint
             policy, preprocessor, postprocessor = _load_policy(str(ckpt_path), dev)
@@ -529,10 +533,8 @@ def eval(
 
             try:
                 while step < max_steps:
-                    t_loop = time.perf_counter()
-
-                    state_deg = _get_state(robot) if robot else np.zeros(6)
-                    images = _capture_frames(cameras)
+                    state_deg = _get_state(robot)
+                    images = _capture_frames(cam_devices)
                     if len(images) < len(camera_names):
                         frame_drops += 1
 
@@ -551,23 +553,24 @@ def eval(
                         actions_deg = postprocessor({"action": actions_normalized})["action"]
                         actions_deg = actions_deg.cpu().numpy()
 
-                    for i in range(min(10, len(actions_deg))):
+                    for i in range(min(action_horizon, len(actions_deg))):
                         t_step = time.perf_counter()
                         action = actions_deg[i]
                         last_action = action
-                        if robot:
-                            action_dict = {f"{name}.pos": float(action[j])
-                                           for j, name in enumerate(JOINT_NAMES)}
-                            robot.send_action(action_dict)
+                        action_dict = {f"{name}.pos": float(action[j])
+                                       for j, name in enumerate(JOINT_NAMES)}
+                        robot.send_action(action_dict)
                         step += 1
+
+                        if print_actions_every > 0 and step % print_actions_every == 0:
+                            action_str = "  ".join(f"{n[:8]}={action[j]:7.1f}" for j, n in enumerate(JOINT_NAMES))
+                            print(f"  step {step}/{max_steps}  {action_str}")
+
                         elapsed = time.perf_counter() - t_step
                         if elapsed < step_dt:
                             time.sleep(step_dt - elapsed)
                         if step >= max_steps:
                             break
-
-                    if step % 30 == 0:
-                        print(f"  step {step}/{max_steps}  drops={frame_drops}")
 
             except KeyboardInterrupt:
                 print(f"\nCheckpoint {ckpt_path.name} interrupted — saving video and continuing.")
@@ -581,11 +584,10 @@ def eval(
                 torch.cuda.empty_cache()
 
     finally:
-        _stop_cameras(cameras)
+        _stop_cameras(cam_devices)
         cv2.destroyAllWindows()
-        if robot:
-            robot.disconnect()
-            print("Robot disconnected.")
+        robot.disconnect()
+        print("Robot disconnected.")
 
     print(f"\nEval complete. Videos saved to: {eval_videos_dir}")
 

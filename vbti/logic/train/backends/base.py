@@ -66,10 +66,12 @@ class TrainingBackend(ABC):
         """
 
     @abstractmethod
-    def save_checkpoint(self, bundle: ModelBundle, path: Path, is_best: bool = False):
+    def save_checkpoint(self, bundle: ModelBundle, path: Path, is_best: bool = False,
+                        optimizer=None, scheduler=None, step: int = None):
         """Save model checkpoint to path.
 
         Should save: model weights, preprocessor, postprocessor, config.
+        If optimizer/scheduler/step provided, also save training state for resume.
         """
 
     @abstractmethod

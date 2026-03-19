@@ -1,0 +1,8 @@
+{
+  "final_train_loss": 0.0046,
+  "best_val_loss": 0.0058,
+  "total_steps": 5000,
+  "stopped_early": "true",
+  "epochs": 3.8,
+  "duration": "~1h40m"
+}

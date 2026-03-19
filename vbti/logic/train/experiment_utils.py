@@ -59,10 +59,23 @@ def _save_state(state: dict):
 
 
 def use(experiment_name: str, version: str | None = None):
-    """Set the active experiment (and optionally version)."""
+    """Set the active experiment (and optionally version).
+
+    Smart resolution: if experiment_name looks like a version (e.g. "v005")
+    and matches a version in the current active experiment, treat it as a version switch.
+    """
     exp_dir = EXPERIMENTS_ROOT / experiment_name
     if not exp_dir.exists():
-        raise ValueError(f"Experiment '{experiment_name}' does not exist")
+        # Maybe it's a version in the active experiment?
+        state = _load_state()
+        active_exp = state.get("active_experiment")
+        if active_exp and (EXPERIMENTS_ROOT / active_exp / experiment_name).exists():
+            # It's a version, not an experiment
+            version = experiment_name
+            experiment_name = active_exp
+            exp_dir = EXPERIMENTS_ROOT / experiment_name
+        else:
+            raise ValueError(f"Experiment '{experiment_name}' does not exist")
     if version:
         if not (exp_dir / version).exists():
             raise ValueError(f"Version '{version}' not found in '{experiment_name}'")
@@ -182,6 +195,15 @@ def create_version(config: dict | str, notes: str = "", experiment: str | None =
             base_path = _experiment_dir(experiment) / "base_config.yaml"
             with open(base_path) as f:
                 config = yaml.safe_load(f)
+        elif config == "last":
+            versions = list_versions(experiment)
+            if not versions:
+                raise ValueError(f"No versions found in '{experiment}' to copy config from.")
+            last_version = versions[-1]
+            last_config_path = _version_dir(experiment, last_version) / "config.yaml"
+            with open(last_config_path) as f:
+                config = yaml.safe_load(f)
+            print(f"Using config from {last_version}")
         else:
             with open(config) as f:
                 config = yaml.safe_load(f)
