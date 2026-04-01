@@ -1,0 +1,38 @@
+# 3D reconstruction & COLMAP pipeline
+# Usage: python -m venv .venv-3d && source .venv-3d/bin/activate && pip install -r requirements-3d.txt
+
+# Core
+numpy
+scipy
+
+# COLMAP / nerfstudio
+nerfstudio
+
+# 3D geometry & mesh
+open3d
+trimesh
+plyfile
+pymeshlab
+
+# USD (for Isaac Sim asset prep)
+usd-core
+
+# Vision & image
+opencv-python
+Pillow
+
+# Visualization
+polyscope
+
+# Data & IO
+h5py
+requests
+tqdm
+PyYAML
+
+# CLI & logging
+fire
+loguru
+
+# Note: omni.usd / omni.physx.scripts are Omniverse packages,
+# installed via Isaac Sim's bundled Python — not pip-installable here.
