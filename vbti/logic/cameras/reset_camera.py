@@ -5,6 +5,7 @@ Usage:
     python reset_camera.py                  # reset all cameras
     python reset_camera.py 128422270260     # reset specific camera
 """
+import subprocess
 import sys
 import time
 import pyrealsense2 as rs
@@ -31,9 +32,19 @@ def main():
         print(f"{sn} ({name}, fw={fw}) — resetting...")
         d.hardware_reset()
 
-    wait = 5
+    wait = 3
     print(f"\nWaiting {wait}s for cameras to reconnect...")
     time.sleep(wait)
+
+    # Refresh udev symlinks (/dev/cam_*)
+    result = subprocess.run(
+        ["sudo", "-S", "udevadm", "trigger", "--subsystem-match=video4linux"],
+        input="may\n", capture_output=True, text=True,
+    )
+    if result.returncode == 0:
+        print("udev symlinks refreshed.")
+    else:
+        print(f"udev trigger failed (run with sudo?): {result.stderr.strip()}")
 
     # Verify
     ctx2 = rs.context()

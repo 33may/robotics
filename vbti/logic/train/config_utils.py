@@ -117,6 +117,8 @@ class TrainingConfig:
     grad_clip_norm: float = 10.0
     warmup_steps: int = 500
     decay_lr: float = 2.5e-6         # final LR after cosine decay
+    lr_schedule: str = "cosine"      # "cosine" or "wsd" (warmup-stable-decay)
+    decay_ratio: float = 0.3         # for wsd: fraction of total steps spent in decay phase
     num_workers: int = 0
     device: str = "auto"        # "auto", "cuda", "cpu", "cuda:0", etc.
     seed: int = 42

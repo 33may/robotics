@@ -49,6 +49,36 @@ class SmolVLABackend(TrainingBackend):
                 if f.type is not FeatureType.VISUAL or k in allowed_keys
             }
 
+        # Align camera names to pretrained slots (camera1, camera2, camera3, ...)
+        # so that pretrained vision weights are properly utilized.
+        # Uses config camera order (which the user controls) rather than alphabetical.
+        pretrained_slots = ["camera1", "camera2", "camera3"]
+        if camera_names:
+            dataset_cam_keys = [f"observation.images.{n}" for n in camera_names
+                                if f"observation.images.{n}" in input_features]
+        else:
+            dataset_cam_keys = sorted(k for k, f in input_features.items() if f.type is FeatureType.VISUAL)
+        rename_map = {}
+        n_empty = 0
+        for i, cam_key in enumerate(dataset_cam_keys):
+            cam_name = cam_key.split(".")[-1]  # e.g. "top" from "observation.images.top"
+            if i < len(pretrained_slots):
+                new_name = pretrained_slots[i]
+            else:
+                new_name = f"empty_camera_{n_empty}"
+                n_empty += 1
+            new_key = f"observation.images.{new_name}"
+            if cam_key != new_key:
+                rename_map[cam_key] = new_key
+
+        # Apply remap to input_features
+        if rename_map:
+            remapped_features = {}
+            for k, f in input_features.items():
+                remapped_features[rename_map.get(k, k)] = f
+            input_features = remapped_features
+            print(f"Camera alignment: {rename_map}")
+
         # Build SmolVLA native config
         smolvla_cfg = SmolVLAConfig(
             input_features=input_features,
@@ -59,7 +89,7 @@ class SmolVLABackend(TrainingBackend):
             freeze_vision_encoder=model_cfg.freeze_vision_encoder,
             train_expert_only=model_cfg.train_expert_only,
             train_state_proj=model_cfg.train_state_proj,
-            empty_cameras=model_cfg.empty_cameras,
+            empty_cameras=max(model_cfg.empty_cameras, n_empty),
             tokenizer_max_length=model_cfg.tokenizer_max_length,
             num_steps=model_cfg.num_denoising_steps,
             optimizer_lr=training_cfg.lr,
@@ -70,6 +100,11 @@ class SmolVLABackend(TrainingBackend):
             scheduler_decay_lr=training_cfg.decay_lr,
         )
 
+        # Remap dataset stats to match aligned camera names
+        stats = meta.stats
+        if rename_map:
+            stats = {rename_map.get(k, k): v for k, v in stats.items()}
+
         # Load pretrained weights with our config
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         policy = SmolVLAPolicy.from_pretrained(model_cfg.pretrained, config=smolvla_cfg)
@@ -78,19 +113,21 @@ class SmolVLABackend(TrainingBackend):
 
         # Create pre/post processors
         preprocessor, postprocessor = make_pre_post_processors(
-            smolvla_cfg, dataset_stats=meta.stats
+            smolvla_cfg, dataset_stats=stats
         )
 
         total_params = sum(p.numel() for p in policy.parameters())
         trainable = sum(p.numel() for p in policy.parameters() if p.requires_grad)
         print(f"SmolVLA loaded: {total_params:,} params, {trainable:,} trainable ({100*trainable/total_params:.1f}%)")
 
-        return ModelBundle(
+        bundle = ModelBundle(
             model=policy,
             preprocessor=preprocessor,
             postprocessor=postprocessor,
             dataset_meta=meta,
         )
+        bundle.camera_rename_map = rename_map
+        return bundle
 
     def make_dataloaders(self, config, dataset_meta) -> tuple:
         """Create dataloaders with proper delta_timestamps for SmolVLA.
@@ -158,7 +195,10 @@ class SmolVLABackend(TrainingBackend):
         return train_loader, val_loader
 
     def train_step(self, bundle: ModelBundle, batch, optimizer) -> tuple[torch.Tensor, dict]:
-        """One SmolVLA training step: preprocess → forward → loss."""
+        """One SmolVLA training step: rename cameras → preprocess → forward → loss."""
+        rename_map = getattr(bundle, 'camera_rename_map', None)
+        if rename_map:
+            batch = {rename_map.get(k, k): v for k, v in batch.items()}
         batch = bundle.preprocessor(batch)
         loss, loss_dict = bundle.model.forward(batch)
         return loss, loss_dict
@@ -172,6 +212,9 @@ class SmolVLABackend(TrainingBackend):
             for i, batch in enumerate(val_loader):
                 if i >= n_batches:
                     break
+                rename_map = getattr(bundle, 'camera_rename_map', None)
+                if rename_map:
+                    batch = {rename_map.get(k, k): v for k, v in batch.items()}
                 batch = bundle.preprocessor(batch)
                 loss, _ = bundle.model.forward(batch)
                 val_losses.append(loss.item())
@@ -203,8 +246,12 @@ class SmolVLABackend(TrainingBackend):
         print(f"  Saved checkpoint: {label} → {path}")
 
     def load_checkpoint_for_resume(self, bundle: ModelBundle, path: Path,
-                                   optimizer, scheduler) -> int:
-        """Load model weights + training state from checkpoint. Returns the step to resume from."""
+                                   optimizer, scheduler, reset_lr: bool = False) -> int:
+        """Load model weights + training state from checkpoint. Returns the step to resume from.
+
+        Args:
+            reset_lr: if True, skip scheduler state restoration so a fresh schedule can be applied.
+        """
         # Load model weights
         bundle.model = SmolVLAPolicy.from_pretrained(path, config=bundle.model.config)
         bundle.model.train()
@@ -217,11 +264,13 @@ class SmolVLABackend(TrainingBackend):
 
         state = torch.load(state_path, weights_only=False)
         optimizer.load_state_dict(state["optimizer"])
-        if "scheduler" in state and scheduler is not None:
+        if not reset_lr and "scheduler" in state and scheduler is not None:
             scheduler.load_state_dict(state["scheduler"])
 
         step = state.get("step", 0)
         print(f"  Resumed from checkpoint: {path.name} (step {step})")
+        if reset_lr:
+            print(f"  LR schedule reset — scheduler state NOT restored")
         return step
 
     def get_optimizer(self, bundle: ModelBundle, config) -> tuple:
@@ -232,7 +281,35 @@ class SmolVLABackend(TrainingBackend):
         optimizer_preset = smolvla_cfg.get_optimizer_preset()
         optimizer = optimizer_preset.build(policy.parameters())
 
-        scheduler_preset = smolvla_cfg.get_scheduler_preset()
-        scheduler = scheduler_preset.build(optimizer, config.training.steps)
+        if config.training.lr_schedule == "wsd":
+            scheduler = self._build_wsd_scheduler(optimizer, config)
+        else:
+            scheduler_preset = smolvla_cfg.get_scheduler_preset()
+            scheduler = scheduler_preset.build(optimizer, config.training.steps)
 
         return optimizer, scheduler
+
+    @staticmethod
+    def _build_wsd_scheduler(optimizer, config):
+        """Warmup-Stable-Decay: hold peak LR, then cosine decay at the end."""
+        import math
+        from torch.optim.lr_scheduler import LambdaLR
+
+        cfg_t = config.training
+        warmup = cfg_t.warmup_steps
+        total = cfg_t.steps
+        decay_steps = int(total * cfg_t.decay_ratio)
+        stable_end = total - decay_steps
+        alpha = cfg_t.decay_lr / cfg_t.lr
+
+        def lr_lambda(step):
+            if step < warmup:
+                return max(1 / (warmup + 1), step / warmup)
+            if step < stable_end:
+                return 1.0
+            progress = (step - stable_end) / max(1, decay_steps)
+            return alpha + (1 - alpha) * 0.5 * (1 + math.cos(math.pi * progress))
+
+        print(f"  WSD schedule: warmup={warmup}, stable={warmup}–{stable_end}, "
+              f"decay={stable_end}–{total} ({decay_steps} steps)")
+        return LambdaLR(optimizer, lr_lambda)

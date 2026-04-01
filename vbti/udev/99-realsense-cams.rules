@@ -1,0 +1,23 @@
+# Stable symlinks for RealSense D405 cameras
+# index==4 → YUYV (processed, better quality)
+# index==2 → UYVY (raw, lower quality)
+#
+# Install:
+#   sudo cp vbti/udev/99-realsense-cams.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+
+# top (RS 123622270073 / V4L2 125423070759)
+SUBSYSTEM=="video4linux", ENV{ID_SERIAL_SHORT}=="125423070759", ATTR{index}=="4", SYMLINK+="cam_top"
+SUBSYSTEM=="video4linux", ENV{ID_SERIAL_SHORT}=="125423070759", ATTR{index}=="2", SYMLINK+="cam_top_raw"
+
+# gripper (RS 128422270260 / V4L2 130523070141)
+SUBSYSTEM=="video4linux", ENV{ID_SERIAL_SHORT}=="130523070141", ATTR{index}=="4", SYMLINK+="cam_gripper"
+SUBSYSTEM=="video4linux", ENV{ID_SERIAL_SHORT}=="130523070141", ATTR{index}=="2", SYMLINK+="cam_gripper_raw"
+
+# right (RS 126122270644 / V4L2 125423070468)
+SUBSYSTEM=="video4linux", ENV{ID_SERIAL_SHORT}=="125423070468", ATTR{index}=="4", SYMLINK+="cam_right"
+SUBSYSTEM=="video4linux", ENV{ID_SERIAL_SHORT}=="125423070468", ATTR{index}=="2", SYMLINK+="cam_right_raw"
+
+# left (RS 123622270367 / V4L2 125423070032)
+SUBSYSTEM=="video4linux", ENV{ID_SERIAL_SHORT}=="125423070032", ATTR{index}=="4", SYMLINK+="cam_left"
+SUBSYSTEM=="video4linux", ENV{ID_SERIAL_SHORT}=="125423070032", ATTR{index}=="2", SYMLINK+="cam_left_raw"

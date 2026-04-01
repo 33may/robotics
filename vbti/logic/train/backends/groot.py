@@ -236,6 +236,8 @@ class GR00TBackend(TrainingBackend):
             max_action_dim=model.config.max_action_dim,
             max_action_horizon=model.config.action_horizon,
             transformers_loading_kwargs={"trust_remote_code": True},
+            image_target_size=[480, 640],
+            image_crop_size=[456, 608],
         )
 
         total_params = sum(p.numel() for p in model.parameters())
@@ -320,8 +322,9 @@ class GR00TBackend(TrainingBackend):
             {"loss": tensor, "action_loss": tensor, "action_mask": tensor, ...}
         We extract loss as scalar and build a metrics dict.
         """
-        # GR00T model.forward() expects a dict and handles device transfer internally
-        outputs = bundle.model.forward(batch)
+        # GR00T model.forward() expects a dict — strip non-tensor fields (e.g. 'task' string)
+        clean_batch = {k: v for k, v in batch.items() if not isinstance(v, (str, list))}
+        outputs = bundle.model.forward(clean_batch)
 
         loss = outputs["loss"]
         metrics = {

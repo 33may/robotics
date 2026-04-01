@@ -195,6 +195,7 @@ def create_version(config: dict | str, notes: str = "", experiment: str | None =
             base_path = _experiment_dir(experiment) / "base_config.yaml"
             with open(base_path) as f:
                 config = yaml.safe_load(f)
+            print(f"Using base config")
         elif config == "last":
             versions = list_versions(experiment)
             if not versions:
@@ -204,6 +205,13 @@ def create_version(config: dict | str, notes: str = "", experiment: str | None =
             with open(last_config_path) as f:
                 config = yaml.safe_load(f)
             print(f"Using config from {last_version}")
+        elif (_version_dir(experiment, config) / "config.yaml").exists():
+            # It's a version name in the current experiment
+            src_version = config
+            src_config_path = _version_dir(experiment, src_version) / "config.yaml"
+            with open(src_config_path) as f:
+                config = yaml.safe_load(f)
+            print(f"Using config from {src_version}")
         else:
             with open(config) as f:
                 config = yaml.safe_load(f)
@@ -319,42 +327,85 @@ def get_version_dir(experiment: str | None = None, version: str | None = None) -
     return _version_dir(experiment, version)
 
 
+def _find_model_dir(d: Path) -> Path | None:
+    """Find the directory containing model.safetensors, handling both formats.
+
+    Custom engine:  {d}/model.safetensors
+    LeRobot output: {d}/pretrained_model/model.safetensors
+    """
+    if (d / "model.safetensors").exists():
+        return d
+    if (d / "pretrained_model" / "model.safetensors").exists():
+        return d / "pretrained_model"
+    return None
+
+
 def list_checkpoints(experiment: str | None = None, version: str | None = None,
                      include_named: bool = True) -> list[dict]:
     """List all checkpoints for a version, sorted by step number.
 
     Returns list of dicts: [{"name": "step_001000", "step": 1000, "path": Path(...)}, ...]
     Named checkpoints (best, final) are appended at the end if include_named=True.
+
+    Supports both custom engine layout ({version}/checkpoints/step_NNNNNN/)
+    and lerobot-train layout ({version}/lerobot_output/checkpoints/NNNNNN/pretrained_model/).
     """
     experiment = _resolve_experiment(experiment)
     version = _resolve_version(experiment, version)
-    ckpt_dir = _version_dir(experiment, version) / "checkpoints"
+    version_dir = _version_dir(experiment, version)
 
-    if not ckpt_dir.exists():
+    # Collect from all checkpoint locations: custom layout + all lerobot_output* runs
+    ckpt_dirs = []  # list of (label, path)
+    custom = version_dir / "checkpoints"
+    if custom.exists():
+        ckpt_dirs.append(("", custom))
+    for lo_dir in sorted(version_dir.glob("lerobot_output*")):
+        candidate = lo_dir / "checkpoints"
+        if candidate.exists():
+            label = lo_dir.name  # e.g. "lerobot_output", "lerobot_output_r2"
+            ckpt_dirs.append((label, candidate))
+
+    if not ckpt_dirs:
         return []
 
     step_ckpts = []
     named_ckpts = []
 
-    for d in ckpt_dir.iterdir():
-        if not d.is_dir():
-            continue
-        # Must have model.safetensors to be a valid checkpoint
-        if not (d / "model.safetensors").exists():
-            continue
+    for label, ckpt_dir in ckpt_dirs:
+        for d in ckpt_dir.iterdir():
+            if not d.is_dir():
+                continue
+            # Resolve symlinks (lerobot uses "last -> 020000")
+            if d.is_symlink():
+                continue
 
-        if d.name.startswith("step_") and d.name[5:].isdigit():
-            step_ckpts.append({
-                "name": d.name,
-                "step": int(d.name[5:]),
-                "path": d,
-            })
-        elif include_named:
-            named_ckpts.append({
-                "name": d.name,
-                "step": None,
-                "path": d,
-            })
+            model_dir = _find_model_dir(d)
+            if model_dir is None:
+                continue
+
+            # Custom format: step_002000
+            if d.name.startswith("step_") and d.name[5:].isdigit():
+                step_ckpts.append({
+                    "name": d.name,
+                    "step": int(d.name[5:]),
+                    "path": model_dir,
+                    "run": label,
+                })
+            # LeRobot format: 002000 (pure digits)
+            elif d.name.isdigit():
+                step_ckpts.append({
+                    "name": f"step_{int(d.name):06d}",
+                    "step": int(d.name),
+                    "path": model_dir,
+                    "run": label,
+                })
+            elif include_named:
+                named_ckpts.append({
+                    "name": d.name,
+                    "step": None,
+                    "path": model_dir,
+                    "run": label,
+                })
 
     step_ckpts.sort(key=lambda c: c["step"])
     named_ckpts.sort(key=lambda c: c["name"])
@@ -368,9 +419,8 @@ def print_checkpoints(experiment: str | None = None, version: str | None = None)
         print("No checkpoints found.")
         return
     for c in ckpts:
-        print(f"---")
-        print(f"  name: {c['name']}")
-        print(f"  path: {c['path']}")
+        run_tag = f"  run:  {c['run']}\n" if c.get("run") else ""
+        print(f"---\n  name: {c['name']}\n{run_tag}  path: {c['path']}")
     print("---")
 
 
@@ -382,30 +432,34 @@ def resolve_checkpoint(checkpoint: str, experiment: str | None = None,
         - "all": all step checkpoints (no best/final)
         - "best", "final", "step_002000": specific checkpoint by name
         - "2000": shorthand for step_002000
+
+    Works with both custom engine and lerobot-train checkpoint layouts.
     """
     experiment = _resolve_experiment(experiment)
     version = _resolve_version(experiment, version)
-    ckpt_dir = _version_dir(experiment, version) / "checkpoints"
 
     if checkpoint == "all":
         ckpts = list_checkpoints(experiment, version, include_named=False)
         if not ckpts:
-            raise ValueError(f"No checkpoints found in {ckpt_dir}")
+            raise ValueError(f"No checkpoints found for {experiment}/{version}")
         return [c["path"] for c in ckpts]
 
+    # Use list_checkpoints to find by name (handles both formats)
+    all_ckpts = list_checkpoints(experiment, version, include_named=True)
+
     # Direct name match (best, final, step_002000)
-    direct = ckpt_dir / checkpoint
-    if direct.exists() and (direct / "model.safetensors").exists():
-        return [direct]
+    for c in all_ckpts:
+        if c["name"] == checkpoint:
+            return [c["path"]]
 
-    # Shorthand: "2000" -> "step_002000"
+    # Shorthand: "2000" -> match step 2000
     if checkpoint.isdigit():
-        step_name = f"step_{int(checkpoint):06d}"
-        step_path = ckpt_dir / step_name
-        if step_path.exists() and (step_path / "model.safetensors").exists():
-            return [step_path]
+        step_num = int(checkpoint)
+        for c in all_ckpts:
+            if c["step"] == step_num:
+                return [c["path"]]
 
-    raise ValueError(f"Checkpoint '{checkpoint}' not found in {ckpt_dir}")
+    raise ValueError(f"Checkpoint '{checkpoint}' not found for {experiment}/{version}")
 
 
 def status(experiment: str | None = None) -> dict:

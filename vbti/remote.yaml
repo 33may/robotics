@@ -1,0 +1,13 @@
+# Remote training machine config
+# Used by vbti/logic/train/remote.py
+
+host: vbti@10.11.100.151
+password: vbti25robot
+
+# Remote paths
+python: /home/vbti/anton/env/bin/python
+data_dir: /home/vbti/anton/data              # datasets land here
+experiments_dir: /home/vbti/anton/experiments # mirrors local vbti/experiments/ structure
+
+# Local HF cache root (datasets are subfolders here)
+local_hf_cache: ~/.cache/huggingface/lerobot

@@ -84,8 +84,63 @@ def _check_existing_checkpoints(checkpoints_dir: Path, resume: bool) -> bool:
         return resp in ("y", "yes")
 
 
+def resolve_config_and_version(
+    config: "TrainConfig | str | None" = None,
+    experiment: str | None = None,
+    version: str | None = None,
+    notes: str = "",
+) -> tuple["TrainConfig", str, Path]:
+    """Shared helper: resolve config + experiment version → (cfg, version_id, version_dir).
+
+    Two flows:
+        1) config provided, no version  → create new version
+        2) config provided, version given → use existing version (prompt if config differs)
+        3) no config                    → load config from active/specified version
+
+    Used by both train() and remote.train() so resolution logic stays in one place.
+    """
+    import yaml as _yaml
+
+    if config is not None:
+        if isinstance(config, (str, Path)):
+            config = TrainConfig.load(config)
+
+        if version:
+            use(experiment or active()[0], version)
+            existing = TrainConfig.from_dict(load_config())
+            diff = config.diff(existing)
+            if diff:
+                print("Config differs from version's stored config:")
+                for section, fields in diff.items():
+                    for field, vals in fields.items():
+                        print(f"  {section}.{field}: {vals['old']} → {vals['new']}")
+                resp = input("Overwrite version config? [y/N] ").strip().lower()
+                if resp not in ("y", "yes"):
+                    raise SystemExit("Aborted.")
+                config_path = get_version_dir() / "config.yaml"
+                with open(config_path, "w") as f:
+                    _yaml.dump(config.to_dict(), f, default_flow_style=False, sort_keys=False)
+            version_id = version
+        else:
+            version_id = create_version(
+                config=config.to_dict(),
+                notes=notes,
+                experiment=experiment,
+            )
+    else:
+        if version:
+            use(experiment or active()[0], version)
+        config = TrainConfig.from_dict(load_config())
+        _, version_id = active()
+        if not version_id:
+            raise ValueError("No active version and no config provided.")
+
+    return config, version_id, get_version_dir()
+
+
 def train(config: TrainConfig | str | None = None, experiment: str | None = None,
-          version: str | None = None, notes: str = "", resume: bool = False):
+          version: str | None = None, notes: str = "", resume: bool = False,
+          reset_lr: bool = False):
     """Run a training experiment.
 
     Two flows:
@@ -99,47 +154,13 @@ def train(config: TrainConfig | str | None = None, experiment: str | None = None
         version: version to resume/use (creates new if None and config is given)
         notes: notes for new version (ignored if using existing)
         resume: if True, resume from latest checkpoint (restores model + optimizer + step)
+        reset_lr: if True (requires --resume), skip scheduler restoration and rebuild
+                  a fresh cosine schedule over the remaining steps.
     """
+    if reset_lr and not resume:
+        raise ValueError("--reset-lr requires --resume")
     # ── Resolve config + version ──────────────────────────────────
-    if config is not None:
-        if isinstance(config, (str, Path)):
-            config = TrainConfig.load(config)
-
-        if version:
-            # Config provided + existing version → check for diff
-            use(experiment or active()[0], version)
-            existing = TrainConfig.from_dict(load_config())
-            diff = config.diff(existing)
-            if diff:
-                print("Config differs from version's stored config:")
-                for section, fields in diff.items():
-                    for field, vals in fields.items():
-                        print(f"  {section}.{field}: {vals['old']} → {vals['new']}")
-                resp = input("Overwrite version config? [y/N] ").strip().lower()
-                if resp not in ("y", "yes"):
-                    print("Aborted.")
-                    return None
-                # Overwrite the version's config
-                import yaml
-                config_path = get_version_dir() / "config.yaml"
-                with open(config_path, "w") as f:
-                    yaml.dump(config.to_dict(), f, default_flow_style=False, sort_keys=False)
-            version_id = version
-        else:
-            # New version from config
-            version_id = create_version(
-                config=config.to_dict(),
-                notes=notes,
-                experiment=experiment,
-            )
-    else:
-        # No config → use existing version's config
-        if version:
-            use(experiment or active()[0], version)
-        config = TrainConfig.from_dict(load_config())
-        _, version_id = active()
-        if not version_id:
-            raise ValueError("No active version and no config provided.")
+    config, version_id, _ = resolve_config_and_version(config, experiment, version, notes)
 
     cfg_t = config.training
     cfg_l = config.logging
@@ -219,8 +240,23 @@ def train(config: TrainConfig | str | None = None, experiment: str | None = None
         latest_ckpt = _find_latest_step_checkpoint(checkpoints_dir)
         if latest_ckpt:
             start_step = backend.load_checkpoint_for_resume(
-                bundle, latest_ckpt, optimizer, scheduler
+                bundle, latest_ckpt, optimizer, scheduler, reset_lr=reset_lr
             )
+            if reset_lr and start_step > 0:
+                remaining = cfg_t.steps - start_step
+                if cfg_t.lr_schedule == "wsd":
+                    from vbti.logic.train.backends.smolvla import SmolVLABackend
+                    scheduler = SmolVLABackend._build_wsd_scheduler(optimizer, config)
+                    # Advance scheduler to match resume position
+                    for _ in range(start_step):
+                        scheduler.step()
+                    print(f"  Reset WSD schedule at step {start_step}, "
+                          f"{remaining} steps remaining")
+                else:
+                    scheduler_preset = bundle.model.config.get_scheduler_preset()
+                    scheduler = scheduler_preset.build(optimizer, remaining)
+                    print(f"  Fresh cosine schedule: {remaining} steps, "
+                          f"peak={cfg_t.lr:.1e} → floor={cfg_t.decay_lr:.1e}")
 
     # ── Training loop ─────────────────────────────────────────────
     remaining = cfg_t.steps - start_step
@@ -316,7 +352,8 @@ def train(config: TrainConfig | str | None = None, experiment: str | None = None
         epoch += 1
         if not done:
             elapsed_so_far = time.time() - start_time
-            eta = elapsed_so_far / step * (cfg_t.steps - step) if step > 0 else 0
+            steps_this_session = step - start_step
+            eta = elapsed_so_far / steps_this_session * (cfg_t.steps - step) if steps_this_session > 0 else 0
             print(f"  Epoch {epoch - 1} done | Step {step}/{cfg_t.steps} | ETA: {_format_duration(eta)}")
 
     # ── Final save ────────────────────────────────────────────────
@@ -366,7 +403,7 @@ def _format_duration(seconds: float) -> str:
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 def _train_cli(config: str = None, experiment: str = None, version: str = None,
-               notes: str = "", resume: bool = False):
+               notes: str = "", resume: bool = False, reset_lr: bool = False):
     """Train from config YAML (new version) or from existing version.
 
     Examples:
@@ -379,11 +416,15 @@ def _train_cli(config: str = None, experiment: str = None, version: str = None,
         # Resume from latest checkpoint:
         python -m vbti.logic.train.engine train --resume
 
+        # Resume with fresh LR schedule over remaining steps:
+        python -m vbti.logic.train.engine train --resume --reset_lr
+
         # Run specific existing version:
         python -m vbti.logic.train.engine train --experiment=lift_cube --version=v001
     """
     cfg = TrainConfig.load(config) if config else None
-    return train(cfg, experiment=experiment, version=version, notes=notes, resume=resume)
+    return train(cfg, experiment=experiment, version=version, notes=notes,
+                 resume=resume, reset_lr=reset_lr)
 
 
 def _status():
@@ -392,10 +433,152 @@ def _status():
     print(f"Active: {exp}" + (f" / {ver}" if ver else ""))
 
 
+def _build_lerobot_command(config: TrainConfig, output_dir: str, job_name: str) -> list[str]:
+    """Translate our TrainConfig into a lerobot-train CLI command."""
+    import json
+
+    model_cfg = config.model
+    dataset_cfg = config.dataset
+    training_cfg = config.training
+    logging_cfg = config.logging
+
+    args = ["lerobot-train"]
+
+    # Policy / model
+    args.append(f"--policy.path={model_cfg.pretrained}")
+
+    # Dataset
+    repo_id = dataset_cfg.sources[0].repo_id
+    args.append(f"--dataset.repo_id={repo_id}")
+    root = dataset_cfg.sources[0].root
+    if root:
+        args.append(f"--dataset.root={root}")
+
+    # Training
+    args.append(f"--batch_size={training_cfg.batch_size}")
+    args.append(f"--steps={training_cfg.steps}")
+    args.append(f"--num_workers={training_cfg.num_workers}")
+
+    # Optimizer
+    args.append(f"--optimizer.lr={training_cfg.lr}")
+    args.append(f"--optimizer.weight_decay={training_cfg.weight_decay}")
+    args.append(f"--optimizer.grad_clip_norm={training_cfg.grad_clip_norm}")
+
+    # Scheduler — map to lerobot's cosine_decay_with_warmup
+    args.append("--scheduler.type=cosine_decay_with_warmup")
+    args.append(f"--scheduler.num_warmup_steps={training_cfg.warmup_steps}")
+    args.append(f"--scheduler.num_decay_steps={training_cfg.steps}")
+    args.append(f"--scheduler.peak_lr={training_cfg.lr}")
+    args.append(f"--scheduler.decay_lr={training_cfg.decay_lr}")
+
+    # Policy config
+    args.append(f"--policy.chunk_size={model_cfg.chunk_size}")
+    args.append(f"--policy.n_obs_steps={model_cfg.n_obs_steps}")
+    args.append(f"--policy.freeze_vision_encoder={str(model_cfg.freeze_vision_encoder).lower()}")
+    args.append(f"--policy.train_expert_only={str(model_cfg.train_expert_only).lower()}")
+    args.append(f"--policy.train_state_proj={str(model_cfg.train_state_proj).lower()}")
+    args.append(f"--policy.tokenizer_max_length={model_cfg.tokenizer_max_length}")
+
+    # Camera alignment — build rename_map from config camera order
+    pretrained_slots = ["camera1", "camera2", "camera3"]
+    camera_names = dataset_cfg.cameras.names or []
+    rename_map = {}
+    n_empty = 0
+    for i, cam in enumerate(camera_names):
+        src = f"observation.images.{cam}"
+        if i < len(pretrained_slots):
+            dst = f"observation.images.{pretrained_slots[i]}"
+        else:
+            dst = f"observation.images.empty_camera_{n_empty}"
+            n_empty += 1
+        if src != dst:
+            rename_map[src] = dst
+
+    if rename_map:
+        args.append(f"--rename_map={json.dumps(rename_map)}")
+
+    empty_total = max(model_cfg.empty_cameras, n_empty)
+    args.append(f"--policy.empty_cameras={empty_total}")
+
+    # Output
+    args.append(f"--output_dir={output_dir}")
+    args.append(f"--job_name={job_name}")
+    args.append(f"--policy.repo_id={job_name}")
+
+    # Logging
+    args.append(f"--log_freq={logging_cfg.log_freq}")
+    args.append(f"--save_freq={logging_cfg.save_freq}")
+
+    # W&B
+    args.append(f"--wandb.enable={str(logging_cfg.wandb_enabled).lower()}")
+    if logging_cfg.wandb_enabled:
+        args.append(f"--wandb.project={logging_cfg.wandb_project}")
+        if logging_cfg.wandb_entity:
+            args.append(f"--wandb.entity={logging_cfg.wandb_entity}")
+        if logging_cfg.wandb_mode:
+            args.append(f"--wandb.mode={logging_cfg.wandb_mode}")
+
+    return args
+
+
+def _train_lerobot_cli(config: str = None, experiment: str = None,
+                       version: str = None, notes: str = "", dry_run: bool = False):
+    """Generate and run lerobot-train from our config.
+
+    Examples:
+        # From config file:
+        python -m vbti.logic.train.engine train-lerobot --config=path/to/config.yaml --experiment=duck_cup
+
+        # From active version:
+        python -m vbti.logic.train.engine train-lerobot
+
+        # Dry run — just print the command:
+        python -m vbti.logic.train.engine train-lerobot --dry_run
+    """
+    import subprocess, shlex
+
+    # Resolve config (same logic as train)
+    if config is not None:
+        cfg = TrainConfig.load(config) if isinstance(config, str) else config
+        if version:
+            use(experiment or active()[0], version)
+        else:
+            version_id = create_version(
+                config=cfg.to_dict(), notes=notes, experiment=experiment,
+            )
+    else:
+        if version:
+            use(experiment or active()[0], version)
+        cfg = TrainConfig.from_dict(load_config())
+
+    exp_name, version_id = active()
+    if not version_id:
+        raise ValueError("No active version and no config provided.")
+
+    version_dir = get_version_dir()
+    output_dir = str(version_dir / "lerobot_output")
+    job_name = f"{exp_name}_{version_id}"
+
+    args = _build_lerobot_command(cfg, output_dir, job_name)
+    cmd_str = " \\\n    ".join(args)
+
+    print(f"Experiment: {exp_name} / {version_id}")
+    print(f"Output: {output_dir}\n")
+    print(cmd_str)
+
+    if dry_run:
+        print("\n(dry run — not executing)")
+        return cmd_str
+
+    print("\n" + "=" * 60)
+    subprocess.run(args, check=True)
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
     fire.Fire({
         "train":  _train_cli,
+        "train-lerobot": _train_lerobot_cli,
         "status": _status,
     })

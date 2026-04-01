@@ -346,7 +346,7 @@ def report(dataset_path: str | Path) -> str:
 
 
 def _load_lerobot_actions(dataset_path: str | Path, max_files: int = 99) -> np.ndarray:
-    data_dir = Path(dataset_path) / "data"
+    data_dir = Path(dataset_path).expanduser() / "data"
     all_actions = []
     for pq in sorted(data_dir.rglob("*.parquet"))[:max_files]:
         df = pd.read_parquet(pq)
@@ -406,6 +406,129 @@ def compare_actions(datasets: dict[str, str], bins: int = 80, save: str = None):
         plt.show()
 
 
+def _load_episodes(repo_id: str, root: str = None, max_files: int = 99) -> tuple[list[np.ndarray], list[str]]:
+    """Load per-episode action arrays from a LeRobot dataset.
+
+    Returns (episodes, joint_names) where episodes is a list of (T, n_joints) arrays.
+    """
+    ds_path = _resolve_dataset_path(repo_id, root)
+    data_dir = ds_path / "data"
+    all_frames = []
+    for pq in sorted(data_dir.rglob("*.parquet"))[:max_files]:
+        df = pd.read_parquet(pq)
+        if "action" in df.columns:
+            all_frames.append(df)
+    if not all_frames:
+        raise ValueError(f"No action data in {ds_path}")
+
+    df = pd.concat(all_frames, ignore_index=True)
+    info_d = lerobot_info(ds_path)
+    joint_names = info_d.get("features", {}).get("action", {}).get("names", [])
+    n_joints = np.stack(df["action"].values[:1]).shape[1]
+    if len(joint_names) < n_joints:
+        joint_names = [f"joint_{i}" for i in range(n_joints)]
+
+    episodes = []
+    for ep_idx in sorted(df["episode_index"].unique()):
+        ep = df[df["episode_index"] == ep_idx].sort_values("frame_index")
+        episodes.append(np.stack(ep["action"].values))
+
+    return episodes, joint_names
+
+
+def _resolve_dataset_path(repo_id: str, root: str = None) -> Path:
+    """Resolve a repo_id to a local dataset path."""
+    if root:
+        return Path(root).expanduser()
+    parts = repo_id.split("/")
+    if len(parts) == 2:
+        candidate = LEROBOT_CACHE / parts[0] / parts[1]
+        if candidate.exists():
+            return candidate.resolve()
+    return Path(repo_id).expanduser()
+
+
+def plot_actions(repo_id: str, root: str = None, save: str = None, alpha: float = 0.15,
+                 xlim: int = 0, joints: str = None):
+    """Plot all per-episode action trajectories overlaid, per joint.
+
+    Draws every episode as a separate line with given alpha so dense regions
+    are visible. Also overlays the global mean trajectory in bold.
+
+    Args:
+        repo_id: HF-style repo id or local path
+        root: optional explicit dataset root
+        save: path to save PNG (shows plot if None)
+        alpha: line opacity for individual episodes (default 0.15)
+        xlim: if > 0, zoom to first N timesteps
+        joints: comma-separated joint indices to plot (e.g. "0,1,2"). All if None.
+    """
+    import matplotlib.pyplot as plt
+
+    episodes, joint_names = _load_episodes(repo_id, root)
+    n_joints = episodes[0].shape[1]
+    print(f"  Loaded {len(episodes)} episodes, {n_joints} joints")
+
+    # Compute mean trajectory (pad shorter episodes with NaN, then nanmean)
+    max_len = max(ep.shape[0] for ep in episodes)
+    padded = np.full((len(episodes), max_len, n_joints), np.nan)
+    for i, ep in enumerate(episodes):
+        padded[i, :ep.shape[0], :] = ep
+    mean_traj = np.nanmean(padded, axis=0)  # (max_len, n_joints)
+
+    # Print mean action summary
+    print(f"\n  Mean action (averaged over time and episodes):")
+    global_mean = np.nanmean(padded, axis=(0, 1))
+    for j in range(n_joints):
+        print(f"    {joint_names[j]:25s}  mean={global_mean[j]:8.3f}")
+
+    # Select joints to plot
+    if joints:
+        if isinstance(joints, str):
+            joint_idxs = [int(j) for j in joints.split(",")]
+        else:
+            joint_idxs = [int(j) for j in joints]
+    else:
+        joint_idxs = list(range(n_joints))
+
+    n_plots = len(joint_idxs)
+    ncols = min(n_plots, 3)
+    nrows = math.ceil(n_plots / ncols)
+
+    colors = ["#D32F2F", "#1976D2", "#388E3C", "#F57C00", "#7B1FA2", "#00796B"]
+    fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 5 * nrows), squeeze=False)
+    zoom_label = f", first {xlim} steps" if xlim > 0 else ""
+    fig.suptitle(f"Action Trajectories — {repo_id} ({len(episodes)} eps{zoom_label})", fontsize=14, fontweight="bold")
+
+    for plot_i, j in enumerate(joint_idxs):
+        ax = axes[plot_i // ncols][plot_i % ncols]
+        color = colors[j % len(colors)]
+        for ep in episodes:
+            data = ep[:xlim, j] if xlim > 0 else ep[:, j]
+            ax.plot(data, color=color, alpha=alpha, linewidth=0.6)
+        # Mean trajectory
+        mean_data = mean_traj[:xlim, j] if xlim > 0 else mean_traj[:, j]
+        ax.plot(mean_data, color="black", linewidth=2.0, label="mean", zorder=10)
+        ax.set_title(joint_names[j], fontsize=12, fontweight="bold")
+        ax.set_xlabel("timestep")
+        ax.set_ylabel("value (degrees)")
+        ax.legend(fontsize=9)
+        ax.grid(True, alpha=0.3)
+
+    # Hide unused axes
+    for plot_i in range(n_plots, nrows * ncols):
+        axes[plot_i // ncols][plot_i % ncols].set_visible(False)
+
+    plt.tight_layout()
+    if save:
+        plt.savefig(save, dpi=150, bbox_inches="tight")
+        print(f"  Saved to {save}")
+    else:
+        plt.show()
+
+    return mean_traj, joint_names
+
+
 # ═══════════════════════════════════════════════════════════════════
 # Fire CLI
 # ═══════════════════════════════════════════════════════════════════
@@ -420,4 +543,5 @@ if __name__ == "__main__":
         "cameras":         cameras,
         "report":          lambda path: print(report(path)),
         "compare_actions": compare_actions,
+        "plot_actions":    plot_actions,
     })

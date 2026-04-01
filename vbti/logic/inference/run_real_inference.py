@@ -46,16 +46,30 @@ CAMERA_PRESETS = {
         "top":     {"type": "realsense", "serial": "123622270073"},
         "left":    {"type": "realsense", "serial": "123622270367"},
         "right":   {"type": "realsense", "serial": "126122270644"},
-        "gripper": {"type": "opencv",    "path": "/dev/video11"},
+        "gripper": {"type": "opencv",    "path": "/dev/cam_gripper"},
     },
     "opencv": {
-        "top":     {"type": "opencv", "path": "/dev/video3"},
-        "left":    {"type": "opencv", "path": "/dev/video21"},
-        "right":   {"type": "opencv", "path": "/dev/video15"},
-        "gripper": {"type": "opencv", "path": "/dev/video11"},
+        "top":     {"type": "opencv", "path": "/dev/cam_top_raw"},
+        "left":    {"type": "opencv", "path": "/dev/cam_left_raw"},
+        "right":   {"type": "opencv", "path": "/dev/cam_right_raw"},
+        "gripper": {"type": "opencv", "path": "/dev/cam_gripper_raw"},
+    },
+    "opencv-3cam": {
+        "left":    {"type": "opencv", "path": "/dev/cam_left"},
+        "right":   {"type": "opencv", "path": "/dev/cam_right"},
+        "gripper": {"type": "opencv", "path": "/dev/cam_gripper"},
     },
 }
 DEFAULT_CAMERAS = CAMERA_PRESETS["realsense"]
+
+
+def _refresh_udev():
+    """Refresh udev symlinks so /dev/cam_* point to current devices."""
+    import subprocess
+    subprocess.run("echo may | sudo -S udevadm trigger --subsystem-match=video4linux",
+                   shell=True, capture_output=True, timeout=5)
+    import time; time.sleep(0.5)
+    print("cam symlinks refresehd")
 
 
 def _init_cameras(camera_config: dict = None, width: int = 640, height: int = 480, fps: int = 30):
@@ -64,6 +78,8 @@ def _init_cameras(camera_config: dict = None, width: int = 640, height: int = 48
 
     if camera_config is None:
         camera_config = DEFAULT_CAMERAS
+
+    # _refresh_udev()
 
     cameras = {}
     for name, cfg in camera_config.items():
@@ -87,11 +103,15 @@ def _init_cameras(camera_config: dict = None, width: int = 640, height: int = 48
 
         elif cam_type == "opencv":
             path = cfg.get("path", cfg.get("index", 0))
-            cap = cv2.VideoCapture(path)
+            cap = cv2.VideoCapture(path, cv2.CAP_V4L2)
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             cap.set(cv2.CAP_PROP_FPS, fps)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             if cap.isOpened():
+                # Warmup — discard stale buffered frames
+                for _ in range(5):
+                    cap.read()
                 cameras[name] = {"type": "opencv", "cap": cap, "last_frame": None}
                 print(f"  {name}: OpenCV path={path} OK")
             else:
@@ -220,8 +240,12 @@ def _stop_cameras(cameras: dict):
 
 def _init_robot(port: str, robot_id: str = "frodeo-test", max_relative_target: float = 10.0):
     """Connect to SO-101 follower arm."""
-    from lerobot.robots.so101_follower.config_so101_follower import SO101FollowerConfig
-    from lerobot.robots.so101_follower.so101_follower import SO101Follower
+    try:
+        from lerobot.robots.so_follower.config_so_follower import SO101FollowerConfig
+        from lerobot.robots.so_follower.so_follower import SO101Follower
+    except ImportError:
+        from lerobot.robots.so101_follower.config_so101_follower import SO101FollowerConfig
+        from lerobot.robots.so101_follower.so101_follower import SO101Follower
 
     config = SO101FollowerConfig(
         port=port,
@@ -305,6 +329,7 @@ def run(
     task: str = "pick up the object",
     robot_id: str = "frodeo-test",
     max_relative_target: float = 10.0,
+    move_to_start: bool = True,
     action_horizon: int = 10,
     fps: int = 30,
     max_steps: int = 500,
@@ -341,6 +366,13 @@ def run(
         dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     else:
         dev = torch.device(device)
+
+    print(f"Connecting to robot on {port}...")
+    robot = _init_robot(port, robot_id=robot_id)
+
+    if robot and move_to_start:
+        move_to_rest(robot, fps=fps)
+    input("\nPress Enter to start inference...")
 
     # ── Load policy ───────────────────────────────────────────
     policy, preprocessor, postprocessor = _load_policy(checkpoint, dev)
@@ -432,6 +464,11 @@ def run(
         print("\n\nStopped by user.")
     finally:
         print("Cleaning up...")
+        # Return to rest before disconnecting to prevent arm from falling
+        try:
+            move_to_rest(robot, fps=fps)
+        except Exception:
+            pass
         _stop_cameras(cameras)
         if show_cameras:
             cv2.destroyAllWindows()
@@ -445,138 +482,212 @@ def run(
     print(f"Done — {step} steps, {frame_drops} frame drops.")
 
 
+def _ckpt_label(ckpt_path: Path) -> str:
+    """Derive a readable checkpoint label from path.
+
+    Handles both "step_006000" and "pretrained_model" (lerobot layout).
+    """
+    label = ckpt_path.name
+    if label == "pretrained_model" and ckpt_path.parent.name.isdigit():
+        label = f"step_{int(ckpt_path.parent.name):06d}"
+    return label
+
+
+def _resolve_checkpoint_list(checkpoint: str, experiment: str, version: str) -> list[Path]:
+    """Resolve checkpoint specifier to paths. Supports comma-separated lists.
+
+    Examples:
+        "all"                          → all step checkpoints
+        "best"                         → single named checkpoint
+        "step_002000,step_004000,best" → specific list
+        "2000,4000"                    → shorthand steps
+    """
+    from vbti.logic.train.experiment_utils import resolve_checkpoint
+
+    # Comma-separated → resolve each independently
+    if "," in checkpoint:
+        paths = []
+        for spec in checkpoint.split(","):
+            spec = spec.strip()
+            if spec:
+                paths.extend(resolve_checkpoint(spec, experiment, version))
+        return paths
+    return resolve_checkpoint(checkpoint, experiment, version)
+
+
 def eval(
     checkpoint: str,
     task: str = "pick up the duck and place it in the cup",
-    port: str = "/dev/ttyACM0",
+    port: str = "/dev/ttyACM1",
+    robot_id="frodeo-test",
     cameras: str = "realsense",
     experiment: str = None,
     version: str = None,
+    n_tries: int = 1,
     action_horizon: int = 10,
     max_steps: int = 500,
     fps: int = 30,
     move_to_start: bool = True,
     print_actions_every: int = 0,
 ):
-    """Run evaluation on one or all checkpoints of the active experiment version.
+    """Run evaluation on checkpoints with multiple tries each.
 
-    Automatically resolves checkpoint paths and saves videos to eval/videos/.
-    Between checkpoints, moves robot back to resting position.
+    Resolves checkpoint paths, runs each n_tries times, saves videos,
+    and prints a summary table at the end for manual scoring.
 
     Args:
-        checkpoint: checkpoint name ("step_002000", "best", "all")
+        checkpoint: checkpoint specifier — single name ("best", "step_002000"),
+                    comma-separated list ("step_002000,step_004000,best"),
+                    or "all" for every step checkpoint
         task: language instruction for the policy
         port: serial port for robot
         cameras: camera preset ("realsense" or "opencv")
         experiment: experiment name (uses active if not given)
         version: version id (uses active if not given)
+        n_tries: number of evaluation runs per checkpoint
         action_horizon: how many actions to execute per inference call
         max_steps: steps per eval run
         fps: control rate
-        move_to_start: move robot to rest position before each checkpoint
+        move_to_start: move robot to rest position before each run
         print_actions_every: print action values every N steps (0 = disabled)
     """
     import sys
     sys.path.insert(0, str(Path(__file__).parents[3]))
-    from vbti.logic.train.experiment_utils import resolve_checkpoint, _resolve_experiment, _resolve_version, _version_dir
+    from vbti.logic.train.experiment_utils import _resolve_experiment, _resolve_version, _version_dir
 
     cam_config = CAMERA_PRESETS.get(cameras, CAMERA_PRESETS["realsense"])
 
     experiment = _resolve_experiment(experiment)
     version = _resolve_version(experiment, version)
-    checkpoint_paths = resolve_checkpoint(checkpoint, experiment, version)
+    checkpoint_paths = _resolve_checkpoint_list(checkpoint, experiment, version)
 
     eval_videos_dir = _version_dir(experiment, version) / "eval" / "videos"
     eval_videos_dir.mkdir(parents=True, exist_ok=True)
 
+    total_runs = len(checkpoint_paths) * n_tries
     print(f"\nEval: {experiment}/{version}")
     print(f"Cameras: {cameras}")
-    print(f"Checkpoints to run: {len(checkpoint_paths)}")
+    print(f"Checkpoints: {len(checkpoint_paths)}, tries each: {n_tries}, total runs: {total_runs}")
     for p in checkpoint_paths:
-        print(f"  {p.name}")
+        print(f"  {_ckpt_label(p)}")
     print()
 
-    # Init hardware once, reuse across checkpoints
+    # Init hardware once, reuse across all runs
     cam_devices = _init_cameras(cam_config, fps=fps)
     camera_names = list(cam_config.keys())
 
     print(f"Connecting to robot on {port}...")
-    robot = _init_robot(port, robot_id="frodeo-test")
+    robot = _init_robot(port, robot_id=robot_id)
 
     if torch.cuda.is_available():
         dev = torch.device("cuda")
     else:
         dev = torch.device("cpu")
 
+    # Track results for summary table
+    eval_results = []  # list of {"checkpoint", "try", "steps", "video", "status"}
+    run_num = 0
+
     try:
         for ckpt_path in checkpoint_paths:
+            label = _ckpt_label(ckpt_path)
+
+            # Load policy once per checkpoint, reuse across tries
             print(f"\n{'='*60}")
-            print(f"Checkpoint: {ckpt_path.name}")
+            print(f"Loading checkpoint: {label}")
             print(f"{'='*60}")
-
-            # Move to rest before each run
-            if robot and move_to_start:
-                move_to_rest(robot, fps=fps)
-            input("\nPress Enter to start inference...")
-
-            record_path = eval_videos_dir / f"eval_{version}_{ckpt_path.name}_ah{action_horizon}_{cameras}"
-
-            # Load policy for this checkpoint
             policy, preprocessor, postprocessor = _load_policy(str(ckpt_path), dev)
 
-            # Run inference loop inline (reusing open cameras + robot)
-            recorded_frames = []
-            step = 0
-            last_action = None
-            frame_drops = 0
-            step_dt = 1.0 / fps
+            for try_idx in range(1, n_tries + 1):
+                run_num += 1
+                try_label = f"try{try_idx}" if n_tries > 1 else ""
 
-            try:
-                while step < max_steps:
-                    state_deg = _get_state(robot)
-                    images = _capture_frames(cam_devices)
-                    if len(images) < len(camera_names):
-                        frame_drops += 1
+                print(f"\n{'─'*60}")
+                print(f"[{run_num}/{total_runs}] {label}" + (f" — try {try_idx}/{n_tries}" if n_tries > 1 else ""))
+                print(f"{'─'*60}")
 
-                    key = _show_camera_grid(images, camera_names, step, last_action)
-                    if key == ord("q"):
-                        print("Quit via camera window.")
-                        break
+                # Move to rest before each run
+                if robot and move_to_start:
+                    move_to_rest(robot, fps=fps)
+                input("\nPress Enter to start inference...")
 
-                    grid = _build_grid_frame(images, camera_names, step, last_action)
-                    recorded_frames.append(grid)
+                # Video filename includes try number when n_tries > 1
+                parts = [f"eval_{version}_{label}_ah{action_horizon}_{cameras}"]
+                if try_label:
+                    parts.append(try_label)
+                record_path = eval_videos_dir / ("_".join(parts) + ".mp4")
 
-                    with torch.inference_mode():
-                        obs = _build_observation(state_deg, images, camera_names,
-                                                 task, preprocessor, dev)
-                        actions_normalized = policy.select_action(obs)
-                        actions_deg = postprocessor({"action": actions_normalized})["action"]
-                        actions_deg = actions_deg.cpu().numpy()
+                # Run inference loop inline (reusing open cameras + robot)
+                recorded_frames = []
+                step = 0
+                last_action = None
+                frame_drops = 0
+                step_dt = 1.0 / fps
+                run_status = "completed"
 
-                    for i in range(min(action_horizon, len(actions_deg))):
-                        t_step = time.perf_counter()
-                        action = actions_deg[i]
-                        last_action = action
-                        action_dict = {f"{name}.pos": float(action[j])
-                                       for j, name in enumerate(JOINT_NAMES)}
-                        robot.send_action(action_dict)
-                        step += 1
+                try:
+                    while step < max_steps:
+                        state_deg = _get_state(robot)
+                        images = _capture_frames(cam_devices)
+                        if len(images) < len(camera_names):
+                            frame_drops += 1
 
-                        if print_actions_every > 0 and step % print_actions_every == 0:
-                            action_str = "  ".join(f"{n[:8]}={action[j]:7.1f}" for j, n in enumerate(JOINT_NAMES))
-                            print(f"  step {step}/{max_steps}  {action_str}")
-
-                        elapsed = time.perf_counter() - t_step
-                        if elapsed < step_dt:
-                            time.sleep(step_dt - elapsed)
-                        if step >= max_steps:
+                        key = _show_camera_grid(images, camera_names, step, last_action)
+                        if key == ord("q"):
+                            print("Quit via camera window.")
+                            run_status = "stopped"
                             break
 
-            except KeyboardInterrupt:
-                print(f"\nCheckpoint {ckpt_path.name} interrupted — saving video and continuing.")
+                        grid = _build_grid_frame(images, camera_names, step, last_action)
+                        recorded_frames.append(grid)
 
-            if recorded_frames:
-                _save_video_ffmpeg(recorded_frames, record_path.with_suffix(".mp4"), fps)
+                        with torch.inference_mode():
+                            obs = _build_observation(state_deg, images, camera_names,
+                                                     task, preprocessor, dev)
+                            actions_normalized = policy.select_action(obs)
+                            actions_deg = postprocessor({"action": actions_normalized})["action"]
+                            actions_deg = actions_deg.cpu().numpy()
+
+                        for i in range(min(action_horizon, len(actions_deg))):
+                            t_step = time.perf_counter()
+                            action = actions_deg[i]
+                            last_action = action
+                            action_dict = {f"{name}.pos": float(action[j])
+                                           for j, name in enumerate(JOINT_NAMES)}
+                            robot.send_action(action_dict)
+                            step += 1
+
+                            if print_actions_every > 0 and step % print_actions_every == 0:
+                                action_str = "  ".join(f"{n[:8]}={action[j]:7.1f}" for j, n in enumerate(JOINT_NAMES))
+                                print(f"  step {step}/{max_steps}  {action_str}")
+
+                            elapsed = time.perf_counter() - t_step
+                            if elapsed < step_dt:
+                                time.sleep(step_dt - elapsed)
+                            if step >= max_steps:
+                                break
+
+                except KeyboardInterrupt:
+                    print(f"\nRun interrupted — saving video and continuing.")
+                    run_status = "interrupted"
+
+                # Always return to rest after each run to prevent arm from falling
+                print("Returning to rest position...")
+                try:
+                    move_to_rest(robot, fps=fps)
+                except Exception as e:
+                    print(f"[WARN] Failed to return to rest: {e}")
+
+                if recorded_frames:
+                    _save_video_ffmpeg(recorded_frames, record_path, fps)
+
+                eval_results.append({
+                    "checkpoint": label,
+                    "try": try_idx,
+                    "steps": step,
+                    "status": run_status,
+                    "video": record_path.name,
+                })
 
             # Clean up policy GPU memory before next checkpoint
             del policy, preprocessor, postprocessor
@@ -584,12 +695,26 @@ def eval(
                 torch.cuda.empty_cache()
 
     finally:
+        # Return to rest before disconnecting to prevent arm from falling
+        print("Returning to rest before shutdown...")
+        try:
+            move_to_rest(robot, fps=fps)
+        except Exception:
+            pass
         _stop_cameras(cam_devices)
         cv2.destroyAllWindows()
         robot.disconnect()
         print("Robot disconnected.")
 
-    print(f"\nEval complete. Videos saved to: {eval_videos_dir}")
+    # Print summary table
+    print(f"\n{'='*60}")
+    print(f"EVAL SUMMARY — {experiment}/{version}")
+    print(f"{'='*60}")
+    print(f"{'Checkpoint':<20} {'Try':>4} {'Steps':>6} {'Status':<12} Video")
+    print(f"{'─'*20} {'─'*4} {'─'*6} {'─'*12} {'─'*30}")
+    for r in eval_results:
+        print(f"{r['checkpoint']:<20} {r['try']:>4} {r['steps']:>6} {r['status']:<12} {r['video']}")
+    print(f"\nVideos: {eval_videos_dir}")
 
 
 def preview(camera_config: dict = None, width: int = 640, height: int = 480, fps: int = 30):
