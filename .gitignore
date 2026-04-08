@@ -99,3 +99,11 @@ robots/roarm-m3-assets/
 # Old demonstration data
 old/diffusion/data/robot_demonstrations/
 /datasets/
+
+# Research data (keep code, ignore heavy outputs)
+vbti/research/**/cached_frames/
+vbti/research/**/images/
+vbti/research/**/results/
+
+# Models directory
+models/

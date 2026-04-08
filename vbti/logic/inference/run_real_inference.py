@@ -215,7 +215,8 @@ def _save_video_ffmpeg(frames: list[np.ndarray], output_path: Path, fps: int):
         ["ffmpeg", "-y", "-f", "rawvideo", "-vcodec", "rawvideo",
          "-s", f"{w}x{h}", "-pix_fmt", "bgr24", "-r", str(fps),
          "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p",
-         "-preset", "fast", "-crf", "23", str(output_path)],
+         "-preset", "fast", "-crf", "23",
+         "-movflags", "+faststart", str(output_path)],
         stdin=subprocess.PIPE, stderr=subprocess.PIPE,
     )
     for frame in frames:
