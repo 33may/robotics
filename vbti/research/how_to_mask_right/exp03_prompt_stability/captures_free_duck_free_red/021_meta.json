@@ -1,0 +1,14 @@
+{
+  "index": 21,
+  "timestamp": "2026-04-08T13:00:21.263588",
+  "cameras": [
+    "top",
+    "left",
+    "right",
+    "gripper"
+  ],
+  "resolution": [
+    640,
+    480
+  ]
+}
