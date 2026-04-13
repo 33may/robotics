@@ -15,10 +15,7 @@ Usage:
 import re
 from pathlib import Path
 
-import h5py
 import numpy as np
-from lerobot.datasets.lerobot_dataset import LeRobotDataset
-from tqdm import tqdm
 
 
 # ── Joint limit tables ──────────────────────────────────────────
@@ -170,6 +167,7 @@ def build_features(camera_map: dict[str, str], fps: float = 30.0) -> dict:
 
 def discover_cameras(hdf5_path: str | Path) -> list[str]:
     """Auto-discover RGB camera keys from the first valid episode."""
+    import h5py
     with h5py.File(hdf5_path, "r") as f:
         for ep_name in f["data"].keys():
             ep = f["data"][ep_name]
@@ -218,6 +216,10 @@ def convert(
     Returns:
         Path to the created dataset.
     """
+    import h5py
+    from lerobot.datasets.lerobot_dataset import LeRobotDataset
+    from tqdm import tqdm
+
     hdf5_path = Path(hdf5_path)
     features = build_features(camera_map, fps=fps)
 
@@ -292,6 +294,99 @@ def convert(
         print(f"  Pushed to hub: {repo_id}")
 
     return dataset.root
+
+
+def to_delta(
+    source: str,
+    output: str,
+    push_to_hub: bool = False,
+):
+    """Convert an absolute-action LeRobot dataset to step-wise delta actions.
+
+    Transform: delta[t][0:5] = action[t][0:5] - state[t][0:5]
+               delta[t][5]   = action[t][5]  (gripper stays absolute)
+
+    Creates a full standalone copy — videos are copied, not symlinked.
+
+    Args:
+        source: path to source LeRobot dataset (absolute actions)
+        output: path for the new delta dataset
+        push_to_hub: push to HuggingFace Hub after conversion
+
+    Usage:
+        python vbti/logic/dataset/convert_utils.py to_delta \
+            datasets/so101_v1_mix/sim/duck_cup_130eps \
+            datasets/so101_v1_mix/sim/duck_cup_130eps_delta
+    """
+    import json
+    import shutil
+
+    import pandas as pd
+
+    source = Path(source)
+    output = Path(output)
+
+    if not (source / "meta" / "info.json").exists():
+        print(f"ERROR: {source} is not a valid LeRobot dataset")
+        return
+
+    if output.exists():
+        print(f"ERROR: {output} already exists. Remove it first.")
+        return
+
+    # Copy entire dataset (videos, meta, parquet — everything)
+    print(f"Copying {source} → {output} ...")
+    shutil.copytree(source, output)
+
+    # Transform parquet files: action = action - state (joints 0-4 only)
+    data_dir = output / "data"
+    all_actions = []  # collect for stats recomputation
+
+    for pq_path in sorted(data_dir.rglob("*.parquet")):
+        df = pd.read_parquet(pq_path)
+
+        actions = np.stack(df["action"].values)
+        states = np.stack(df["observation.state"].values)
+
+        # Step-wise delta for body joints (0-4), gripper (5) stays absolute
+        delta = actions.copy()
+        delta[:, :GRIPPER_IDX] = actions[:, :GRIPPER_IDX] - states[:, :GRIPPER_IDX]
+
+        all_actions.append(delta)
+
+        # Write back
+        df["action"] = list(delta.astype(np.float32))
+        df.to_parquet(pq_path)
+
+    # Recompute action stats
+    all_actions = np.concatenate(all_actions)
+    stats_path = output / "meta" / "stats.json"
+    with open(stats_path) as f:
+        stats = json.load(f)
+
+    stats["action"]["mean"] = all_actions.mean(axis=0).tolist()
+    stats["action"]["std"] = all_actions.std(axis=0).tolist()
+    stats["action"]["min"] = all_actions.min(axis=0).tolist()
+    stats["action"]["max"] = all_actions.max(axis=0).tolist()
+
+    with open(stats_path, "w") as f:
+        json.dump(stats, f, indent=2)
+
+    # Print summary
+    print(f"\nDelta conversion complete: {output}")
+    print(f"  Frames: {len(all_actions)}")
+    print(f"  Delta action stats (joints 0-4):")
+    for i, name in enumerate(JOINT_NAMES[:GRIPPER_IDX]):
+        print(f"    {name:20s}  mean={all_actions[:, i].mean():7.3f}  std={all_actions[:, i].std():7.3f}")
+    print(f"  Gripper stats (absolute):")
+    i = GRIPPER_IDX
+    print(f"    {JOINT_NAMES[i]:20s}  mean={all_actions[:, i].mean():7.3f}  std={all_actions[:, i].std():7.3f}")
+
+    if push_to_hub:
+        from lerobot.datasets.lerobot_dataset import LeRobotDataset
+        ds = LeRobotDataset(output)
+        ds.push_to_hub()
+        print(f"  Pushed to hub.")
 
 
 def roundtrip_test():
@@ -398,6 +493,7 @@ if __name__ == "__main__":
     fire.core.Display = lambda lines, out: print(*lines, file=out)
     fire.Fire({
         "convert":        convert,
+        "to_delta":       to_delta,
         "discover":       discover_cameras,
         "verify":         verify,
         "roundtrip_test": roundtrip_test,
