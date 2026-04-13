@@ -38,6 +38,17 @@ JOINT_NAMES = [
     "wrist_flex", "wrist_roll", "gripper",
 ]
 
+GRIPPER_IDX = 5
+
+REAL_LIMITS_DEG = [
+    (-114.5, 125.5),   # shoulder_pan
+    (-109.9, 101.0),   # shoulder_lift
+    (-106.0,  89.5),   # elbow_flex
+    (-103.7, 103.8),   # wrist_flex
+    (-171.3, 165.2),   # wrist_roll
+    (  -2.3, 110.4),   # gripper
+]
+
 
 # ── Camera setup (shared module) ─────────────────────────────────────────────
 
@@ -186,6 +197,7 @@ def run(
     record: str = "",
     device: str = "auto",
     print_actions_every: int = 0,
+    delta_actions: bool = False,
 ):
     """Run SmolVLA inference on real robot with live camera display.
 
@@ -239,6 +251,8 @@ def run(
     print(f"\nTask: '{task}'")
     print(f"Action horizon: {action_horizon}, FPS: {fps}, Max steps: {max_steps}")
     print(f"Safety clamp: {max_relative_target} deg/step")
+    if delta_actions:
+        print(f"  Delta actions: ENABLED (step-wise delta, joints reconstructed from state + delta)")
     print("=" * 60)
     print("Press 'q' in camera window or Ctrl+C to stop\n")
 
@@ -288,6 +302,18 @@ def run(
             for i in range(min(action_horizon, len(actions_deg))):
                 t_step = time.perf_counter()
                 action = actions_deg[i]
+
+                if delta_actions:
+                    # Reconstruct absolute target from delta prediction + current state
+                    state_deg = np.array([robot.get_state()[f"{n}.pos"] for n in JOINT_NAMES])
+                    target = state_deg + action
+                    target[GRIPPER_IDX] = action[GRIPPER_IDX]  # gripper is absolute
+                    # Safety clamp to joint limits
+                    for j in range(len(REAL_LIMITS_DEG)):
+                        lo, hi = REAL_LIMITS_DEG[j]
+                        target[j] = np.clip(target[j], lo, hi)
+                    action = target
+
                 last_action = action
 
                 action_dict = {f"{name}.pos": float(action[j])
