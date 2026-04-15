@@ -370,6 +370,9 @@ def _phase_verify(stdscr, bus: FeetechMotorsBus, state: JointCalibState) -> None
                     stdscr.nodelay(False)
                     deg_val = _prompt_float(stdscr, "Go to degrees: ", row + 2)
                     if deg_val is not None:
+                        assert state.homing_offset is not None
+                        assert state.range_min is not None
+                        assert state.range_max is not None
                         if bus.calibration is None:
                             bus.calibration = {}
                         bus.calibration[state.name] = MotorCalibration(
