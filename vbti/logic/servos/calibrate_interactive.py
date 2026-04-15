@@ -405,6 +405,7 @@ def _phase_verify(
     """Verify calibration with live readout, tweak offset, and test torque."""
     stdscr.nodelay(True)
     torque_on = False
+    torque_target: float | None = None  # last commanded degree value
 
     try:
         while True:
@@ -418,7 +419,8 @@ def _phase_verify(
             stdscr.addstr(4, 2, f"Raw encoder:   {raw:5d}")
             deg_str = f"{deg:.2f}°" if deg is not None else "N/A"
             stdscr.addstr(5, 2, f"Degrees:       {deg_str}")
-            stdscr.addstr(6, 2, f"Torque:        {'ON' if torque_on else 'off'}")
+            torque_info = f"ON → {torque_target:.1f}°" if torque_on and torque_target is not None else ("ON" if torque_on else "off")
+            stdscr.addstr(6, 2, f"Torque:        {torque_info}")
 
             # Residuals table
             row = 8
@@ -439,13 +441,20 @@ def _phase_verify(
             if key in (ord("+"), ord("=")):
                 if state.homing_offset is not None:
                     state.homing_offset += 1
+                    if torque_on and torque_target is not None:
+                        _set_joint_calib_on_bus(bus, state)
+                        bus.write("Goal_Position", state.name, torque_target)
             elif key in (ord("-"), ord("_")):
                 if state.homing_offset is not None:
                     state.homing_offset -= 1
+                    if torque_on and torque_target is not None:
+                        _set_joint_calib_on_bus(bus, state)
+                        bus.write("Goal_Position", state.name, torque_target)
             elif key == ord("t"):
                 if torque_on:
                     bus.disable_torque([state.name])
                     torque_on = False
+                    torque_target = None
                 else:
                     stdscr.nodelay(False)
                     deg_val = _prompt_float(stdscr, "Go to degrees: ", row + 2)
@@ -454,6 +463,7 @@ def _phase_verify(
                         bus.enable_torque([state.name])
                         bus.write("Goal_Position", state.name, deg_val)
                         torque_on = True
+                        torque_target = deg_val
                     stdscr.nodelay(True)
             elif key == ord("g"):
                 if torque_on:
