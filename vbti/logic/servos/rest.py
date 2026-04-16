@@ -56,21 +56,25 @@ def move_to_rest(robot, speed_deg_per_step: float = 3.0, fps: int = 30):
     print(f"  At rest: {np.round(target, 1)}")
 
 
-def rest(port: str = "/dev/ttyACM0", robot_id: str = "frodeo-test",
+def rest(port: str = "/dev/ttyACM0", robot_id: str | None = None,
          speed: float = 3.0, fps: int = 30):
     """Connect to robot and move to resting position.
 
     Args:
         port: serial port
-        robot_id: robot identifier
+        robot_id: robot identifier (default: active profile from registry)
         speed: max degrees per joint per step
         fps: control rate
     """
-    from lerobot.robots.so101_follower.config_so101_follower import SO101FollowerConfig
-    from lerobot.robots.so101_follower.so101_follower import SO101Follower
+    from lerobot.robots.so_follower.config_so_follower import SOFollowerRobotConfig
+    from lerobot.robots.so_follower.so_follower import SOFollower
+    from vbti.logic.servos.profiles import get_active_profile
 
-    config = SO101FollowerConfig(port=port, id=robot_id)
-    robot = SO101Follower(config)
+    if robot_id is None:
+        robot_id = get_active_profile()
+
+    config = SOFollowerRobotConfig(port=port, id=robot_id)
+    robot = SOFollower(config)
     robot.connect()
 
     try:

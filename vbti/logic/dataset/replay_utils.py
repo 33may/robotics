@@ -9,10 +9,11 @@ Usage:
     python vbti/logic/dataset/replay_utils.py show datasets/so101_v1_mix/sim/duck_cup_130eps 33
 """
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
+
 
 
 JOINT_NAMES = [
@@ -32,7 +33,8 @@ def _load_episode(dataset_path: str, episode_idx: int) -> tuple[np.ndarray, int]
         (actions array [n_frames, 6], fps)
     """
     import json
-    ds = Path(dataset_path)
+    from vbti.logic.dataset import resolve_dataset_path
+    ds = resolve_dataset_path(dataset_path)
     info = json.load(open(ds / "meta" / "info.json"))
     fps = info["fps"]
 
@@ -85,15 +87,34 @@ def _go_to_start(robot, target: dict[str, float], steps: int = 100, duration: fl
         time.sleep(dt)
 
 
+def _go_to_pos(robot, target: dict[str, float], steps: int = 100, duration: float = 3.0):
+    """Slowly interpolate from current position to target over `duration` seconds.
+
+    Reads current position, linearly interpolates in `steps` increments,
+    sends each intermediate position to the robot.
+    """
+    current = robot.get_observation()
+    current_pos = {name: current[f"{name}.pos"] for name in JOINT_NAMES}
+    dt = duration / steps
+
+    for step in range(1, steps + 1):
+        t = step / steps
+        interp = {}
+        for name in JOINT_NAMES:
+            interp[f"{name}.pos"] = current_pos[name] + t * (target[f"{name}.pos"] - current_pos[name])
+        robot.send_action(interp)
+        time.sleep(dt)
+
 def replay(
     dataset_path: str,
     episode_idx: int = 0,
     port: str = "/dev/ttyACM0",
-    robot_id: str = "frodeo-test",
+    robot_id: str | None = None,
     max_relative_target: float = 10.0,
     speed: float = 1.0,
     dry_run: bool = False,
     go_to_duration: float = 3.0,
+    hold: bool = False,
 ):
     """Replay a dataset episode on the real robot.
 
@@ -128,15 +149,19 @@ def replay(
         return
 
     # Connect to robot
-    from lerobot.robots.so101_follower.config_so101_follower import SO101FollowerConfig
-    from lerobot.robots.so101_follower.so101_follower import SO101Follower
+    from lerobot.robots.so_follower.config_so_follower import SOFollowerRobotConfig
+    from lerobot.robots.so_follower.so_follower import SOFollower
+    from vbti.logic.servos.profiles import get_active_profile
 
-    config = SO101FollowerConfig(
+    if robot_id is None:
+        robot_id = get_active_profile()
+
+    config = SOFollowerRobotConfig(
         port=port,
         id=robot_id,
         max_relative_target=max_relative_target,
     )
-    robot = SO101Follower(config)
+    robot = SOFollower(config)
     robot.connect()
 
     try:
@@ -168,12 +193,88 @@ def replay(
 
         print(f"\nReplay complete ({n_frames} frames)")
 
+        if hold:
+            print("Holding last frame — press 'q' or Ctrl+C to return to rest...")
+            import select, sys
+            while True:
+                # Re-send last action to maintain position
+                robot.send_action(action_dicts[-1])
+                # Check for 'q' keypress (non-blocking)
+                if select.select([sys.stdin], [], [], 0.1)[0]:
+                    key = sys.stdin.read(1)
+                    if key == 'q':
+                        print("\nReleasing hold.")
+                        break
+
     except KeyboardInterrupt:
-        print("\n\nAborted! Disabling torque...")
+        print("\n\nAborted!")
     finally:
+        from vbti.logic.servos.rest import move_to_rest
+        move_to_rest(robot)
         robot.disconnect()
         print("Robot disconnected.")
 
+
+def goto(
+    port: str = "/dev/ttyACM0",
+    robot_id: str | None = None,
+    duration: float = 3.0,
+    shoulder_pan: float = 0.0,
+    shoulder_lift: float = -95.0,
+    elbow_flex: float = 95.0,
+    wrist_flex: float = 45.0,
+    wrist_roll: float = 0.0,
+    gripper: float = 0.0,
+    hold: bool = False,
+):
+    """Move robot to an arbitrary joint position.
+
+    Usage:
+        python replay_utils.py goto --wrist_roll=-70 --shoulder_pan=15
+        python replay_utils.py goto --shoulder_lift=-27 --elbow_flex=-31 --duration=5
+    """
+    from lerobot.robots.so_follower.config_so_follower import SOFollowerRobotConfig
+    from lerobot.robots.so_follower.so_follower import SOFollower
+    from vbti.logic.servos.profiles import get_active_profile
+
+    if robot_id is None:
+        robot_id = get_active_profile()
+
+    target_vals = [shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll, gripper]
+    target = {f"{name}.pos": val for name, val in zip(JOINT_NAMES, target_vals)}
+
+    print(f"Target position ({robot_id}):")
+    for name, val in zip(JOINT_NAMES, target_vals):
+        print(f"  {name:15s} {val:7.2f}")
+
+    config = SOFollowerRobotConfig(port=port, id=robot_id)
+    robot = SOFollower(config)
+    robot.connect()
+
+    try:
+        _go_to_start(robot, target, duration=duration)
+        print("Done.")
+        if hold:
+            print("Holding — press 'q' or Ctrl+C to release...")
+            import select, sys
+            while True:
+                robot.send_action(target)
+                if select.select([sys.stdin], [], [], 0.1)[0]:
+                    if sys.stdin.read(1) == 'q':
+                        print("\nReleasing.")
+                        break
+    except KeyboardInterrupt:
+        print("\nAborted!")
+    finally:
+        from vbti.logic.servos.rest import move_to_rest
+        move_to_rest(robot)
+        robot.disconnect()
+        print("Robot disconnected.")
+
+
+
+
+# At rest: [  0. -95.  95.  45.   0.   0.]
 
 if __name__ == "__main__":
     import fire
@@ -181,4 +282,5 @@ if __name__ == "__main__":
     fire.Fire({
         "replay": replay,
         "show":   show,
+        "goto":   goto,
     })

@@ -22,14 +22,30 @@ JOINT_NAMES = [
 ]
 
 LEROBOT_CALIB_DIR = (
-    Path.home() / ".cache/huggingface/lerobot/calibration/robots/so101_follower"
-)
-LEROBOT_CALIB_DIR_ALT = (
     Path.home() / ".cache/huggingface/lerobot/calibration/robots/so_follower"
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[3]  # vbti/logic/servos -> root
 REGISTRY_PATH = PROJECT_ROOT / "calibration" / "registry.json"
 PROFILES_BACKUP_DIR = PROJECT_ROOT / "calibration" / "profiles"
+
+
+def get_active_profile() -> str:
+    """Return the active (default) profile name from the registry."""
+    registry = _load_registry()
+    return registry.get("default", "frodeo-test")
+
+
+def activate(name: str) -> None:
+    """Set a profile as the active default."""
+    # Verify it exists
+    path = _calib_path(name)
+    if not path.exists():
+        print(f"Error: calibration file not found for '{name}'")
+        return
+    registry = _load_registry()
+    registry["default"] = name
+    _save_registry(registry)
+    print(f"Active profile: {name}")
 
 
 # ---------------------------------------------------------------------------
@@ -38,13 +54,7 @@ PROFILES_BACKUP_DIR = PROJECT_ROOT / "calibration" / "profiles"
 
 def _calib_path(name: str) -> Path:
     """Path to a calibration JSON in the LeRobot cache (checks both dirs)."""
-    primary = LEROBOT_CALIB_DIR / f"{name}.json"
-    if primary.exists():
-        return primary
-    alt = LEROBOT_CALIB_DIR_ALT / f"{name}.json"
-    if alt.exists():
-        return alt
-    return primary  # default to primary for new files
+    return LEROBOT_CALIB_DIR / f"{name}.json"
 
 
 def _load_registry() -> dict:
@@ -54,7 +64,7 @@ def _load_registry() -> dict:
 
     # Bootstrap: scan cache dirs for existing calibration files
     profiles = {}
-    for d in (LEROBOT_CALIB_DIR, LEROBOT_CALIB_DIR_ALT):
+    for d in (LEROBOT_CALIB_DIR,):
         if d.exists():
             for f in sorted(d.glob("*.json")):
                 if f.stem not in profiles:
@@ -100,8 +110,7 @@ def list_profiles() -> None:
     print("-" * 65)
     for name, info in profiles.items():
         marker = " *" if name == default else ""
-        path = _calib_path(name)
-        cached = f"yes ({path.parent.name})" if path.exists() else "no"
+        cached = "yes" if _calib_path(name).exists() else "no"
         desc = info.get("description", "")
         status = info.get("status", "?")
         print(f"{name + marker:<20} {status:<10} {cached:<8} {desc}")
@@ -211,7 +220,7 @@ def sync() -> None:
     registry = _load_registry()
     profiles = registry.setdefault("profiles", {})
     added = []
-    for d in (LEROBOT_CALIB_DIR, LEROBOT_CALIB_DIR_ALT):
+    for d in (LEROBOT_CALIB_DIR,):
         if d.exists():
             for f in sorted(d.glob("*.json")):
                 if f.stem not in profiles:
@@ -268,4 +277,5 @@ if __name__ == "__main__":
         "register": register,
         "sync": sync,
         "delete": delete,
+        "activate": activate,
     })

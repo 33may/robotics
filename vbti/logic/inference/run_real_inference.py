@@ -98,8 +98,12 @@ def _save_video_ffmpeg(frames: list[np.ndarray], output_path: Path, fps: int):
 
 # ── Robot setup ───────────────────────────────────────────────────────────────
 
-def _init_robot(port: str, robot_id: str = "frodeo-test", max_relative_target: float = 10.0):
+def _init_robot(port: str, robot_id: str | None = None, max_relative_target: float = 10.0):
     """Connect to SO-101 follower arm."""
+    from vbti.logic.servos.profiles import get_active_profile
+    if robot_id is None:
+        robot_id = get_active_profile()
+
     try:
         from lerobot.robots.so_follower.config_so_follower import SO101FollowerConfig
         from lerobot.robots.so_follower.so_follower import SO101Follower
@@ -187,7 +191,7 @@ def run(
     camera_config: dict = None,
     camera_names: list = None,
     task: str = "pick up the object",
-    robot_id: str = "frodeo-test",
+    robot_id: str | None = None,
     max_relative_target: float = 10.0,
     move_to_start: bool = True,
     action_horizon: int = 10,
@@ -305,7 +309,7 @@ def run(
 
                 if delta_actions:
                     # Reconstruct absolute target from delta prediction + current state
-                    state_deg = np.array([robot.get_state()[f"{n}.pos"] for n in JOINT_NAMES])
+                    state_deg = _get_state(robot)
                     target = state_deg + action
                     target[GRIPPER_IDX] = action[GRIPPER_IDX]  # gripper is absolute
                     # Safety clamp to joint limits
@@ -394,7 +398,7 @@ def eval(
     checkpoint: str,
     task: str = "pick up the duck and place it in the cup",
     port: str = "/dev/ttyACM1",
-    robot_id="frodeo-test",
+    robot_id=None,
     cameras: str = "realsense",
     experiment: str = None,
     version: str = None,
