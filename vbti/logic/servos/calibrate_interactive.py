@@ -1,8 +1,8 @@
 """Interactive servo calibration TUI.
 
-Starts from an existing calibration (e.g. frodeo-test), loads it to servos,
-commands each joint to 0°, then lets you nudge the offset until the physical
-position matches simulation zero. Only the homing_offset changes — range stays.
+Starts from an existing calibration (e.g. frodeo-test), uses SOFollower
+(same as goto) to command joints, then lets you nudge offsets until 0°
+matches simulation zero.
 """
 from __future__ import annotations
 
@@ -11,8 +11,9 @@ import curses
 import json
 import time
 
-from lerobot.motors import Motor, MotorCalibration, MotorNormMode
-from lerobot.motors.feetech import FeetechMotorsBus
+from lerobot.motors import MotorCalibration
+from lerobot.robots.so_follower.config_so_follower import SOFollowerRobotConfig
+from lerobot.robots.so_follower.so_follower import SOFollower
 
 from vbti.logic.servos.profiles import (
     JOINT_NAMES,
@@ -21,50 +22,56 @@ from vbti.logic.servos.profiles import (
     register,
 )
 
-MOTOR_IDS: dict[str, int] = {
-    "shoulder_pan": 1, "shoulder_lift": 2, "elbow_flex": 3,
-    "wrist_flex": 4, "wrist_roll": 5, "gripper": 6,
-}
-
 
 # ---------------------------------------------------------------------------
-# Bus helpers
+# Robot helpers (use SOFollower — same path as goto)
 # ---------------------------------------------------------------------------
 
-def _make_bus(port: str, calib: dict) -> FeetechMotorsBus:
-    """Create bus with calibration loaded."""
-    motors = {}
-    calibration = {}
-    for joint in JOINT_NAMES:
-        j = calib[joint]
-        norm = MotorNormMode.RANGE_0_100 if joint == "gripper" else MotorNormMode.DEGREES
-        motors[joint] = Motor(id=j["id"], model="sts3215", norm_mode=norm)
-        calibration[joint] = MotorCalibration(
-            id=j["id"], drive_mode=j["drive_mode"],
-            homing_offset=j["homing_offset"],
-            range_min=j["range_min"], range_max=j["range_max"],
-        )
-    bus = FeetechMotorsBus(port=port, motors=motors, calibration=calibration)
-    return bus
+def _connect_robot(port: str, robot_id: str) -> SOFollower:
+    """Connect SOFollower with given calibration profile."""
+    config = SOFollowerRobotConfig(port=port, id=robot_id)
+    robot = SOFollower(config)
+    robot.connect(calibrate=False)
+    # Write calibration from file to EEPROM
+    if robot.calibration:
+        robot.bus.write_calibration(robot.calibration)
+    robot.configure()
+    return robot
 
 
-def _load_calib_to_servos(bus: FeetechMotorsBus) -> None:
-    """Write current bus calibration to servo EEPROM."""
-    assert bus.calibration is not None
-    with bus.torque_disabled():
-        bus.write_calibration(bus.calibration)
-    time.sleep(0.1)
+def _goto_zeros(robot: SOFollower) -> None:
+    """Command all joints to 0° (gripper to 0%)."""
+    target = {}
+    for motor in robot.bus.motors:
+        target[f"{motor}.pos"] = 0.0
+    robot.send_action(target)
 
 
-def _apply_nudge(bus: FeetechMotorsBus, calib: dict, joint: str, step: int) -> None:
-    """Nudge offset by step, shift range to match, write to EEPROM, re-command 0°.
+def _goto_zeros_hold(robot: SOFollower, stdscr) -> None:
+    """Command all zeros and hold until keypress."""
+    _goto_zeros(robot)
+    stdscr.clear()
+    stdscr.addstr(0, 0, "── All Zeros ──", curses.A_BOLD)
+    row = 2
+    assert robot.calibration is not None
+    for j in JOINT_NAMES:
+        cal = robot.calibration[j]
+        stdscr.addstr(row, 2, f"{j:18s} → 0°  (offset={cal.homing_offset})")
+        row += 1
+    stdscr.addstr(row + 1, 2, "Press any key to release")
+    stdscr.refresh()
+    stdscr.getch()
+    robot.bus.disable_torque()
 
-    When offset changes by +step, reported space shifts by -step at the same
-    physical position. So range_min/max must also shift by -step to keep
-    pointing at the same physical limits.
+
+def _apply_nudge(robot: SOFollower, calib_dict: dict, joint: str, step: int) -> None:
+    """Nudge offset by step, shift range to match, update robot + EEPROM.
+
+    When offset changes by +step, reported space shifts by -step.
+    range_min/max shift by -step to keep same physical limits.
     """
-    assert bus.calibration is not None
-    c = calib[joint]
+    assert robot.calibration is not None
+    c = calib_dict[joint]
     new_offset = c["homing_offset"] + step
     new_min = c["range_min"] - step
     new_max = c["range_max"] - step
@@ -74,28 +81,23 @@ def _apply_nudge(bus: FeetechMotorsBus, calib: dict, joint: str, step: int) -> N
     c["range_min"] = new_min
     c["range_max"] = new_max
 
-    # Update bus calibration
-    old_cal = bus.calibration[joint]
-    bus.calibration[joint] = MotorCalibration(
+    # Update robot calibration
+    old_cal = robot.calibration[joint]
+    robot.calibration[joint] = MotorCalibration(
         id=old_cal.id, drive_mode=old_cal.drive_mode,
         homing_offset=new_offset, range_min=new_min, range_max=new_max,
     )
 
-    # Write to servo EEPROM
-    bus.disable_torque([joint])
-    bus.write("Homing_Offset", joint, new_offset)
-    bus.write("Min_Position_Limit", joint, new_min)
-    bus.write("Max_Position_Limit", joint, new_max)
+    # Write to servo EEPROM (needs torque off)
+    robot.bus.disable_torque([joint])
+    robot.bus.write("Homing_Offset", joint, new_offset)
+    robot.bus.write("Min_Position_Limit", joint, new_min)
+    robot.bus.write("Max_Position_Limit", joint, new_max)
     time.sleep(0.05)
-    bus.enable_torque([joint])
-    bus.write("Goal_Position", joint, 0.0)
 
-
-def _command_all_zeros(bus: FeetechMotorsBus) -> None:
-    """Command all joints to 0°."""
-    bus.enable_torque()
-    for joint in JOINT_NAMES:
-        bus.write("Goal_Position", joint, 0.0)
+    # Re-command 0°
+    robot.bus.enable_torque([joint])
+    robot.bus.write("Goal_Position", joint, 0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -121,32 +123,27 @@ def _draw_main(stdscr, calib: dict, name: str, selected: int, tuned: dict[str, b
     stdscr.refresh()
 
 
-def _tune_joint(stdscr, bus: FeetechMotorsBus, calib: dict, joint: str, name: str, tuned: dict[str, bool]) -> None:
+def _tune_joint(stdscr, robot: SOFollower, calib: dict, joint: str, name: str, tuned: dict[str, bool]) -> None:
     """Nudge offset until 0° matches sim zero."""
-    assert bus.calibration is not None
     # Command this joint to 0°
-    bus.enable_torque([joint])
-    bus.write("Goal_Position", joint, 0.0)
+    robot.bus.enable_torque([joint])
+    robot.bus.write("Goal_Position", joint, 0.0)
 
-    offset = calib[joint]["homing_offset"]
     stdscr.nodelay(True)
-
     try:
         while True:
-            raw = int(bus.sync_read("Present_Position", [joint], normalize=False)[joint])
+            raw = int(robot.bus.sync_read("Present_Position", [joint], normalize=False)[joint])
             c = calib[joint]
             mid = (c["range_min"] + c["range_max"]) / 2
-            deg = (raw - mid) * 360.0 / 4095
 
             stdscr.clear()
             stdscr.addstr(0, 0, f"── Zero Tuning: {joint} ──", curses.A_BOLD)
-            stdscr.addstr(2, 2, f"Homing offset:  {offset}")
+            stdscr.addstr(2, 2, f"Homing offset:  {c['homing_offset']}")
             stdscr.addstr(3, 2, f"Range:          [{c['range_min']}, {c['range_max']}]  mid={mid:.0f}")
             stdscr.addstr(4, 2, f"Raw encoder:    {raw}")
-            stdscr.addstr(5, 2, f"Current degrees:{deg:>8.1f}°")
-            stdscr.addstr(7, 2, "Motor holding at 0°. Nudge until it matches sim zero.")
-            stdscr.addstr(9, 2, "[+/-] ±1 tick    [>/<] ±10 ticks    []/[] ±100 ticks")
-            stdscr.addstr(10, 2, "[z] All zeros    [a] Accept    [b] Back")
+            stdscr.addstr(6, 2, "Motor holding at 0°. Nudge until it matches sim zero.")
+            stdscr.addstr(8, 2, "[+/-] ±1    [>/<] ±10    []/[] ±100")
+            stdscr.addstr(9, 2, "[z] All zeros    [a] Accept    [b] Back")
             stdscr.refresh()
 
             key = stdscr.getch()
@@ -165,28 +162,21 @@ def _tune_joint(stdscr, bus: FeetechMotorsBus, calib: dict, joint: str, name: st
                 step = -100
 
             if step != 0:
-                _apply_nudge(bus, calib, joint, step)
-                offset = calib[joint]["homing_offset"]
+                _apply_nudge(robot, calib, joint, step)
             elif key == ord("z"):
+                robot.bus.disable_torque([joint])
                 stdscr.nodelay(False)
-                _load_calib_to_servos(bus)
-                _command_all_zeros(bus)
-                stdscr.clear()
-                stdscr.addstr(0, 0, "── All Zeros ──", curses.A_BOLD)
-                row = 2
-                for j in JOINT_NAMES:
-                    stdscr.addstr(row, 2, f"{j:18s} → 0°  (offset={calib[j]['homing_offset']})")
-                    row += 1
-                stdscr.addstr(row + 1, 2, "Press any key to release")
-                stdscr.refresh()
-                stdscr.getch()
-                bus.disable_torque()
+                # Reload all calibration to servos and go to zeros
+                assert robot.calibration is not None
+                with robot.bus.torque_disabled():
+                    robot.bus.write_calibration(robot.calibration)
+                _goto_zeros_hold(robot, stdscr)
                 # Re-enable just this joint
-                bus.enable_torque([joint])
-                bus.write("Goal_Position", joint, 0.0)
+                robot.bus.enable_torque([joint])
+                robot.bus.write("Goal_Position", joint, 0.0)
                 stdscr.nodelay(True)
             elif key == ord("a"):
-                bus.disable_torque([joint])
+                robot.bus.disable_torque([joint])
                 tuned[joint] = True
                 # Autosave
                 out = _calib_path(name)
@@ -194,7 +184,7 @@ def _tune_joint(stdscr, bus: FeetechMotorsBus, calib: dict, joint: str, name: st
                 out.write_text(json.dumps(calib, indent=4) + "\n")
                 return
             elif key == ord("b"):
-                bus.disable_torque([joint])
+                robot.bus.disable_torque([joint])
                 return
 
             time.sleep(0.05)
@@ -211,19 +201,19 @@ def _tui_main(stdscr, port: str, name: str, base_profile: str) -> None:
         raise FileNotFoundError(f"Base profile not found: {base_path}")
     calib = json.loads(base_path.read_text())
 
-    # If target profile already exists, load it instead (resume)
+    # If target profile already exists, resume from it
     target_path = _calib_path(name)
     if target_path.exists() and name != base_profile:
         calib = json.loads(target_path.read_text())
 
-    # Track which joints have been tuned
+    # Save as target so SOFollower can load it
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(json.dumps(calib, indent=4) + "\n")
+
+    # Connect using SOFollower (same as goto)
+    robot = _connect_robot(port, name)
+
     tuned: dict[str, bool] = {j: False for j in JOINT_NAMES}
-
-    # Create bus with this calibration and load to servos
-    bus = _make_bus(port, calib)
-    bus.connect()
-    _load_calib_to_servos(bus)
-
     selected = 0
 
     try:
@@ -238,10 +228,9 @@ def _tui_main(stdscr, port: str, name: str, base_profile: str) -> None:
             elif ord("1") <= key <= ord("6"):
                 selected = key - ord("1")
             elif key in (curses.KEY_ENTER, ord("\n"), ord("\r")):
-                _tune_joint(stdscr, bus, calib, JOINT_NAMES[selected], name, tuned)
+                _tune_joint(stdscr, robot, calib, JOINT_NAMES[selected], name, tuned)
             elif key == ord("z"):
-                _load_calib_to_servos(bus)
-                _command_all_zeros(bus)
+                _goto_zeros(robot)
                 stdscr.clear()
                 stdscr.addstr(0, 0, "── All Zeros ──", curses.A_BOLD)
                 row = 2
@@ -251,24 +240,23 @@ def _tui_main(stdscr, port: str, name: str, base_profile: str) -> None:
                 stdscr.addstr(row + 1, 2, "Press any key to release")
                 stdscr.refresh()
                 stdscr.getch()
-                bus.disable_torque()
+                robot.bus.disable_torque()
             elif key == ord("s"):
                 out = _calib_path(name)
-                out.parent.mkdir(parents=True, exist_ok=True)
                 out.write_text(json.dumps(calib, indent=4) + "\n")
                 register(name)
                 curses.endwin()
                 print(f"Saved to {out}")
-                ans = input("Write to motors now? [y/n] ").strip().lower()
-                if ans == "y":
-                    from vbti.logic.servos.profiles import load as load_profile
-                    load_profile(name, port=port)
-                print("Done.")
+                # Write final calibration to EEPROM
+                assert robot.calibration is not None
+                with robot.bus.torque_disabled():
+                    robot.bus.write_calibration(robot.calibration)
+                print("Written to motors. Done.")
                 return
             elif key == ord("q"):
                 return
     finally:
-        bus.disconnect(disable_torque=True)
+        robot.disconnect()
 
 
 def main(port: str = "/dev/ttyACM1", name: str = "sim_accurate", base: str = "frodeo-test") -> None:
@@ -277,7 +265,7 @@ def main(port: str = "/dev/ttyACM1", name: str = "sim_accurate", base: str = "fr
     Args:
         port: Serial port for the robot arm.
         name: Profile name to create.
-        base: Existing profile to start from (default: frodeo-test).
+        base: Existing profile to start from.
     """
     try:
         curses.wrapper(lambda stdscr: _tui_main(stdscr, port, name, base))
