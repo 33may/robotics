@@ -191,6 +191,35 @@ def register(name: str, description: str = "", parent: str = "") -> None:
     print(f"Registered '{name}' (cached: {cached})")
 
 
+def delete(name: str) -> None:
+    """Delete a calibration profile from cache and registry."""
+    registry = _load_registry()
+    profiles = registry.get("profiles", {})
+
+    if name not in profiles and not _calib_path(name).exists():
+        print(f"Profile '{name}' not found.")
+        return
+
+    # Remove from registry
+    if name in profiles:
+        del profiles[name]
+        if registry.get("default") == name:
+            registry["default"] = next(iter(profiles), "")
+        _save_registry(registry)
+
+    # Remove from cache
+    cache_file = _calib_path(name)
+    if cache_file.exists():
+        cache_file.unlink()
+
+    # Remove from version-controlled backups
+    backup_file = PROFILES_BACKUP_DIR / f"{name}.json"
+    if backup_file.exists():
+        backup_file.unlink()
+
+    print(f"Deleted profile '{name}'.")
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
@@ -200,4 +229,5 @@ if __name__ == "__main__":
         "load": load,
         "export": export,
         "register": register,
+        "delete": delete,
     })
