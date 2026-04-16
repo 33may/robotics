@@ -39,12 +39,19 @@ def _connect_robot(port: str, robot_id: str) -> SOFollower:
     return robot
 
 
-def _goto_zeros(robot: SOFollower) -> None:
-    """Command all joints to 0° (gripper to 0%)."""
-    target = {}
-    for motor in robot.bus.motors:
-        target[f"{motor}.pos"] = 0.0
-    robot.send_action(target)
+def _goto_zeros(robot: SOFollower, steps: int = 100, duration: float = 3.0) -> None:
+    """Smoothly interpolate all joints to 0° over duration seconds."""
+    target = {f"{m}.pos": 0.0 for m in robot.bus.motors}
+    current = robot.get_observation()
+    current_pos = {f"{m}.pos": current[f"{m}.pos"] for m in robot.bus.motors}
+    dt = duration / steps
+    for step in range(1, steps + 1):
+        t = step / steps
+        interp = {}
+        for key in target:
+            interp[key] = current_pos[key] + t * (target[key] - current_pos[key])
+        robot.send_action(interp)
+        time.sleep(dt)
 
 
 def _goto_zeros_hold(robot: SOFollower, stdscr) -> None:
