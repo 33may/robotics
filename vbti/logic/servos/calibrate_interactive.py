@@ -165,6 +165,29 @@ def save_profile(
     return out_path
 
 
+def _autosave(name: str, all_states: dict[str, JointCalibState]) -> None:
+    """Save all accepted joints to disk. Silently skips incomplete joints."""
+    saveable = {
+        j: st for j, st in all_states.items()
+        if st.accepted and st.homing_offset is not None
+        and st.range_min is not None
+    }
+    if not saveable:
+        return
+    calib_data: dict[str, dict] = {}
+    for joint, st in saveable.items():
+        calib_data[joint] = {
+            "id": st.motor_id,
+            "drive_mode": 0,
+            "homing_offset": st.homing_offset,
+            "range_min": st.range_min,
+            "range_max": st.range_max,
+        }
+    out_path = _calib_path(name)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(calib_data, indent=4) + "\n")
+
+
 # ---------------------------------------------------------------------------
 # TUI helpers
 # ---------------------------------------------------------------------------
@@ -351,6 +374,35 @@ def _set_joint_calib_on_bus(bus: FeetechMotorsBus, state: JointCalibState) -> No
     bus.write("Homing_Offset", state.name, state.homing_offset)
     bus.write("Min_Position_Limit", state.name, state.range_min)
     bus.write("Max_Position_Limit", state.name, state.range_max)
+    time.sleep(0.1)  # let servo apply EEPROM changes before next command
+
+
+def _hold_pose(
+    stdscr,
+    bus: FeetechMotorsBus,
+    all_states: dict[str, JointCalibState],
+    targets: dict[str, float],
+) -> None:
+    """Write calibration, enable torque, command targets, hold until keypress."""
+    for jname in targets:
+        _set_joint_calib_on_bus(bus, all_states[jname])
+
+    target_joints = list(targets.keys())
+    bus.enable_torque(target_joints)
+    for jname, deg_val in targets.items():
+        bus.write("Goal_Position", jname, deg_val)
+
+    stdscr.clear()
+    stdscr.addstr(0, 0, "── Holding Pose ──", curses.A_BOLD)
+    row = 2
+    for jname, deg_val in targets.items():
+        stdscr.addstr(row, 2, f"{jname:18s} → {deg_val:.1f}°")
+        row += 1
+    stdscr.addstr(row + 1, 2, "Press any key to release")
+    stdscr.refresh()
+    stdscr.getch()
+
+    bus.disable_torque(target_joints)
 
 
 def _prompt_global_pose(
@@ -362,7 +414,7 @@ def _prompt_global_pose(
     stdscr.nodelay(False)
     stdscr.clear()
     stdscr.addstr(0, 0, "── Global Pose Test ──", curses.A_BOLD)
-    stdscr.addstr(2, 2, "Enter target degrees per joint (empty = skip, 'q' = cancel):")
+    stdscr.addstr(2, 2, "Enter target degrees per joint (empty = skip, 'q' = cancel, 'z' = all zeros):")
 
     targets: dict[str, float] = {}
     row = 4
@@ -376,15 +428,22 @@ def _prompt_global_pose(
             stdscr.addstr(row, 55, "→ ")
             stdscr.refresh()
             try:
-                raw_input = stdscr.getstr(row, 57, 10).decode().strip()
+                raw_inp = stdscr.getstr(row, 57, 10).decode().strip()
             except (curses.error, UnicodeDecodeError):
-                raw_input = ""
+                raw_inp = ""
             curses.noecho()
-            if raw_input.lower() == "q":
+            if raw_inp.lower() == "q":
                 return
-            if raw_input:
+            if raw_inp.lower() == "z":
+                # All zeros for all calibrated joints
+                targets = {
+                    j: 0.0 for j, s in all_states.items()
+                    if s.homing_offset is not None and s.range_min is not None
+                }
+                break
+            if raw_inp:
                 try:
-                    targets[jname] = float(raw_input)
+                    targets[jname] = float(raw_inp)
                 except ValueError:
                     pass
         row += 1
@@ -395,21 +454,7 @@ def _prompt_global_pose(
         stdscr.getch()
         return
 
-    # Set calibration and command all target joints
-    for jname, deg_val in targets.items():
-        _set_joint_calib_on_bus(bus, all_states[jname])
-
-    target_joints = list(targets.keys())
-    bus.enable_torque(target_joints)
-    for jname, deg_val in targets.items():
-        bus.write("Goal_Position", jname, deg_val)
-
-    row += 2
-    stdscr.addstr(row, 2, "Holding pose — press any key to release")
-    stdscr.refresh()
-    stdscr.getch()
-
-    bus.disable_torque(target_joints)
+    _hold_pose(stdscr, bus, all_states, targets)
 
 
 def _phase_verify(
@@ -417,6 +462,7 @@ def _phase_verify(
     bus: FeetechMotorsBus,
     state: JointCalibState,
     all_states: dict[str, JointCalibState],
+    profile_name: str = "",
 ) -> None:
     """Verify calibration with live readout, tweak offset, and test torque."""
     stdscr.nodelay(True)
@@ -497,6 +543,8 @@ def _phase_verify(
                 # Write calibration to EEPROM so it's live for global pose tests
                 _set_joint_calib_on_bus(bus, state)
                 state.accepted = True
+                # Autosave — write all accepted joints so progress survives crashes
+                _autosave(profile_name, all_states)
                 return
             elif key == ord("r"):
                 if torque_on:
@@ -521,6 +569,7 @@ def _calibrate_joint(
     bus: FeetechMotorsBus,
     state: JointCalibState,
     all_states: dict[str, JointCalibState],
+    profile_name: str = "",
 ) -> None:
     """Run the full calibration flow for a single joint."""
     if state.range_min is None:
@@ -532,7 +581,7 @@ def _calibrate_joint(
             # User pressed 'b' to go back without fitting
             if state.homing_offset is None:
                 return
-        _phase_verify(stdscr, bus, state, all_states)
+        _phase_verify(stdscr, bus, state, all_states, profile_name)
 
 
 # ---------------------------------------------------------------------------
@@ -578,7 +627,7 @@ def _tui_main(stdscr, port: str, name: str) -> None:
             elif key in (curses.KEY_ENTER, ord("\n"), ord("\r")):
                 jname = JOINT_NAMES[selected]
                 states[jname].accepted = False
-                _calibrate_joint(stdscr, bus, states[jname], states)
+                _calibrate_joint(stdscr, bus, states[jname], states, name)
             elif key == ord("g"):
                 _prompt_global_pose(stdscr, bus, states)
             elif key == ord("s"):
