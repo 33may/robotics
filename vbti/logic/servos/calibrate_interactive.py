@@ -494,6 +494,8 @@ def _phase_verify(
                 if torque_on:
                     bus.disable_torque([state.name])
                     torque_on = False
+                # Write calibration to EEPROM so it's live for global pose tests
+                _set_joint_calib_on_bus(bus, state)
                 state.accepted = True
                 return
             elif key == ord("r"):
