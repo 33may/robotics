@@ -196,7 +196,7 @@ def _draw_joint_list(
         attr = curses.A_REVERSE if i == selected else 0
         stdscr.addstr(row + i, 1, label[:w - 2], attr)
 
-    footer = "[Enter] Calibrate joint   [s] Save   [q] Quit"
+    footer = "[Enter] Calibrate joint   [g] Global pose   [s] Save   [q] Quit"
     if row + len(JOINT_NAMES) + 2 < h:
         stdscr.addstr(row + len(JOINT_NAMES) + 2, 1, footer)
     stdscr.refresh()
@@ -209,6 +209,9 @@ def _draw_joint_list(
 def _phase_range_discovery(stdscr, bus: FeetechMotorsBus, state: JointCalibState) -> None:
     """Move joint through full range to discover min/max encoder values."""
     bus.disable_torque([state.name])
+    # Reset EEPROM homing_offset to 0 so raw reads are true physical positions.
+    # Without this, readings include the old offset and corrupt the fitting math.
+    bus.write("Homing_Offset", state.name, 0)
     stdscr.nodelay(True)
     raw = read_raw_position(bus, state.name)
     mn, mx = raw, raw
@@ -322,19 +325,32 @@ def _phase_keyframes(stdscr, bus: FeetechMotorsBus, state: JointCalibState) -> N
 # ---------------------------------------------------------------------------
 
 def _set_joint_calib_on_bus(bus: FeetechMotorsBus, state: JointCalibState) -> None:
-    """Write a single joint's calibration to the bus (for torque commands)."""
+    """Write a single joint's calibration to bus AND servo EEPROM.
+
+    The Feetech servo applies homing_offset in hardware — Goal_Position
+    commands are interpreted relative to the EEPROM offset.  Setting only
+    the Python-side calibration dict is not enough; the servo must also
+    have the correct offset written to register 31.
+    """
     assert state.homing_offset is not None
     assert state.range_min is not None
     assert state.range_max is not None
-    if bus.calibration is None:
-        bus.calibration = {}
-    bus.calibration[state.name] = MotorCalibration(
+    cal = MotorCalibration(
         id=state.motor_id,
         drive_mode=0,
         homing_offset=state.homing_offset,
         range_min=state.range_min,
         range_max=state.range_max,
     )
+    if bus.calibration is None:
+        bus.calibration = {}
+    bus.calibration[state.name] = cal
+    # Write to servo EEPROM so hardware applies the offset.
+    # EEPROM writes require torque disabled.
+    bus.disable_torque([state.name])
+    bus.write("Homing_Offset", state.name, state.homing_offset)
+    bus.write("Min_Position_Limit", state.name, state.range_min)
+    bus.write("Max_Position_Limit", state.name, state.range_max)
 
 
 def _prompt_global_pose(
@@ -442,13 +458,15 @@ def _phase_verify(
                 if state.homing_offset is not None:
                     state.homing_offset += 1
                     if torque_on and torque_target is not None:
-                        _set_joint_calib_on_bus(bus, state)
+                        _set_joint_calib_on_bus(bus, state)  # disables torque for EEPROM write
+                        bus.enable_torque([state.name])
                         bus.write("Goal_Position", state.name, torque_target)
             elif key in (ord("-"), ord("_")):
                 if state.homing_offset is not None:
                     state.homing_offset -= 1
                     if torque_on and torque_target is not None:
-                        _set_joint_calib_on_bus(bus, state)
+                        _set_joint_calib_on_bus(bus, state)  # disables torque for EEPROM write
+                        bus.enable_torque([state.name])
                         bus.write("Goal_Position", state.name, torque_target)
             elif key == ord("t"):
                 if torque_on:
@@ -559,6 +577,8 @@ def _tui_main(stdscr, port: str, name: str) -> None:
                 jname = JOINT_NAMES[selected]
                 states[jname].accepted = False
                 _calibrate_joint(stdscr, bus, states[jname], states)
+            elif key == ord("g"):
+                _prompt_global_pose(stdscr, bus, states)
             elif key == ord("s"):
                 # Check for uncalibrated joints
                 uncalibrated = [
@@ -575,33 +595,35 @@ def _tui_main(stdscr, port: str, name: str) -> None:
                     if confirm != ord("s"):
                         continue
 
-                curses.endwin()
                 # Only save joints that have calibration
                 saveable = {
                     j: st for j, st in states.items()
                     if st.homing_offset is not None and st.range_min is not None
                 }
                 if not saveable:
-                    print("No calibrated joints to save.")
-                    return
+                    stdscr.addstr(len(JOINT_NAMES) + 5, 1, "No calibrated joints to save. Press any key.")
+                    stdscr.refresh()
+                    stdscr.getch()
+                    continue
                 out = save_profile(name, saveable)
+                # Temporarily leave curses for y/n prompt
+                curses.def_prog_mode()
+                curses.endwin()
                 print(f"Saved to {out}")
                 ans = input("Write to motors now? [y/n] ").strip().lower()
                 if ans == "y":
                     from vbti.logic.servos.profiles import load as load_profile
                     load_profile(name, port=port)
-                return
+                curses.reset_prog_mode()
+                stdscr.refresh()
             elif key == ord("q"):
+                curses.def_prog_mode()
                 curses.endwin()
                 ans = input("Quit without saving? [y/n] ").strip().lower()
                 if ans == "y":
                     return
-                # Re-init curses
-                stdscr = curses.initscr()
-                curses.noecho()
-                curses.cbreak()
-                stdscr.keypad(True)
-                curses.curs_set(0)
+                curses.reset_prog_mode()
+                stdscr.refresh()
     finally:
         bus.disconnect(disable_torque=True)
 
