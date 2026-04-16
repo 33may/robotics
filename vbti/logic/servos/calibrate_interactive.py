@@ -4,6 +4,7 @@ Bus helpers, data model, fitting logic, save, and TUI screens.
 """
 from __future__ import annotations
 
+import _curses
 import curses
 import json
 import time
@@ -657,24 +658,17 @@ def _tui_main(stdscr, port: str, name: str) -> None:
                     stdscr.getch()
                     continue
                 out = save_profile(name, saveable)
-                # Temporarily leave curses for y/n prompt
-                curses.def_prog_mode()
+                # Leave curses cleanly, print results, exit
                 curses.endwin()
                 print(f"Saved to {out}")
                 ans = input("Write to motors now? [y/n] ").strip().lower()
                 if ans == "y":
                     from vbti.logic.servos.profiles import load as load_profile
                     load_profile(name, port=port)
-                curses.reset_prog_mode()
-                stdscr.refresh()
+                print("Done.")
+                return
             elif key == ord("q"):
-                curses.def_prog_mode()
-                curses.endwin()
-                ans = input("Quit without saving? [y/n] ").strip().lower()
-                if ans == "y":
-                    return
-                curses.reset_prog_mode()
-                stdscr.refresh()
+                return
     finally:
         bus.disconnect(disable_torque=True)
 
@@ -685,7 +679,10 @@ def _tui_main(stdscr, port: str, name: str) -> None:
 
 def main(port: str = "/dev/ttyACM1", name: str = "new-profile") -> None:
     """Launch the interactive calibration TUI."""
-    curses.wrapper(lambda stdscr: _tui_main(stdscr, port, name))
+    try:
+        curses.wrapper(lambda stdscr: _tui_main(stdscr, port, name))
+    except _curses.error:
+        pass  # endwin() already called in save path — safe to ignore
 
 
 if __name__ == "__main__":
