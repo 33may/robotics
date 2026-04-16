@@ -1,9 +1,8 @@
-"""Interactive servo calibration with curses TUI.
+"""Interactive servo calibration TUI.
 
-Flow:
-  Phase 1 — Range discovery (all joints, like LeRobot)
-  Phase 2 — Zero tuning (per joint: torque on at 0°, nudge +/- until sim-accurate)
-  Save   — Adjust ranges for final offsets, write JSON + EEPROM
+Starts from an existing calibration (e.g. frodeo-test), loads it to servos,
+commands each joint to 0°, then lets you nudge the offset until the physical
+position matches simulation zero. Only the homing_offset changes — range stays.
 """
 from __future__ import annotations
 
@@ -11,19 +10,16 @@ import _curses
 import curses
 import json
 import time
-from dataclasses import dataclass
 
 from lerobot.motors import Motor, MotorCalibration, MotorNormMode
 from lerobot.motors.feetech import FeetechMotorsBus
 
 from vbti.logic.servos.profiles import (
     JOINT_NAMES,
+    LEROBOT_CALIB_DIR,
     _calib_path,
     register,
 )
-
-ENCODER_MAX = 4095
-HALF_TURN = 2047
 
 MOTOR_IDS: dict[str, int] = {
     "shoulder_pan": 1, "shoulder_lift": 2, "elbow_flex": 3,
@@ -31,156 +27,126 @@ MOTOR_IDS: dict[str, int] = {
 }
 
 
-@dataclass
-class JointState:
-    name: str
-    motor_id: int
-    # Raw physical range (discovered with offset=0)
-    phys_min: int | None = None
-    phys_max: int | None = None
-    # Homing offset (tuned in phase 2)
-    homing_offset: int | None = None
-    zero_tuned: bool = False
-
-
 # ---------------------------------------------------------------------------
-# Bus
+# Bus helpers
 # ---------------------------------------------------------------------------
 
-def _make_bus(port: str) -> FeetechMotorsBus:
+def _make_bus(port: str, calib: dict) -> FeetechMotorsBus:
+    """Create bus with calibration loaded."""
     motors = {}
+    calibration = {}
     for joint in JOINT_NAMES:
+        j = calib[joint]
         norm = MotorNormMode.RANGE_0_100 if joint == "gripper" else MotorNormMode.DEGREES
-        motors[joint] = Motor(id=MOTOR_IDS[joint], model="sts3215", norm_mode=norm)
-    return FeetechMotorsBus(port=port, motors=motors)
+        motors[joint] = Motor(id=j["id"], model="sts3215", norm_mode=norm)
+        calibration[joint] = MotorCalibration(
+            id=j["id"], drive_mode=j["drive_mode"],
+            homing_offset=j["homing_offset"],
+            range_min=j["range_min"], range_max=j["range_max"],
+        )
+    bus = FeetechMotorsBus(port=port, motors=motors, calibration=calibration)
+    return bus
 
 
-def _reset_all(bus: FeetechMotorsBus) -> None:
-    """Reset all servos: offset=0, limits=full range."""
-    bus.disable_torque()
-    for joint in JOINT_NAMES:
-        bus.write("Homing_Offset", joint, 0, normalize=False)
-        bus.write("Min_Position_Limit", joint, 0, normalize=False)
-        bus.write("Max_Position_Limit", joint, ENCODER_MAX, normalize=False)
-    bus.calibration = {}
+def _load_calib_to_servos(bus: FeetechMotorsBus) -> None:
+    """Write current bus calibration to servo EEPROM."""
+    assert bus.calibration is not None
+    with bus.torque_disabled():
+        bus.write_calibration(bus.calibration)
     time.sleep(0.1)
 
 
-def _write_offset(bus: FeetechMotorsBus, joint: str, offset: int) -> None:
-    """Write homing_offset to EEPROM (torque must be off)."""
-    bus.disable_torque([joint])
-    bus.write("Homing_Offset", joint, offset)
-    time.sleep(0.05)
+def _apply_nudge(bus: FeetechMotorsBus, calib: dict, joint: str, step: int) -> None:
+    """Nudge offset by step, shift range to match, write to EEPROM, re-command 0°.
 
+    When offset changes by +step, reported space shifts by -step at the same
+    physical position. So range_min/max must also shift by -step to keep
+    pointing at the same physical limits.
+    """
+    assert bus.calibration is not None
+    c = calib[joint]
+    new_offset = c["homing_offset"] + step
+    new_min = c["range_min"] - step
+    new_max = c["range_max"] - step
 
-def _command_degrees(bus: FeetechMotorsBus, joint: str, state: JointState, deg: float) -> None:
-    """Set calibration on bus and command joint to a degree position."""
-    assert state.homing_offset is not None and state.phys_min is not None and state.phys_max is not None
-    # Compute range in reported space (after offset)
-    rmin = state.phys_min - state.homing_offset
-    rmax = state.phys_max - state.homing_offset
-    cal = MotorCalibration(
-        id=state.motor_id, drive_mode=0,
-        homing_offset=state.homing_offset, range_min=rmin, range_max=rmax,
+    # Update JSON dict
+    c["homing_offset"] = new_offset
+    c["range_min"] = new_min
+    c["range_max"] = new_max
+
+    # Update bus calibration
+    old_cal = bus.calibration[joint]
+    bus.calibration[joint] = MotorCalibration(
+        id=old_cal.id, drive_mode=old_cal.drive_mode,
+        homing_offset=new_offset, range_min=new_min, range_max=new_max,
     )
-    if bus.calibration is None:
-        bus.calibration = {}
-    bus.calibration[state.name] = cal
+
+    # Write to servo EEPROM
+    bus.disable_torque([joint])
+    bus.write("Homing_Offset", joint, new_offset)
+    bus.write("Min_Position_Limit", joint, new_min)
+    bus.write("Max_Position_Limit", joint, new_max)
+    time.sleep(0.05)
     bus.enable_torque([joint])
-    bus.write("Goal_Position", joint, deg)
+    bus.write("Goal_Position", joint, 0.0)
 
 
-# ---------------------------------------------------------------------------
-# Phase 1 — Range discovery (all joints at once)
-# ---------------------------------------------------------------------------
-
-def _phase_range(stdscr, bus: FeetechMotorsBus, states: dict[str, JointState]) -> None:
-    """Sweep all joints by hand to discover physical min/max."""
-    _reset_all(bus)
-
-    mins = {j: 99999 for j in JOINT_NAMES}
-    maxs = {j: 0 for j in JOINT_NAMES}
-
-    stdscr.nodelay(True)
-    try:
-        while True:
-            positions = bus.sync_read("Present_Position", normalize=False)
-
-            stdscr.clear()
-            stdscr.addstr(0, 0, "── Phase 1: Range Discovery (all joints) ──", curses.A_BOLD)
-            stdscr.addstr(2, 2, "Move ALL joints through their full range of motion.")
-            stdscr.addstr(3, 2, "Press ENTER when done.")
-
-            row = 5
-            for joint in JOINT_NAMES:
-                raw = int(positions[joint])
-                mins[joint] = min(mins[joint], raw)
-                maxs[joint] = max(maxs[joint], raw)
-                rng = maxs[joint] - mins[joint]
-                stdscr.addstr(row, 2, f"{joint:18s}  raw={raw:5d}  min={mins[joint]:5d}  max={maxs[joint]:5d}  ({rng:4d})")
-                row += 1
-
-            stdscr.addstr(row + 1, 2, "[Enter] Done   [r] Reset")
-            stdscr.refresh()
-
-            key = stdscr.getch()
-            if key in (curses.KEY_ENTER, ord("\n"), ord("\r")):
-                break
-            elif key in (ord("r"), ord("R")):
-                positions = bus.sync_read("Present_Position", normalize=False)
-                for joint in JOINT_NAMES:
-                    raw = int(positions[joint])
-                    mins[joint] = raw
-                    maxs[joint] = raw
-
-            time.sleep(0.05)
-    finally:
-        stdscr.nodelay(False)
-
-    # Store physical ranges and compute initial offsets (LeRobot style: current pos → half turn)
+def _command_all_zeros(bus: FeetechMotorsBus) -> None:
+    """Command all joints to 0°."""
+    bus.enable_torque()
     for joint in JOINT_NAMES:
-        states[joint].phys_min = mins[joint]
-        states[joint].phys_max = maxs[joint]
-        # Initial offset: midpoint of range → half turn
-        mid = (mins[joint] + maxs[joint]) // 2
-        states[joint].homing_offset = mid - HALF_TURN
+        bus.write("Goal_Position", joint, 0.0)
 
 
 # ---------------------------------------------------------------------------
-# Phase 2 — Zero tuning (per joint)
+# TUI
 # ---------------------------------------------------------------------------
 
-def _phase_zero_tune(
-    stdscr,
-    bus: FeetechMotorsBus,
-    state: JointState,
-    all_states: dict[str, JointState],
-    profile_name: str,
-) -> None:
-    """Torque on at 0°, nudge +/- to match sim zero, accept."""
-    assert state.homing_offset is not None
+def _draw_main(stdscr, calib: dict, name: str, selected: int, tuned: dict[str, bool]) -> None:
+    stdscr.clear()
+    h, w = stdscr.getmaxyx()
+    stdscr.addstr(0, 0, f"── Calibration: {name} ──", curses.A_BOLD)
 
-    # Write offset to EEPROM and command 0°
-    _write_offset(bus, state.name, state.homing_offset)
-    _command_degrees(bus, state.name, state, 0.0)
+    row = 2
+    for i, j in enumerate(JOINT_NAMES):
+        c = calib[j]
+        marker = "✓" if tuned.get(j) else ("●" if i == selected else "○")
+        mid = (c["range_min"] + c["range_max"]) / 2
+        label = f"  {marker} {j:18s}  offset={c['homing_offset']:>5}  mid={mid:.0f}  range=[{c['range_min']},{c['range_max']}]"
+        attr = curses.A_REVERSE if i == selected else 0
+        stdscr.addstr(row + i, 1, label[:w - 2], attr)
 
+    footer_row = row + len(JOINT_NAMES) + 2
+    stdscr.addstr(footer_row, 1, "[Enter] Tune zero   [z] All zeros   [s] Save & exit   [q] Quit")
+    stdscr.refresh()
+
+
+def _tune_joint(stdscr, bus: FeetechMotorsBus, calib: dict, joint: str, name: str, tuned: dict[str, bool]) -> None:
+    """Nudge offset until 0° matches sim zero."""
+    assert bus.calibration is not None
+    # Command this joint to 0°
+    bus.enable_torque([joint])
+    bus.write("Goal_Position", joint, 0.0)
+
+    offset = calib[joint]["homing_offset"]
     stdscr.nodelay(True)
+
     try:
         while True:
-            raw = bus.sync_read("Present_Position", [state.name], normalize=False)[state.name]
+            raw = int(bus.sync_read("Present_Position", [joint], normalize=False)[joint])
+            c = calib[joint]
+            mid = (c["range_min"] + c["range_max"]) / 2
+            deg = (raw - mid) * 360.0 / 4095
 
             stdscr.clear()
-            stdscr.addstr(0, 0, f"── Zero Tuning: {state.name} ──", curses.A_BOLD)
-            stdscr.addstr(2, 2, f"Homing offset:  {state.homing_offset}")
-            stdscr.addstr(3, 2, f"Physical range: [{state.phys_min}, {state.phys_max}]")
-            stdscr.addstr(4, 2, f"Raw encoder:    {int(raw)}")
-            mid = (state.phys_min + state.phys_max) / 2 if state.phys_min is not None and state.phys_max is not None else 0
-            deg_approx = (int(raw) - state.homing_offset - mid) * 360.0 / ENCODER_MAX
-            stdscr.addstr(5, 2, f"Approx degrees: {deg_approx:.1f}°")
-            stdscr.addstr(7, 2, "Motor is holding at 0°. Nudge until it matches sim zero.")
-            stdscr.addstr(9, 2, "[+/-] ±1 tick   [</>/,/.] ±10/±100 ticks")
-            stdscr.addstr(10, 2, "[g] Global pose   [z] All zeros")
-            stdscr.addstr(11, 2, "[a] Accept   [b] Back")
+            stdscr.addstr(0, 0, f"── Zero Tuning: {joint} ──", curses.A_BOLD)
+            stdscr.addstr(2, 2, f"Homing offset:  {offset}")
+            stdscr.addstr(3, 2, f"Range:          [{c['range_min']}, {c['range_max']}]  mid={mid:.0f}")
+            stdscr.addstr(4, 2, f"Raw encoder:    {raw}")
+            stdscr.addstr(5, 2, f"Current degrees:{deg:>8.1f}°")
+            stdscr.addstr(7, 2, "Motor holding at 0°. Nudge until it matches sim zero.")
+            stdscr.addstr(9, 2, "[+/-] ±1 tick    [>/<] ±10 ticks    []/[] ±100 ticks")
+            stdscr.addstr(10, 2, "[z] All zeros    [a] Accept    [b] Back")
             stdscr.refresh()
 
             key = stdscr.getch()
@@ -189,41 +155,46 @@ def _phase_zero_tune(
                 step = 1
             elif key in (ord("-"), ord("_")):
                 step = -1
-            elif key == ord(">") or key == ord("."):
+            elif key in (ord(">"), ord(".")):
                 step = 10
-            elif key == ord("<") or key == ord(","):
+            elif key in (ord("<"), ord(",")):
                 step = -10
             elif key == ord("]"):
                 step = 100
             elif key == ord("["):
                 step = -100
+
             if step != 0:
-                state.homing_offset += step
-                _write_offset(bus, state.name, state.homing_offset)
-                _command_degrees(bus, state.name, state, 0.0)
-            elif key == ord("g"):
-                bus.disable_torque([state.name])
-                stdscr.nodelay(False)
-                _global_pose(stdscr, bus, all_states)
-                # Re-enable this joint at 0°
-                _write_offset(bus, state.name, state.homing_offset)
-                _command_degrees(bus, state.name, state, 0.0)
-                stdscr.nodelay(True)
+                _apply_nudge(bus, calib, joint, step)
+                offset = calib[joint]["homing_offset"]
             elif key == ord("z"):
-                bus.disable_torque([state.name])
                 stdscr.nodelay(False)
-                _all_zeros(stdscr, bus, all_states)
-                # Re-enable this joint at 0°
-                _write_offset(bus, state.name, state.homing_offset)
-                _command_degrees(bus, state.name, state, 0.0)
+                _load_calib_to_servos(bus)
+                _command_all_zeros(bus)
+                stdscr.clear()
+                stdscr.addstr(0, 0, "── All Zeros ──", curses.A_BOLD)
+                row = 2
+                for j in JOINT_NAMES:
+                    stdscr.addstr(row, 2, f"{j:18s} → 0°  (offset={calib[j]['homing_offset']})")
+                    row += 1
+                stdscr.addstr(row + 1, 2, "Press any key to release")
+                stdscr.refresh()
+                stdscr.getch()
+                bus.disable_torque()
+                # Re-enable just this joint
+                bus.enable_torque([joint])
+                bus.write("Goal_Position", joint, 0.0)
                 stdscr.nodelay(True)
             elif key == ord("a"):
-                bus.disable_torque([state.name])
-                state.zero_tuned = True
-                _autosave(profile_name, all_states)
+                bus.disable_torque([joint])
+                tuned[joint] = True
+                # Autosave
+                out = _calib_path(name)
+                out.parent.mkdir(parents=True, exist_ok=True)
+                out.write_text(json.dumps(calib, indent=4) + "\n")
                 return
             elif key == ord("b"):
-                bus.disable_torque([state.name])
+                bus.disable_torque([joint])
                 return
 
             time.sleep(0.05)
@@ -231,225 +202,33 @@ def _phase_zero_tune(
         stdscr.nodelay(False)
 
 
-# ---------------------------------------------------------------------------
-# Global pose helpers
-# ---------------------------------------------------------------------------
-
-def _all_zeros(stdscr, bus: FeetechMotorsBus, all_states: dict[str, JointState]) -> None:
-    """Command all tuned joints to 0°, hold until keypress."""
-    ready = [j for j in JOINT_NAMES if all_states[j].homing_offset is not None and all_states[j].phys_min is not None]
-    if not ready:
-        return
-
-    # Write all offsets with torque off first
-    bus.disable_torque(ready)
-    for j in ready:
-        assert all_states[j].homing_offset is not None
-        bus.write("Homing_Offset", j, all_states[j].homing_offset)
-    time.sleep(0.1)
-
-    # Set calibration on bus, enable torque, command all to 0°
-    for j in ready:
-        st = all_states[j]
-        assert st.phys_min is not None and st.phys_max is not None
-        rmin = st.phys_min - st.homing_offset
-        rmax = st.phys_max - st.homing_offset
-        if bus.calibration is None:
-            bus.calibration = {}
-        bus.calibration[j] = MotorCalibration(
-            id=st.motor_id, drive_mode=0,
-            homing_offset=st.homing_offset,
-            range_min=rmin, range_max=rmax,
-        )
-    bus.enable_torque(ready)
-    for j in ready:
-        bus.write("Goal_Position", j, 0.0)
-
-    stdscr.clear()
-    stdscr.addstr(0, 0, "── All Zeros ──", curses.A_BOLD)
-    row = 2
-    for j in ready:
-        stdscr.addstr(row, 2, f"{j:18s} → 0°  (offset={all_states[j].homing_offset})")
-        row += 1
-    stdscr.addstr(row + 1, 2, "Press any key to release")
-    stdscr.refresh()
-    stdscr.getch()
-    bus.disable_torque(ready)
-
-
-def _global_pose(stdscr, bus: FeetechMotorsBus, all_states: dict[str, JointState]) -> None:
-    """Prompt degrees per joint, hold pose."""
-    stdscr.clear()
-    stdscr.addstr(0, 0, "── Global Pose ──", curses.A_BOLD)
-    stdscr.addstr(2, 2, "Enter degrees per joint (empty=skip, q=cancel, z=all zeros):")
-
-    targets: dict[str, float] = {}
-    row = 4
-    for j in JOINT_NAMES:
-        st = all_states[j]
-        has_cal = st.homing_offset is not None and st.phys_min is not None
-        info = f"(offset={st.homing_offset})" if has_cal else "(skip)"
-        stdscr.addstr(row, 2, f"{j:18s} {info}")
-        if has_cal:
-            curses.echo()
-            stdscr.addstr(row, 50, "→ ")
-            stdscr.refresh()
-            try:
-                inp = stdscr.getstr(row, 52, 10).decode().strip()
-            except (curses.error, UnicodeDecodeError):
-                inp = ""
-            curses.noecho()
-            if inp.lower() == "q":
-                return
-            if inp.lower() == "z":
-                targets = {j2: 0.0 for j2 in JOINT_NAMES if all_states[j2].homing_offset is not None and all_states[j2].phys_min is not None}
-                break
-            if inp:
-                try:
-                    targets[j] = float(inp)
-                except ValueError:
-                    pass
-        row += 1
-
-    if not targets:
-        return
-
-    target_joints = list(targets.keys())
-    bus.disable_torque(target_joints)
-    for j in target_joints:
-        assert all_states[j].homing_offset is not None
-        bus.write("Homing_Offset", j, all_states[j].homing_offset)
-    time.sleep(0.1)
-
-    for j in target_joints:
-        st = all_states[j]
-        assert st.homing_offset is not None and st.phys_min is not None and st.phys_max is not None
-        rmin = st.phys_min - st.homing_offset
-        rmax = st.phys_max - st.homing_offset
-        if bus.calibration is None:
-            bus.calibration = {}
-        bus.calibration[j] = MotorCalibration(
-            id=st.motor_id, drive_mode=0,
-            homing_offset=st.homing_offset,
-            range_min=rmin, range_max=rmax,
-        )
-    bus.enable_torque(target_joints)
-    for j, deg in targets.items():
-        bus.write("Goal_Position", j, deg)
-
-    stdscr.clear()
-    stdscr.addstr(0, 0, "── Holding Pose ──", curses.A_BOLD)
-    r = 2
-    for j, deg in targets.items():
-        stdscr.addstr(r, 2, f"{j:18s} → {deg:.1f}°")
-        r += 1
-    stdscr.addstr(r + 1, 2, "Press any key to release")
-    stdscr.refresh()
-    stdscr.getch()
-    bus.disable_torque(list(targets.keys()))
-
-
-# ---------------------------------------------------------------------------
-# Save
-# ---------------------------------------------------------------------------
-
-def _compute_final_calibration(states: dict[str, JointState]) -> dict[str, dict]:
-    """Compute final calibration with ranges adjusted for homing_offset."""
-    calib = {}
-    for joint in JOINT_NAMES:
-        st = states[joint]
-        if st.homing_offset is None or st.phys_min is None or st.phys_max is None:
-            continue
-        # Range in reported space: reported = physical - offset
-        calib[joint] = {
-            "id": st.motor_id,
-            "drive_mode": 0,
-            "homing_offset": st.homing_offset,
-            "range_min": st.phys_min - st.homing_offset,
-            "range_max": st.phys_max - st.homing_offset,
-        }
-    return calib
-
-
-def _autosave(name: str, all_states: dict[str, JointState]) -> None:
-    calib = _compute_final_calibration(all_states)
-    if not calib:
-        return
-    out = _calib_path(name)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(calib, indent=4) + "\n")
-
-
-# ---------------------------------------------------------------------------
-# Main TUI
-# ---------------------------------------------------------------------------
-
-def _draw_main(stdscr, states: dict[str, JointState], name: str, selected: int, phase1_done: bool) -> None:
-    stdscr.clear()
-    h, w = stdscr.getmaxyx()
-    stdscr.addstr(0, 0, f"── Calibration: {name} ──", curses.A_BOLD)
-
-    row = 2
-    for i, j in enumerate(JOINT_NAMES):
-        st = states[j]
-        if st.zero_tuned:
-            marker = "✓"
-        elif i == selected:
-            marker = "●"
-        else:
-            marker = "○"
-        label = f"  {marker} {j:18s}"
-        if st.homing_offset is not None:
-            label += f"  offset={st.homing_offset}"
-        if st.phys_min is not None:
-            label += f"  range=[{st.phys_min},{st.phys_max}]"
-        attr = curses.A_REVERSE if i == selected else 0
-        stdscr.addstr(row + i, 1, label[:w - 2], attr)
-
-    footer_row = row + len(JOINT_NAMES) + 2
-    if not phase1_done:
-        stdscr.addstr(footer_row, 1, "[r] Run range discovery first")
-    else:
-        stdscr.addstr(footer_row, 1, "[Enter] Tune zero   [g] Global pose   [z] All zeros   [s] Save   [q] Quit")
-    stdscr.refresh()
-
-
-def _tui_main(stdscr, port: str, name: str) -> None:
+def _tui_main(stdscr, port: str, name: str, base_profile: str) -> None:
     curses.curs_set(0)
-    bus = _make_bus(port)
+
+    # Load base calibration
+    base_path = LEROBOT_CALIB_DIR / f"{base_profile}.json"
+    if not base_path.exists():
+        raise FileNotFoundError(f"Base profile not found: {base_path}")
+    calib = json.loads(base_path.read_text())
+
+    # If target profile already exists, load it instead (resume)
+    target_path = _calib_path(name)
+    if target_path.exists() and name != base_profile:
+        calib = json.loads(target_path.read_text())
+
+    # Track which joints have been tuned
+    tuned: dict[str, bool] = {j: False for j in JOINT_NAMES}
+
+    # Create bus with this calibration and load to servos
+    bus = _make_bus(port, calib)
     bus.connect()
-
-    states: dict[str, JointState] = {}
-    phase1_done = False
-
-    # Load existing profile if present
-    calib_file = _calib_path(name)
-    if calib_file.exists():
-        data = json.loads(calib_file.read_text())
-        for j in JOINT_NAMES:
-            if j in data:
-                d = data[j]
-                # Reconstruct physical range from stored range + offset
-                offset = d["homing_offset"]
-                states[j] = JointState(
-                    name=j, motor_id=MOTOR_IDS[j],
-                    phys_min=d["range_min"] + offset,
-                    phys_max=d["range_max"] + offset,
-                    homing_offset=offset,
-                    zero_tuned=True,
-                )
-            else:
-                states[j] = JointState(name=j, motor_id=MOTOR_IDS[j])
-        phase1_done = all(states[j].phys_min is not None for j in JOINT_NAMES)
-    else:
-        for j in JOINT_NAMES:
-            states[j] = JointState(name=j, motor_id=MOTOR_IDS[j])
+    _load_calib_to_servos(bus)
 
     selected = 0
 
     try:
         while True:
-            _draw_main(stdscr, states, name, selected, phase1_done)
+            _draw_main(stdscr, calib, name, selected, tuned)
             key = stdscr.getch()
 
             if key == curses.KEY_UP:
@@ -458,20 +237,22 @@ def _tui_main(stdscr, port: str, name: str) -> None:
                 selected = (selected + 1) % len(JOINT_NAMES)
             elif ord("1") <= key <= ord("6"):
                 selected = key - ord("1")
-            elif key == ord("r"):
-                _phase_range(stdscr, bus, states)
-                phase1_done = True
-            elif key in (curses.KEY_ENTER, ord("\n"), ord("\r")) and phase1_done:
-                j = JOINT_NAMES[selected]
-                _phase_zero_tune(stdscr, bus, states[j], states, name)
-            elif key == ord("g") and phase1_done:
-                _global_pose(stdscr, bus, states)
-            elif key == ord("z") and phase1_done:
-                _all_zeros(stdscr, bus, states)
+            elif key in (curses.KEY_ENTER, ord("\n"), ord("\r")):
+                _tune_joint(stdscr, bus, calib, JOINT_NAMES[selected], name, tuned)
+            elif key == ord("z"):
+                _load_calib_to_servos(bus)
+                _command_all_zeros(bus)
+                stdscr.clear()
+                stdscr.addstr(0, 0, "── All Zeros ──", curses.A_BOLD)
+                row = 2
+                for j in JOINT_NAMES:
+                    stdscr.addstr(row, 2, f"{j:18s} → 0°  (offset={calib[j]['homing_offset']})")
+                    row += 1
+                stdscr.addstr(row + 1, 2, "Press any key to release")
+                stdscr.refresh()
+                stdscr.getch()
+                bus.disable_torque()
             elif key == ord("s"):
-                calib = _compute_final_calibration(states)
-                if not calib:
-                    continue
                 out = _calib_path(name)
                 out.parent.mkdir(parents=True, exist_ok=True)
                 out.write_text(json.dumps(calib, indent=4) + "\n")
@@ -490,10 +271,16 @@ def _tui_main(stdscr, port: str, name: str) -> None:
         bus.disconnect(disable_torque=True)
 
 
-def main(port: str = "/dev/ttyACM1", name: str = "new-profile") -> None:
-    """Launch the interactive calibration TUI."""
+def main(port: str = "/dev/ttyACM1", name: str = "sim_accurate", base: str = "frodeo-test") -> None:
+    """Launch the interactive calibration TUI.
+
+    Args:
+        port: Serial port for the robot arm.
+        name: Profile name to create.
+        base: Existing profile to start from (default: frodeo-test).
+    """
     try:
-        curses.wrapper(lambda stdscr: _tui_main(stdscr, port, name))
+        curses.wrapper(lambda stdscr: _tui_main(stdscr, port, name, base))
     except _curses.error:
         pass
 
