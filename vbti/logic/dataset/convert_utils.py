@@ -323,8 +323,12 @@ def to_delta(
 
     import pandas as pd
 
-    source = Path(source)
+    from vbti.logic.dataset import resolve_dataset_path, LEROBOT_CACHE
+    source = resolve_dataset_path(source)
+    # For output: if it looks like a repo_id, place in HF lerobot cache
     output = Path(output)
+    if not output.is_absolute() and "/" in str(output):
+        output = LEROBOT_CACHE / output
 
     if not (source / "meta" / "info.json").exists():
         print(f"ERROR: {source} is not a valid LeRobot dataset")
@@ -488,12 +492,158 @@ def ls():
                       f"({d.get('total_episodes', '?')} eps, {d.get('total_frames', '?')} frames){sym}")
 
 
+def recalibrate(
+    source: str,
+    old_calib: str,
+    new_calib: str,
+    push_to_hub: bool = False,
+):
+    """Remap a dataset from one calibration profile to another.
+
+    For DEGREES joints (0-4): adds a constant offset per joint so that
+    the same physical position gets the correct degree value under the
+    new calibration.
+
+    For RANGE_0_100 gripper (5): rescales through physical encoder space.
+
+    Output dataset is named {source}_{new_calib}.
+
+    Args:
+        source: path or repo_id of the source dataset
+        old_calib: name of the calibration profile the dataset was recorded with
+        new_calib: name of the target calibration profile
+
+    Usage:
+        python vbti/logic/dataset/convert_utils.py recalibrate \
+            eternalmay33/02_black_full_center frodeo-test may-sim
+    """
+    import json
+    import shutil
+
+    import pandas as pd
+
+    from vbti.logic.dataset import resolve_dataset_path, LEROBOT_CACHE
+    from vbti.logic.servos.profiles import _calib_path
+
+    source_path = resolve_dataset_path(source)
+
+    # Load calibration files
+    old_data = json.loads(_calib_path(old_calib).read_text())
+    new_data = json.loads(_calib_path(new_calib).read_text())
+
+    # Strip .pos suffix for lookup
+    joint_keys = [n.replace(".pos", "") for n in JOINT_NAMES]
+
+    # Compute per-joint transforms
+    # DEGREES: new_deg = old_deg + shift
+    #   where shift = (old_mid + old_offset - new_mid - new_offset) * 360 / 4095
+    # RANGE_0_100 (gripper): remap through physical space
+    #   physical = old_pct/100 * old_width + old_min + old_offset
+    #   new_pct = (physical - new_offset - new_min) / new_width * 100
+    shifts = np.zeros(6)
+    for i, jk in enumerate(joint_keys):
+        o, n = old_data[jk], new_data[jk]
+        old_mid = (o["range_min"] + o["range_max"]) / 2
+        new_mid = (n["range_min"] + n["range_max"]) / 2
+
+        if i < GRIPPER_IDX:
+            # DEGREES mode: constant shift
+            shifts[i] = (old_mid + o["homing_offset"] - new_mid - n["homing_offset"]) * 360.0 / 4095
+        # gripper handled separately below
+
+    old_grip = old_data["gripper"]
+    new_grip = new_data["gripper"]
+    old_grip_width = old_grip["range_max"] - old_grip["range_min"]
+    new_grip_width = new_grip["range_max"] - new_grip["range_min"]
+    # Gripper affine: new_pct = old_pct * scale + bias
+    # physical = old_pct/100 * old_width + old_min + old_offset
+    # new_pct = (physical - new_offset - new_min) / new_width * 100
+    # new_pct = (old_pct/100 * old_width + old_min + old_offset - new_offset - new_min) / new_width * 100
+    grip_scale = old_grip_width / new_grip_width
+    grip_bias = (old_grip["range_min"] + old_grip["homing_offset"]
+                 - new_grip["homing_offset"] - new_grip["range_min"]) / new_grip_width * 100
+
+    # Build output path
+    output_path = Path(str(source_path) + f"_{new_calib}")
+    if output_path.exists():
+        print(f"ERROR: {output_path} already exists. Remove it first.")
+        return
+
+    print(f"Recalibrating: {old_calib} → {new_calib}")
+    print(f"  Source: {source_path}")
+    print(f"  Output: {output_path}")
+    print(f"\n  Joint shifts (degrees):")
+    for i, jk in enumerate(joint_keys[:GRIPPER_IDX]):
+        print(f"    {jk:20s} {shifts[i]:>+8.2f}°")
+    print(f"    {'gripper':20s} scale={grip_scale:.4f} bias={grip_bias:>+8.2f}")
+
+    # Copy dataset
+    print(f"\nCopying dataset...")
+    shutil.copytree(source_path, output_path)
+
+    # Transform parquet files
+    all_actions = []
+    all_states = []
+    data_dir = output_path / "data"
+
+    for pq_path in sorted(data_dir.rglob("*.parquet")):
+        df = pd.read_parquet(pq_path)
+
+        for col in ("action", "observation.state"):
+            if col not in df.columns:
+                continue
+            values = np.stack(df[col].values).copy()
+
+            # Body joints: add shift
+            values[:, :GRIPPER_IDX] += shifts[:GRIPPER_IDX]
+
+            # Gripper: affine remap
+            values[:, GRIPPER_IDX] = values[:, GRIPPER_IDX] * grip_scale + grip_bias
+
+            df[col] = list(values.astype(np.float32))
+
+            if col == "action":
+                all_actions.append(values)
+            else:
+                all_states.append(values)
+
+        df.to_parquet(pq_path)
+
+    # Recompute stats
+    stats_path = output_path / "meta" / "stats.json"
+    with open(stats_path) as f:
+        stats = json.load(f)
+
+    for key, arrs in [("action", all_actions), ("observation.state", all_states)]:
+        if not arrs:
+            continue
+        data = np.concatenate(arrs)
+        if key in stats:
+            stats[key]["mean"] = data.mean(axis=0).tolist()
+            stats[key]["std"] = data.std(axis=0).tolist()
+            stats[key]["min"] = data.min(axis=0).tolist()
+            stats[key]["max"] = data.max(axis=0).tolist()
+
+    with open(stats_path, "w") as f:
+        json.dump(stats, f, indent=2)
+
+    print(f"\nRecalibration complete: {output_path}")
+    print(f"  Frames: {sum(len(a) for a in all_actions)}")
+
+    if push_to_hub:
+        from lerobot.datasets.lerobot_dataset import LeRobotDataset
+        ds = LeRobotDataset(output_path)
+        ds.push_to_hub()
+        print(f"  Pushed to hub.")
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
     fire.Fire({
         "convert":        convert,
         "to_delta":       to_delta,
+        "recalibrate":    recalibrate,
         "discover":       discover_cameras,
         "verify":         verify,
         "roundtrip_test": roundtrip_test,
