@@ -174,19 +174,31 @@ def _phase_zero_tune(
             stdscr.addstr(2, 2, f"Homing offset:  {state.homing_offset}")
             stdscr.addstr(3, 2, f"Physical range: [{state.phys_min}, {state.phys_max}]")
             stdscr.addstr(4, 2, f"Raw encoder:    {int(raw)}")
-            stdscr.addstr(6, 2, "Motor is holding at 0°. Nudge until it matches sim zero.")
-            stdscr.addstr(8, 2, "[+/-] Nudge offset (motor moves)")
-            stdscr.addstr(9, 2, "[g] Global pose (all joints)   [z] All zeros")
-            stdscr.addstr(10, 2, "[a] Accept   [b] Back")
+            mid = (state.phys_min + state.phys_max) / 2 if state.phys_min is not None and state.phys_max is not None else 0
+            deg_approx = (int(raw) - state.homing_offset - mid) * 360.0 / ENCODER_MAX
+            stdscr.addstr(5, 2, f"Approx degrees: {deg_approx:.1f}°")
+            stdscr.addstr(7, 2, "Motor is holding at 0°. Nudge until it matches sim zero.")
+            stdscr.addstr(9, 2, "[+/-] ±1 tick   [</>/,/.] ±10/±100 ticks")
+            stdscr.addstr(10, 2, "[g] Global pose   [z] All zeros")
+            stdscr.addstr(11, 2, "[a] Accept   [b] Back")
             stdscr.refresh()
 
             key = stdscr.getch()
+            step = 0
             if key in (ord("+"), ord("=")):
-                state.homing_offset += 1
-                _write_offset(bus, state.name, state.homing_offset)
-                _command_degrees(bus, state.name, state, 0.0)
+                step = 1
             elif key in (ord("-"), ord("_")):
-                state.homing_offset -= 1
+                step = -1
+            elif key == ord(">") or key == ord("."):
+                step = 10
+            elif key == ord("<") or key == ord(","):
+                step = -10
+            elif key == ord("]"):
+                step = 100
+            elif key == ord("["):
+                step = -100
+            if step != 0:
+                state.homing_offset += step
                 _write_offset(bus, state.name, state.homing_offset)
                 _command_degrees(bus, state.name, state, 0.0)
             elif key == ord("g"):
