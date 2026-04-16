@@ -229,10 +229,29 @@ def _all_zeros(stdscr, bus: FeetechMotorsBus, all_states: dict[str, JointState])
     if not ready:
         return
 
+    # Write all offsets with torque off first
+    bus.disable_torque(ready)
     for j in ready:
         assert all_states[j].homing_offset is not None
-        _write_offset(bus, j, all_states[j].homing_offset)
-        _command_degrees(bus, j, all_states[j], 0.0)
+        bus.write("Homing_Offset", j, all_states[j].homing_offset)
+    time.sleep(0.1)
+
+    # Set calibration on bus, enable torque, command all to 0°
+    for j in ready:
+        st = all_states[j]
+        assert st.phys_min is not None and st.phys_max is not None
+        rmin = st.phys_min - st.homing_offset
+        rmax = st.phys_max - st.homing_offset
+        if bus.calibration is None:
+            bus.calibration = {}
+        bus.calibration[j] = MotorCalibration(
+            id=st.motor_id, drive_mode=0,
+            homing_offset=st.homing_offset,
+            range_min=rmin, range_max=rmax,
+        )
+    bus.enable_torque(ready)
+    for j in ready:
+        bus.write("Goal_Position", j, 0.0)
 
     stdscr.clear()
     stdscr.addstr(0, 0, "── All Zeros ──", curses.A_BOLD)
@@ -283,10 +302,28 @@ def _global_pose(stdscr, bus: FeetechMotorsBus, all_states: dict[str, JointState
     if not targets:
         return
 
-    for j, deg in targets.items():
+    target_joints = list(targets.keys())
+    bus.disable_torque(target_joints)
+    for j in target_joints:
         assert all_states[j].homing_offset is not None
-        _write_offset(bus, j, all_states[j].homing_offset)
-        _command_degrees(bus, j, all_states[j], deg)
+        bus.write("Homing_Offset", j, all_states[j].homing_offset)
+    time.sleep(0.1)
+
+    for j in target_joints:
+        st = all_states[j]
+        assert st.homing_offset is not None and st.phys_min is not None and st.phys_max is not None
+        rmin = st.phys_min - st.homing_offset
+        rmax = st.phys_max - st.homing_offset
+        if bus.calibration is None:
+            bus.calibration = {}
+        bus.calibration[j] = MotorCalibration(
+            id=st.motor_id, drive_mode=0,
+            homing_offset=st.homing_offset,
+            range_min=rmin, range_max=rmax,
+        )
+    bus.enable_torque(target_joints)
+    for j, deg in targets.items():
+        bus.write("Goal_Position", j, deg)
 
     stdscr.clear()
     stdscr.addstr(0, 0, "── Holding Pose ──", curses.A_BOLD)
