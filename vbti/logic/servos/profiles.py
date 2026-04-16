@@ -24,6 +24,9 @@ JOINT_NAMES = [
 LEROBOT_CALIB_DIR = (
     Path.home() / ".cache/huggingface/lerobot/calibration/robots/so101_follower"
 )
+LEROBOT_CALIB_DIR_ALT = (
+    Path.home() / ".cache/huggingface/lerobot/calibration/robots/so_follower"
+)
 PROJECT_ROOT = Path(__file__).resolve().parents[3]  # vbti/logic/servos -> root
 REGISTRY_PATH = PROJECT_ROOT / "calibration" / "registry.json"
 PROFILES_BACKUP_DIR = PROJECT_ROOT / "calibration" / "profiles"
@@ -34,8 +37,14 @@ PROFILES_BACKUP_DIR = PROJECT_ROOT / "calibration" / "profiles"
 # ---------------------------------------------------------------------------
 
 def _calib_path(name: str) -> Path:
-    """Path to a calibration JSON in the LeRobot cache."""
-    return LEROBOT_CALIB_DIR / f"{name}.json"
+    """Path to a calibration JSON in the LeRobot cache (checks both dirs)."""
+    primary = LEROBOT_CALIB_DIR / f"{name}.json"
+    if primary.exists():
+        return primary
+    alt = LEROBOT_CALIB_DIR_ALT / f"{name}.json"
+    if alt.exists():
+        return alt
+    return primary  # default to primary for new files
 
 
 def _load_registry() -> dict:
@@ -43,15 +52,17 @@ def _load_registry() -> dict:
     if REGISTRY_PATH.exists():
         return json.loads(REGISTRY_PATH.read_text())
 
-    # Bootstrap: scan cache dir for existing calibration files
+    # Bootstrap: scan cache dirs for existing calibration files
     profiles = {}
-    if LEROBOT_CALIB_DIR.exists():
-        for f in sorted(LEROBOT_CALIB_DIR.glob("*.json")):
-            profiles[f.stem] = {
-                "description": "",
-                "created": date.today().isoformat(),
-                "status": "active",
-            }
+    for d in (LEROBOT_CALIB_DIR, LEROBOT_CALIB_DIR_ALT):
+        if d.exists():
+            for f in sorted(d.glob("*.json")):
+                if f.stem not in profiles:
+                    profiles[f.stem] = {
+                        "description": "",
+                        "created": date.today().isoformat(),
+                        "status": "active",
+                    }
     registry = {"profiles": profiles, "default": ""}
     _save_registry(registry)
     return registry
@@ -89,7 +100,8 @@ def list_profiles() -> None:
     print("-" * 65)
     for name, info in profiles.items():
         marker = " *" if name == default else ""
-        cached = "yes" if _calib_path(name).exists() else "no"
+        path = _calib_path(name)
+        cached = f"yes ({path.parent.name})" if path.exists() else "no"
         desc = info.get("description", "")
         status = info.get("status", "?")
         print(f"{name + marker:<20} {status:<10} {cached:<8} {desc}")
@@ -98,18 +110,21 @@ def list_profiles() -> None:
 
 
 def show(name: str) -> None:
-    """Print calibration values table for a profile."""
+    """Print calibration values and degree ranges for a profile."""
     data = _load_calib_json(name)
     print(f"Profile: {name}")
-    print(f"{'Joint':<18} {'ID':>3} {'Drive':>6} {'Offset':>8} {'Min':>6} {'Max':>6}")
-    print("-" * 52)
+    print(f"{'Joint':<18} {'Offset':>8} {'Min':>6} {'Max':>6} {'Width':>6} {'Deg Min':>8} {'Deg Max':>8}")
+    print("-" * 75)
     for joint in JOINT_NAMES:
         if joint not in data:
             continue
         j = data[joint]
+        mid = (j["range_min"] + j["range_max"]) / 2
+        deg_min = (j["range_min"] - mid) * 360.0 / 4095
+        deg_max = (j["range_max"] - mid) * 360.0 / 4095
         print(
-            f"{joint:<18} {j['id']:>3} {j['drive_mode']:>6} "
-            f"{j['homing_offset']:>8} {j['range_min']:>6} {j['range_max']:>6}"
+            f"{joint:<18} {j['homing_offset']:>8} {j['range_min']:>6} {j['range_max']:>6} "
+            f"{j['range_max'] - j['range_min']:>6} {deg_min:>+8.1f}° {deg_max:>+8.1f}°"
         )
 
 
@@ -191,6 +206,28 @@ def register(name: str, description: str = "", parent: str = "") -> None:
     print(f"Registered '{name}' (cached: {cached})")
 
 
+def sync() -> None:
+    """Re-scan calibration directories and update registry with any new profiles."""
+    registry = _load_registry()
+    profiles = registry.setdefault("profiles", {})
+    added = []
+    for d in (LEROBOT_CALIB_DIR, LEROBOT_CALIB_DIR_ALT):
+        if d.exists():
+            for f in sorted(d.glob("*.json")):
+                if f.stem not in profiles:
+                    profiles[f.stem] = {
+                        "description": "",
+                        "created": date.today().isoformat(),
+                        "status": "active",
+                    }
+                    added.append(f.stem)
+    _save_registry(registry)
+    if added:
+        print(f"Added {len(added)} new profiles: {', '.join(added)}")
+    else:
+        print("Registry up to date.")
+
+
 def delete(name: str) -> None:
     """Delete a calibration profile from cache and registry."""
     registry = _load_registry()
@@ -229,5 +266,6 @@ if __name__ == "__main__":
         "load": load,
         "export": export,
         "register": register,
+        "sync": sync,
         "delete": delete,
     })
