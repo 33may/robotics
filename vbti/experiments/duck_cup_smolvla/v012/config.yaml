@@ -1,0 +1,57 @@
+model:
+  type: smolvla
+  pretrained: lerobot/smolvla_base
+  chunk_size: 50
+  n_obs_steps: 1
+  freeze_vision_encoder: true
+  train_expert_only: true
+  train_state_proj: true
+  empty_cameras: 0
+  tokenizer_max_length: 48
+  num_denoising_steps: 10
+dataset:
+  sources:
+  - repo_id: eternalmay33/01_02_09_00_merged_delta
+    root: null
+    episodes: null
+    weight: 1.0
+    source: real
+    role: both
+  cameras:
+    names:
+    - top
+    - left
+    - right
+    - gripper
+    remap: null
+  train_ratio: 1
+  val_sources: null
+  use_imagenet_stats: true
+training:
+  steps: 50000
+  batch_size: 64
+  lr: 0.0001
+  weight_decay: 1.0e-10
+  grad_clip_norm: 10.0
+  warmup_steps: 1000
+  decay_lr: 2.5e-06
+  lr_schedule: cosine
+  decay_ratio: 0.3
+  num_workers: 8
+  device: auto
+  seed: 42
+  fp16: false
+  bf16: true
+logging:
+  log_freq: 200
+  save_freq: 5000
+  val_freq: 500
+  val_size: 50
+  wandb_enabled: true
+  wandb_project: vbti-training
+  wandb_entity: null
+  wandb_mode: online
+eval:
+  n_episodes: 50
+  sim_env: null
+  record_video: true

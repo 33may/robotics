@@ -28,6 +28,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 
+
 # ── Rest detection ────────────────────────────────────────────────────────────
 
 JOINT_NAMES = ["shoulder_pan", "shoulder_lift", "elbow_flex",
@@ -529,26 +530,8 @@ def compare_trimmed(datasets: dict[str, str], dist_thresh: float = 5.0,
 
 
 def _resolve_dataset_path(dataset_path: str) -> Path:
-    """Resolve a dataset path or repo_id to an absolute Path."""
-    p = Path(dataset_path).expanduser()
-    if p.exists():
-        return p.resolve()
-    # Try as repo_id in lerobot cache
-    cache_root = Path.home() / ".cache/huggingface/lerobot"
-    cache = cache_root / dataset_path
-    if cache.exists():
-        return cache.resolve()
-    # Suggest similar repo_ids
-    available = []
-    if cache_root.exists():
-        for author_dir in cache_root.iterdir():
-            if author_dir.is_dir() and not author_dir.name.startswith("."):
-                for ds_dir in author_dir.iterdir():
-                    if ds_dir.is_dir():
-                        available.append(f"{author_dir.name}/{ds_dir.name}")
-    suggestions = [a for a in available if dataset_path.split("/")[-1][:5] in a]
-    hint = f"\n  Did you mean: {', '.join(suggestions)}" if suggestions else f"\n  Available: {', '.join(available)}"
-    raise FileNotFoundError(f"Dataset not found: {dataset_path}{hint}")
+    from vbti.logic.dataset import resolve_dataset_path
+    return resolve_dataset_path(dataset_path)
 
 
 def distribution(dataset_path: str, bins: int = 80, save: str = None):

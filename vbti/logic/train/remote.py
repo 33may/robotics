@@ -65,7 +65,7 @@ def _rsync_to_remote(remote_cfg: dict, local_path: str, remote_path: str, delete
     """Rsync local → remote."""
     cmd = [
         "sshpass", "-p", remote_cfg["password"],
-        "rsync", "-avz", "--progress", "--partial",
+        "rsync", "-avzL", "--progress", "--partial",
         "-e", "ssh -o StrictHostKeyChecking=no",
     ]
     if delete:

@@ -40,6 +40,9 @@ JOINT_NAMES = [
 
 GRIPPER_IDX = 5
 
+# Detection camera mapping — inference camera names → detection expectations
+DETECTION_CAMERAS = ["left", "right", "top", "gripper"]
+
 REAL_LIMITS_DEG = [
     (-114.5, 125.5),   # shoulder_pan
     (-109.9, 101.0),   # shoulder_lift
@@ -71,6 +74,60 @@ def _show_camera_grid(frames, camera_names, step, action=None,
         frames, camera_names, step, action, width, height,
         joint_names=JOINT_NAMES, window_name="Inference",
     )
+
+
+# ── Detection overlay ───────────────────────────────────────────────────────
+
+def _init_detector(device: str = "cuda"):
+    """Load Grounding DINO for live detection overlay (ONNX if available)."""
+    from vbti.logic.detection.detect import create_detector
+    detector = create_detector(device=device, confidence_threshold=0.1)
+    vram_mb = torch.cuda.memory_allocated() / 1e6
+    print(f"[detection] Detector loaded — total VRAM: {vram_mb:.0f} MB")
+    return detector
+
+
+def _run_detection_overlay(detector, images: dict, camera_names: list) -> dict:
+    """Run detection on each camera frame, draw boxes + centers, return results.
+
+    Modifies images IN-PLACE (draws on BGR frames).
+    Returns dict of {cam: {duck: {...}, cup: {...}}} detection results.
+    """
+    from vbti.logic.detection.detect import DEFAULT_MAX_AREA, GRIPPER_MAX_AREA
+
+    results = {}
+    for cam_name in camera_names:
+        if cam_name not in images or cam_name not in DETECTION_CAMERAS:
+            continue
+
+        frame = images[cam_name]  # BGR uint8 from camera
+        # Detector expects RGB
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        max_area = GRIPPER_MAX_AREA if cam_name == "gripper" else DEFAULT_MAX_AREA
+        det = detector.detect(rgb, max_area=max_area)
+        results[cam_name] = det
+
+        h, w = frame.shape[:2]
+
+        # Draw duck (green) and cup (red)
+        colors = {"duck": (0, 255, 0), "cup": (0, 0, 255)}
+        for obj_name, color in colors.items():
+            obj = det[obj_name]
+            if not obj["found"]:
+                continue
+            # Draw bounding box
+            x1, y1, x2, y2 = obj["bbox"]
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
+            # Draw center crosshair
+            cx, cy = obj["center"]
+            cx, cy = int(cx), int(cy)
+            cv2.drawMarker(frame, (cx, cy), color, cv2.MARKER_CROSS, 15, 2)
+            # Label with confidence
+            label = f"{obj_name} {obj['confidence']:.2f}"
+            cv2.putText(frame, label, (int(x1), int(y1) - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+    return results
 
 
 def _save_video_ffmpeg(frames: list[np.ndarray], output_path: Path, fps: int):
@@ -202,6 +259,7 @@ def run(
     device: str = "auto",
     print_actions_every: int = 0,
     delta_actions: bool = False,
+    detection: bool = False,
 ):
     """Run SmolVLA inference on real robot with live camera display.
 
@@ -242,6 +300,11 @@ def run(
     # ── Load policy ───────────────────────────────────────────
     policy, preprocessor, postprocessor = _load_policy(checkpoint, dev)
 
+    # ── Load detector (optional) ─────────────────────────────
+    detector = None
+    if detection:
+        detector = _init_detector(device=str(dev))
+
     # ── Init hardware ─────────────────────────────────────────
     print(f"\nInitializing cameras...")
     cameras = _init_cameras(camera_config, fps=fps)
@@ -257,6 +320,9 @@ def run(
     print(f"Safety clamp: {max_relative_target} deg/step")
     if delta_actions:
         print(f"  Delta actions: ENABLED (step-wise delta, joints reconstructed from state + delta)")
+    if detection:
+        vram_total = torch.cuda.memory_allocated() / 1e6
+        print(f"  Detection: ENABLED — total VRAM: {vram_total:.0f} MB")
     print("=" * 60)
     print("Press 'q' in camera window or Ctrl+C to stop\n")
 
@@ -280,6 +346,15 @@ def run(
             images = _capture_frames(cameras)
             if len(images) < len(camera_names):
                 frame_drops += 1
+
+            # Run detection overlay (draws on frames in-place)
+            if detector is not None:
+                t_det = time.perf_counter()
+                _run_detection_overlay(detector, images, camera_names)
+                det_ms = (time.perf_counter() - t_det) * 1000
+                if step % 30 == 0:
+                    vram_mb = torch.cuda.memory_allocated() / 1e6
+                    print(f"  [det] step {step}: {det_ms:.0f}ms, VRAM {vram_mb:.0f}MB")
 
             # Show camera grid + record
             if show_cameras or record:
@@ -348,15 +423,15 @@ def run(
             move_to_rest(robot, fps=fps)
         except Exception:
             pass
+        # Save video before disconnect — disconnect can crash (servo overload etc.)
+        if record and recorded_frames:
+            _save_video_ffmpeg(recorded_frames, record_path, fps)
+
         _stop_cameras(cameras)
         if show_cameras:
             cv2.destroyAllWindows()
         robot.disconnect()
         print("Robot disconnected.")
-
-        # Save video via ffmpeg (produces proper mp4 Obsidian can play)
-        if record and recorded_frames:
-            _save_video_ffmpeg(recorded_frames, record_path, fps)
 
     print(f"Done — {step} steps, {frame_drops} frame drops.")
 

@@ -437,15 +437,8 @@ def _load_episodes(repo_id: str, root: str = None, max_files: int = 99) -> tuple
 
 
 def _resolve_dataset_path(repo_id: str, root: str = None) -> Path:
-    """Resolve a repo_id to a local dataset path."""
-    if root:
-        return Path(root).expanduser()
-    parts = repo_id.split("/")
-    if len(parts) == 2:
-        candidate = LEROBOT_CACHE / parts[0] / parts[1]
-        if candidate.exists():
-            return candidate.resolve()
-    return Path(repo_id).expanduser()
+    from vbti.logic.dataset import resolve_dataset_path
+    return resolve_dataset_path(repo_id, root)
 
 
 def plot_actions(repo_id: str, root: str = None, save: str = None, alpha: float = 0.15,
@@ -537,6 +530,8 @@ def plot_actions(repo_id: str, root: str = None, save: str = None, alpha: float 
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
+    from vbti.logic.dataset import delete_dataset
+
     fire.Fire({
         "ls":              ls,
         "info":            info,
@@ -544,4 +539,5 @@ if __name__ == "__main__":
         "report":          lambda path: print(report(path)),
         "compare_actions": compare_actions,
         "plot_actions":    plot_actions,
+        "delete":          delete_dataset,
     })

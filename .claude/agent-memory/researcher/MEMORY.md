@@ -1,0 +1,1 @@
+- [Don't read rendered gallery images](feedback_image_review.md) — Coordinator skips per-image Reads; render agent writes findings.md, coordinator relays summary

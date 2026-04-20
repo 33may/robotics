@@ -51,3 +51,13 @@ My take on the comparison:
 Actually — now that you're saying you'll have cup variation in the dataset anyway, the framing changes. You're not asking "which one fixes cup conditioning" — you're asking "which regularization makes the model learn better from varied data." In that case I'd lean toward idea 2. It's the safer bet, it works with the encoder as designed, and combined with actual cup variation in data, the model should learn to ignore cup position naturally.
 
 Is that how you're thinking about it — regularization on top of better data, not instead of it?
+
+
+we have done the [[What is the better masking]] research
+
+# problem
+today at 08-04 I have tested the model, and it doesn't work at all, it is completely different then it was when we just trained and evaluated the model
+![[Pasted image 20260409102846.png]]
+
+
+Okay the problem was actually the cameras, what has changed is the table position. the cameras itself. the table edges was simmilar the change came from the changed backgrounds, after I move the table to the same position as in reference data, the performance improved. Also the lighting was different, haven't evaluated it yet, but it should not be that problematic, since the SmolVLA adds a lot of image color augmentation during training

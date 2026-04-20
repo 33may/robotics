@@ -31,6 +31,16 @@ CAMERA_PRESETS = {
         "right":   {"type": "opencv", "path": "/dev/cam_right"},
         "gripper": {"type": "opencv", "path": "/dev/cam_gripper"},
     },
+    "sim_3_cam": {
+        "wrist_cam": {"type": "opencv", "path": "/dev/cam_gripper"},
+        "left_cam":  {"type": "opencv", "path": "/dev/cam_left"},
+        "right_cam": {"type": "opencv", "path": "/dev/cam_right"},
+    },
+    "sim_3_cam_opencv": {
+        "wrist_cam": {"type": "opencv", "path": "/dev/cam_gripper_raw"},
+        "left_cam":  {"type": "opencv", "path": "/dev/cam_left_raw"},
+        "right_cam": {"type": "opencv", "path": "/dev/cam_right_raw"},
+    }
 }
 DEFAULT_PRESET = "realsense"
 
