@@ -13,6 +13,7 @@ import torch.nn as nn
 from torchvision.models import (
     mobilenet_v3_small, MobileNet_V3_Small_Weights,
     mobilenet_v3_large, MobileNet_V3_Large_Weights,
+    efficientnet_b0, EfficientNet_B0_Weights,
 )
 
 
@@ -46,6 +47,13 @@ class DistilledDetector(nn.Module):
             weights = MobileNet_V3_Large_Weights.DEFAULT if pretrained else None
             net = mobilenet_v3_large(weights=weights)
             feat_dim = 960  # mobilenetv3-large final conv channels
+        elif backbone == "efficientnet_b0":
+            # v5_effnet_b0 — cross-family capacity check.
+            # efficientnet_b0.features has 9 blocks, final conv outputs 1280 channels.
+            # Same avgpool shape as mobilenet (AdaptiveAvgPool2d((1,1))).
+            weights = EfficientNet_B0_Weights.DEFAULT if pretrained else None
+            net = efficientnet_b0(weights=weights)
+            feat_dim = 1280
         else:
             raise ValueError(f"Unknown backbone: {backbone}")
 

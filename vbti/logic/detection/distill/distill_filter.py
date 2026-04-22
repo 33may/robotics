@@ -88,7 +88,10 @@ BLUE_RATIO_MEANINGFUL_DELTA = 0.05   # apply per-cluster only if max-min diff > 
 #   (cx>0.7, cy~0.66-0.70) got caught. Manual re-inspection of TPs shows jaw tooling
 #   sits tightly at cx~0.74-0.78, cy~0.81-0.86, area~0.06-0.14. Jaw scan CSV at
 #   cx>=0.74, cy>=0.81, area<=0.14 gives catch=15.1%, fp_acc=1.45% (vs 24.6%/3.2% at v3).
-CUP_JAW_CX_MIN = 0.74
+# v11 (stage1 audit 2026-04-21): 518 jaw false-accepts found clustered tightly at
+#   cx=0.734-0.740 (just below the v5 cutoff). Lowering to 0.73 catches them all.
+#   Distribution has a clean gap [0.72, 0.73] separating jaw cluster from real cups.
+CUP_JAW_CX_MIN = 0.73
 CUP_JAW_CY_MIN = 0.81
 CUP_JAW_AREA_MAX = 0.14
 CONF_THRESH_GRIPPER_DUCK = 0.15
@@ -107,6 +110,13 @@ R_PHASE_NO_BLUE = "phase_gripper_duck_no_blue"          # A, shrunk bbox not blu
 R_CUP_JAW = "gripper_cup_jaw_region"                    # B, geometric jaw region
 R_TOP_DUCK_ARMLOCK = "top_duck_armlock_y2"              # v9, top_duck bbox.y2 > 0.85
 R_NO_DETECTION = "no_detection"
+R_SIDE_DUCK_RELEASE = "side_duck_release"               # stage1: left/right duck in release phase
+R_LEFT_DUCK_TOP_STRIP = "left_duck_top_strip"           # stage1: left_duck y2<0.10 fixed artifact
+R_LEFT_DUCK_FIXED_BLOB = "left_duck_fixed_blob"         # stage1: left_duck fixed pixel-blob artifact (cx≈0.28 cy≈0.74)
+R_RIGHT_DUCK_ARM_BASE = "right_duck_arm_base"           # stage1: right_duck x1<0.124 (left-edge arm base)
+R_TOP_DUCK_FIXED_BLOB = "top_duck_fixed_blob"           # stage1: top_duck fixed pixel-blob artifact
+R_CUP_INSIDE_DUCK = "cup_inside_duck"                   # stage1: pregrasp/grasp cup bbox ≥80% inside duck bbox (DINO double-label)
+R_INTERPOLATED = "interpolated"                          # stage2: rescued via linear interp between anchors
 
 REASON_CATEGORIES = [
     R_ACCEPTED,
@@ -117,6 +127,13 @@ REASON_CATEGORIES = [
     R_CUP_JAW,
     R_TOP_DUCK_ARMLOCK,
     R_NO_DETECTION,
+    R_SIDE_DUCK_RELEASE,
+    R_LEFT_DUCK_TOP_STRIP,
+    R_LEFT_DUCK_FIXED_BLOB,
+    R_RIGHT_DUCK_ARM_BASE,
+    R_TOP_DUCK_FIXED_BLOB,
+    R_CUP_INSIDE_DUCK,
+    R_INTERPOLATED,
 ]
 
 Y2_ARMLOCK_THRESHOLD = 0.85  # v9: top_duck bbox bottom-edge reject threshold
@@ -350,10 +367,12 @@ def compute_gripper_duck_pixel_stats(
         | merged["gripper_duck_x2_eff"].isna()
         | merged["gripper_duck_y2_eff"].isna()
     )
+    # v11 (stage1): Sample RGB for every candidate frame regardless of phase.
+    # Stage1 runs blue-gate universally (not just grasp/transport), so RGB
+    # must be available for reach/pregrasp/release too.
     cand = merged[
         (merged["gripper_duck_conf"] > 0.0)
         & has_bbox_eff
-        & merged["phase"].isin(["grasp", "transport"])
     ][[
         "episode_index", "frame_index",
         "gripper_duck_x1_eff", "gripper_duck_y1_eff",
@@ -718,8 +737,14 @@ def apply_trust_gated_interp_and_v10(df: pd.DataFrame) -> pd.DataFrame:
       2. Linearly interpolate those cols per episode.
       3. Rows that were trust=0 and now have valid cx/cy become candidates for
          trust=1, subject to re-checking Filter E and v9.
-      4. Apply v10 cy-shift for left/right duck (target correction): if h>w,
-         set cy = y2 - w/2 (recomputes cx unchanged).
+      4. Force trust=0 for rows that had NO valid raw detection (conf=0 OR raw
+         bbox missing/zero). These must NEVER be rescued by interpolation — doing
+         so produces mismatched cx/bbox pairs (observed 2026-04-20: ep=113 fr=402
+         had raw all-zero, got interpolated arm-lock bbox with cx pointing at
+         empty sky). Exception: gripper_duck with bbox_filled=True from Filter
+         A's +/-15-frame interp is a legitimate rescue path.
+      5. Apply v10 cy-shift for left/right duck (target correction): if h>w,
+         set cy = y2 - w/2.
     """
     df = df.copy()
     for cam in CAMERAS:
@@ -728,6 +753,32 @@ def apply_trust_gated_interp_and_v10(df: pd.DataFrame) -> pd.DataFrame:
             reason_col = f"{cam}_{obj}_reason"
             cols = [f"{cam}_{obj}_{f}" for f in _INTERP_FIELDS]
             trust = df[trust_col].to_numpy().astype(np.int8)
+
+            # 0. Snapshot "did this row have a real raw detection?" BEFORE we
+            #    nuke anything. Permanent-untrust mask — checked at the end to
+            #    undo any interpolation-based rescue.
+            raw_conf = df[f"{cam}_{obj}_conf"].to_numpy()
+            raw_x1 = df[f"{cam}_{obj}_x1"].to_numpy()
+            raw_y1 = df[f"{cam}_{obj}_y1"].to_numpy()
+            raw_x2 = df[f"{cam}_{obj}_x2"].to_numpy()
+            raw_y2 = df[f"{cam}_{obj}_y2"].to_numpy()
+            conf_invalid = ~(np.isfinite(raw_conf) & (raw_conf > 0))
+            bbox_nan = (
+                ~np.isfinite(raw_x1) | ~np.isfinite(raw_y1)
+                | ~np.isfinite(raw_x2) | ~np.isfinite(raw_y2)
+            )
+            bbox_zero = (
+                np.isfinite(raw_x1) & np.isfinite(raw_y1)
+                & np.isfinite(raw_x2) & np.isfinite(raw_y2)
+                & (raw_x1 == 0) & (raw_y1 == 0) & (raw_x2 == 0) & (raw_y2 == 0)
+            )
+            bbox_invalid = bbox_nan | bbox_zero
+            # Gripper_duck Filter A legitimately interpolates missing bboxes;
+            # those rows have bbox_filled=True and should remain eligible for trust.
+            if cam == "gripper" and obj == "duck":
+                filled_ok = df["gripper_duck_bbox_filled"].to_numpy().astype(bool)
+                bbox_invalid = bbox_invalid & ~filled_ok
+            no_raw_detection = conf_invalid | bbox_invalid
 
             # 1. Null cx/cy/conf/bbox on trust=0 rows
             untrusted_mask = trust == 0
@@ -765,11 +816,18 @@ def apply_trust_gated_interp_and_v10(df: pd.DataFrame) -> pd.DataFrame:
 
             recovered = untrusted_mask & has_value & conf_ok & v9_ok
             trust = np.where(recovered, np.int8(1), trust)
+
+            # 3b. Permanent untrust: rows that had no valid raw detection
+            # (raw conf=0 OR raw bbox missing/zero) must stay trust=0, even if
+            # interpolation produced plausible values. Without this the stable
+            # re-pass rescues rows where teacher genuinely saw nothing.
+            trust = np.where(no_raw_detection, np.int8(0), trust)
             df[trust_col] = trust
 
             # update reason for recovered rows
             reason_arr = np.array(df[reason_col].astype(object).tolist(), dtype=object)
             reason_arr[recovered] = R_ACCEPTED
+            reason_arr[no_raw_detection] = R_NO_DETECTION
             df[reason_col] = pd.Categorical(reason_arr, categories=REASON_CATEGORIES)
 
     # 4. v10 cy-shift for left/right duck

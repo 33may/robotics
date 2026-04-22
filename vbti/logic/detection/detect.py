@@ -417,6 +417,153 @@ def create_detector(
 
 
 # ----------------------------------------------------------------------
+# Student detector — distilled MobileNetV3 per-camera models
+# ----------------------------------------------------------------------
+
+STUDENT_TRAINING_ROOT = Path.home() / "Documents" / "Obsidian Vault" / "vbti" / "researches" / \
+    "engineering tricks" / "detection" / "distillation" / "training"
+STUDENT_IMG_SIZE = 224
+STUDENT_CONF_THRESHOLD = 0.15   # below this → object not found
+STUDENT_CAMERAS = ["left", "right", "top", "gripper"]
+
+# Approximate bbox half-size (px, in 640×480 space) used to synthesise bbox
+# from center prediction — student doesn't predict box size.
+_STUDENT_BBOX_HALF: dict[str, int] = {
+    "left": 40, "right": 40, "top": 30, "gripper": 50,
+}
+
+
+class StudentDetector:
+    """Per-camera distilled detector — drops-in for DuckDetector.
+
+    Loads one MobileNetV3-Small model per camera from a training run.
+    ``detect(image, cam)`` returns the same dict format as DuckDetector.detect().
+
+    Args:
+        run: training run name (e.g. "m1_baseline")
+        device: torch device string
+        conf_threshold: detections below this confidence are treated as not-found
+    """
+
+    def __init__(
+        self,
+        run: str = "m1_baseline",
+        device: str = "cuda",
+        conf_threshold: float = STUDENT_CONF_THRESHOLD,
+    ):
+        from vbti.logic.detection.distill.distill_model import DistilledDetector
+        self.device = torch.device(device if torch.cuda.is_available() else "cpu")
+        self.conf_threshold = conf_threshold
+        self.models: dict[str, DistilledDetector] = {}
+
+        run_root = STUDENT_TRAINING_ROOT / run
+        for cam in STUDENT_CAMERAS:
+            ckpt_path = run_root / cam / "best.pt"
+            ck = torch.load(ckpt_path, map_location=self.device, weights_only=False)
+            cfg = ck.get("config", {})
+            backbone = cfg.get("model_backbone", "mobilenet_v3_small")
+            m = DistilledDetector(backbone=backbone, pretrained=False)
+            m.load_state_dict(ck["model"])
+            m.eval().to(self.device)
+            self.models[cam] = m
+        print(f"[StudentDetector] loaded {len(self.models)} cameras from '{run}' on {self.device}")
+
+    @torch.inference_mode()
+    def detect(self, image: np.ndarray, cam: str) -> dict:
+        """Detect duck and cup in a single frame for a given camera.
+
+        Args:
+            image: RGB numpy array (H, W, 3) uint8
+            cam: camera name — "left", "right", "top", or "gripper"
+
+        Returns:
+            Same dict format as DuckDetector.detect():
+            {"duck": {found, center, center_norm, bbox, confidence}, "cup": {...}}
+        """
+        h, w = image.shape[:2]
+        model = self.models[cam]
+        small = __import__("cv2").resize(image, (STUDENT_IMG_SIZE, STUDENT_IMG_SIZE),
+                                         interpolation=__import__("cv2").INTER_AREA)
+        x = torch.from_numpy(small).to(self.device).float() / 255.0
+        x = x.permute(2, 0, 1).unsqueeze(0)
+        out = model(x)[0].cpu().numpy()  # [duck_cx, duck_cy, duck_conf, cup_cx, cup_cy, cup_conf]
+
+        half = _STUDENT_BBOX_HALF.get(cam, 40)
+        result = {}
+        for obj, cx_i, cy_i, conf_i in [("duck", 0, 1, 2), ("cup", 3, 4, 5)]:
+            cx_n = float(out[cx_i])
+            cy_n = float(out[cy_i])
+            conf = float(out[conf_i])
+            if conf < self.conf_threshold:
+                result[obj] = self._empty_obj()
+                continue
+            cx_px = cx_n * w
+            cy_px = cy_n * h
+            result[obj] = {
+                "found": True,
+                "center": (cx_px, cy_px),
+                "center_norm": (cx_n, cy_n),
+                "bbox": (
+                    max(0.0, cx_px - half), max(0.0, cy_px - half),
+                    min(float(w), cx_px + half), min(float(h), cy_px + half),
+                ),
+                "confidence": conf,
+            }
+        return result
+
+    @torch.inference_mode()
+    def detect_batch(self, images: list[np.ndarray], cam: str) -> list[dict]:
+        """Batch detect for a single camera — all images processed together."""
+        if not images:
+            return []
+        import cv2
+        h, w = images[0].shape[:2]
+        model = self.models[cam]
+        half = _STUDENT_BBOX_HALF.get(cam, 40)
+
+        xs = [cv2.resize(img, (STUDENT_IMG_SIZE, STUDENT_IMG_SIZE), interpolation=cv2.INTER_AREA)
+              for img in images]
+        arr = np.stack(xs).astype(np.float32) / 255.0
+        t = torch.from_numpy(arr).to(self.device).permute(0, 3, 1, 2)
+        outs = model(t).cpu().numpy()  # (B, 6)
+
+        results = []
+        for out in outs:
+            row = {}
+            for obj, cx_i, cy_i, conf_i in [("duck", 0, 1, 2), ("cup", 3, 4, 5)]:
+                cx_n = float(out[cx_i])
+                cy_n = float(out[cy_i])
+                conf = float(out[conf_i])
+                if conf < self.conf_threshold:
+                    row[obj] = self._empty_obj()
+                    continue
+                cx_px = cx_n * w
+                cy_px = cy_n * h
+                row[obj] = {
+                    "found": True,
+                    "center": (cx_px, cy_px),
+                    "center_norm": (cx_n, cy_n),
+                    "bbox": (
+                        max(0.0, cx_px - half), max(0.0, cy_px - half),
+                        min(float(w), cx_px + half), min(float(h), cy_px + half),
+                    ),
+                    "confidence": conf,
+                }
+            results.append(row)
+        return results
+
+    @staticmethod
+    def _empty_obj() -> dict:
+        return {
+            "found": False,
+            "center": (0.0, 0.0),
+            "center_norm": (0.0, 0.0),
+            "bbox": (0.0, 0.0, 0.0, 0.0),
+            "confidence": 0.0,
+        }
+
+
+# ----------------------------------------------------------------------
 # Quick test
 # ----------------------------------------------------------------------
 if __name__ == "__main__":

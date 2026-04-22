@@ -100,8 +100,8 @@ def info(repo_id: str, root: str = None):
                 print(f"    {key}:")
                 for stat_name in ["min", "max", "mean", "std"]:
                     vals = s.get(stat_name, [])
-                    if vals:
-                        print(f"      {stat_name:5s}: {[round(v, 4) for v in vals]}")
+                    if vals is not None and len(vals) > 0:
+                        print(f"      {stat_name:5s}: {[round(float(v), 4) for v in vals]}")
     print()
 
 

@@ -61,109 +61,159 @@ def _group_consecutive(indices: np.ndarray, gap: int = 3) -> list[np.ndarray]:
 # Core detection
 # ------------------------------------------------------------------
 
-def _find_grasp_region(grip_smooth: np.ndarray, grip_vel: np.ndarray, fps: int):
-    """Find the main grasp region: the largest closing transition followed by
-    a sustained closed period.
+MIN_EVENT_DISP = 5.0   # min gripper displacement (degrees) to count as a "significant" event
 
-    Returns (grasp_start, grasp_end, closed_end) or None if not found.
-    - grasp_start: first frame of closing transition
-    - grasp_end: last frame of closing transition (gripper reaches closed)
-    - closed_end: last frame where gripper stays closed before opening
+
+def _find_initial_opening_end(grip_smooth: np.ndarray, grip_vel: np.ndarray, fps: int) -> int:
+    """Find the end of the initial gripper-opening event (setup/pregrasp pose).
+
+    The gripper often opens once at the start of the episode. We use this as
+    the earliest allowed start-frame for grasp detection. Returns 0 if no
+    significant opening exists (the gripper may already be open).
+    """
+    T = len(grip_smooth)
+    pos_frames = np.where(grip_vel > 0.15)[0]
+    if len(pos_frames) == 0:
+        return 0
+    events = _group_consecutive(pos_frames, gap=max(fps // 3, 5))
+    for event in events:
+        s, e = int(event[0]), int(event[-1])
+        disp = grip_smooth[e] - grip_smooth[s]
+        if disp >= MIN_EVENT_DISP and s < T // 2:
+            return e
+    return 0
+
+
+def _find_release_event(
+    grip_smooth: np.ndarray, grip_vel: np.ndarray, fps: int, after_frame: int
+) -> tuple[int, int] | None:
+    """Find the BIGGEST opening event with start > after_frame.
+
+    Return (release_start, release_end) or None.
+    """
+    pos_frames = np.where(grip_vel > 0.15)[0]
+    if len(pos_frames) == 0:
+        return None
+    pos_frames = pos_frames[pos_frames > after_frame]
+    if len(pos_frames) == 0:
+        return None
+    events = _group_consecutive(pos_frames, gap=max(fps // 3, 5))
+    best: tuple[int, int] | None = None
+    best_disp = 0.0
+    for event in events:
+        s, e = int(event[0]), int(event[-1])
+        if s <= after_frame:
+            continue
+        disp = float(grip_smooth[e] - grip_smooth[s])
+        if disp < MIN_EVENT_DISP:
+            continue
+        if disp > best_disp:
+            best_disp = disp
+            best = (s, e)
+    return best
+
+
+RETRY_GAP_MAX_SEC = 4.0   # merge consecutive closes if their gap < this (seconds)
+
+
+def _find_grasp_region(grip_smooth: np.ndarray, grip_vel: np.ndarray, fps: int):
+    """Identify task events: pregrasp opening, grasp, release.
+
+    Chronology + retry-chain algorithm:
+      1. Find initial gripper opening (pregrasp setup).
+      2. Find all significant closing events after it.
+      3. Group closings into CHAINS: consecutive closings whose gap is
+         < RETRY_GAP_MAX_SEC seconds belong to the same grasp (close→open→close
+         is a grasp retry, not a release).
+      4. Find all significant opening events after pregrasp.
+      5. Grasp = the LAST close in the LAST chain that is followed by a sig open
+         (this skips the terminal return-to-home closing that has no release).
+      6. Release = biggest opening AFTER grasp_end.
+
+    Returns (grasp_start, grasp_end, closed_end, release_start) or None.
+    release_start is None if not found. closed_end = release_start - 1 if
+    release exists, else T - 1.
     """
     T = len(grip_smooth)
 
-    # Find all significant closing frames
-    close_thresh = -0.3
-    neg_frames = np.where(grip_vel < close_thresh)[0]
+    initial_open_end = _find_initial_opening_end(grip_smooth, grip_vel, fps)
+
+    # --- All significant closes (after pregrasp) ---
+    neg_frames = np.where(grip_vel < -0.15)[0]
     if len(neg_frames) == 0:
-        close_thresh = -0.15
-        neg_frames = np.where(grip_vel < close_thresh)[0]
-        if len(neg_frames) == 0:
-            return None
-
-    # Group into closing events (allow gaps up to fps/3 ~10 frames)
-    closing_events = _group_consecutive(neg_frames, gap=max(fps // 3, 5))
-
-    # Score each event by total displacement
-    events_scored = []
-    for event in closing_events:
-        start, end = event[0], event[-1]
-        displacement = grip_smooth[start] - grip_smooth[end]  # positive = closing
-        events_scored.append((event, displacement))
-
-    if not events_scored:
+        return None
+    close_events = _group_consecutive(neg_frames, gap=max(fps // 3, 5))
+    sig_closes: list[tuple[int, int]] = []
+    for ev in close_events:
+        s, e = int(ev[0]), int(ev[-1])
+        if s <= initial_open_end:
+            continue
+        disp = float(grip_smooth[s] - grip_smooth[e])
+        if disp >= MIN_EVENT_DISP:
+            sig_closes.append((s, e))
+    if not sig_closes:
         return None
 
-    # Sort by displacement (biggest closing first)
-    events_scored.sort(key=lambda x: x[1], reverse=True)
-    best_event, best_disp = events_scored[0]
-
-    if best_disp < 1.0:
-        return None
-
-    grasp_start = int(best_event[0])
-    grasp_end = int(best_event[-1])
-
-    # The closed level is the gripper value right after the grasp.
-    # Find the minimum gripper value in the region after grasp_end to account
-    # for the gripper still settling.
-    settle_end = min(grasp_end + fps, T)
-    closed_level = np.min(grip_smooth[grasp_end:settle_end])
-    # Tight tolerance: small noise margin (3 degrees or 15% of displacement)
-    closed_tolerance = min(max(best_disp * 0.15, 3.0), 8.0)
-
-    # Find the end of the sustained closed region.
-    # The gripper is "closed" while it stays below closed_level + tolerance.
-    # To handle grasp retries (close, open briefly, close again), we look
-    # for closing events after the main one. If there's another significant
-    # closing within fps*2 frames that returns to a closed level, include it.
-    closed_end = grasp_end
-    i = grasp_end + 1
-    while i < T:
-        if grip_smooth[i] <= closed_level + closed_tolerance:
-            closed_end = i
-            i += 1
+    # --- Group closes into retry chains ---
+    retry_gap = int(RETRY_GAP_MAX_SEC * fps)
+    chains: list[list[tuple[int, int]]] = [[sig_closes[0]]]
+    for i in range(1, len(sig_closes)):
+        prev_end = chains[-1][-1][1]
+        cur_start = sig_closes[i][0]
+        if cur_start - prev_end <= retry_gap:
+            chains[-1].append(sig_closes[i])
         else:
-            # Gripper went above tolerance. Check if there's another closing
-            # event soon (grasp retry). Look for a subsequent closing that
-            # returns to a closed-ish level and stays there.
-            retry_window = min(i + fps * 3, T)
-            found_retry = False
-            # The retry might close to a slightly different level, so use
-            # a more generous threshold: below the midpoint between
-            # closed_level and the open level before the main grasp.
-            open_level = grip_smooth[grasp_start]
-            retry_closed_thresh = closed_level + (open_level - closed_level) * 0.35
-            for j in range(i, retry_window):
-                if grip_smooth[j] <= retry_closed_thresh:
-                    # Check it stays closed for at least 0.5s
-                    stay_count = 0
-                    for k in range(j, min(j + fps, T)):
-                        if grip_smooth[k] <= retry_closed_thresh:
-                            stay_count += 1
-                    if stay_count >= fps // 2:
-                        # Update closed_level to the new level
-                        new_settle = min(j + fps // 2, T)
-                        closed_level = np.min(grip_smooth[j:new_settle])
-                        closed_tolerance = min(max(
-                            (open_level - closed_level) * 0.15, 3.0), 8.0)
-                        closed_end = j
-                        i = j + 1
-                        found_retry = True
-                        break
-            if not found_retry:
-                break
+            chains.append([sig_closes[i]])
 
-    # Also extend grasp_start backwards if there were earlier closing movements
-    # that are part of the approach (gripper pre-closing slightly)
-    pre_level = grip_smooth[grasp_start]
+    # --- All significant opens (after pregrasp) ---
+    pos_frames = np.where(grip_vel > 0.15)[0]
+    open_events = _group_consecutive(pos_frames, gap=max(fps // 3, 5)) if len(pos_frames) else []
+    sig_opens: list[tuple[int, int]] = []
+    for ev in open_events:
+        s, e = int(ev[0]), int(ev[-1])
+        if s <= initial_open_end:
+            continue
+        disp = float(grip_smooth[e] - grip_smooth[s])
+        if disp >= MIN_EVENT_DISP:
+            sig_opens.append((s, e))
+
+    # --- Pick grasp chain: last chain whose final close has a subsequent sig open ---
+    grasp_chain = None
+    for chain in reversed(chains):
+        last_close_end = chain[-1][1]
+        has_release = any(os > last_close_end + fps // 3 for os, _ in sig_opens)
+        if has_release:
+            grasp_chain = chain
+            break
+    if grasp_chain is None:
+        return None
+
+    # Grasp = the LAST close in the chain (the successful one).
+    grasp_start, grasp_end = grasp_chain[-1]
+
+    # Extend grasp_start backwards slightly to capture pre-closing drift.
     for i in range(grasp_start - 1, max(grasp_start - fps, -1), -1):
-        if grip_vel[i] < close_thresh * 0.5:
+        if grip_vel[i] < -0.075:
             grasp_start = i
         else:
             break
 
-    return grasp_start, grasp_end, closed_end
+    # --- Release = biggest open AFTER grasp_end ---
+    release: tuple[int, int] | None = None
+    best_disp = 0.0
+    for s, e in sig_opens:
+        if s <= grasp_end:
+            continue
+        d = float(grip_smooth[e] - grip_smooth[s])
+        if d > best_disp:
+            best_disp = d
+            release = (s, e)
+
+    release_start = release[0] if release is not None else None
+    closed_end = (release_start - 1) if release_start is not None else T - 1
+    closed_end = max(closed_end, grasp_end)
+
+    return grasp_start, grasp_end, closed_end, release_start
 
 
 def detect_phases(
@@ -195,38 +245,18 @@ def detect_phases(
     grip_smooth = _smooth(gripper, smooth_window)
     grip_vel = np.gradient(grip_smooth)
 
-    # --- Step 2: find grasp region ---
+    # --- Step 2: find grasp region + release ---
     result = _find_grasp_region(grip_smooth, grip_vel, fps)
     if result is None:
         return np.full(T, -1, dtype=np.int32)
 
-    grasp_start, grasp_end, closed_end = result
+    grasp_start, grasp_end, closed_end, release_start = result
 
     # Ensure minimum grasp duration
     if grasp_end - grasp_start < MIN_PHASE_FRAMES:
         grasp_end = min(grasp_start + MIN_PHASE_FRAMES, T - 1)
     if closed_end < grasp_end:
         closed_end = grasp_end
-
-    # --- Step 3: find RELEASE event ---
-    # Release starts when gripper begins sustained opening after the closed region.
-    # The gripper must reach substantially above the closed level.
-    closed_level = grip_smooth[closed_end]
-    grasp_displacement = grip_smooth[grasp_start] - closed_level
-    release_thresh = closed_level + max(grasp_displacement * 0.3, 3.0)
-
-    release_start = None
-    for i in range(closed_end + 1, T):
-        if grip_smooth[i] >= release_thresh:
-            # Walk back to find start of the opening
-            release_start = i
-            for j in range(i - 1, closed_end, -1):
-                if grip_vel[j] <= 0.05:
-                    release_start = j + 1
-                    break
-            else:
-                release_start = closed_end + 1
-            break
 
     # --- Step 4: separate REACH from PREGRASP ---
     if joint_positions.shape[0] != T:

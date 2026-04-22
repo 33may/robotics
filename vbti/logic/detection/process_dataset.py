@@ -20,7 +20,7 @@ import pyarrow.parquet as pq
 from tqdm import tqdm
 
 from vbti.logic.dataset import resolve_dataset_path
-from vbti.logic.detection.detect import create_detector, DEFAULT_MAX_AREA, GRIPPER_MAX_AREA
+from vbti.logic.detection.detect import create_detector, StudentDetector, DEFAULT_MAX_AREA, GRIPPER_MAX_AREA
 
 DEFAULT_CAMERAS = ["left", "right", "top", "gripper"]
 OBJECTS = ["duck", "cup"]
@@ -246,6 +246,7 @@ def process_dataset(
     conf_hold_threshold: float | None = None,
     device: str = "cuda",
     root: str = None,
+    student_run: str | None = None,
 ):
     """Run detection on a LeRobot dataset and save results parquet.
 
@@ -314,11 +315,13 @@ def process_dataset(
     remaining_frames = remaining_eps["length"].sum()
     print(f"[detection] Processing {len(remaining_eps)} episodes ({remaining_frames} frames)")
 
-    # Initialize detector (ONNX if available, falls back to PyTorch)
-    detector = create_detector(
-        device=device,
-        confidence_threshold=confidence_threshold,
-    )
+    # Initialize detector
+    use_student = student_run is not None
+    if use_student:
+        detector = StudentDetector(run=student_run, device=device)
+        print(f"[detection] Using StudentDetector (run='{student_run}')")
+    else:
+        detector = create_detector(device=device, confidence_threshold=confidence_threshold)
 
     cam_key_map = {cam: f"observation.images.{cam}" for cam in cameras}
 
@@ -344,8 +347,11 @@ def process_dataset(
         nonlocal frames_detected
         if not batch_imgs:
             return
-        max_area = GRIPPER_MAX_AREA if cam == "gripper" else DEFAULT_MAX_AREA
-        results = detector.detect_batch(batch_imgs, max_area=max_area)
+        if use_student:
+            results = detector.detect_batch(batch_imgs, cam=cam)  # type: ignore[call-arg]
+        else:
+            max_area = GRIPPER_MAX_AREA if cam == "gripper" else DEFAULT_MAX_AREA
+            results = detector.detect_batch(batch_imgs, max_area=max_area)
         for (ep_idx, fi), img, det in zip(batch_meta, batch_imgs, results):
             ih, iw = img.shape[:2]
             for obj_name in OBJECTS:
@@ -486,6 +492,9 @@ def main():
                         help="Torch device (default: cuda)")
     parser.add_argument("--root", default=None,
                         help="Override dataset root path")
+    parser.add_argument("--student-run", default=None,
+                        help="Use StudentDetector from this training run instead of DINO "
+                             "(e.g. 'm1_baseline'). Recommended with --stride 1.")
 
     args = parser.parse_args()
 
@@ -502,6 +511,7 @@ def main():
         conf_hold_threshold=hold,
         device=args.device,
         root=args.root,
+        student_run=args.student_run,
     )
 
 

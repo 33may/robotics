@@ -4,13 +4,25 @@ Usage:
     python -m vbti.logic.dataset.viewer eternalmay33/02_black_full_center_aug
     python -m vbti.logic.dataset.viewer eternalmay33/02_black_full_center_aug --episode 5
 
+    # Overlay the filter output parquet (what actually gets used in training):
+    python -m vbti.logic.dataset.viewer eternalmay33/01_02_03_merged_may-sim \\
+        --parq /home/may33/.cache/vbti/detection_labels_final.parquet
+
 Controls:
     SPACE     pause/resume
     RIGHT     step forward (paused)
     LEFT      step backward (paused)
     N / P     next / previous episode
     +/-       speed up / slow down
+    T         (parq mode) toggle show-only-trusted
+    R         (parq mode) toggle show rejected bboxes
     Q / ESC   quit
+
+Parq mode colors:
+    GREEN      trust=1, real detection
+    YELLOW     trust=1, gripper_duck interpolated bbox
+    RED        trust=0 with a geometric reject reason (armlock/jaw/no_blue/...)
+    (nothing)  trust=0 with reason=no_detection (teacher saw nothing)
 """
 
 from __future__ import annotations
@@ -143,6 +155,166 @@ def load_conf_lookup(repo_id: str) -> dict[tuple[int, int], dict] | None:
         return None
 
 
+# ------------------------------------------------------------------
+# Filter-parquet overlay support
+# ------------------------------------------------------------------
+
+# Short labels for the reason codes so they fit on screen next to the bbox.
+_REASON_SHORT = {
+    "accepted":                       "OK",
+    "no_detection":                   "no_det",
+    "low_confidence":                 "lowconf",
+    "phase_gripper_duck_occluded":    "occl",
+    "phase_gripper_duck_no_neighbor": "no_nbr",
+    "phase_gripper_duck_no_blue":     "no_blue",
+    "gripper_cup_jaw_region":         "jaw",
+    "top_duck_armlock_y2":            "armlock",
+    "side_duck_release":              "rel_far",
+    "left_duck_top_strip":            "top_strip",
+    "right_duck_arm_base":            "arm_base",
+    "top_duck_fixed_blob":            "fx_blob",
+    "interpolated":                   "INTERP",
+}
+
+# Per-object colors (BGR).
+_OBJ_COLOR = {
+    "duck": (200,  40, 200),   # purple
+    "cup":  ( 40, 140, 255),   # orange
+}
+
+_PARQ_OBJ_COLS = ["cx", "cy", "conf", "x1", "y1", "x2", "y2", "trust", "reason"]
+
+
+def load_parq_lookup(parq_path: str) -> dict[tuple[int, int], dict]:
+    """Load filter-output parquet into {(ep, frame): row_dict}.
+
+    Each row_dict has keys:
+        "phase": str
+        "gripper_duck_bbox_filled": bool
+        "<cam>_<obj>_<field>": value  for each (cam, obj) and each of
+            {cx, cy, conf, x1, y1, x2, y2, trust, reason}.
+    """
+    print(f"Loading parq: {parq_path}")
+    df = pd.read_parquet(parq_path)
+    print(f"  {len(df)} rows, {df['episode_index'].nunique()} episodes")
+
+    # Build the minimal set of columns we need (keeps memory sane).
+    keep = ["episode_index", "frame_index", "phase", "gripper_duck_bbox_filled"]
+    for cam in ["left", "right", "top", "gripper"]:
+        for obj in ["duck", "cup"]:
+            for f in _PARQ_OBJ_COLS:
+                keep.append(f"{cam}_{obj}_{f}")
+    keep = [c for c in keep if c in df.columns]
+    df = df[keep].copy()
+
+    # Cast reason categoricals to plain str for easy dict access.
+    for cam in ["left", "right", "top", "gripper"]:
+        for obj in ["duck", "cup"]:
+            rc = f"{cam}_{obj}_reason"
+            if rc in df.columns:
+                df[rc] = df[rc].astype(str)
+
+    lookup: dict[tuple[int, int], dict] = {}
+    cols = df.columns.tolist()
+    for vals in df.itertuples(index=False, name=None):
+        d = dict(zip(cols, vals))
+        key = (int(d["episode_index"]), int(d["frame_index"]))
+        lookup[key] = d
+    print(f"  lookup built: {len(lookup)} (ep, frame) keys")
+    return lookup
+
+
+def _parq_row_for(lookup, sample) -> dict | None:
+    ep = int(sample["episode_index"].item())
+    fr = int(sample["frame_index"].item())
+    return lookup.get((ep, fr))
+
+
+def _draw_parq_bbox(
+    frame: np.ndarray,
+    x1n: float, y1n: float, x2n: float, y2n: float,
+    cx: float, cy: float,
+    color: tuple,
+    label: str,
+    thickness: int = 2,
+):
+    """Draw bbox rectangle + cx/cy dot + text label. All coords are normalized [0,1]."""
+    h, w = frame.shape[:2]
+    ix1, iy1 = int(x1n * w), int(y1n * h)
+    ix2, iy2 = int(x2n * w), int(y2n * h)
+    # Clip to frame
+    ix1 = max(0, min(w - 1, ix1))
+    iy1 = max(0, min(h - 1, iy1))
+    ix2 = max(0, min(w - 1, ix2))
+    iy2 = max(0, min(h - 1, iy2))
+    if ix2 > ix1 and iy2 > iy1:
+        cv2.rectangle(frame, (ix1, iy1), (ix2, iy2), color, thickness)
+    # cx/cy dot
+    if 0.0 < cx < 1.0 and 0.0 < cy < 1.0:
+        px, py = int(cx * w), int(cy * h)
+        cv2.circle(frame, (px, py), 5, color, -1)
+        cv2.circle(frame, (px, py), 6, (0, 0, 0), 1)
+    # label just above the top-left corner of bbox (or the dot if no bbox)
+    tx = ix1 if ix2 > ix1 else int(cx * w)
+    ty = max(12, iy1 - 4) if ix2 > ix1 else int(cy * h) - 8
+    cv2.putText(frame, label, (tx, ty),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1, cv2.LINE_AA)
+
+
+def _draw_parq_detections(
+    frame: np.ndarray,
+    cam: str,
+    parq: dict,
+    show_rejected: bool,
+    show_only_trusted: bool,
+):
+    """Overlay parquet detections for one camera onto the frame."""
+    gripper_filled = bool(parq.get("gripper_duck_bbox_filled", False))
+    for obj in ["duck", "cup"]:
+        trust = int(parq.get(f"{cam}_{obj}_trust", 0) or 0)
+        reason = parq.get(f"{cam}_{obj}_reason", "no_detection") or "no_detection"
+        conf = float(parq.get(f"{cam}_{obj}_conf", 0.0) or 0.0)
+        cx = float(parq.get(f"{cam}_{obj}_cx", np.nan) or np.nan)
+        cy = float(parq.get(f"{cam}_{obj}_cy", np.nan) or np.nan)
+        x1 = float(parq.get(f"{cam}_{obj}_x1", np.nan) or np.nan)
+        y1 = float(parq.get(f"{cam}_{obj}_y1", np.nan) or np.nan)
+        x2 = float(parq.get(f"{cam}_{obj}_x2", np.nan) or np.nan)
+        y2 = float(parq.get(f"{cam}_{obj}_y2", np.nan) or np.nan)
+
+        # Per-object color (duck=purple, cup=orange). Trust state is conveyed
+        # via line thickness (thick=accepted, thin=rejected) and label suffix.
+        color = _OBJ_COLOR[obj]
+        if trust == 1:
+            interp = (reason == "interpolated"
+                      or (cam == "gripper" and obj == "duck" and gripper_filled))
+            thickness = 2
+            tag = f"{obj[0].upper()} {conf:.2f}" + (" I" if interp else "")
+        else:
+            if show_only_trusted:
+                continue
+            if reason == "no_detection" or not show_rejected:
+                continue
+            thickness = 1
+            short = _REASON_SHORT.get(reason, reason[:8])
+            tag = f"{obj[0].upper()} REJ:{short}"
+
+        # Skip if both bbox and dot are invalid.
+        have_bbox = all(np.isfinite([x1, y1, x2, y2])) and (x2 > x1) and (y2 > y1)
+        have_dot = np.isfinite(cx) and np.isfinite(cy) and (cx > 0 or cy > 0)
+        if not have_bbox and not have_dot:
+            continue
+
+        if have_bbox:
+            _draw_parq_bbox(frame, x1, y1, x2, y2, cx, cy, color, tag, thickness=thickness)
+        else:
+            # bbox missing — just draw the dot with label
+            h, w = frame.shape[:2]
+            px, py = int(cx * w), int(cy * h)
+            cv2.circle(frame, (px, py), 6, color, -1)
+            cv2.putText(frame, tag, (px + 8, py + 4),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1, cv2.LINE_AA)
+
+
 def _load_episode_index(ds: LeRobotDataset) -> pd.DataFrame:
     """Load episode boundaries from meta parquets."""
     root = ds.meta.root
@@ -152,7 +324,7 @@ def _load_episode_index(ds: LeRobotDataset) -> pd.DataFrame:
     return eps[["episode_index", "length", "dataset_from_index", "dataset_to_index"]]
 
 
-def run_viewer(repo_id: str, start_episode: int = 0):
+def run_viewer(repo_id: str, start_episode: int = 0, parq_path: str | None = None):
     print(f"Loading {repo_id}...")
     ds = LeRobotDataset(repo_id)
     n_episodes = ds.meta.total_episodes
@@ -170,12 +342,20 @@ def run_viewer(repo_id: str, start_episode: int = 0):
     print("Loading episode index...")
     ep_df = _load_episode_index(ds)
 
-    print("Loading detection confidences...")
-    conf_lookup = load_conf_lookup(repo_id)
-    if conf_lookup:
-        print(f"  {len(conf_lookup)} entries loaded")
+    parq_lookup: dict[tuple[int, int], dict] | None = None
+    conf_lookup = None
+    if parq_path:
+        parq_lookup = load_parq_lookup(parq_path)
     else:
-        print("  not available (will show positions without confidence)")
+        print("Loading detection confidences...")
+        conf_lookup = load_conf_lookup(repo_id)
+        if conf_lookup:
+            print(f"  {len(conf_lookup)} entries loaded")
+        else:
+            print("  not available (will show positions without confidence)")
+
+    show_rejected = True      # toggle with R
+    show_only_trusted = False # toggle with T
 
     ep_idx = start_episode
     paused = False
@@ -199,14 +379,17 @@ def run_viewer(repo_id: str, start_episode: int = 0):
             state = sample["observation.state"].numpy()
 
             # Get phase
-            if phase_slice is not None:
+            parq_row = _parq_row_for(parq_lookup, sample) if parq_lookup else None
+            if parq_row is not None and parq_row.get("phase") is not None:
+                phase_name = str(parq_row["phase"])
+            elif phase_slice is not None:
                 phase_oh = state[phase_slice]
                 phase_idx_val = int(np.argmax(phase_oh))
                 phase_name = PHASE_NAMES[phase_idx_val] if phase_oh.max() > 0 else "unknown"
             else:
                 phase_name = ""
 
-            # Get confidence values
+            # Get confidence values (legacy path — only used without --parq)
             conf = {}
             if conf_lookup:
                 key = (int(sample["episode_index"].item()), int(sample["frame_index"].item()))
@@ -223,20 +406,32 @@ def run_viewer(repo_id: str, start_episode: int = 0):
 
             # Draw detections on each camera
             for cam in ["left", "right", "top", "gripper"]:
-                if cam not in cam_frames or cam not in det_slices:
+                if cam not in cam_frames:
                     continue
                 frame = cam_frames[cam]
-                for obj, color in [("duck", (255, 100, 0)), ("cup", (0, 0, 255))]:
-                    if obj not in det_slices[cam]:
+
+                if parq_row is not None:
+                    # Parq mode: draw filter-aware overlays (bbox + trust color + reason).
+                    _draw_parq_detections(
+                        frame, cam, parq_row,
+                        show_rejected=show_rejected,
+                        show_only_trusted=show_only_trusted,
+                    )
+                else:
+                    # Legacy path — state-based cx/cy dots.
+                    if cam not in det_slices:
                         continue
-                    s, _e = det_slices[cam][obj]
-                    cx, cy = state[s], state[s + 1]
-                    if cx == 0 and cy == 0:
-                        continue
-                    c = conf.get(f"{cam}_{obj}_conf", -1)
-                    if 0 < c < 0.05:
-                        continue
-                    _draw_detection(frame, cx, cy, obj[0].upper(), color, c)
+                    for obj, color in [("duck", (255, 100, 0)), ("cup", (0, 0, 255))]:
+                        if obj not in det_slices[cam]:
+                            continue
+                        s, _e = det_slices[cam][obj]
+                        cx, cy = state[s], state[s + 1]
+                        if cx == 0 and cy == 0:
+                            continue
+                        c = conf.get(f"{cam}_{obj}_conf", -1)
+                        if 0 < c < 0.05:
+                            continue
+                        _draw_detection(frame, cx, cy, obj[0].upper(), color, c)
 
                 # Phase badge per camera
                 if phase_name:
@@ -276,6 +471,12 @@ def run_viewer(repo_id: str, start_episode: int = 0):
                 speed = min(speed * 1.5, 10.0)
             elif key == ord("-"):
                 speed = max(speed / 1.5, 0.1)
+            elif key == ord("t") and parq_lookup is not None:
+                show_only_trusted = not show_only_trusted
+                print(f"  show_only_trusted = {show_only_trusted}")
+            elif key == ord("r") and parq_lookup is not None:
+                show_rejected = not show_rejected
+                print(f"  show_rejected = {show_rejected}")
             elif key == 83 and paused:  # right arrow
                 local_frame = min(local_frame + 1, n_frames - 1)
                 continue
@@ -297,8 +498,14 @@ def main():
     parser = argparse.ArgumentParser(description="Augmented dataset viewer")
     parser.add_argument("dataset", help="Augmented dataset repo_id")
     parser.add_argument("--episode", type=int, default=0, help="Start episode")
+    parser.add_argument(
+        "--parq", default=None,
+        help="Path to filter-output parquet (e.g. detection_labels_final.parquet). "
+             "When set, detection overlays come from the parquet (bboxes + trust + reason) "
+             "instead of the dataset's state cx/cy.",
+    )
     args = parser.parse_args()
-    run_viewer(args.dataset, args.episode)
+    run_viewer(args.dataset, args.episode, parq_path=args.parq)
 
 
 if __name__ == "__main__":

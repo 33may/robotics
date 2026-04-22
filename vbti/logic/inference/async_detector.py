@@ -1,4 +1,4 @@
-"""Async G-DINO detector for real-time inference.
+"""Async student-model detector for real-time inference.
 
 A single worker thread runs detection in the background.  The policy loop
 submits the latest camera frame (overwriting any still-pending frame for
@@ -30,11 +30,7 @@ from typing import Optional
 
 import numpy as np
 
-from vbti.logic.detection.detect import (
-    DuckDetector,
-    DEFAULT_MAX_AREA,
-    GRIPPER_MAX_AREA,
-)
+from vbti.logic.detection.detect import StudentDetector
 
 
 @dataclass
@@ -53,13 +49,13 @@ class AsyncDetector:
     def __init__(
         self,
         cameras: list[str],
-        detector: DuckDetector | None = None,
+        detector: StudentDetector | None = None,
         priority: dict[str, int] | None = None,
         warmup: bool = True,
         warmup_shape: tuple[int, int, int] = (480, 640, 3),
     ):
         self.cameras = list(cameras)
-        self.detector = detector if detector is not None else DuckDetector()
+        self.detector = detector if detector is not None else StudentDetector()
         self.priority = {c: 1 for c in self.cameras}
         if priority:
             self.priority.update(priority)
@@ -123,8 +119,9 @@ class AsyncDetector:
 
     def _warmup(self, shape: tuple[int, int, int]) -> None:
         dummy = np.zeros(shape, dtype=np.uint8)
-        for _ in range(2):
-            self.detector.detect(dummy)
+        for cam in self.cameras:
+            for _ in range(2):
+                self.detector.detect(dummy, cam)
 
     def _run(self) -> None:
         schedule = self._schedule
@@ -151,10 +148,9 @@ class AsyncDetector:
                 continue
 
             frame, frame_idx, submitted_t = work
-            max_area = GRIPPER_MAX_AREA if cam == "gripper" else DEFAULT_MAX_AREA
 
             started_t = time.perf_counter()
-            result = self.detector.detect(frame, max_area=max_area)
+            result = self.detector.detect(frame, cam)
             completed_t = time.perf_counter()
 
             det_result = DetectionResult(

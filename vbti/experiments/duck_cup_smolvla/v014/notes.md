@@ -1,21 +1,13 @@
-# v014 — Detection Coordinates (Hold-Simulated, Variable Stride)
+# v014 — Student Detection Coordinates
 
-**Hypothesis**: Training with hold-simulated detection data (stride 5-20 frames, uniform random per episode) makes the policy robust to the noisy coordinates it will see at inference time, improving real-world performance vs clean data.
+**Hypothesis**: Adding student detector coordinates (duck/cup cx/cy/conf from 4 cameras = 24d state) as extra state improves grasping accuracy over pure vision.
 
 **What changed from v013**:
-- Dataset: `eternalmay33/01_02_03_merged_may-sim_detection_hold` (20d state)
-- Detection coordinates simulated with hold strategy: random stride 5-20 frames, forward-fill between arrivals
-- This matches inference distribution: TRT async detection at ~103ms/cam, 4 cameras round-robin, ~12 frames between updates with variance
+- Dataset: `eternalmay33/01_02_03_merged_may-sim_detection` (detection parquet merged in, 30d state: 6 joints + 24 detection values)
+- Detection: StudentDetector (MobileNetV3-Small, m1_baseline, per-camera)
 
-**Hold simulation stats** (vs dense ground truth):
-- Mean difference: 12.0 px
-- Median difference: 0.2 px
-- P95 difference: 62.8 px
+**A/B pair**: v013 (no detection) vs v014 (student detection). Same model, same hyperparams, same dataset base.
 
-**A/B pair**: v013 (clean) vs v014 (hold-simulated). Same model, same hyperparams, different detection noise.
+**Key question**: Does student detector coordinates improve policy over pure vision baseline (v013)?
 
-**Key question**: Does domain-matched noisy training beat clean training for real-world deployment?
-
-**Baseline**: v013 (clean detection), v012 (no detection)
-
-**Inference**: Same as v013 — live TRT async detection with hold strategy
+**Inference**: requires live StudentDetector (m1_baseline) at inference time

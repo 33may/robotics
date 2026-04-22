@@ -11,7 +11,7 @@ model:
   num_denoising_steps: 10
 dataset:
   sources:
-  - repo_id: eternalmay33/01_02_03_merged_may-sim_detection_hold
+  - repo_id: eternalmay33/01_02_03_merged_may-sim_detection
     root: null
     episodes: null
     weight: 1.0

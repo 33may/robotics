@@ -34,7 +34,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from vbti.logic.detection.distill_model import DistilledDetector, count_params
+from vbti.logic.detection.distill.distill_model import DistilledDetector, count_params
 from vbti.logic.detection.process_dataset import (
     VideoReader,
     get_video_path,
@@ -298,15 +298,17 @@ class DistillDataset(Dataset):
         cup_conf_raw = merged[f"{cam}_cup_conf"].fillna(0.0).to_numpy(dtype=np.float32)
         cup_trust = merged[f"{cam}_cup_trust"].fillna(0).to_numpy(dtype=np.float32)
 
-        # Conf targets per-source + per-cam
+        # Conf targets = trust. Universally. Trust is the filter's binary
+        # verdict "is there a real duck/cup in this frame, with a clean label?".
+        # Raw teacher conf was already consumed during filtering (to decide
+        # trust) — it's not a training signal. Second-guessing trust with a
+        # conf_raw threshold leaks interpolated-on-trust=0 values into the
+        # conf target, which taught the student to claim conf=1 on ~90% of
+        # rejected side-cam rows (v1_baseline arm-base overconfidence bug,
+        # 2026-04-21).
         source_arr = merged["source"].to_numpy()
-        use_trust_as_conf = (source_arr == "no_obj") | (cam == "gripper")
-        duck_conf_target = np.where(
-            use_trust_as_conf, duck_trust, (duck_conf_raw >= 0.08).astype(np.float32),
-        ).astype(np.float32)
-        cup_conf_target = np.where(
-            use_trust_as_conf, cup_trust, (cup_conf_raw >= 0.08).astype(np.float32),
-        ).astype(np.float32)
+        duck_conf_target = duck_trust.astype(np.float32)
+        cup_conf_target = cup_trust.astype(np.float32)
 
         # Clip coords
         duck_cx = np.clip(duck_cx, 0.0, 1.0)
@@ -555,6 +557,7 @@ class TrainConfig:
     model_backbone: str = "mobilenet_v3_small"  # or mobilenet_v3_large
     focal_gamma: float = 0.0                    # 0.0 = standard BCE
     augment: bool = False                       # ColorJitter 0.2
+    resume_from: str | None = None              # path to existing .pt to extend from
 
 
 def _make_loaders(cam: str, cfg: TrainConfig):
@@ -635,15 +638,69 @@ def train_one(cam: str, cfg: TrainConfig):
     optim = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=cfg.max_epochs)
 
-    metrics_csv = out_dir / "metrics.csv"
-    csv_fp = open(metrics_csv, "w", newline="")
-    csv_writer = None
+    # -- RESUME from existing checkpoint (extension mode) --
+    # Loads model weights; if the checkpoint also has optim/sched state, restores
+    # them. Fresh cosine annealing starts over the NEW --max-epochs window.
+    # Seeds best_score/best_epoch from existing best.pt so we only overwrite
+    # best.pt when extension actually beats it.
+    csv_start_offset = 0
+    csv_header_written = False
+    if cfg.resume_from:
+        rp = Path(cfg.resume_from)
+        if not rp.exists():
+            raise FileNotFoundError(f"--resume-from path not found: {rp}")
+        ck = torch.load(rp, map_location=device, weights_only=False)
+        model.load_state_dict(ck["model"])
+        print(f"[train] RESUMED model weights from {rp}")
+        if "optim" in ck:
+            try:
+                optim.load_state_dict(ck["optim"])
+                print(f"[train] resumed optimizer state")
+            except Exception as e:
+                print(f"[train] optim state load failed ({e}); keeping fresh AdamW")
+        else:
+            print(f"[train] checkpoint has no optimizer state; fresh AdamW at lr={cfg.lr}")
+        if "sched" in ck:
+            try:
+                sched.load_state_dict(ck["sched"])
+                print(f"[train] resumed scheduler state")
+            except Exception:
+                pass
 
     # Early stop on main pixel error (sum of duck + cup medians). Smaller is better.
     best_score = math.inf
     best_epoch = -1
     patience_left = cfg.patience
     history = []
+
+    # Metrics CSV: fresh for cold start, append-and-continue for resume.
+    metrics_csv = out_dir / "metrics.csv"
+    if cfg.resume_from and metrics_csv.exists():
+        prev_df = pd.read_csv(metrics_csv)
+        if len(prev_df) > 0:
+            csv_start_offset = int(prev_df["epoch"].max())
+            # Seed history so the training.png plot shows the full curve.
+            history = prev_df.to_dict("records")
+        csv_fp = open(metrics_csv, "a", newline="")
+        csv_header_written = True  # already present on disk
+        # Seed best_score from existing best.pt so extension only overwrites on real improvement.
+        best_pt = out_dir / "best.pt"
+        if best_pt.exists():
+            try:
+                prev_best = torch.load(best_pt, map_location="cpu", weights_only=False)
+                pv = prev_best.get("val", {}) or {}
+                pd_med = pv.get("main_duck_err_median_px", float("nan"))
+                pc_med = pv.get("main_cup_err_median_px", float("nan"))
+                if np.isfinite(pd_med) and np.isfinite(pc_med):
+                    best_score = float(pd_med) + float(pc_med)
+                    best_epoch = int(prev_best.get("epoch", -1))
+                    print(f"[train] existing best.pt: score={best_score:.2f} @ ep{best_epoch}")
+            except Exception as e:
+                print(f"[train] could not read prev best.pt ({e}); starting best_score=inf")
+        print(f"[train] resume: csv_start_offset={csv_start_offset} (continuing epoch numbering)")
+    else:
+        csv_fp = open(metrics_csv, "w", newline="")
+    csv_writer = None
 
     t_start = time.perf_counter()
     for epoch in range(cfg.max_epochs):
@@ -692,7 +749,7 @@ def train_one(cam: str, cfg: TrainConfig):
         score = _num(duck_med_main) + _num(cup_med_main)
 
         row = {
-            "epoch": epoch + 1,
+            "epoch": csv_start_offset + epoch + 1,
             "lr": optim.param_groups[0]["lr"],
             "train_total": train_total,
             "train_coord": train_coord,
@@ -718,12 +775,15 @@ def train_one(cam: str, cfg: TrainConfig):
 
         if csv_writer is None:
             csv_writer = csv.DictWriter(csv_fp, fieldnames=list(row.keys()))
-            csv_writer.writeheader()
+            if not csv_header_written:
+                csv_writer.writeheader()
+                csv_header_written = True
         csv_writer.writerow(row)
         csv_fp.flush()
 
+        abs_epoch = csv_start_offset + epoch + 1
         print(
-            f"[train] {cfg.run_name}/{cam} ep {epoch+1}: "
+            f"[train] {cfg.run_name}/{cam} ep {abs_epoch}: "
             f"train {train_total:.4f}  "
             f"val pixel-score {score:.1f}  "
             f"main d/c med {duck_med_main:.1f}/{cup_med_main:.1f}  "
@@ -731,7 +791,8 @@ def train_one(cam: str, cfg: TrainConfig):
             f"{val_metrics.get('no_obj_cup_false_positive_rate', float('nan')):.3f}"
         )
 
-        torch.save({"model": model.state_dict(), "epoch": epoch + 1,
+        torch.save({"model": model.state_dict(), "epoch": abs_epoch,
+                    "optim": optim.state_dict(), "sched": sched.state_dict(),
                     "val": val_metrics, "config": asdict(cfg)},
                    out_dir / "last.pt")
 
@@ -742,8 +803,9 @@ def train_one(cam: str, cfg: TrainConfig):
 
         if improved:
             best_score = score
-            best_epoch = epoch + 1
-            torch.save({"model": model.state_dict(), "epoch": epoch + 1,
+            best_epoch = abs_epoch
+            torch.save({"model": model.state_dict(), "epoch": abs_epoch,
+                        "optim": optim.state_dict(), "sched": sched.state_dict(),
                         "val": val_metrics, "config": asdict(cfg)},
                        out_dir / "best.pt")
             patience_left = cfg.patience
@@ -753,7 +815,7 @@ def train_one(cam: str, cfg: TrainConfig):
                 patience_left -= 1
                 print(f"[train] no improvement, patience={patience_left}")
                 if patience_left <= 0:
-                    print(f"[train] early stop at epoch {epoch+1} (best @ ep{best_epoch})")
+                    print(f"[train] early stop at epoch {abs_epoch} (best @ ep{best_epoch})")
                     break
             else:
                 print(f"[train] below min_epochs ({cfg.min_epochs}), continuing")
@@ -860,11 +922,17 @@ def main():
     sub_train.add_argument("--lr", type=float, default=1e-3)
     sub_train.add_argument("--num-workers", type=int, default=4)
     sub_train.add_argument("--model", type=str, default="mobilenet_v3_small",
-                           choices=["mobilenet_v3_small", "mobilenet_v3_large"])
+                           choices=["mobilenet_v3_small", "mobilenet_v3_large", "efficientnet_b0"])
     sub_train.add_argument("--focal-gamma", type=float, default=0.0,
                            help="Focal loss gamma for conf head; 0 = standard BCE")
     sub_train.add_argument("--augment", action="store_true",
                            help="Enable conservative color jitter augmentation")
+    sub_train.add_argument("--resume-from", type=str, default=None,
+                           help="Path to .pt to resume from (extension mode). "
+                                "Loads model weights; also restores optim/sched state "
+                                "if present in the checkpoint. Metrics.csv is appended "
+                                "with continued epoch numbering. best.pt is only "
+                                "overwritten if extension beats existing best.")
 
     sub_eval = sub.add_parser("eval", help="Evaluate a checkpoint on val")
     sub_eval.add_argument("--cam", choices=CAMERAS, required=True)
@@ -903,6 +971,7 @@ def main():
                 model_backbone=args.model,
                 focal_gamma=args.focal_gamma,
                 augment=args.augment,
+                resume_from=args.resume_from,
             )
             r = train_one(c, cfg)
             results.append(r)

@@ -74,6 +74,7 @@ EMA_ALPHA_CX = 0.35
 EMA_ALPHA_CY = 0.35
 EMA_ALPHA_CONF = 0.5
 DEFAULT_BBOX_SIZE = 60
+CONF_DRAW_THRESHOLD = 0.15  # skip drawing student prediction below this confidence
 
 
 # =============================================================================
@@ -187,8 +188,10 @@ def _extract_teacher_bbox(
     y1 = teacher_row.get(f"{cam}_{obj}_y1", np.nan)
     x2 = teacher_row.get(f"{cam}_{obj}_x2", np.nan)
     y2 = teacher_row.get(f"{cam}_{obj}_y2", np.nan)
+    if any(v is None for v in (x1, y1, x2, y2)):
+        return None
     try:
-        x1f = float(x1); y1f = float(y1); x2f = float(x2); y2f = float(y2)
+        x1f = float(x1); y1f = float(y1); x2f = float(x2); y2f = float(y2)  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return None
     if not all(np.isfinite([x1f, y1f, x2f, y2f])):
@@ -201,7 +204,7 @@ def _teacher_conf(teacher_row: pd.Series | None, cam: str, obj: str) -> float | 
         return None
     c = teacher_row.get(f"{cam}_{obj}_conf", np.nan)
     try:
-        cf = float(c)
+        cf = float(c)  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return None
     return cf if np.isfinite(cf) else None
@@ -284,7 +287,7 @@ def _pick_frame_with_all_teachers(teacher: pd.DataFrame, ep_idx: int, ep_len: in
     if len(ep_t) == 0:
         return ep_len // 2
     # mask: which frames have all required x1 cols non-null
-    valid_mask = ep_t[required_cols].notna().all(axis=1)
+    valid_mask = ep_t[required_cols].notna().all(axis=1)  # type: ignore[union-attr]
     valid_frames = ep_t.loc[valid_mask, "frame_index"].to_numpy()
     if len(valid_frames) == 0:
         print(f"  [grid] ep{ep_idx}: NO frame with full teacher coverage — using midpoint")
@@ -371,11 +374,22 @@ def draw_dashed_rect(
     dashed_line((x1, y2), (x1, y1))
 
 
+def _draw_crosshair(img: np.ndarray, cx: int, cy: int, color: tuple[int, int, int], r: int = 8, thickness: int = 2) -> None:
+    """Draw a crosshair (+) at (cx, cy) — compact point marker for center predictions."""
+    cv2.line(img, (cx - r, cy), (cx + r, cy), (0, 0, 0), thickness + 2, cv2.LINE_AA)
+    cv2.line(img, (cx, cy - r), (cx, cy + r), (0, 0, 0), thickness + 2, cv2.LINE_AA)
+    cv2.line(img, (cx - r, cy), (cx + r, cy), color, thickness, cv2.LINE_AA)
+    cv2.line(img, (cx, cy - r), (cx, cy + r), color, thickness, cv2.LINE_AA)
+    cv2.circle(img, (cx, cy), 3, color, -1, cv2.LINE_AA)
+
+
 def draw_overlay_on_frame(
     frame_rgb: np.ndarray,
     teacher_row: pd.Series | None,
     student_out: np.ndarray,
     cam: str,
+    point_only: bool = False,
+    show_teacher: bool = True,
 ) -> np.ndarray:
     img = frame_rgb.copy()
     errs: dict[str, float | None] = {"duck": None, "cup": None}
@@ -384,7 +398,7 @@ def draw_overlay_on_frame(
         ("duck", COLOR_T_DUCK_RGB, COLOR_S_DUCK_RGB, (0, 1, 2)),
         ("cup",  COLOR_T_CUP_RGB,  COLOR_S_CUP_RGB,  (3, 4, 5)),
     ]:
-        t_bbox = _extract_teacher_bbox(teacher_row, cam, obj)
+        t_bbox = _extract_teacher_bbox(teacher_row, cam, obj) if show_teacher else None
         t_cx = t_cy = None
         t_w = t_h = None
 
@@ -396,37 +410,48 @@ def draw_overlay_on_frame(
             t_h = float(y2i - y1i)
             t_cx = 0.5 * (x1i + x2i)
             t_cy = 0.5 * (y1i + y2i)
-            draw_dashed_rect(img, (x1i, y1i), (x2i, y2i), tcolor, thickness=2)
+            if point_only:
+                _draw_crosshair(img, int(t_cx), int(t_cy), tcolor)
+            else:
+                draw_dashed_rect(img, (x1i, y1i), (x2i, y2i), tcolor, thickness=2)
             tconf = _teacher_conf(teacher_row, cam, obj)
             tl = f"T{obj[0]}" + (f" {tconf:.2f}" if tconf is not None else "")
-            ty = max(12, y1i - 4)
-            cv2.putText(img, tl, (x1i, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 3, cv2.LINE_AA)
-            cv2.putText(img, tl, (x1i, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.45, tcolor, 1, cv2.LINE_AA)
+            ty = max(12, y1i - 4) if not point_only else max(12, int(t_cy) - 10)
+            tx = x1i if not point_only else int(t_cx) + 6
+            cv2.putText(img, tl, (tx, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 3, cv2.LINE_AA)
+            cv2.putText(img, tl, (tx, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.45, tcolor, 1, cv2.LINE_AA)
 
         s_cx = float(student_out[s_idx[0]]) * NATIVE_W
         s_cy = float(student_out[s_idx[1]]) * NATIVE_H
         s_conf = float(student_out[s_idx[2]])
 
-        s_w = t_w if t_w is not None else float(DEFAULT_BBOX_SIZE)
-        s_h = t_h if t_h is not None else float(DEFAULT_BBOX_SIZE)
-        sx1 = int(max(0, min(NATIVE_W - 1, s_cx - s_w / 2)))
-        sy1 = int(max(0, min(NATIVE_H - 1, s_cy - s_h / 2)))
-        sx2 = int(max(0, min(NATIVE_W - 1, s_cx + s_w / 2)))
-        sy2 = int(max(0, min(NATIVE_H - 1, s_cy + s_h / 2)))
-        cv2.rectangle(img, (sx1, sy1), (sx2, sy2), scolor, 2)
-        sl = f"S{obj[0]} {s_conf:.2f}"
-        sy_text = min(NATIVE_H - 3, sy2 + 14)
-        cv2.putText(img, sl, (sx1, sy_text), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 3, cv2.LINE_AA)
-        cv2.putText(img, sl, (sx1, sy_text), cv2.FONT_HERSHEY_SIMPLEX, 0.45, scolor, 1, cv2.LINE_AA)
+        if s_conf >= CONF_DRAW_THRESHOLD:
+            if point_only:
+                _draw_crosshair(img, int(s_cx), int(s_cy), scolor)
+                sl = f"S{obj[0]} {s_conf:.2f}"
+                cv2.putText(img, sl, (int(s_cx) + 6, int(s_cy) + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 3, cv2.LINE_AA)
+                cv2.putText(img, sl, (int(s_cx) + 6, int(s_cy) + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, scolor, 1, cv2.LINE_AA)
+            else:
+                s_w = t_w if t_w is not None else float(DEFAULT_BBOX_SIZE)
+                s_h = t_h if t_h is not None else float(DEFAULT_BBOX_SIZE)
+                sx1 = int(max(0, min(NATIVE_W - 1, s_cx - s_w / 2)))
+                sy1 = int(max(0, min(NATIVE_H - 1, s_cy - s_h / 2)))
+                sx2 = int(max(0, min(NATIVE_W - 1, s_cx + s_w / 2)))
+                sy2 = int(max(0, min(NATIVE_H - 1, s_cy + s_h / 2)))
+                cv2.rectangle(img, (sx1, sy1), (sx2, sy2), scolor, 2)
+                sl = f"S{obj[0]} {s_conf:.2f}"
+                sy_text = min(NATIVE_H - 3, sy2 + 14)
+                cv2.putText(img, sl, (sx1, sy_text), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 3, cv2.LINE_AA)
+                cv2.putText(img, sl, (sx1, sy_text), cv2.FONT_HERSHEY_SIMPLEX, 0.45, scolor, 1, cv2.LINE_AA)
 
-        if t_cx is not None and t_cy is not None:
+        if t_cx is not None and t_cy is not None and s_conf >= CONF_DRAW_THRESHOLD:
             errs[obj] = float(np.hypot(s_cx - t_cx, s_cy - t_cy))
 
     err_d = errs["duck"]
     err_c = errs["cup"]
     err_d_s = f"{err_d:.0f}" if err_d is not None else "-"
     err_c_s = f"{err_c:.0f}" if err_c is not None else "-"
-    label = f"{cam}  d={err_d_s}  c={err_c_s}px"
+    label = f"{cam}  d={err_d_s}  c={err_c_s}px" if show_teacher else cam
     cv2.putText(img, label, (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 3, cv2.LINE_AA)
     cv2.putText(img, label, (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
     return img
@@ -438,6 +463,8 @@ def build_tracking_video(
     teacher: pd.DataFrame,
     episodes: pd.DataFrame,
     run: str,
+    point_only: bool = False,
+    show_teacher: bool = True,
 ) -> Path:
     print(f"[video] decoding ep{ep_idx} frames (4 cams)...")
     cam_frames: dict[str, np.ndarray] = {}
@@ -461,9 +488,14 @@ def build_tracking_video(
 
     grid_h = 2 * NATIVE_H
     grid_w = 2 * NATIVE_W
+    suffix = ""
+    if point_only:
+        suffix += "_point"
+    if not show_teacher:
+        suffix += "_noteacher"
     out_dir = TRAINING_ROOT / run
-    tmp_path = out_dir / f"tracking_ep{ep_idx}.tmp.mp4"
-    final_path = out_dir / f"tracking_ep{ep_idx}.mp4"
+    tmp_path = out_dir / f"tracking_ep{ep_idx}{suffix}.tmp.mp4"
+    final_path = out_dir / f"tracking_ep{ep_idx}{suffix}.mp4"
 
     fourcc = cv2.VideoWriter.fourcc(*"mp4v")
     writer = cv2.VideoWriter(str(tmp_path), fourcc, FPS, (grid_w, grid_h))
@@ -478,7 +510,7 @@ def build_tracking_video(
         for cam, rr, cc in layout:
             frame = cam_frames[cam][t]
             out = cam_preds[cam][t]
-            overlay = draw_overlay_on_frame(frame, trow, out, cam)
+            overlay = draw_overlay_on_frame(frame, trow, out, cam, point_only=point_only, show_teacher=show_teacher)
             canvas[rr * NATIVE_H:(rr + 1) * NATIVE_H, cc * NATIVE_W:(cc + 1) * NATIVE_W] = overlay
         writer.write(cv2.cvtColor(canvas, cv2.COLOR_RGB2BGR))
     writer.release()
@@ -548,6 +580,10 @@ def main():
     parser.add_argument("--compare-with", type=str, default=None, help="other run to compare curves against")
     parser.add_argument("--skip-grid", action="store_true")
     parser.add_argument("--skip-video", action="store_true")
+    parser.add_argument("--point-only", action="store_true",
+                        help="draw center crosshair instead of bounding box")
+    parser.add_argument("--no-teacher", action="store_true",
+                        help="omit teacher annotations entirely")
     args = parser.parse_args()
 
     run_root = TRAINING_ROOT / args.run
@@ -567,7 +603,11 @@ def main():
     if not args.skip_grid:
         build_comparison_grid(students, teacher, episodes, args.run, args.grid_episodes)
     if not args.skip_video:
-        build_tracking_video(args.episode, students, teacher, episodes, args.run)
+        build_tracking_video(
+            args.episode, students, teacher, episodes, args.run,
+            point_only=args.point_only,
+            show_teacher=not args.no_teacher,
+        )
     if args.compare_with:
         plot_training_compare(args.run, args.compare_with)
 

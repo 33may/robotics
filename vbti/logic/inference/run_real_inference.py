@@ -79,11 +79,11 @@ def _show_camera_grid(frames, camera_names, step, action=None,
 # ── Detection overlay ───────────────────────────────────────────────────────
 
 def _init_detector(device: str = "cuda"):
-    """Load Grounding DINO for live detection overlay (ONNX if available)."""
-    from vbti.logic.detection.detect import create_detector
-    detector = create_detector(device=device, confidence_threshold=0.1)
+    """Load student detector for live detection overlay."""
+    from vbti.logic.detection.detect import StudentDetector
+    detector = StudentDetector(device=device)
     vram_mb = torch.cuda.memory_allocated() / 1e6
-    print(f"[detection] Detector loaded — total VRAM: {vram_mb:.0f} MB")
+    print(f"[detection] StudentDetector loaded — total VRAM: {vram_mb:.0f} MB")
     return detector
 
 
@@ -93,8 +93,6 @@ def _run_detection_overlay(detector, images: dict, camera_names: list) -> dict:
     Modifies images IN-PLACE (draws on BGR frames).
     Returns dict of {cam: {duck: {...}, cup: {...}}} detection results.
     """
-    from vbti.logic.detection.detect import DEFAULT_MAX_AREA, GRIPPER_MAX_AREA
-
     results = {}
     for cam_name in camera_names:
         if cam_name not in images or cam_name not in DETECTION_CAMERAS:
@@ -103,8 +101,7 @@ def _run_detection_overlay(detector, images: dict, camera_names: list) -> dict:
         frame = images[cam_name]  # BGR uint8 from camera
         # Detector expects RGB
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        max_area = GRIPPER_MAX_AREA if cam_name == "gripper" else DEFAULT_MAX_AREA
-        det = detector.detect(rgb, max_area=max_area)
+        det = detector.detect(rgb, cam_name)
         results[cam_name] = det
 
         h, w = frame.shape[:2]

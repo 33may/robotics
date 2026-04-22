@@ -4,8 +4,8 @@
   "remote_version_dir": "/home/vbti/anton/experiments/duck_cup_smolvla/v013",
   "remote_run_dir": "/home/vbti/anton/experiments/duck_cup_smolvla/v013/lerobot_output_r1",
   "remote_ckpt_dir": "/home/vbti/anton/experiments/duck_cup_smolvla/v013/lerobot_output_r1/checkpoints",
-  "remote_data_root": "/home/vbti/anton/data/eternalmay33/01_02_03_merged_may-sim_detection",
+  "remote_data_root": "/home/vbti/anton/data/eternalmay33/01_02_03_merged_may-sim",
   "job_name": "duck_cup_smolvla_v013_lerobot_output_r1",
-  "repo_id": "eternalmay33/01_02_03_merged_may-sim_detection",
+  "repo_id": "eternalmay33/01_02_03_merged_may-sim",
   "host": "vbti@10.11.100.151"
 }

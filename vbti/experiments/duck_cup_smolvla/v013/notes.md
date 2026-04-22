@@ -1,19 +1,12 @@
-# v013 — Detection Coordinates (Clean Interpolated)
+# v013 — New Baseline (01_02_03 May-Sim)
 
-**Hypothesis**: Adding object detection coordinates (duck/cup cx/cy from left/right/top/gripper, minus top_duck which is unreliable) as extra state dimensions improves grasping accuracy.
+**Hypothesis**: Fresh baseline on the latest merged dataset
 
 **What changed from v012**:
-- Dataset: `eternalmay33/01_02_03_merged_may-sim_detection` (20d state, was 6d)
-- State layout: [6 joints] + [16 detection cx/cy: 4 cams x 2 objects]
-- Detection: Grounding DINO (TRT, stride=3, linear interpolated) — dense, clean coordinates
-- No phase labels (keeping it simple for A/B test)
-- `train_state_proj: true`
-- Same architecture, hyperparameters, cameras as v012
+- Dataset: `eternalmay33/01_02_03_merged_may-sim` (absolute actions, may-sim = calibration profile)
+- Batch size: 32 (was 64)
+- No detection state — standard 6d joint state
 
-**A/B pair**: v013 (clean) vs v014 (hold-simulated). Same model, same hyperparams, different detection noise levels.
+**A/B pair**: v013 (no detection) vs v014 (student detection). Same model, same hyperparams, same dataset base.
 
-**Key question**: Does clean detection data give better policy than hold-simulated data that matches inference distribution?
-
-**Baseline**: v012 (no detection, 6d state)
-
-**Inference**: requires live detection (TRT async, ~103ms/cam, hold strategy between updates)
+**Key question**: Does adding student detector coordinates improve policy performance over pure vision?
