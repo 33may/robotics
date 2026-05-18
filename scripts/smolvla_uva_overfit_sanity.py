@@ -74,8 +74,25 @@ def phase_train(args: argparse.Namespace):
     log.info("[Phase 2] Loading dataset metadata from %s", args.baked_output)
     ds_meta = LeRobotDatasetMetadata(repo_id="local/uva_smoke", root=args.baked_output)
 
-    # -- UVA config --
+    # -- UVA config: read the baked feature's actual shape from the dataset's
+    #    info.json so t_future / spatial_size / feature_dim always match the bake,
+    #    regardless of which teacher was used.
     cfg = SmolVLAUVAConfig(device=str(device))
+    feat = ds_meta.features.get(cfg.teacher_features_key)
+    if feat is None:
+        raise SystemExit(
+            f"baked dataset is missing '{cfg.teacher_features_key}'. "
+            f"Available: {sorted(ds_meta.features.keys())}"
+        )
+    t_fut, s_h, s_w, feat_dim = feat["shape"]
+    log.info("[Phase 2] baked feature shape: t_future=%d spatial=%dx%d dim=%d",
+             t_fut, s_h, s_w, feat_dim)
+    cfg = SmolVLAUVAConfig(
+        device=str(device),
+        t_future=t_fut,
+        teacher_spatial_size=s_h,
+        teacher_feature_dim=feat_dim,
+    )
 
     # -- resolve delta timestamps from config + metadata --
     delta_timestamps = resolve_delta_timestamps(cfg, ds_meta)
