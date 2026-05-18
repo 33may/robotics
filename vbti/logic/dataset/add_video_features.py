@@ -2,8 +2,14 @@
 
 Creates a NEW dataset copy at --output containing all original data PLUS a new
 column ``observation.video_features.{layer}_{S}x{S}`` with fp16/fp32 tensors of
-shape (S, S, feat_dim) per frame, where S = --spatial-size and feat_dim comes
-from the teacher's SigLIP last layer.
+shape (t_future, S, S, feat_dim) per frame, where S = --spatial-size,
+feat_dim comes from the teacher's SigLIP last layer, and t_future = --t-future.
+
+Each row stores the **pre-assembled future window**: frame t holds the features
+of frames t+1, t+2, ..., t+t_future, clamped at episode boundaries (the last
+frame of the episode is repeated if t+k would fall outside). This means the
+policy can read the full future window directly via observation_delta_indices=[0]
+without touching any other observation.* key.
 
 Dataset copy layout:
   {output}/meta/         — full copy of source meta/ (info.json patched in-place)
@@ -17,6 +23,7 @@ Usage:
       --teacher vbti/experiments/duck_cup_smolvla/v020/lerobot_output_r12/checkpoints/150000/pretrained_model \\
       --layer siglip_output \\
       --spatial-size 4 \\
+      --t-future 4 \\
       --target-camera observation.images.gripper \\
       --output /path/to/new_dataset_with_uva
 """
@@ -105,13 +112,79 @@ def _bake_features(
     return out
 
 
+def _assemble_future_windows(
+    baked: torch.Tensor,          # (N, S, S, D) per-frame, indexed by global frame index
+    episode_index: list[int],     # (N,) episode id of each global frame index
+    t_future: int,
+    log: logging.Logger,
+) -> torch.Tensor:
+    """Build per-row future windows: row t -> [feat[t+1], ..., feat[t+t_future]].
+
+    Frames near an episode end are clamped: if t+k exceeds the episode's last
+    frame, the episode's last frame's feature is repeated. Episodes are assumed
+    contiguous in global index (verified true for LeRobot v3 datasets).
+
+    Returns (N, t_future, S, S, D), same dtype as `baked`.
+    """
+    N, S1, S2, D = baked.shape
+    log.info(f"assembling future windows: N={N} t_future={t_future} S={S1} D={D}")
+
+    # Compute the last global frame index per episode
+    ep_last: dict[int, int] = {}
+    for global_idx, ep in enumerate(episode_index):
+        if ep not in ep_last or global_idx > ep_last[ep]:
+            ep_last[ep] = global_idx
+
+    windowed = torch.empty((N, t_future, S1, S2, D), dtype=baked.dtype)
+
+    for t in range(N):
+        ep = episode_index[t]
+        last = ep_last[ep]
+        for k in range(1, t_future + 1):
+            src = min(t + k, last)
+            windowed[t, k - 1] = baked[src]
+
+    log.info(f"windowed tensor shape={tuple(windowed.shape)} dtype={windowed.dtype}")
+    return windowed
+
+
+def _read_episode_index_from_parquets(src_root: Path, log: logging.Logger) -> list[int]:
+    """Read `episode_index` and `index` columns from all data parquets.
+
+    Returns a list of length N (total frames) where result[global_frame_index]
+    = episode_index for that frame.
+    """
+    src_data = src_root / "data"
+    parquet_files = sorted(src_data.glob("*/*.parquet"))
+    log.info(f"reading episode_index from {len(parquet_files)} parquet files")
+
+    # Collect (global_index, episode_id) pairs
+    pairs: list[tuple[int, int]] = []
+    for pq_path in parquet_files:
+        table = pq.read_table(str(pq_path), columns=["index", "episode_index"])
+        indices = table.column("index").to_pylist()
+        ep_ids = table.column("episode_index").to_pylist()
+        pairs.extend(zip(indices, ep_ids))
+
+    # Sort by global index and build flat list
+    pairs.sort(key=lambda x: x[0])
+    n = pairs[-1][0] + 1  # global indices are 0-based
+    episode_index = [0] * n
+    for global_idx, ep_id in pairs:
+        episode_index[global_idx] = ep_id
+
+    log.info(f"episode_index array length={n}")
+    return episode_index
+
+
 def _build_dataset_copy(
     src_root: Path,
     output: Path,
     feature_key: str,
-    baked: torch.Tensor,   # (N, S, S, D) — full dataset, fp16 or fp32
+    baked: torch.Tensor,   # (N, t_future, S, S, D) — full dataset, fp16 or fp32
     dtype_str: str,
     spatial_size: int,
+    t_future: int,
     log: logging.Logger,
 ) -> None:
     """Build the new dataset copy at `output`.
@@ -138,12 +211,12 @@ def _build_dataset_copy(
         info = json.load(f)
     info["features"][feature_key] = {
         "dtype": "float16" if dtype_str == "fp16" else "float32",
-        "shape": [spatial_size, spatial_size, feat_dim],
+        "shape": [t_future, spatial_size, spatial_size, feat_dim],
         "names": None,
     }
     with open(info_path, "w") as f:
         json.dump(info, f, indent=4)
-    log.info(f"patched info.json: added feature '{feature_key}'")
+    log.info(f"patched info.json: added feature '{feature_key}' shape=[{t_future},{spatial_size},{spatial_size},{feat_dim}]")
 
     # --- 3. Symlink videos/ --------------------------------------------------
     src_videos = (src_root / "videos").resolve()
@@ -173,15 +246,15 @@ def _build_dataset_copy(
 
         # Slice the baked tensor by this file's global index values
         indices = table.column("index").to_pylist()  # list of int (global frame indices)
-        # Shape per row: (S, S, D) -> nested list for parquet storage
-        # Convert only this file's rows to avoid giant Python list in memory
-        rows = baked[indices].tolist()   # list of S x S x D nested lists
+        # Shape per row: (t_future, S, S, D) -> nested list for parquet storage
+        rows = baked[indices].tolist()   # list of t_future x S x S x D nested lists
 
         # Build a pyarrow array for the new column.
-        # Array3D equivalent: list<list<list<float16>>>
-        inner_type = pa.list_(pa.field("item", pa_dtype))
-        mid_type   = pa.list_(pa.field("item", inner_type))
-        outer_type = pa.list_(pa.field("item", mid_type))
+        # Array4D equivalent: list<list<list<list<float16>>>>
+        innermost_type = pa.list_(pa.field("item", pa_dtype))
+        inner_type     = pa.list_(pa.field("item", innermost_type))
+        mid_type       = pa.list_(pa.field("item", inner_type))
+        outer_type     = pa.list_(pa.field("item", mid_type))
         new_col = pa.array(rows, type=outer_type)
 
         table = table.append_column(
@@ -193,7 +266,14 @@ def _build_dataset_copy(
     log.info(f"dataset copy complete at {output}")
 
 
-def _verify_copy(output: Path, feature_key: str, spatial_size: int, feat_dim: int, log: logging.Logger) -> None:
+def _verify_copy(
+    output: Path,
+    feature_key: str,
+    spatial_size: int,
+    feat_dim: int,
+    t_future: int,
+    log: logging.Logger,
+) -> None:
     """Re-open the output dataset with LeRobotDataset and verify the new feature."""
     # Use a synthetic repo_id — only `root` matters for local-only datasets.
     # LeRobotDataset.__init__ tries to load from disk first (via load_metadata),
@@ -207,8 +287,8 @@ def _verify_copy(output: Path, feature_key: str, spatial_size: int, feat_dim: in
     )
     sample = check[0]
     actual_shape = tuple(sample[feature_key].shape)
-    expected_suffix = (spatial_size, spatial_size, feat_dim)
-    assert actual_shape[-3:] == expected_suffix, (
+    expected_suffix = (t_future, spatial_size, spatial_size, feat_dim)
+    assert actual_shape[-4:] == expected_suffix, (
         f"VERIFICATION FAILED: expected shape ending {expected_suffix}, got {actual_shape}"
     )
     log.info(f"verification OK: {feature_key} shape={actual_shape}")
@@ -220,6 +300,9 @@ def main():
     p.add_argument("--teacher", required=True, help="Path to teacher SmolVLAPolicy checkpoint")
     p.add_argument("--layer", default="siglip_output", help="Extractor registry name")
     p.add_argument("--spatial-size", type=int, default=4)
+    p.add_argument("--t-future", type=int, default=4,
+                   help="Future window depth: row t stores features of frames t+1..t+t_future "
+                        "(clamped at episode boundaries). Default: 4")
     p.add_argument("--target-camera", default="observation.images.gripper",
                    help="Camera key to extract features from")
     p.add_argument("--batch-size", type=int, default=8)
@@ -241,6 +324,9 @@ def main():
             f"ERROR: layer '{args.layer}' not in extractor registry. "
             f"Available: {available}"
         )
+
+    if args.t_future < 1:
+        raise SystemExit(f"ERROR: --t-future must be >= 1, got {args.t_future}")
 
     teacher_path = Path(args.teacher)
     if not teacher_path.exists():
@@ -289,7 +375,7 @@ def main():
     extractor = get_extractor(args.layer)
 
     # -------------------------------------------------------------------------
-    # Bake features — keep in memory as a single torch tensor
+    # Bake features — keep in memory as a single torch tensor (N, S, S, D)
     # -------------------------------------------------------------------------
     baked = _bake_features(
         dataset=dataset,
@@ -307,16 +393,34 @@ def main():
     log.info(f"feat_dim={feat_dim}")
 
     # -------------------------------------------------------------------------
-    # Build the new dataset copy
+    # Read episode_index per global frame index from parquets
     # -------------------------------------------------------------------------
     src_root = Path(dataset.root)
+    episode_index = _read_episode_index_from_parquets(src_root, log)
+
+    # -------------------------------------------------------------------------
+    # Assemble future windows: (N, S, S, D) -> (N, t_future, S, S, D)
+    # -------------------------------------------------------------------------
+    windowed = _assemble_future_windows(
+        baked=baked,
+        episode_index=episode_index,
+        t_future=args.t_future,
+        log=log,
+    )
+    # Free the per-frame tensor now that windowed is built
+    del baked
+
+    # -------------------------------------------------------------------------
+    # Build the new dataset copy
+    # -------------------------------------------------------------------------
     _build_dataset_copy(
         src_root=src_root,
         output=output,
         feature_key=feature_key,
-        baked=baked,
+        baked=windowed,
         dtype_str=args.dtype,
         spatial_size=args.spatial_size,
+        t_future=args.t_future,
         log=log,
     )
 
@@ -328,6 +432,7 @@ def main():
         feature_key=feature_key,
         spatial_size=args.spatial_size,
         feat_dim=feat_dim,
+        t_future=args.t_future,
         log=log,
     )
 
