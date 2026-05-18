@@ -114,7 +114,10 @@ def phase_train(args: argparse.Namespace):
         batch = move_batch_to_device(batch, device)
 
         opt.zero_grad(set_to_none=True)
-        total_loss, loss_dict = policy.forward(batch)
+        # SmolVLAUVAPolicy.forward returns (total_loss, loss_dict); the parent's
+        # return-type annotation upstream is wrong (says dict), so narrow explicitly.
+        total_loss, loss_dict = policy.forward(batch)  # pyright: ignore[reportGeneralTypeIssues]
+        assert isinstance(loss_dict, dict)
         total_loss.backward()
         torch.nn.utils.clip_grad_norm_(policy.parameters(), 1.0)
         opt.step()
