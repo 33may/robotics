@@ -30,7 +30,6 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 import torch
-import torch.nn.functional as F
 from tqdm import tqdm
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
