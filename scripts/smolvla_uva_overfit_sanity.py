@@ -25,6 +25,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
     level=logging.INFO,
     stream=sys.stdout,
+    force=True,  # lerobot imports configure root logging first; force reconfigures
 )
 log = logging.getLogger(__name__)
 
