@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 
 from lerobot.datasets.factory import resolve_delta_timestamps
 from lerobot.datasets.lerobot_dataset import LeRobotDataset, LeRobotDatasetMetadata
-from lerobot.policies.factory import make_policy
+from lerobot.policies.factory import make_policy, make_pre_post_processors
 from lerobot.policies.smolvla_uva.configuration_smolvla_uva import SmolVLAUVAConfig
 
 logging.basicConfig(
@@ -94,6 +94,12 @@ def phase_train(args: argparse.Namespace):
     policy = make_policy(cfg, ds_meta=ds_meta)
     policy.train().to(device)
 
+    # -- build the preprocessor pipeline (tokenizes the task string into
+    #    observation.language.tokens, normalizes, moves known features to device).
+    #    This is the same step lerobot-train runs as `batch = preprocessor(batch)`.
+    log.info("[Phase 2] Building preprocessor pipeline …")
+    preprocessor, _ = make_pre_post_processors(policy_cfg=cfg, dataset_stats=ds_meta.stats)
+
     # -- DataLoader + optimizer --
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     opt = torch.optim.AdamW(policy.parameters(), lr=1e-4)
@@ -111,6 +117,10 @@ def phase_train(args: argparse.Namespace):
             iterator = iter(loader)
             batch = next(iterator)
 
+        # preprocessor adds language tokens, normalizes, moves known features to
+        # device. It does NOT recognize observation.video_features.* (excluded from
+        # input_features), so a follow-up move_batch_to_device catches that key.
+        batch = preprocessor(batch)
         batch = move_batch_to_device(batch, device)
 
         opt.zero_grad(set_to_none=True)
