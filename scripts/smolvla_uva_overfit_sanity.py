@@ -116,7 +116,12 @@ def phase_train(args: argparse.Namespace):
     #    observation.language.tokens, normalizes, moves known features to device).
     #    This is the same step lerobot-train runs as `batch = preprocessor(batch)`.
     log.info("[Phase 2] Building preprocessor pipeline …")
-    preprocessor, _ = make_pre_post_processors(policy_cfg=cfg, dataset_stats=ds_meta.stats)
+    # ds_meta.stats holds ndarrays; make_pre_post_processors is annotated for Tensors.
+    # Runtime is fine (lerobot-train passes it identically) — suppress the type noise.
+    preprocessor, _ = make_pre_post_processors(
+        policy_cfg=cfg,
+        dataset_stats=ds_meta.stats,  # pyright: ignore[reportArgumentType]
+    )
 
     # -- DataLoader + optimizer --
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)

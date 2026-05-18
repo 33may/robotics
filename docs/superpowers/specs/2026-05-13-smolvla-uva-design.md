@@ -544,3 +544,22 @@ Memory references:
 - `project_remote_training_path.md` — remote.py ships lerobot-train; custom code must live in fork
 - `project_smolvla_vram_anchor.md` — VRAM budget on 4070 Ti SUPER
 - `duck_cup_sota_plan.md` — broader research roadmap context
+
+---
+
+## 14. v0 Validation Log
+
+| Date | Check | Result |
+|---|---|---|
+| 2026-05-18 | Fork unit tests (`tests/policies/smolvla_uva/`) | 18 passed (config, video_head, modeling, checkpoint) |
+| 2026-05-18 | Tier-1 refactor invariance (`test_refactor_invariance.py`) | PASS — `_compute_suffix_out` extraction bit-identical |
+| 2026-05-18 | Tier-2 `enable_aux_loss=False` parity | PASS — UVA policy bit-identical to vanilla SmolVLA |
+| 2026-05-18 | Bake `06_black_cup_red_bg_depth` (21136 frames, gripper cam, L2, 4×4, t_future=4) | PASS — new dataset copy built; `_verify_copy` reload OK; feature shape `[4,4,4,960]` |
+| 2026-05-18 | End-to-end overfit smoke (100 steps, BS=4) | **SMOKE PASS** — action_loss 1.31→0.50 (−62%), video_loss 25.3→17.2 (−32%) |
+
+Three integration bugs found and fixed during v0 bring-up:
+1. **Bake persistence** — original `_persist_column` wrote `.arrow` to a dir `LeRobotDataset` never reads. Fixed: new-dataset-copy that rewrites `data/chunk-*/file-*.parquet` + patches `meta/info.json`.
+2. **`observation_delta_indices`** — applied globally to all `observation.*` keys; `[0..T]` would corrupt the image/state observation. Fixed: bake the future window per row (see Section 0).
+3. **Feature classification** — `dataset_to_policy_features` classifies any `observation.*` key as STATE, routing `video_features` into the normalizer. Fixed: `validate_features` drops `teacher_features_key` from `input_features`.
+
+Also corrected: `teacher_feature_dim` 1152 → **960** (SmolVLM2-500M's `embed_image` returns connector-projected text-space features, not raw SigLIP-SO400M patches).
