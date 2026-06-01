@@ -1,0 +1,357 @@
+<style>
+  :root {
+    --bg: #050505;
+    --panel: rgba(255,255,255,0.045);
+    --panel-strong: rgba(255,255,255,0.075);
+    --stroke: rgba(255,255,255,0.13);
+    --stroke-soft: rgba(255,255,255,0.075);
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #71717a;
+    --blue: #62a8ff;
+    --green: #75d980;
+    --pink: #f081b5;
+    --violet: #a7a4ff;
+  }
+
+  .nvidia-poster {
+    background:
+      radial-gradient(circle at 50% 4%, rgba(98,168,255,.16), transparent 22%),
+      radial-gradient(circle at 78% 42%, rgba(117,217,128,.08), transparent 20%),
+      radial-gradient(circle at 23% 83%, rgba(167,164,255,.08), transparent 24%),
+      var(--bg);
+    border: 1px solid var(--stroke-soft);
+    border-radius: 28px;
+    padding: 34px 38px 30px;
+    color: var(--text);
+    min-height: 980px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), 0 40px 90px rgba(0,0,0,.45);
+    overflow: hidden;
+  }
+
+  .poster-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 26px;
+  }
+
+  .poster-title h2 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 54px);
+    line-height: .95;
+    letter-spacing: -.045em;
+    font-weight: 850;
+    max-width: 880px;
+  }
+
+  .poster-title p {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 660px;
+  }
+
+  .logo-strip {
+    min-width: 260px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .logo-pill {
+    border: 1px solid var(--stroke);
+    color: #d4d4d8;
+    border-radius: 999px;
+    padding: 9px 13px;
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,.035);
+  }
+
+  .flow {
+    display: grid;
+    grid-template-rows: auto 66px auto 70px auto 70px auto;
+    gap: 0;
+  }
+
+  .level {
+    position: relative;
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    align-items: center;
+    min-height: 150px;
+    border-top: 1px solid var(--stroke-soft);
+  }
+
+  .level:last-child { border-bottom: 1px solid var(--stroke-soft); }
+
+  .level-label {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    color: var(--dim);
+    font-size: 12px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+  }
+
+  .level-content {
+    display: grid;
+    align-items: center;
+    gap: 22px;
+    padding: 24px 0;
+  }
+
+  .centered { justify-items: center; }
+  .branches { grid-template-columns: minmax(280px,1fr) minmax(280px,1fr); }
+  .outputs { grid-template-columns: minmax(300px,1fr) minmax(300px,1fr); }
+
+  .block {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035));
+    border: 1px solid var(--stroke);
+    box-shadow: 0 24px 54px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
+    overflow: hidden;
+  }
+
+  .block.compact { max-width: 460px; }
+  .block.wide { max-width: none; }
+  .block.blue { border-color: rgba(98,168,255,.28); background: linear-gradient(180deg, rgba(54,99,177,.22), rgba(54,99,177,.08)); }
+  .block.green { border-color: rgba(117,217,128,.28); background: linear-gradient(180deg, rgba(38,130,67,.22), rgba(38,130,67,.08)); }
+  .block.violet { border-color: rgba(167,164,255,.26); background: linear-gradient(180deg, rgba(86,83,170,.20), rgba(86,83,170,.08)); }
+  .block.pink { border-color: rgba(240,129,181,.26); background: linear-gradient(180deg, rgba(153,57,101,.20), rgba(153,57,101,.08)); }
+
+  .block-body { padding: 22px 24px; }
+  .eyebrow { color: var(--muted); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 8px; }
+  .block h3 { margin: 0; font-size: 24px; line-height: 1.08; letter-spacing: -.025em; }
+  .block p { margin: 10px 0 0; color: #c7c7cf; font-size: 15px; line-height: 1.42; }
+
+  .image-frame { aspect-ratio: 16 / 7.5; }
+  .image-frame.tall { aspect-ratio: 16 / 8.8; }
+  .image-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: saturate(.92) contrast(1.06) brightness(.82);
+  }
+
+  .image-caption {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 14px;
+    color: white;
+    text-shadow: 0 2px 18px rgba(0,0,0,.95);
+  }
+
+  .image-caption h3 { font-size: 26px; }
+  .image-caption .tag {
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    padding: 7px 10px;
+    color: rgba(255,255,255,.78);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,.32);
+    backdrop-filter: blur(8px);
+    white-space: nowrap;
+  }
+
+  .connector {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    align-items: stretch;
+  }
+
+  .connector-space {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  .down-arrow::before {
+    content: "";
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(98,168,255,.25), rgba(98,168,255,.9), rgba(98,168,255,.25));
+  }
+
+  .down-arrow::after {
+    content: "↓";
+    position: absolute;
+    bottom: -13px;
+    color: var(--blue);
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .split-arrow, .merge-arrow, .output-arrow { position: relative; }
+  .split-arrow::before,
+  .merge-arrow::before,
+  .output-arrow::before {
+    content: "";
+    position: absolute;
+    left: 25%;
+    right: 25%;
+    top: 50%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,.42), transparent);
+  }
+
+  .split-arrow::after {
+    content: "↓        ↓";
+    white-space: pre;
+    color: var(--blue);
+    font-size: 28px;
+    letter-spacing: clamp(140px, 28vw, 420px);
+    transform: translateX(.6em);
+  }
+
+  .merge-arrow::after {
+    content: "↘       ↙";
+    white-space: pre;
+    color: #b5c6dd;
+    font-size: 28px;
+    letter-spacing: clamp(120px, 24vw, 340px);
+    transform: translateX(.6em);
+  }
+
+  .output-arrow::after {
+    content: "↙       ↘";
+    white-space: pre;
+    color: #b5c6dd;
+    font-size: 28px;
+    letter-spacing: clamp(120px, 24vw, 340px);
+    transform: translateX(.6em);
+  }
+
+  .output-card .image-frame { margin: 14px 14px 0; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.10); }
+
+  @media (max-width: 900px) {
+    .poster-title { flex-direction: column; }
+    .logo-strip { justify-content: flex-start; }
+    .level, .connector { grid-template-columns: 1fr; }
+    .level-label { padding: 18px 0 0; }
+    .branches, .outputs { grid-template-columns: 1fr; }
+    .split-arrow::after, .merge-arrow::after, .output-arrow::after { content: "↓"; letter-spacing: 0; transform: none; }
+  }
+</style>
+
+<div class="nvidia-poster">
+  <div class="poster-title">
+    <div>
+      <h2>Research &amp; Development of Scalable Robot Learning</h2>
+      <p>Modern robot training workflows combining real demonstrations, simulation reconstruction, synthetic data, and VLA model training.</p>
+    </div>
+    <div class="logo-strip">
+      <div class="logo-pill">NVIDIA Isaac</div>
+      <div class="logo-pill">LeRobot</div>
+      <div class="logo-pill">VBTI</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <section class="level hardware-level">
+      <div class="level-label">Physical hardware</div>
+      <div class="level-content centered">
+        <div class="block image-frame tall">
+          <img src="lab_scene.jpg" alt="Real robot setup">
+          <div class="image-caption">
+            <div>
+              <div class="eyebrow">input</div>
+              <h3>Real robot setup</h3>
+            </div>
+            <div class="tag">SO-ARM101 lab task</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector">
+      <div></div>
+      <div class="connector-space split-arrow"></div>
+    </div>
+
+    <section class="level data-level">
+      <div class="level-label">Data collection</div>
+      <div class="level-content branches">
+        <div class="block blue wide">
+          <div class="block-body">
+            <div class="eyebrow">branch 1</div>
+            <h3>Real data collection</h3>
+            <p>Teleoperated demonstrations captured from the physical robot task.</p>
+          </div>
+        </div>
+        <div class="block green wide">
+          <div class="block-body">
+            <div class="eyebrow">branch 2</div>
+            <h3>3D simulation reconstruction + synthetic data</h3>
+            <p>Scene reconstruction, simulation-ready assets, and synthetic data collection.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector">
+      <div></div>
+      <div class="connector-space merge-arrow"></div>
+    </div>
+
+    <section class="level training-level">
+      <div class="level-label">Training</div>
+      <div class="level-content centered">
+        <div class="block compact">
+          <div class="block-body" style="text-align:center;">
+            <div class="eyebrow">model training</div>
+            <h3>Final model</h3>
+            <p>VLA pretraining and imitation learning use real + synthetic data.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector">
+      <div></div>
+      <div class="connector-space output-arrow"></div>
+    </div>
+
+    <section class="level output-level">
+      <div class="level-label">Evaluation and deployment</div>
+      <div class="level-content outputs">
+        <div class="block violet output-card wide">
+          <div class="block-body">
+            <div class="eyebrow">evaluation</div>
+            <h3>Simulation</h3>
+            <p>Measure performance and test post-training in simulation.</p>
+          </div>
+          <div class="image-frame">
+            <img src="sim_evaluation.png" alt="Simulation evaluation screenshot">
+          </div>
+        </div>
+        <div class="block pink output-card wide">
+          <div class="block-body">
+            <div class="eyebrow">deployment</div>
+            <h3>Real world deployment</h3>
+            <p>Run the final model on the physical robot task.</p>
+          </div>
+          <div class="image-frame">
+            <img src="real_deployment.png" alt="Real world deployment screenshot">
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

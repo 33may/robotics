@@ -22,7 +22,7 @@ from vbti.logic.detection.process_dataset import VideoReader, get_video_path, lo
 DATASET = Path("/home/may33/.cache/huggingface/lerobot/eternalmay33/01_02_03_merged_may-sim")
 CLEAN_PARQUET = Path("/home/may33/.cache/vbti/detection_labels_clean.parquet")
 GALLERY_ROOT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/engineering tricks/"
+    "/home/may33/Documents/vbti/vbti/researches/engineering tricks/"
     "detection/distillation/data_analysis/gallery"
 )
 OUT = GALLERY_ROOT / "rejected_both_obj_review"

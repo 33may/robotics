@@ -2,7 +2,7 @@
 for the distillation data audit. Also renders 2 no_objects frames.
 
 Saves individual PNGs + 2×4 grid to:
-  /home/may33/Documents/Obsidian Vault/vbti/researches/engineering tricks/
+  /home/may33/Documents/vbti/vbti/researches/engineering tricks/
   detection/distillation/training/00_data_audit/
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ FINAL_PARQ  = Path("/home/may33/.cache/vbti/detection_labels_final.parquet")
 NO_OBJ_DS   = Path("/home/may33/.cache/huggingface/lerobot/eternalmay33/distill_no_objects")
 NO_OBJ_PARQ = Path("/home/may33/.cache/vbti/detection_labels_final_no_objects.parquet")
 OUT_DIR     = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/"
+    "/home/may33/Documents/vbti/vbti/researches/"
     "engineering tricks/detection/distillation/training/00_data_audit"
 )
 

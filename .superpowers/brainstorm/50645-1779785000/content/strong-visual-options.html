@@ -1,0 +1,58 @@
+<h2>Which visual direction feels strongest for the conference poster?</h2>
+<p class="subtitle">Pick the one that looks most like a title slide / cover page, not a research poster.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:220px; background:linear-gradient(135deg,#111827,#1f2937); display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div style="width:100%; max-width:320px; height:180px; position:relative; border-radius:18px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); overflow:hidden;">
+        <div style="position:absolute; inset:0; background:radial-gradient(circle at 35% 50%, rgba(59,130,246,0.35), transparent 38%), radial-gradient(circle at 70% 60%, rgba(34,197,94,0.18), transparent 35%);"></div>
+        <div style="position:absolute; left:18px; top:18px; right:18px; height:22px; border-top:1px solid rgba(255,255,255,0.12);"></div>
+        <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:120px; height:70px; border-radius:18px; border:2px solid rgba(255,255,255,0.55);"></div>
+        <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-10deg) translateY(-48px); width:8px; height:100px; background:linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.15)); border-radius:999px;"></div>
+        <div style="position:absolute; left:22px; bottom:18px; font-size:12px; color:#cbd5e1; letter-spacing:0.08em;">REAL → SIM → MODEL</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Hero robot, very clean</h3>
+      <p>One strong centered visual, dark background, subtle pipeline glow. Most like a premium cover slide.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:220px; background:linear-gradient(135deg,#0f172a,#312e81); display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div style="width:100%; max-width:320px; height:180px; position:relative; border-radius:18px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); overflow:hidden; display:flex; align-items:center; justify-content:space-between; padding:24px; gap:14px;">
+        <div style="flex:1; height:100px; border-radius:14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.08);"></div>
+        <div style="width:2px; height:70px; background:rgba(255,255,255,0.25);"></div>
+        <div style="flex:1; height:100px; border-radius:14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.08);"></div>
+        <div style="position:absolute; left:24px; right:24px; top:50%; height:2px; background:linear-gradient(to right, rgba(96,165,250,0), rgba(96,165,250,0.85), rgba(96,165,250,0));"></div>
+        <div style="position:absolute; left:24px; bottom:16px; right:24px; display:flex; justify-content:space-between; font-size:11px; color:#cbd5e1; letter-spacing:0.06em;">
+          <span>DATA</span><span>SIM</span><span>VLA</span><span>TASK</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Pipeline as the image</h3>
+      <p>A clean horizontal flow: real data, reconstruction, simulation, VLA, evaluation. More explicit about the work.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:220px; background:linear-gradient(135deg,#0b1220,#18181b); display:flex; align-items:center; justify-content:center; padding:20px;">
+      <div style="width:100%; max-width:320px; height:180px; position:relative; border-radius:18px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); overflow:hidden;">
+        <div style="position:absolute; inset:0; background:linear-gradient(to bottom, rgba(255,255,255,0.02), transparent 55%);"></div>
+        <div style="position:absolute; left:24px; top:24px; width:110px; height:42px; border-radius:999px; background:rgba(255,255,255,0.08);"></div>
+        <div style="position:absolute; left:24px; top:78px; width:72px; height:72px; border-radius:18px; background:rgba(255,255,255,0.08);"></div>
+        <div style="position:absolute; right:24px; top:32px; width:100px; height:100px; border-radius:22px; border:1px dashed rgba(255,255,255,0.18);"></div>
+        <div style="position:absolute; left:24px; bottom:18px; right:24px; display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#cbd5e1; letter-spacing:0.06em;">
+          <span>SUPPORTED BY</span><span>LOGOS</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Title slide with logo bar</h3>
+      <p>Most minimal and corporate. Strong if the goal is elegance and sponsor logos, with the image staying secondary.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">If you want, click one or tell me what to combine from two options.</p>

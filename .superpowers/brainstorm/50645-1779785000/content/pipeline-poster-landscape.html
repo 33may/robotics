@@ -1,0 +1,396 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1200,height=1200,initial-scale=1" />
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --poster-bg: radial-gradient(circle at 28% 15%, rgba(80,145,255,.16), transparent 25%), radial-gradient(circle at 72% 55%, rgba(112,255,146,.09), transparent 30%), linear-gradient(135deg, #050506 0%, #0b0f14 48%, #050506 100%);
+    --branch-real-border: rgba(87,154,255,.28);
+    --branch-real-bg: linear-gradient(180deg, rgba(35,87,170,.28), rgba(35,87,170,.075));
+    --branch-sim-border: rgba(105,220,124,.28);
+    --branch-sim-bg: linear-gradient(180deg, rgba(43,128,61,.27), rgba(43,128,61,.075));
+    --model-bg: linear-gradient(180deg, rgba(18,28,47,.95), rgba(10,13,22,.98));
+    --model-border: rgba(168,180,205,.22);
+    --eval-border: rgba(160,158,255,.24);
+    --eval-bg: linear-gradient(180deg, rgba(77,75,160,.20), rgba(77,75,160,.07));
+    --deploy-border: rgba(255,132,184,.24);
+    --deploy-bg: linear-gradient(180deg, rgba(155,55,101,.20), rgba(155,55,101,.07));
+    --flow-accent: #a8c6ff;
+    --flow-glow: rgba(98,168,255,.55);
+  }
+  body.theme-warm {
+    background: #f7f3ec;
+    color: #2a1d14;
+    --poster-bg: radial-gradient(circle at 21% 12%, rgba(255,255,255,.95), transparent 24%), radial-gradient(circle at 73% 54%, rgba(255,95,54,.18), transparent 28%), radial-gradient(circle at 52% 82%, rgba(255,178,82,.16), transparent 30%), linear-gradient(135deg, #fffaf2 0%, #f4ebe0 52%, #fffaf5 100%);
+    --branch-real-border: rgba(80,68,55,.20);
+    --branch-real-bg: linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.56));
+    --branch-sim-border: rgba(230,102,41,.34);
+    --branch-sim-bg: linear-gradient(180deg, rgba(255,159,88,.24), rgba(255,255,255,.58));
+    --model-bg: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,241,224,.82));
+    --model-border: rgba(209,91,46,.30);
+    --eval-border: rgba(222,130,48,.30);
+    --eval-bg: linear-gradient(180deg, rgba(255,171,78,.22), rgba(255,255,255,.62));
+    --deploy-border: rgba(218,70,54,.30);
+    --deploy-bg: linear-gradient(180deg, rgba(255,104,83,.20), rgba(255,255,255,.62));
+    --flow-accent: #cf4f25;
+    --flow-glow: rgba(207,79,37,.34);
+  }
+  body {
+    margin: 0;
+    width: 1200px;
+    height: 1200px;
+    overflow: hidden;
+    background: #040506;
+    color: #f4f4f5;
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .poster {
+    position: relative;
+    width: 1200px;
+    height: 1200px;
+    padding: 32px 38px 28px;
+    background: var(--poster-bg);
+  }
+  .poster::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.014) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(circle at 50% 50%, black, transparent 76%);
+  }
+  body.theme-warm .poster::after {
+    background-image: linear-gradient(rgba(80,60,40,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(80,60,40,.045) 1px, transparent 1px);
+  }
+  body.theme-warm .subtitle,
+  body.theme-warm .stage-labels,
+  body.theme-warm footer { color: #3f332b; }
+  body.theme-warm .eyebrow { color: #67584c; }
+  body.theme-warm p { color: #493d34; }
+  body.theme-warm .image-card .caption,
+  body.theme-warm .image-card .eyebrow,
+  body.theme-warm .image-card p { color: #f4f4f5; }
+  body.theme-warm .image-card p { color: #d7dde6; }
+  body.theme-warm .block {
+    border-color: rgba(70,55,42,.16);
+    background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.58));
+    box-shadow: 0 22px 46px rgba(98,66,43,.15), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  body.theme-warm .phase-lines div {
+    background: linear-gradient(to bottom, transparent, rgba(80,60,40,.22), transparent);
+  }
+  body.theme-warm .small-image { background: #f2eee8; border-color: rgba(80,60,40,.13); }
+  .header {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    height: 92px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 54px;
+    line-height: .92;
+    letter-spacing: -.055em;
+    font-weight: 850;
+    max-width: 660px;
+  }
+  .subtitle {
+    margin-top: 10px;
+    color: #9ca3af;
+    font-size: 16px;
+    line-height: 1.35;
+    max-width: 610px;
+  }
+  .logos { display: flex; gap: 2px; align-items: center; }
+  .logo {
+    width: 112px;
+    height: 65px;
+    display: grid;
+    place-items: center;
+  }
+  .logo img {
+    max-width: 100%;
+    height: 48px;
+    object-fit: contain;
+    display: block;
+  }
+  .logo.fontys img, .logo.nvidia img { height: 46px; }
+  .logo.vbti { width: 140px; }
+  .logo.vbti img { height: 52px; max-width: 140px; }
+  .logo.lerobot img { height: 50px; border-radius: 6px; }
+  .diagram-panel {
+    position: relative;
+    z-index: 2;
+    height: 760px;
+    margin-top: -10px;
+    padding-bottom: 28px;
+  }
+  .diagram-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .stage-labels {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 137px;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 235px 34px 220px 34px 230px 34px 265px;
+    gap: 12px;
+    color: #c7d0dc;
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+  .stage-labels div {
+    min-height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  footer {
+    position: absolute;
+    left: 38px;
+    right: 38px;
+    top: 750px;
+    z-index: 20;
+    color: #c7d0dc;
+    font-size: 12px;
+    letter-spacing: .12em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .stage-labels .hardware { grid-column: 1 / 2; }
+  .stage-labels .data { grid-column: 3 / 4; }
+  .stage-labels .training { grid-column: 5 / 6; }
+  .stage-labels .deployment { grid-column: 7 / 8; }
+  .phase-lines {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 48px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .phase-lines div {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,.30), transparent);
+  }
+  .phase-lines .l1 { left: 264px; }
+  .phase-lines .l2 { left: 542px; }
+  .phase-lines .l3 { left: 830px; }
+  .flow {
+    position: relative;
+    z-index: 2;
+    height: 650px;
+    display: grid;
+    grid-template-columns: 235px 34px 220px 34px 230px 34px 265px;
+    gap: 12px;
+    align-items: center;
+  }
+  .block {
+    position: relative;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.13);
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.028));
+    box-shadow: 0 22px 46px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
+    overflow: hidden;
+  }
+  .image-card { height: 430px; }
+  .image-card img, .small-image img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    filter: saturate(.92) contrast(1.06) brightness(.82);
+  }
+  .image-card::after, .small-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.78), transparent 54%);
+  }
+  .caption {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+    z-index: 2;
+  }
+  .eyebrow {
+    color: #aab0bb;
+    font-size: 10px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  h2, h3 { margin: 0; }
+  h2 { font-size: 23px; line-height: 1.05; letter-spacing: -.03em; }
+  h3 { font-size: 18px; line-height: 1.08; letter-spacing: -.025em; }
+  p { margin: 8px 0 0; color: #bec4cf; font-size: 13.5px; line-height: 1.35; }
+  .input-card { grid-column: 1; }
+  .data-stack { grid-column: 3; display: grid; gap: 15px; }
+  .model { grid-column: 5; }
+  .outputs { grid-column: 7; }
+  .text-block { padding: 22px 20px; min-height: 154px; }
+  .blue { border-color: var(--branch-real-border); background: var(--branch-real-bg); }
+  .green { border-color: var(--branch-sim-border); background: var(--branch-sim-bg); }
+  .model {
+    padding: 23px 20px;
+    text-align: center;
+    min-height: 165px;
+    display: grid;
+    place-items: center;
+    background: var(--model-bg);
+    border-color: var(--model-border);
+  }
+  .model h2 { font-size: 27px; }
+  .outputs { display: grid; gap: 14px; }
+  .output-card { padding: 12px 12px 6px; height: 238px; }
+  .small-image { position: relative; height: 162px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.10); background: #070707; }
+  .output-card .copy { padding: 6px 3px 0; }
+  .output-card p { display: none; }
+  .outputs .output-card:nth-child(1) img { object-position: left top; }
+  .outputs .output-card:nth-child(2) img { object-position: left top; }
+  .violet { border-color: var(--eval-border); background: var(--eval-bg); }
+  .pink { border-color: var(--deploy-border); background: var(--deploy-bg); }
+  .connectors { display: none; }
+  .arrow {
+    position: absolute;
+    z-index: 3;
+    color: var(--flow-accent);
+    font-size: 24px;
+    line-height: 1;
+    opacity: .9;
+    text-shadow: 0 0 18px var(--flow-glow);
+  }
+  .arrow.a1 { left: 257px; top: 244px; }
+  .arrow.a2 { left: 535px; top: 244px; }
+  .arrow.a3 { left: 823px; top: 244px; }
+  .trace {
+    position: absolute;
+    z-index: 2;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--flow-glow), transparent);
+  }
+  .t1 { left: 247px; top: 257px; width: 34px; }
+  .t2 { left: 525px; top: 257px; width: 34px; }
+  .t3 { left: 813px; top: 257px; width: 34px; }
+</style>
+</head>
+<body class="theme-warm">
+  <main class="poster">
+    <section class="header">
+      <div>
+        <h1>Research & Development of Scalable Robot Learning</h1>
+        <div class="subtitle">Modern robot training workflows combining real demonstrations, simulation reconstruction, synthetic data, and VLA model training.</div>
+      </div>
+    </section>
+
+    <section class="diagram-panel">
+      <div class="diagram-wrap">
+      <div class="phase-lines"><div class="l1"></div><div class="l2"></div><div class="l3"></div></div>
+
+      <svg class="connectors" viewBox="0 0 1200 675" aria-hidden="true">
+      <defs>
+        <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(168,198,255,.82)" />
+        </marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(117,217,128,.78)" />
+        </marker>
+      </defs>
+      <path d="M298 354 C308 354, 308 290, 318 290" marker-end="url(#arrow-blue)" />
+      <path d="M298 354 C308 354, 308 410, 318 410" class="secondary" marker-end="url(#arrow-green)" />
+      <path d="M616 354 C626 354, 626 354, 636 354" marker-end="url(#arrow-blue)" />
+      <path d="M824 354 C834 354, 834 290, 844 290" marker-end="url(#arrow-blue)" />
+      <path d="M824 354 C834 354, 834 430, 844 430" class="secondary" marker-end="url(#arrow-green)" />
+    </svg>
+
+    <div class="trace t1"></div><div class="trace t2"></div><div class="trace t3"></div>
+    <div class="arrow a1">→</div><div class="arrow a2">→</div><div class="arrow a3">→</div>
+
+    <section class="flow">
+      <article class="block image-card input-card">
+        <img src="lab_scene_crop.png" alt="Real robot setup" />
+        <div class="caption">
+          <div class="eyebrow">input</div>
+          <h2>Real robot setup</h2>
+          <p>Physical platform for collecting demonstrations and validating policies.</p>
+        </div>
+      </article>
+
+      <section class="data-stack">
+        <article class="block text-block blue">
+          <div class="eyebrow">branch 1</div>
+          <h2>Real data collection</h2>
+          <p>Teleoperated demonstrations captured from the physical robot task.</p>
+        </article>
+        <article class="block text-block green">
+          <div class="eyebrow">branch 2</div>
+          <h2>3D reconstruction + synthetic data</h2>
+          <p>Scene reconstruction, simulation-ready assets, and synthetic data collection.</p>
+        </article>
+      </section>
+
+      <article class="block model">
+        <div>
+          <div class="eyebrow">model training</div>
+          <h2>Final model</h2>
+          <p>VLA pretraining and imitation learning use real + synthetic data.</p>
+        </div>
+      </article>
+
+      <section class="outputs">
+        <article class="block output-card violet">
+          <div class="small-image"><img src="sim_evaluation.png" alt="Simulation evaluation" /></div>
+          <div class="copy">
+            <div class="eyebrow">evaluation</div>
+            <h3>Simulation</h3>
+            <p>Measure performance and test post-training in sim.</p>
+          </div>
+        </article>
+        <article class="block output-card pink">
+          <div class="small-image"><img src="real_deployment.png" alt="Real deployment" /></div>
+          <div class="copy">
+            <div class="eyebrow">deployment</div>
+            <h3>Real world</h3>
+            <p>Run the final model on the physical robot task.</p>
+          </div>
+        </article>
+      </section>
+    </section>
+
+      <section class="stage-labels">
+        <div class="hardware">Physical hardware</div>
+        <div class="data">Data collection</div>
+        <div class="training">Training</div>
+        <div class="deployment">Evaluation & deployment</div>
+      </section>
+      </div>
+    </section>
+    <footer>
+      <div>Anton Novokhatskyi Fontys ICT Graduation Project 2026</div>
+      <div class="logos">
+        <div class="logo fontys"><img src="fontys_logo.png" alt="Fontys" /></div>
+        <div class="logo vbti"><img src="vbti_logo.png" alt="VBTI" /></div>
+        <div class="logo lerobot"><img src="lerobot_logo.png" alt="LeRobot" /></div>
+        <div class="logo nvidia"><img src="nvidia_logo.png" alt="NVIDIA" /></div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

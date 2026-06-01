@@ -22,7 +22,7 @@ export CONDA_RUN="conda run -n lerobot --no-capture-output python -u"
 REPO_ROOT="/home/may33/projects/ml_portfolio/robotics"
 cd "$REPO_ROOT"
 
-TRAINING_ROOT="/home/may33/Documents/Obsidian Vault/vbti/researches/engineering tricks/detection/distillation/training"
+TRAINING_ROOT="/home/may33/Documents/vbti/vbti/researches/engineering tricks/detection/distillation/training"
 
 # Run registry: name | cli args | comparison target
 declare -A RUN_ARGS

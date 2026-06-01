@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 TRAINING_ROOT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/"
+    "/home/may33/Documents/vbti/vbti/researches/"
     "engineering tricks/detection/distillation/training"
 )
 CAMERAS = ["left", "right", "top", "gripper"]

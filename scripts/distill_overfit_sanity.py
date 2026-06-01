@@ -18,7 +18,7 @@ import torch
 
 # ---- output dir ----
 OUT_DIR = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/engineering tricks/"
+    "/home/may33/Documents/vbti/vbti/researches/engineering tricks/"
     "detection/distillation/training/01_overfit_sanity"
 )
 OUT_DIR.mkdir(parents=True, exist_ok=True)

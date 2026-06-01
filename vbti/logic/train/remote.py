@@ -65,7 +65,7 @@ def _rsync_to_remote(remote_cfg: dict, local_path: str, remote_path: str, delete
     """Rsync local → remote."""
     cmd = [
         "sshpass", "-p", remote_cfg["password"],
-        "rsync", "-avzL", "--progress", "--partial",
+        "rsync", "-avL", "--progress", "--partial",
         "-e", "ssh -o StrictHostKeyChecking=no",
     ]
     if delete:
@@ -135,6 +135,8 @@ def train(
     config: str = None,
     notes: str = "",
     dry_run: bool = False,
+    expandable_segments: bool = True,
+    stream: bool = True,
 ):
     """Launch training on remote machine in a tmux session.
 
@@ -184,11 +186,15 @@ def train(
         args.append(f"--policy.path={remote_pretrained_dir}")
         # Will be rsynced below alongside resume checkpoint
 
-    # Resume: swap --policy.path to point at the remote checkpoint
+    # Resume: use lerobot's --resume=true flow to load model + optimizer + scheduler state.
+    # `resume_from` is a path like 'lerobot_output_r7/checkpoints/080000' (relative to version dir).
     if resume_from:
-        remote_resume_path = f"{remote_version_dir}/{resume_from}/pretrained_model"
+        remote_resume_dir = f"{remote_version_dir}/{resume_from}"
+        # Lerobot resume requires --config_path pointing to the saved train_config.json.
+        # Also drop --policy.path because it's mutually exclusive with resume.
         args = [a for a in args if not a.startswith("--policy.path=")]
-        args.append(f"--policy.path={remote_resume_path}")
+        args.append(f"--config_path={remote_resume_dir}/pretrained_model/train_config.json")
+        args.append("--resume=true")
 
     # Escape inner double quotes so the command survives bash -c "..." inside tmux
     def _shell_quote(a: str) -> str:
@@ -245,15 +251,26 @@ def train(
         _rsync_to_remote(remote_cfg, str(local_pretrained) + "/", remote_pretrained_dir + "/")
 
     # ── Push resume checkpoint if needed ─────────────────────────────────────
+    # Resume can come from either local (train was done locally then pushed) or remote
+    # (train was done on remote and we're resuming a remote-only checkpoint). Auto-detect.
     if resume_from:
         local_resume = version_dir / resume_from
-        if not local_resume.exists():
-            print(f"[ERR] resume_from path not found locally: {local_resume}")
-            sys.exit(1)
         remote_resume_dir = f"{remote_version_dir}/{resume_from}"
-        print(f"Pushing resume checkpoint → remote:{remote_resume_dir}")
-        _ssh(remote_cfg, f"mkdir -p {remote_resume_dir}")
-        _rsync_to_remote(remote_cfg, str(local_resume) + "/", remote_resume_dir + "/")
+        remote_resume_exists = _ssh(
+            remote_cfg,
+            f"test -d {remote_resume_dir}/training_state && echo OK",
+            capture=True,
+        ).stdout.strip() == "OK"
+
+        if local_resume.exists():
+            print(f"Pushing resume checkpoint (local→remote): {remote_resume_dir}")
+            _ssh(remote_cfg, f"mkdir -p {remote_resume_dir}")
+            _rsync_to_remote(remote_cfg, str(local_resume) + "/", remote_resume_dir + "/")
+        elif remote_resume_exists:
+            print(f"Resume checkpoint already on remote: {remote_resume_dir}")
+        else:
+            print(f"[ERR] resume_from not found locally or on remote: {resume_from}")
+            sys.exit(1)
 
     # ── Copy config to version dir (don't create run_dir — lerobot-train does that) ─
     _ssh(remote_cfg, f"mkdir -p {remote_version_dir}")
@@ -265,9 +282,19 @@ def train(
     script_lines = [
         "#!/bin/bash",
         "export LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:${LD_LIBRARY_PATH:-}",
+    ]
+    if expandable_segments:
+        # PyTorch CUDA allocator: avoid OOM from fragmentation, frees up to ~1-2 GB usable
+        script_lines.append("export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True")
+    # Gradient checkpointing toggle for SmolVLA vision encoder (set in config.yaml).
+    # Read from training.gradient_checkpoint; default True. Pass to remote via env var
+    # because the patch lives in lerobot's installed code, not in lerobot's CLI surface.
+    if not getattr(cfg.training, "gradient_checkpoint", True):
+        script_lines.append("export VBTI_GRAD_CHECKPOINT=0")
+    script_lines.extend([
         "source /home/vbti/anton/env/bin/activate",
         lerobot_cmd,
-    ]
+    ])
     script_content = "\n".join(script_lines)
 
     # Write script to remote via heredoc
@@ -286,6 +313,15 @@ def train(
         sys.exit(1)
 
     receipt_path.write_text(json.dumps(session_info, indent=2))
+
+    # Robust against fire passing the string "false" instead of bool False
+    _stream = stream
+    if isinstance(_stream, str):
+        _stream = _stream.strip().lower() not in ("false", "0", "no", "")
+    if not _stream:
+        print(f"Training launched (non-streaming). Tmux: {tmux_session}")
+        return
+
     print(f"Training launched. Streaming logs (Ctrl+C to detach)...\n")
 
     # Stream logs immediately
@@ -365,15 +401,22 @@ def pull(
     experiment: str = None,
     version: str = None,
     checkpoint: str = "all",
+    run_name: str = None,
+    pretrained_only: bool = False,
 ):
     """Pull run outputs (checkpoints + logs) from remote → local version dir/{run_name}/.
 
     Args:
         checkpoint: "all" (default) syncs entire run dir, or specific step e.g. "step_010000"
+        run_name: override which run to pull from. Default uses remote_session.json (most recent run).
+                  Use this to fetch checkpoints from older runs (e.g. --run_name=lerobot_output_r7).
+        pretrained_only: if True and checkpoint != "all", pulls only pretrained_model/ subdir
+                         (model weights for inference, ~50% smaller — skips optimizer/scheduler state).
 
     Example:
         python -m vbti.logic.train.remote pull
-        python -m vbti.logic.train.remote pull --checkpoint=step_010000
+        python -m vbti.logic.train.remote pull --checkpoint=step_080000
+        python -m vbti.logic.train.remote pull --checkpoint=step_080000 --run_name=lerobot_output_r7 --pretrained_only=true
     """
     remote_cfg = _load_remote_config()
     version_dir = _resolve_version_dir(experiment, version)
@@ -385,9 +428,14 @@ def pull(
         return
 
     session = json.loads(receipt_path.read_text())
-    run_name = session.get("run_name", "lerobot_output")
-    remote_run_dir = session.get("remote_run_dir") or f"{session['remote_version_dir']}/{run_name}"
-    remote_ckpt_dir = session.get("remote_ckpt_dir") or f"{remote_run_dir}/checkpoints"
+    # Allow CLI override of run_name (useful for pulling from older runs not in current receipt).
+    if run_name is None:
+        run_name = session.get("run_name", "lerobot_output")
+        remote_run_dir = session.get("remote_run_dir") or f"{session['remote_version_dir']}/{run_name}"
+        remote_ckpt_dir = session.get("remote_ckpt_dir") or f"{remote_run_dir}/checkpoints"
+    else:
+        remote_run_dir = f"{session['remote_version_dir']}/{run_name}"
+        remote_ckpt_dir = f"{remote_run_dir}/checkpoints"
     local_run_dir = version_dir / run_name
     local_run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -396,10 +444,14 @@ def pull(
         _rsync_from_remote(remote_cfg, remote_run_dir + "/", str(local_run_dir) + "/")
     else:
         ckpt_name = checkpoint.replace("step_", "") if checkpoint.startswith("step_") else checkpoint
-        remote_src = f"{remote_ckpt_dir}/{ckpt_name}/"
-        local_dst = local_run_dir / "checkpoints" / ckpt_name
+        if pretrained_only:
+            remote_src = f"{remote_ckpt_dir}/{ckpt_name}/pretrained_model/"
+            local_dst = local_run_dir / "checkpoints" / ckpt_name / "pretrained_model"
+        else:
+            remote_src = f"{remote_ckpt_dir}/{ckpt_name}/"
+            local_dst = local_run_dir / "checkpoints" / ckpt_name
         local_dst.mkdir(parents=True, exist_ok=True)
-        print(f"Pulling checkpoint '{ckpt_name}' from remote")
+        print(f"Pulling {'pretrained_model' if pretrained_only else 'full'} checkpoint '{ckpt_name}' from {run_name}")
         _rsync_from_remote(remote_cfg, remote_src, str(local_dst) + "/")
 
     print(f"Done. Local run dir: {local_run_dir}")

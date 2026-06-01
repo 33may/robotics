@@ -28,7 +28,7 @@ SHRINK = math.sqrt(0.5)  # inner 50% area (~0.707 per edge)
 DATASET_REPO = "eternalmay33/01_02_03_merged_may-sim"
 CLEAN_PARQUET = Path("/home/may33/.cache/vbti/detection_labels_clean.parquet")
 OUT_DIR = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/"
+    "/home/may33/Documents/vbti/vbti/researches/"
     "engineering tricks/detection/distillation/data_analysis/gallery/"
     "accepted_top_duck_bluemap"
 )

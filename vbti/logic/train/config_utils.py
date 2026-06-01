@@ -28,6 +28,7 @@ import yaml
 
 class ModelType(str, Enum):
     SMOLVLA = "smolvla"
+    SMOLVLA_UVA = "smolvla_uva"   # SmolVLA + UVA aux video-prediction loss
     GROOT = "groot"
 
 
@@ -78,6 +79,11 @@ class DatasetConfig:
     # Validation filtering — which sources to include in val loss
     val_sources: list[str] | None = None  # None = all, or filter by source type: ["real", "sim"]
     use_imagenet_stats: bool = True
+    # Image augmentation passthrough to LeRobot's ImageTransformsConfig.
+    # Keys we currently support being mapped to CLI flags:
+    #   enable, max_num_transforms, disable_transforms (list of names to set weight=0)
+    # Anything else gets forwarded as-is via dot-notation.
+    image_transforms: dict | None = None
 
 
 # ── Model configs (one per backend) ──────────────────────────────────────────
@@ -94,6 +100,7 @@ class SmolVLAModelConfig:
     empty_cameras: int = 0           # pad with fake cameras when training with fewer than base expects
     tokenizer_max_length: int = 48   # increase for longer task descriptions
     num_denoising_steps: int = 10    # diffusion steps at inference
+    aux_weight: float | None = None  # SmolVLA-UVA aux loss weight; None uses checkpoint default
 
 
 @dataclass
@@ -110,7 +117,8 @@ class GR00TModelConfig:
 
 @dataclass
 class TrainingConfig:
-    steps: int = 10_000
+    steps: int = 10_000              # absolute step target (used if epochs is None)
+    epochs: float | None = None      # if set, engine derives steps = epochs * num_frames / batch_size (overrides steps)
     batch_size: int = 4
     lr: float = 1e-5
     weight_decay: float = 1e-10
@@ -124,6 +132,14 @@ class TrainingConfig:
     seed: int = 42
     fp16: bool = False
     bf16: bool = True
+    # If < 1.0, switches optimizer to `smolvla-adamw` with the SigLIP encoder
+    # at lr * vision_lr_scale; everything else stays at lr. Default 1.0 = single LR.
+    vision_lr_scale: float = 1.0
+    # Vision encoder gradient checkpointing (SmolVLA only).
+    # ON = saves ~10-17 GB activation memory at cost of ~15% step-time slowdown.
+    # Required when vision is unfrozen + multiple cameras + small VRAM headroom.
+    # Disable when VRAM headroom is large to recover step time.
+    gradient_checkpoint: bool = True
 
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -197,6 +213,9 @@ class TrainConfig:
         model_type = model_data.get("type", "smolvla")
         if model_type == "smolvla":
             model_data["type"] = ModelType.SMOLVLA
+            model = SmolVLAModelConfig(**model_data)
+        elif model_type == "smolvla_uva":
+            model_data["type"] = ModelType.SMOLVLA_UVA
             model = SmolVLAModelConfig(**model_data)
         elif model_type == "groot":
             model_data["type"] = ModelType.GROOT

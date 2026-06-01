@@ -1,0 +1,1189 @@
+{
+  "checkpoint": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/lerobot_output_r1/checkpoints/020000/pretrained_model",
+  "protocol": "dual_cup_30",
+  "date": "2026-05-07T12:00:13",
+  "trials": [
+    {
+      "trial_id": 0,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            466,
+            219
+          ],
+          "dir_deg": 341.6
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            454,
+            350
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 319,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_00_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 1,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            227,
+            259
+          ],
+          "dir_deg": 55.7
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            327,
+            198
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 340,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_01_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 2,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            224,
+            137
+          ],
+          "dir_deg": 91.9
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            434,
+            313
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 357,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_02_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 3,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            377,
+            293
+          ],
+          "dir_deg": 105.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            441,
+            359
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 722,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_03_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 4,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            274,
+            252
+          ],
+          "dir_deg": 251.3
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            293,
+            173
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 422,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_04_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 5,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            254,
+            317
+          ],
+          "dir_deg": 209.2
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            317,
+            229
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 601,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_05_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 6,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            284,
+            367
+          ],
+          "dir_deg": 285.0
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            283,
+            150
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 517,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_06_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 7,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            496,
+            234
+          ],
+          "dir_deg": 136.3
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            261,
+            166
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 283,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_07_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 8,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            230,
+            263
+          ],
+          "dir_deg": 146.3
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            462,
+            159
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 467,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_08_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 9,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            292,
+            265
+          ],
+          "dir_deg": 322.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            485,
+            217
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "failure",
+      "steps": 393,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_09_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 10,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            243,
+            283
+          ],
+          "dir_deg": 355.9
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            482,
+            372
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            501,
+            159
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "left",
+        "target_closer": true
+      },
+      "result": "failure",
+      "steps": 315,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_10_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 11,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            488,
+            205
+          ],
+          "dir_deg": 240.8
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            231,
+            165
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            451,
+            236
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "left",
+        "target_closer": false
+      },
+      "result": "success",
+      "steps": 411,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_11_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 12,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            410,
+            264
+          ],
+          "dir_deg": 108.7
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            266,
+            147
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            465,
+            319
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "left",
+        "target_closer": false
+      },
+      "result": "success",
+      "steps": 335,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_12_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 13,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            314,
+            221
+          ],
+          "dir_deg": 234.6
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            470,
+            171
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            209,
+            136
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "right",
+        "target_closer": true
+      },
+      "result": "failure",
+      "steps": 378,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_13_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 14,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            283,
+            192
+          ],
+          "dir_deg": 71.2
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            434,
+            200
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            231,
+            238
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "right",
+        "target_closer": false
+      },
+      "result": "failure",
+      "steps": 480,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_14_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 15,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            279,
+            314
+          ],
+          "dir_deg": 322.5
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            332,
+            163
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            460,
+            269
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "left",
+        "target_closer": true
+      },
+      "result": "success",
+      "steps": 245,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_15_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 16,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            241,
+            251
+          ],
+          "dir_deg": 289.2
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            478,
+            232
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            305,
+            180
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "left",
+        "target_closer": false
+      },
+      "result": "failure",
+      "steps": 271,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_16_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 17,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            476,
+            309
+          ],
+          "dir_deg": 22.9
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            369,
+            164
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            233,
+            171
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "right",
+        "target_closer": true
+      },
+      "result": "failure",
+      "steps": 487,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_17_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 18,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            236,
+            325
+          ],
+          "dir_deg": 209.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            433,
+            201
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            281,
+            144
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "right",
+        "target_closer": true
+      },
+      "result": "failure",
+      "steps": 383,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_18_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 19,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            295,
+            219
+          ],
+          "dir_deg": 345.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            463,
+            199
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            230,
+            139
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "right",
+        "target_closer": false
+      },
+      "result": "success",
+      "steps": 230,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_19_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 20,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            225,
+            331
+          ],
+          "dir_deg": 288.8
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            306,
+            221
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "failure",
+      "steps": 779,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_20_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 21,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            489,
+            336
+          ],
+          "dir_deg": 312.4
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            425,
+            149
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "success",
+      "steps": 369,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_21_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 22,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            370,
+            139
+          ],
+          "dir_deg": 29.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            485,
+            224
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "success",
+      "steps": 279,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_22_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 23,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            199,
+            246
+          ],
+          "dir_deg": 97.0
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            389,
+            179
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "success",
+      "steps": 501,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_23_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 24,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            359,
+            180
+          ],
+          "dir_deg": 152.7
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            490,
+            168
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "success",
+      "steps": 255,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_24_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 25,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            424,
+            323
+          ],
+          "dir_deg": 238.3
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            259,
+            178
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "success",
+      "steps": 251,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_25_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 26,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            308,
+            306
+          ],
+          "dir_deg": 244.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            501,
+            365
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "success",
+      "steps": 334,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_26_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 27,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            482,
+            309
+          ],
+          "dir_deg": 44.0
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            434,
+            184
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "success",
+      "steps": 413,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_27_success.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 28,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            397,
+            210
+          ],
+          "dir_deg": 135.6
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            198,
+            214
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "failure",
+      "steps": 693,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_28_failure.mp4",
+      "note": ""
+    },
+    {
+      "trial_id": 29,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            210,
+            236
+          ],
+          "dir_deg": 126.7
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            427,
+            184
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      },
+      "result": "failure",
+      "steps": 522,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/eval_sessions/chkpt_step_020000_ah_10_pr_dual_cup_30_20260507_120013/videos/trial_29_failure.mp4",
+      "note": ""
+    }
+  ],
+  "config": {
+    "checkpoint": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v019/lerobot_output_r1/checkpoints/020000/pretrained_model",
+    "checkpoint_label": "step_020000",
+    "experiment": "duck_cup_smolvla",
+    "version": "v019",
+    "protocol": "dual_cup_30",
+    "task": null,
+    "cameras": "opencv_depth",
+    "port": "/dev/ttyACM1",
+    "robot_id": null,
+    "action_horizon": 10,
+    "max_steps": 10000,
+    "fps": 30,
+    "max_relative_target": 10.0,
+    "delta_actions": false,
+    "detection": false,
+    "device": "auto",
+    "enable_rtc": true,
+    "record": true,
+    "depth": true,
+    "task_mode": "per-trial"
+  }
+}

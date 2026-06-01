@@ -97,7 +97,7 @@ CUP_JAW_AREA_MAX = 0.14
 CONF_THRESH_GRIPPER_DUCK = 0.15
 CONF_THRESH_DEFAULT = 0.02  # v8: lowered from 0.05 — v7 audit still 68% FN in lowconf_E
 INVESTIGATION_CSV = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/"
+    "/home/may33/Documents/vbti/vbti/researches/"
     "engineering tricks/detection/distillation/investigation_v3/episode_modes.csv"
 )
 

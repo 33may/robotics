@@ -25,7 +25,10 @@ from vbti.logic.dataset.loading_utils import resolve_dataset_source
 
 def _get_backend(model_type: ModelType):
     """Lazy-load the correct backend."""
-    if model_type == ModelType.SMOLVLA:
+    if model_type in (ModelType.SMOLVLA, ModelType.SMOLVLA_UVA):
+        # UVA reuses the SmolVLA backend — same lerobot-train command path.
+        # The smolvla_uva policy class is selected by lerobot from --policy.path
+        # (the smolvla_uva_base checkpoint's config.json says type=smolvla_uva).
         from vbti.logic.train.backends.smolvla import SmolVLABackend
         return SmolVLABackend()
     elif model_type == ModelType.GROOT:
@@ -442,6 +445,29 @@ def _build_lerobot_command(config: TrainConfig, output_dir: str, job_name: str) 
     training_cfg = config.training
     logging_cfg = config.logging
 
+    # If `epochs` is set in config, derive `steps` from it (overrides any literal `steps` value).
+    # epochs × num_frames / batch_size = total optimizer steps for one full pass × `epochs` times.
+    # This makes BS changes safe: epoch budget stays constant, steps auto-adjust.
+    if training_cfg.epochs is not None:
+        from vbti.logic.dataset import resolve_dataset_path
+        src = dataset_cfg.sources[0]
+        ep_filter = getattr(src, "episodes", None)
+        dataset_root = resolve_dataset_path(src.repo_id)
+        if ep_filter:
+            # When an episode filter is set, count frames only for the kept episodes —
+            # info.json["total_frames"] is the unfiltered dataset total.
+            import pyarrow.parquet as pq
+            ep_parquet = next((dataset_root / "meta" / "episodes").rglob("*.parquet"))
+            ep_table = pq.read_table(ep_parquet, columns=["episode_index", "length"]).to_pandas()
+            num_frames = int(ep_table[ep_table.episode_index.isin(ep_filter)].length.sum())
+            print(f"[engine] episode filter active: {len(ep_filter)} episodes, {num_frames} frames")
+        else:
+            with open(dataset_root / "meta" / "info.json") as f:
+                num_frames = json.load(f)["total_frames"]
+        derived = int(training_cfg.epochs * num_frames / training_cfg.batch_size)
+        print(f"[engine] epochs={training_cfg.epochs} × {num_frames} frames / BS={training_cfg.batch_size} → steps={derived} (was {training_cfg.steps})")
+        training_cfg.steps = derived
+
     args = ["lerobot-train"]
 
     # Policy / model
@@ -453,21 +479,49 @@ def _build_lerobot_command(config: TrainConfig, output_dir: str, job_name: str) 
     root = dataset_cfg.sources[0].root
     if root:
         args.append(f"--dataset.root={root}")
+    ep_filter = getattr(dataset_cfg.sources[0], "episodes", None)
+    if ep_filter:
+        args.append(f"--dataset.episodes={json.dumps(list(ep_filter))}")
+
+    # Image augmentation passthrough to LeRobot's ImageTransformsConfig.
+    # NOTE: draccus only exposes `enable` and `max_num_transforms` via CLI; the inner
+    # `tfs` dict (per-transform weights/kwargs) is NOT CLI-overrideable. To disable
+    # specific transforms (saturation, hue) we patch ImageTransformsConfig defaults
+    # on remote — see remote_lerobot_patches.md (Patch 3).
+    aug = getattr(dataset_cfg, "image_transforms", None) or {}
+    if aug.get("enable"):
+        args.append("--dataset.image_transforms.enable=true")
+        if aug.get("max_num_transforms") is not None:
+            args.append(f"--dataset.image_transforms.max_num_transforms={aug['max_num_transforms']}")
 
     # Training
     args.append(f"--batch_size={training_cfg.batch_size}")
     args.append(f"--steps={training_cfg.steps}")
     args.append(f"--num_workers={training_cfg.num_workers}")
 
-    # Optimizer
+    # Disable policy training preset so our --optimizer.* / --scheduler.* flags actually take effect.
+    # Without this, SmolVLA's preset hardcodes AdamW + 1k warmup + 30k decay and ignores CLI.
+    args.append("--use_policy_training_preset=false")
+
+    # Optimizer — switch to `smolvla-adamw` (per-group LR) when vision_lr_scale < 1.0.
+    # Requires the remote lerobot patch that registers SmolVLAAdamWConfig (see remote_lerobot_patches.md).
+    if getattr(training_cfg, "vision_lr_scale", 1.0) != 1.0:
+        args.append("--optimizer.type=smolvla-adamw")
+        args.append(f"--optimizer.vision_lr_scale={training_cfg.vision_lr_scale}")
+    else:
+        args.append("--optimizer.type=adamw")
     args.append(f"--optimizer.lr={training_cfg.lr}")
     args.append(f"--optimizer.weight_decay={training_cfg.weight_decay}")
     args.append(f"--optimizer.grad_clip_norm={training_cfg.grad_clip_norm}")
 
-    # Scheduler — map to lerobot's cosine_decay_with_warmup
+    # Scheduler — map to lerobot's cosine_decay_with_warmup.
+    # decay_ratio = fraction of (steps - warmup) used for cosine decay; remainder is flat at decay_lr.
+    decay_ratio = getattr(training_cfg, "decay_ratio", 1.0)
+    active_steps = max(1, training_cfg.steps - training_cfg.warmup_steps)
+    num_decay_steps = training_cfg.warmup_steps + int(active_steps * decay_ratio)
     args.append("--scheduler.type=cosine_decay_with_warmup")
     args.append(f"--scheduler.num_warmup_steps={training_cfg.warmup_steps}")
-    args.append(f"--scheduler.num_decay_steps={training_cfg.steps}")
+    args.append(f"--scheduler.num_decay_steps={num_decay_steps}")
     args.append(f"--scheduler.peak_lr={training_cfg.lr}")
     args.append(f"--scheduler.decay_lr={training_cfg.decay_lr}")
 
@@ -478,6 +532,8 @@ def _build_lerobot_command(config: TrainConfig, output_dir: str, job_name: str) 
     args.append(f"--policy.train_expert_only={str(model_cfg.train_expert_only).lower()}")
     args.append(f"--policy.train_state_proj={str(model_cfg.train_state_proj).lower()}")
     args.append(f"--policy.tokenizer_max_length={model_cfg.tokenizer_max_length}")
+    if getattr(model_cfg, "aux_weight", None) is not None:
+        args.append(f"--policy.aux_weight={model_cfg.aux_weight}")
 
     # Camera alignment — build rename_map from config camera order
     pretrained_slots = ["camera1", "camera2", "camera3"]
@@ -504,6 +560,7 @@ def _build_lerobot_command(config: TrainConfig, output_dir: str, job_name: str) 
     args.append(f"--output_dir={output_dir}")
     args.append(f"--job_name={job_name}")
     args.append(f"--policy.repo_id={job_name}")
+    args.append("--policy.push_to_hub=false")
 
     # Logging
     args.append(f"--log_freq={logging_cfg.log_freq}")

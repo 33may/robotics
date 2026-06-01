@@ -1,0 +1,68 @@
+<h2>Does this layered layout match the poster structure you want?</h2>
+<p class="subtitle">Four background bands: physical hardware, data collection, training, and evaluation/deployment.</p>
+
+<div class="mockup" style="padding:20px; background:linear-gradient(180deg,#242424,#2b2b2b);">
+  <div class="mockup-body" style="position:relative; min-height:760px; overflow:hidden; border-radius:18px; background:#2a2a2a; border:1px solid rgba(255,255,255,0.06);">
+    <div style="position:absolute; inset:0; pointer-events:none;">
+      <div style="position:absolute; left:0; right:0; top:20%; height:1px; background:rgba(255,255,255,0.08);"></div>
+      <div style="position:absolute; left:0; right:0; top:44%; height:1px; background:rgba(255,255,255,0.08);"></div>
+      <div style="position:absolute; left:0; right:0; top:69%; height:1px; background:rgba(255,255,255,0.08);"></div>
+      <div style="position:absolute; left:24px; top:24px; color:#a1a1aa; font-size:12px; letter-spacing:0.14em; text-transform:uppercase;">physical hardware</div>
+      <div style="position:absolute; left:24px; top:39%; color:#a1a1aa; font-size:12px; letter-spacing:0.14em; text-transform:uppercase;">data collection</div>
+      <div style="position:absolute; left:24px; top:63%; color:#a1a1aa; font-size:12px; letter-spacing:0.14em; text-transform:uppercase;">training</div>
+      <div style="position:absolute; left:24px; top:88%; color:#a1a1aa; font-size:12px; letter-spacing:0.14em; text-transform:uppercase;">evaluation and deployment</div>
+    </div>
+
+    <div style="position:absolute; left:50%; top:12%; transform:translateX(-50%); width:min(340px,70%); padding:18px 22px; border-radius:18px; background:#111827; color:#e5e7eb; border:1px solid rgba(96,165,250,0.22); text-align:center; box-shadow:0 12px 32px rgba(0,0,0,0.24);">
+      <div class="label">input</div>
+      <div style="font-size:24px; font-weight:800;">Real robot setup</div>
+    </div>
+
+    <div style="position:absolute; left:50%; top:20%; transform:translateX(-50%); width:260px; height:150px; display:flex; align-items:center; justify-content:center;">
+      <div style="width:210px; height:120px; border-radius:20px; background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(16,185,129,0.08)); border:1px solid rgba(255,255,255,0.12); box-shadow:0 18px 36px rgba(0,0,0,0.22); position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 40%, rgba(96,165,250,0.18), transparent 40%);"></div>
+        <img src="/home/may33/Documents/vbti/vbti/assets/lab_scene.jpg" alt="robot setup" style="width:100%; height:100%; object-fit:cover; opacity:0.88; filter:saturate(0.95) contrast(1.04);" />
+      </div>
+    </div>
+
+    <div style="position:absolute; left:50%; top:29%; transform:translateX(-50%); font-size:34px; color:#60a5fa;">↓</div>
+
+    <div style="position:absolute; left:8%; right:8%; top:33%; display:flex; gap:18px; align-items:stretch; justify-content:center; flex-wrap:wrap;">
+      <div style="flex:1; min-width:280px; padding:20px 22px; border-radius:20px; background:rgba(37,99,235,0.10); border:1px solid rgba(59,130,246,0.22); box-shadow:0 10px 30px rgba(0,0,0,0.18);">
+        <div class="label">branch 1</div>
+        <h3>Real data collection</h3>
+        <p>Teleoperated demonstrations from the physical robot.</p>
+      </div>
+
+      <div style="flex:1; min-width:280px; padding:20px 22px; border-radius:20px; background:rgba(16,185,129,0.10); border:1px solid rgba(34,197,94,0.22); box-shadow:0 10px 30px rgba(0,0,0,0.18);">
+        <div class="label">branch 2</div>
+        <h3>3D simulation reconstruction + synthetic data</h3>
+        <p>Scene reconstruction, simulation-ready assets, and synthetic collection.</p>
+      </div>
+    </div>
+
+    <div style="position:absolute; left:50%; top:54%; transform:translateX(-50%); width:320px; padding:20px 22px; border-radius:20px; background:#111827; color:#e5e7eb; border:1px solid rgba(148,163,184,0.24); text-align:center; box-shadow:0 12px 32px rgba(0,0,0,0.24);">
+      <div class="label">training</div>
+      <div style="font-size:24px; font-weight:800;">Final model</div>
+      <div style="margin-top:10px; color:#cbd5e1; font-size:15px; line-height:1.4;">VLA pretrain and imitation learning use real + synthetic data.</div>
+    </div>
+
+    <div style="position:absolute; left:50%; top:44%; transform:translateX(-50%); font-size:34px; color:#94a3b8;">↓</div>
+    <div style="position:absolute; left:50%; top:50%; transform:translateX(-50%); font-size:34px; color:#94a3b8;">↓</div>
+
+    <div style="position:absolute; left:50%; top:73%; transform:translateX(-50%); width:min(460px,84%); display:flex; gap:18px; justify-content:center; flex-wrap:wrap;">
+      <div style="flex:1; min-width:200px; padding:18px 20px; border-radius:18px; background:rgba(99,102,241,0.10); border:1px solid rgba(129,140,248,0.22); text-align:center;">
+        <div class="label">evaluation</div>
+        <h3>Simulation</h3>
+        <p>Measure performance and test post-training in sim.</p>
+      </div>
+      <div style="flex:1; min-width:200px; padding:18px 20px; border-radius:18px; background:rgba(244,114,182,0.10); border:1px solid rgba(244,114,182,0.22); text-align:center;">
+        <div class="label">deployment</div>
+        <h3>Real world</h3>
+        <p>Run the final model on the physical robot task.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">If this matches the direction, I can turn it into the final poster composition next.</p>

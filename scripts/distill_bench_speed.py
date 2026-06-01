@@ -23,7 +23,7 @@ import torch
 from vbti.logic.detection.distill_model import DistilledDetector
 
 TRAINING_ROOT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/"
+    "/home/may33/Documents/vbti/vbti/researches/"
     "engineering tricks/detection/distillation/training"
 )
 CAMERAS = ["left", "right", "top", "gripper"]

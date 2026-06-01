@@ -40,7 +40,7 @@ DATASET_PATH = Path(
     "/home/may33/.cache/huggingface/lerobot/eternalmay33/01_02_03_merged_may-sim"
 )
 TRAINING_ROOT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/engineering tricks/"
+    "/home/may33/Documents/vbti/vbti/researches/engineering tricks/"
     "detection/distillation/training"
 )
 

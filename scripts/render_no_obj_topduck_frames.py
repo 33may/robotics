@@ -19,7 +19,7 @@ CLEAN_PARQUET = Path(DS_PATH / "detection_results_clean.parquet")
 RAW_PARQUET = Path(DS_PATH / "detection_results.parquet")  # restored original (sparse)
 TRUST_PARQUET = Path("/home/may33/.cache/vbti/detection_labels_clean_no_objects.parquet")
 OUT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/engineering tricks/"
+    "/home/may33/Documents/vbti/vbti/researches/engineering tricks/"
     "detection/distillation/no_objects/ep4_topduck_26s_33s"
 )
 

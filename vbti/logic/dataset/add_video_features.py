@@ -42,6 +42,8 @@ from tqdm import tqdm
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy, resize_with_pad
 
+DEFAULT_REWRITE_CHUNK_ROWS = 256
+
 # Import to trigger registry registration of siglip_output
 import vbti.logic.dataset.target_extractors.siglip_output  # noqa: F401
 from vbti.logic.dataset.target_extractors import get as get_extractor, list_available
@@ -112,40 +114,52 @@ def _bake_features(
     return out
 
 
-def _assemble_future_windows(
-    baked: torch.Tensor,          # (N, S, S, D) per-frame, indexed by global frame index
-    episode_index: list[int],     # (N,) episode id of each global frame index
-    t_future: int,
-    log: logging.Logger,
-) -> torch.Tensor:
-    """Build per-row future windows: row t -> [feat[t+1], ..., feat[t+t_future]].
+def _episode_last_index(episode_index: list[int]) -> dict[int, int]:
+    """Map episode id -> its last global frame index.
 
-    Frames near an episode end are clamped: if t+k exceeds the episode's last
-    frame, the episode's last frame's feature is repeated. Episodes are assumed
-    contiguous in global index (verified true for LeRobot v3 datasets).
-
-    Returns (N, t_future, S, S, D), same dtype as `baked`.
+    Episodes are assumed contiguous in global index (true for LeRobot v3 datasets).
     """
-    N, S1, S2, D = baked.shape
-    log.info(f"assembling future windows: N={N} t_future={t_future} S={S1} D={D}")
-
-    # Compute the last global frame index per episode
     ep_last: dict[int, int] = {}
     for global_idx, ep in enumerate(episode_index):
         if ep not in ep_last or global_idx > ep_last[ep]:
             ep_last[ep] = global_idx
+    return ep_last
 
-    windowed = torch.empty((N, t_future, S1, S2, D), dtype=baked.dtype)
 
-    for t in range(N):
-        ep = episode_index[t]
-        last = ep_last[ep]
+def _assemble_windows_for_indices(
+    baked: torch.Tensor,          # (N, S, S, D) per-frame features, global frame index
+    episode_index: list[int],     # (N,) episode id of each global frame index
+    ep_last: dict[int, int],      # episode id -> last global frame index
+    indices: list[int],           # global frame indices of ONE parquet file's rows
+    t_future: int,
+) -> torch.Tensor:
+    """Build future windows for one parquet file's rows: g -> [feat[g+1]..feat[g+t_future]].
+
+    Frames near an episode end are clamped: if g+k exceeds the episode's last
+    frame, that last frame's feature is repeated.
+
+    Assembling per-file (rather than one global (N, t_future, S, S, D) tensor)
+    keeps peak RAM at ~the per-frame tensor size. The full windowed tensor is
+    t_future x larger — 41 GB for a 337k-frame dataset at 4x4x960 fp16, which
+    plus the 10 GB per-frame tensor would not fit the remote's 60 GB.
+
+    Returns (len(indices), t_future, S, S, D), same dtype as `baked`.
+    """
+    _, S1, S2, D = baked.shape
+    out = torch.empty((len(indices), t_future, S1, S2, D), dtype=baked.dtype)
+    for i, g in enumerate(indices):
+        last = ep_last[episode_index[g]]
         for k in range(1, t_future + 1):
-            src = min(t + k, last)
-            windowed[t, k - 1] = baked[src]
+            out[i, k - 1] = baked[min(g + k, last)]
+    return out
 
-    log.info(f"windowed tensor shape={tuple(windowed.shape)} dtype={windowed.dtype}")
-    return windowed
+
+def _feature_arrow_type(dtype_str: str) -> pa.DataType:
+    pa_dtype = pa.float16() if dtype_str == "fp16" else pa.float32()
+    innermost_type = pa.list_(pa.field("item", pa_dtype))
+    inner_type = pa.list_(pa.field("item", innermost_type))
+    mid_type = pa.list_(pa.field("item", inner_type))
+    return pa.list_(pa.field("item", mid_type))
 
 
 def _read_episode_index_from_parquets(src_root: Path, log: logging.Logger) -> list[int]:
@@ -181,11 +195,13 @@ def _build_dataset_copy(
     src_root: Path,
     output: Path,
     feature_key: str,
-    baked: torch.Tensor,   # (N, t_future, S, S, D) — full dataset, fp16 or fp32
+    baked: torch.Tensor,          # (N, S, S, D) — per-frame features, fp16 or fp32
+    episode_index: list[int],     # (N,) episode id per global frame index
     dtype_str: str,
     spatial_size: int,
     t_future: int,
     log: logging.Logger,
+    rewrite_chunk_rows: int = DEFAULT_REWRITE_CHUNK_ROWS,
 ) -> None:
     """Build the new dataset copy at `output`.
 
@@ -234,7 +250,9 @@ def _build_dataset_copy(
     parquet_files = sorted(src_data.glob("*/*.parquet"))
     log.info(f"found {len(parquet_files)} parquet files to rewrite")
 
-    pa_dtype = pa.float16() if dtype_str == "fp16" else pa.float32()
+    ep_last = _episode_last_index(episode_index)
+    feature_type = _feature_arrow_type(dtype_str)
+    feature_field = pa.field(feature_key, feature_type)
 
     for src_pq in tqdm(parquet_files, desc="rewriting parquets", unit="file"):
         # Preserve chunk-XXX/file-YYY.parquet sub-path
@@ -243,25 +261,31 @@ def _build_dataset_copy(
         dst_pq.parent.mkdir(parents=True, exist_ok=True)
 
         table = pq.read_table(str(src_pq))
+        indices = table.column("index").to_pylist()  # global frame indices
 
-        # Slice the baked tensor by this file's global index values
-        indices = table.column("index").to_pylist()  # list of int (global frame indices)
-        # Shape per row: (t_future, S, S, D) -> nested list for parquet storage
-        rows = baked[indices].tolist()   # list of t_future x S x S x D nested lists
+        writer = None
+        try:
+            for row_start in range(0, table.num_rows, rewrite_chunk_rows):
+                row_end = min(row_start + rewrite_chunk_rows, table.num_rows)
+                chunk_indices = indices[row_start:row_end]
+                chunk_table = table.slice(row_start, row_end - row_start)
 
-        # Build a pyarrow array for the new column.
-        # Array4D equivalent: list<list<list<list<float16>>>>
-        innermost_type = pa.list_(pa.field("item", pa_dtype))
-        inner_type     = pa.list_(pa.field("item", innermost_type))
-        mid_type       = pa.list_(pa.field("item", inner_type))
-        outer_type     = pa.list_(pa.field("item", mid_type))
-        new_col = pa.array(rows, type=outer_type)
+                window = _assemble_windows_for_indices(
+                    baked,
+                    episode_index,
+                    ep_last,
+                    chunk_indices,
+                    t_future,
+                )
+                new_col = pa.array(window.tolist(), type=feature_type)
+                chunk_table = chunk_table.append_column(feature_field, new_col)
 
-        table = table.append_column(
-            pa.field(feature_key, outer_type),
-            new_col,
-        )
-        pq.write_table(table, str(dst_pq), compression="snappy")
+                if writer is None:
+                    writer = pq.ParquetWriter(str(dst_pq), chunk_table.schema, compression="snappy")
+                writer.write_table(chunk_table)
+        finally:
+            if writer is not None:
+                writer.close()
 
     log.info(f"dataset copy complete at {output}")
 
@@ -307,6 +331,15 @@ def main():
                    help="Camera key to extract features from")
     p.add_argument("--batch-size", type=int, default=8)
     p.add_argument("--dtype", default="fp16", choices=["fp16", "fp32"])
+    p.add_argument(
+        "--rewrite-chunk-rows",
+        type=int,
+        default=DEFAULT_REWRITE_CHUNK_ROWS,
+        help=(
+            "Rows per in-memory Arrow conversion while rewriting parquets. "
+            "Lower values use less RAM; default: 256"
+        ),
+    )
     p.add_argument("--root", default=None, help="LeRobot dataset cache root (source)")
     p.add_argument("--output", required=True, help="Absolute path for the new dataset copy (must not exist)")
     p.add_argument("--force", action="store_true", help="Allow --output to already exist (will delete it first)")
@@ -327,6 +360,10 @@ def main():
 
     if args.t_future < 1:
         raise SystemExit(f"ERROR: --t-future must be >= 1, got {args.t_future}")
+    if args.rewrite_chunk_rows < 1:
+        raise SystemExit(
+            f"ERROR: --rewrite-chunk-rows must be >= 1, got {args.rewrite_chunk_rows}"
+        )
 
     teacher_path = Path(args.teacher)
     if not teacher_path.exists():
@@ -399,29 +436,22 @@ def main():
     episode_index = _read_episode_index_from_parquets(src_root, log)
 
     # -------------------------------------------------------------------------
-    # Assemble future windows: (N, S, S, D) -> (N, t_future, S, S, D)
-    # -------------------------------------------------------------------------
-    windowed = _assemble_future_windows(
-        baked=baked,
-        episode_index=episode_index,
-        t_future=args.t_future,
-        log=log,
-    )
-    # Free the per-frame tensor now that windowed is built
-    del baked
-
-    # -------------------------------------------------------------------------
-    # Build the new dataset copy
+    # Build the new dataset copy. Future windows ((t_future, S, S, D) per row)
+    # are assembled per-parquet-file inside _build_dataset_copy from the
+    # per-frame `baked` tensor — the full (N, t_future, S, S, D) windowed tensor
+    # is never materialized (t_future x larger; 41 GB for this dataset).
     # -------------------------------------------------------------------------
     _build_dataset_copy(
         src_root=src_root,
         output=output,
         feature_key=feature_key,
-        baked=windowed,
+        baked=baked,
+        episode_index=episode_index,
         dtype_str=args.dtype,
         spatial_size=args.spatial_size,
         t_future=args.t_future,
         log=log,
+        rewrite_chunk_rows=args.rewrite_chunk_rows,
     )
 
     # -------------------------------------------------------------------------

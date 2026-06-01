@@ -56,7 +56,7 @@ EP_PRESENT: dict[int, set[str]] = {
 FIELDS = ["cx", "cy", "conf", "x1", "y1", "x2", "y2"]
 
 OUTPUT_ROOT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/engineering tricks/"
+    "/home/may33/Documents/vbti/vbti/researches/engineering tricks/"
     "detection/distillation/no_objects"
 )
 

@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1200,height=1580,initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="canvas poster">
+  <section class="top">
+    <div class="title">
+      <div class="eyebrow">Office demo · SO‑101 robot arm · SmolVLA</div>
+      <h1>Learning robot manipulation from examples</h1>
+      <p class="subtitle">A compact Vision‑Language‑Action model controls a low-cost SO‑101 arm from camera observations, robot state, and a natural-language task.</p>
+    </div>
+    <div class="logos">
+      <img src="assets/fontys_logo.png">
+      <img class="logo-vbti" src="assets/vbti_logo.png">
+      <img src="assets/lerobot_logo.png">
+      <img src="assets/nvidia_logo.png">
+    </div>
+  </section>
+
+  <section class="bodygrid">
+    <div class="card hero media">
+      <img class="image" src="assets/lab_scene.jpg">
+      <div class="caption">Real SO‑101 setup</div>
+    </div>
+
+    <div class="card pipeline">
+      <div>
+        <span class="tag">What we are building</span>
+        <h3 style="font-size:30px;margin-top:10px">A reusable robot-learning loop</h3>
+      </div>
+      <div class="pipeline-row">
+        <div class="card step"><div class="eyebrow">01 · collect</div><h3>Teleoperate</h3><p>Record demonstrations with cameras, joint states and actions in LeRobot format.</p></div>
+        <div class="arrow"></div>
+        <div class="card step"><div class="eyebrow">02 · train</div><h3>Fine‑tune SmolVLA</h3><p>Learn action chunks conditioned on images, robot state and language instructions.</p></div>
+        <div class="arrow"></div>
+        <div class="card step"><div class="eyebrow">03 · deploy</div><h3>Run on robot</h3><p>Execute the learned policy live on SO‑101 and evaluate robustness.</p></div>
+      </div>
+      <p class="small">Focus: data-efficient manipulation, reproducible evaluation, and a pipeline that can scale to harder VBTI robot tasks.</p>
+    </div>
+
+    <div class="card why">
+      <span class="tag">Why it matters</span>
+      <div class="bullets">
+        <div class="bullet"><span class="dot"></span><p>Manual robot programming is slow and brittle when tasks or objects change.</p></div>
+        <div class="bullet"><span class="dot"></span><p>Foundation robot policies promise faster adaptation from demonstrations.</p></div>
+        <div class="bullet"><span class="dot"></span><p>We need practical evidence: what works on a real, affordable arm today?</p></div>
+      </div>
+      <div><div class="metric">SO‑101</div><p class="small">Small arm, real cameras, live policy demo</p></div>
+    </div>
+  </section>
+
+  <section class="humanoid">
+    <div class="card media">
+      <img class="image" src="assets/humanoid_walk.jpg">
+      <div class="caption">LimX humanoid · walking policy</div>
+    </div>
+    <div class="card humanoid-info">
+      <div>
+        <span class="tag">How this transfers to humanoids</span>
+        <h3 style="font-size:34px;margin-top:10px">Walking is provided — real work starts at task intelligence</h3>
+        <p class="humanoid-note">The LimX robot already comes with a pre-trained locomotion policy. We can use that as a low-level walking controller, while building domain-specific models for manipulation, perception and high-level task execution.</p>
+      </div>
+      <div class="humanoid-flow">
+        <div class="card humanoid-step"><div class="eyebrow">01 · base skill</div><h3>Pre-trained walking</h3><p>Stable locomotion policy handles balance and movement.</p></div>
+        <div class="arrow"></div>
+        <div class="card humanoid-step"><div class="eyebrow">02 · high-level control</div><h3>Task planner</h3><p>Decide where to move, what to inspect, and which skill to run.</p></div>
+        <div class="arrow"></div>
+        <div class="card humanoid-step"><div class="eyebrow">03 · VBTI tasks</div><h3>Domain models</h3><p>Train policies for real actions: handling tools, objects, plants, machines and site-specific workflows.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer"><span>Scalable Robot Learning</span><span>SO‑101 policy demo → Humanoid task autonomy</span></footer>
+</main>
+</body>
+</html>

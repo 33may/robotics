@@ -36,7 +36,7 @@ Y2_THR_NORM = 408.0 / H_IMG  # 0.85
 DATASET_REPO = "eternalmay33/01_02_03_merged_may-sim"
 CLEAN_PARQUET = Path("/home/may33/.cache/vbti/detection_labels_clean.parquet")
 GALLERY_ROOT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/"
+    "/home/may33/Documents/vbti/vbti/researches/"
     "engineering tricks/detection/distillation/data_analysis/gallery"
 )
 OUT_DIR = GALLERY_ROOT / "accepted_final_v10"

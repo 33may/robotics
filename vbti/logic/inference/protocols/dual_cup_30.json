@@ -1,0 +1,1101 @@
+{
+  "name": "dual_cup_30",
+  "version": "v2",
+  "schema": "entities",
+  "task_template": "Pick up the duck and place it in the {color} cup",
+  "description": "30 trials, mixed scenes: 10 only-red, 10 only-black, 10 both-cups. Single-cup trials calibrate per-color baseline; dual-cup trials (counterbalanced 5/5 on color, side, closer-to-duck) test language disambiguation under distractor presence. Workspace = canonical table bbox with 10% inset. Seed=17.",
+  "task": "VARIES_PER_TRIAL \u2014 see trial.task",
+  "total_trials": 30,
+  "id_count": 30,
+  "ood_count": 0,
+  "trials": [
+    {
+      "trial_id": 0,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            466,
+            219
+          ],
+          "dir_deg": 341.6
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            454,
+            350
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 1,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            227,
+            259
+          ],
+          "dir_deg": 55.7
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            327,
+            198
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 2,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            224,
+            137
+          ],
+          "dir_deg": 91.9
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            434,
+            313
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 3,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            377,
+            293
+          ],
+          "dir_deg": 105.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            441,
+            359
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 4,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            274,
+            252
+          ],
+          "dir_deg": 251.3
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            293,
+            173
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 5,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            254,
+            317
+          ],
+          "dir_deg": 209.2
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            317,
+            229
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 6,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            284,
+            367
+          ],
+          "dir_deg": 285.0
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            283,
+            150
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 7,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            496,
+            234
+          ],
+          "dir_deg": 136.3
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            261,
+            166
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 8,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            230,
+            263
+          ],
+          "dir_deg": 146.3
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            462,
+            159
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 9,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            292,
+            265
+          ],
+          "dir_deg": 322.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            485,
+            217
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      }
+    },
+    {
+      "trial_id": 10,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            243,
+            283
+          ],
+          "dir_deg": 355.9
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            482,
+            372
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            501,
+            159
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "left",
+        "target_closer": true
+      }
+    },
+    {
+      "trial_id": 11,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            488,
+            205
+          ],
+          "dir_deg": 240.8
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            231,
+            165
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            451,
+            236
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "left",
+        "target_closer": false
+      }
+    },
+    {
+      "trial_id": 12,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            410,
+            264
+          ],
+          "dir_deg": 108.7
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            266,
+            147
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            465,
+            319
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "left",
+        "target_closer": false
+      }
+    },
+    {
+      "trial_id": 13,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            314,
+            221
+          ],
+          "dir_deg": 234.6
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            470,
+            171
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            209,
+            136
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "right",
+        "target_closer": true
+      }
+    },
+    {
+      "trial_id": 14,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            283,
+            192
+          ],
+          "dir_deg": 71.2
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            434,
+            200
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            231,
+            238
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "red",
+        "target_side": "right",
+        "target_closer": false
+      }
+    },
+    {
+      "trial_id": 15,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            279,
+            314
+          ],
+          "dir_deg": 322.5
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            332,
+            163
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            460,
+            269
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "left",
+        "target_closer": true
+      }
+    },
+    {
+      "trial_id": 16,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            241,
+            251
+          ],
+          "dir_deg": 289.2
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            478,
+            232
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            305,
+            180
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "left",
+        "target_closer": false
+      }
+    },
+    {
+      "trial_id": 17,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            476,
+            309
+          ],
+          "dir_deg": 22.9
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            369,
+            164
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            233,
+            171
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "right",
+        "target_closer": true
+      }
+    },
+    {
+      "trial_id": 18,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            236,
+            325
+          ],
+          "dir_deg": 209.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            433,
+            201
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            281,
+            144
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "right",
+        "target_closer": true
+      }
+    },
+    {
+      "trial_id": 19,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            295,
+            219
+          ],
+          "dir_deg": 345.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            463,
+            199
+          ]
+        },
+        {
+          "name": "B",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            230,
+            139
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "both",
+        "target_color": "black",
+        "target_side": "right",
+        "target_closer": false
+      }
+    },
+    {
+      "trial_id": 20,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            225,
+            331
+          ],
+          "dir_deg": 288.8
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            306,
+            221
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 21,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            489,
+            336
+          ],
+          "dir_deg": 312.4
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            425,
+            149
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 22,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            370,
+            139
+          ],
+          "dir_deg": 29.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            485,
+            224
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 23,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            199,
+            246
+          ],
+          "dir_deg": 97.0
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            389,
+            179
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 24,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            359,
+            180
+          ],
+          "dir_deg": 152.7
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            490,
+            168
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 25,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            424,
+            323
+          ],
+          "dir_deg": 238.3
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            259,
+            178
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 26,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            308,
+            306
+          ],
+          "dir_deg": 244.1
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            501,
+            365
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 27,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            482,
+            309
+          ],
+          "dir_deg": 44.0
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            434,
+            184
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 28,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            397,
+            210
+          ],
+          "dir_deg": 135.6
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            198,
+            214
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    },
+    {
+      "trial_id": 29,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            210,
+            236
+          ],
+          "dir_deg": 126.7
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "black",
+          "px": [
+            427,
+            184
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the black cup",
+      "tags": {
+        "scene": "single_black",
+        "target_color": "black"
+      }
+    }
+  ],
+  "workspace_bbox": [
+    198,
+    120,
+    502,
+    440
+  ],
+  "cup_bbox": [
+    198,
+    120,
+    502,
+    376
+  ],
+  "duck_bbox": [
+    198,
+    120,
+    502,
+    392
+  ],
+  "robot_nogo_bbox": [
+    270,
+    250,
+    430,
+    480
+  ],
+  "duck_nogo_bbox": [
+    300,
+    360,
+    400,
+    480
+  ],
+  "constraints": {
+    "min_cup_to_cup": 80.0,
+    "min_duck_to_cup": 35.0,
+    "cup_bottom_pad_pct": 0.2,
+    "duck_bottom_pad_pct": 0.15,
+    "robot_nogo_for": [
+      "cup"
+    ],
+    "duck_nogo_for": [
+      "duck"
+    ]
+  },
+  "scene_counts": {
+    "single_red": 10,
+    "single_black": 10,
+    "both": 10
+  },
+  "_generated_by": "vbti/logic/inference/protocols/generators/make_dual_cup_30.py"
+}

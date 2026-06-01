@@ -1,0 +1,50 @@
+{
+  "image_size": [
+    640,
+    480
+  ],
+  "table": {
+    "bbox": [
+      160,
+      80,
+      540,
+      480
+    ],
+    "description": "wooden board boundary — user-confirmed 2026-05-04 against the freshly captured 640x480 base_frame; spans almost the full visible vertical range to the frame bottom"
+  },
+  "id_zone": {
+    "bbox": [
+      270,
+      191,
+      424,
+      313
+    ],
+    "stickers_px": [
+      [
+        270,
+        191
+      ],
+      [
+        421,
+        191
+      ],
+      [
+        275,
+        313
+      ],
+      [
+        424,
+        308
+      ]
+    ]
+  },
+  "cup_strip": {
+    "bbox": [
+      160,
+      83,
+      535,
+      191
+    ],
+    "description": "cup stays in horizontal strip between table top and ID zone top, y=[83,191]"
+  }
+}

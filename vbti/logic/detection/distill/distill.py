@@ -66,7 +66,7 @@ TRAIN_EPISODES = range(0, 200)
 VAL_EPISODES = range(200, 244)
 
 TRAINING_ROOT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/engineering tricks/"
+    "/home/may33/Documents/vbti/vbti/researches/engineering tricks/"
     "detection/distillation/training"
 )
 # Legacy alias (some callers may still reference this)

@@ -18,8 +18,15 @@ from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
 from lerobot.policies.factory import make_pre_post_processors
 
 from vbti.logic.dataset import load_and_split_dataset, create_dataloaders
+from vbti.logic.dataset.depth_transform import GripperDepthDecoder
 from vbti.logic.dataset.loading_utils import _resolve_root
 from vbti.logic.train.backends.base import TrainingBackend, ModelBundle
+
+
+# Substring(s) used to identify packed-depth image features that need
+# decode-on-read in the dataloader. Matches our convention of suffixing the
+# camera name with "_depth" (e.g. observation.images.gripper_depth).
+DEPTH_KEY_SUFFIX = "_depth"
 
 
 class SmolVLABackend(TrainingBackend):
@@ -176,6 +183,19 @@ class SmolVLABackend(TrainingBackend):
             delta_timestamps=delta_timestamps,
             train_ratio=dataset_cfg.train_ratio,
         )
+
+        # Wrap with depth decoder if any *_depth image feature is being used.
+        # The dataset stores depth as packed-PNG (uint16 split into RGB
+        # high/low/preview bytes); the model must see decoded turbo-RGB.
+        depth_keys = sorted(
+            k for k in input_features
+            if input_features[k].type is FeatureType.VISUAL and k.endswith(DEPTH_KEY_SUFFIX)
+        )
+        if depth_keys:
+            print(f"[depth] decoding packed-PNG depth → turbo RGB for: {depth_keys}")
+            train_dataset = GripperDepthDecoder(train_dataset, depth_keys=depth_keys)
+            if val_dataset is not None:
+                val_dataset = GripperDepthDecoder(val_dataset, depth_keys=depth_keys)
 
         if val_dataset is not None:
             train_loader, val_loader = create_dataloaders(

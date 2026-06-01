@@ -31,7 +31,7 @@ DATASET = Path(
 )
 FINAL_PARQUET = Path("/home/may33/.cache/vbti/detection_labels_final.parquet")
 OUT_DIR = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/"
+    "/home/may33/Documents/vbti/vbti/researches/"
     "engineering tricks/detection/distillation/data_analysis/main_v11_verification"
 )
 

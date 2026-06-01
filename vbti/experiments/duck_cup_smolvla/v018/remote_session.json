@@ -1,0 +1,11 @@
+{
+  "run_name": "lerobot_output_r1",
+  "tmux_session": "train_duck_cup_smolvla_v018_lerobot_output_r1",
+  "remote_version_dir": "/home/vbti/anton/experiments/duck_cup_smolvla/v018",
+  "remote_run_dir": "/home/vbti/anton/experiments/duck_cup_smolvla/v018/lerobot_output_r1",
+  "remote_ckpt_dir": "/home/vbti/anton/experiments/duck_cup_smolvla/v018/lerobot_output_r1/checkpoints",
+  "remote_data_root": "/home/vbti/anton/data/eternalmay33/04_05_06_07_merged_may-sim_depth_turbo",
+  "job_name": "duck_cup_smolvla_v018_lerobot_output_r1",
+  "repo_id": "eternalmay33/04_05_06_07_merged_may-sim_depth_turbo",
+  "host": "vbti@10.11.100.151"
+}

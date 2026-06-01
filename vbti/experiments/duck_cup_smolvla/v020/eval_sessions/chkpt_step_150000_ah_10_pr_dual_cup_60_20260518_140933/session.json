@@ -1,0 +1,64 @@
+{
+  "checkpoint": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/lerobot_output_r12/checkpoints/150000/pretrained_model",
+  "protocol": "dual_cup_60",
+  "date": "2026-05-18T14:09:33",
+  "trials": [
+    {
+      "trial_id": 0,
+      "zone": "ID",
+      "entities": [
+        {
+          "name": "duck",
+          "kind": "duck",
+          "color": "yellow",
+          "px": [
+            471,
+            336
+          ],
+          "dir_deg": 309.5
+        },
+        {
+          "name": "A",
+          "kind": "cup",
+          "color": "red",
+          "px": [
+            340,
+            205
+          ]
+        }
+      ],
+      "target": "A",
+      "task": "Pick up the duck and place it in the red cup",
+      "tags": {
+        "scene": "single_red",
+        "target_color": "red"
+      },
+      "result": "success",
+      "steps": 299,
+      "video": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/eval_sessions/chkpt_step_150000_ah_10_pr_dual_cup_60_20260518_140933/videos/trial_00_success.mp4",
+      "note": ""
+    }
+  ],
+  "config": {
+    "checkpoint": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/lerobot_output_r12/checkpoints/150000/pretrained_model",
+    "checkpoint_label": "step_150000",
+    "experiment": "duck_cup_smolvla",
+    "version": "v020",
+    "protocol": "dual_cup_60",
+    "task": null,
+    "cameras": "opencv_depth",
+    "port": "/dev/ttyACM1",
+    "robot_id": null,
+    "action_horizon": 10,
+    "max_steps": 10000,
+    "fps": 30,
+    "max_relative_target": 10.0,
+    "delta_actions": false,
+    "detection": false,
+    "device": "auto",
+    "enable_rtc": true,
+    "record": true,
+    "depth": true,
+    "task_mode": "per-trial"
+  }
+}

@@ -1,0 +1,386 @@
+{
+  "checkpoint": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v013/lerobot_output_r1/checkpoints/025000/pretrained_model",
+  "protocol": "checkpoint_sweep_no_ood",
+  "date": "2026-04-29T10:13:47",
+  "trials": [
+    {
+      "trial_id": 0,
+      "zone": "ID",
+      "duck_px": [
+        410,
+        299
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 291.4,
+      "cup_group": 0,
+      "result": "success",
+      "steps": 439,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 1,
+      "zone": "ID",
+      "duck_px": [
+        284,
+        236
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 251.3,
+      "cup_group": 0,
+      "result": "success",
+      "steps": 868,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 2,
+      "zone": "ID",
+      "duck_px": [
+        410,
+        267
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 56.0,
+      "cup_group": 0,
+      "result": "failure",
+      "steps": 431,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 3,
+      "zone": "ID",
+      "duck_px": [
+        410,
+        205
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 33.4,
+      "cup_group": 0,
+      "result": "failure",
+      "steps": 685,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 4,
+      "zone": "ID",
+      "duck_px": [
+        410,
+        236
+      ],
+      "cup_px": [
+        271,
+        173
+      ],
+      "duck_dir_deg": 305.1,
+      "cup_group": 1,
+      "result": "success",
+      "steps": 708,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 5,
+      "zone": "ID",
+      "duck_px": [
+        378,
+        267
+      ],
+      "cup_px": [
+        271,
+        173
+      ],
+      "duck_dir_deg": 290.6,
+      "cup_group": 1,
+      "result": "success",
+      "steps": 315,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 6,
+      "zone": "ID",
+      "duck_px": [
+        284,
+        299
+      ],
+      "cup_px": [
+        271,
+        173
+      ],
+      "duck_dir_deg": 44.9,
+      "cup_group": 1,
+      "result": "failure",
+      "steps": 398,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 7,
+      "zone": "ID",
+      "duck_px": [
+        378,
+        299
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 198.7,
+      "cup_group": 2,
+      "result": "failure",
+      "steps": 483,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 8,
+      "zone": "ID",
+      "duck_px": [
+        315,
+        236
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 318.8,
+      "cup_group": 2,
+      "result": "success",
+      "steps": 281,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 9,
+      "zone": "ID",
+      "duck_px": [
+        347,
+        267
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 69.2,
+      "cup_group": 2,
+      "result": "failure",
+      "steps": 436,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 10,
+      "zone": "ID",
+      "duck_px": [
+        347,
+        299
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 238.1,
+      "cup_group": 3,
+      "result": "failure",
+      "steps": 645,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 11,
+      "zone": "ID",
+      "duck_px": [
+        284,
+        267
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 307.9,
+      "cup_group": 3,
+      "result": "success",
+      "steps": 309,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 12,
+      "zone": "ID",
+      "duck_px": [
+        315,
+        205
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 100.1,
+      "cup_group": 3,
+      "result": "success",
+      "steps": 276,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 13,
+      "zone": "ID",
+      "duck_px": [
+        315,
+        267
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 58.6,
+      "cup_group": 3,
+      "result": "failure",
+      "steps": 516,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 14,
+      "zone": "ID",
+      "duck_px": [
+        347,
+        205
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 241.3,
+      "cup_group": 4,
+      "result": "success",
+      "steps": 287,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 15,
+      "zone": "ID",
+      "duck_px": [
+        315,
+        299
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 228.6,
+      "cup_group": 4,
+      "result": "failure",
+      "steps": 418,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 16,
+      "zone": "ID",
+      "duck_px": [
+        347,
+        236
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 58.8,
+      "cup_group": 5,
+      "result": "success",
+      "steps": 272,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 17,
+      "zone": "ID",
+      "duck_px": [
+        378,
+        236
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 356.2,
+      "cup_group": 5,
+      "result": "success",
+      "steps": 274,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 18,
+      "zone": "ID",
+      "duck_px": [
+        284,
+        205
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 246.5,
+      "cup_group": 5,
+      "result": "success",
+      "steps": 304,
+      "video": null,
+      "note": ""
+    },
+    {
+      "trial_id": 19,
+      "zone": "ID",
+      "duck_px": [
+        378,
+        205
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 295.8,
+      "cup_group": 5,
+      "result": "success",
+      "steps": 291,
+      "video": null,
+      "note": ""
+    }
+  ],
+  "config": {
+    "checkpoint": "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v013/lerobot_output_r1/checkpoints/025000/pretrained_model",
+    "checkpoint_label": "step_025000",
+    "experiment": "duck_cup_smolvla",
+    "version": "v013",
+    "protocol": "checkpoint_sweep_no_ood",
+    "task": "Pick up the blue duck and place it in the red bin.",
+    "cameras": "opencv",
+    "port": "/dev/ttyACM1",
+    "robot_id": null,
+    "action_horizon": 10,
+    "max_steps": 10000,
+    "fps": 30,
+    "max_relative_target": 10.0,
+    "delta_actions": false,
+    "detection": false,
+    "device": "auto",
+    "enable_rtc": true
+  }
+}

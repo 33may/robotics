@@ -22,7 +22,7 @@ from pathlib import Path
 import pandas as pd
 
 TRAINING_ROOT = Path(
-    "/home/may33/Documents/Obsidian Vault/vbti/researches/"
+    "/home/may33/Documents/vbti/vbti/researches/"
     "engineering tricks/detection/distillation/training"
 )
 INDEX_CSV = TRAINING_ROOT / "runs_index.csv"
