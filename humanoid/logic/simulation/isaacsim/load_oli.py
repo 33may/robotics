@@ -1,115 +1,122 @@
 """
-load_oli.py — Smoke-test loader for HU_D04_01 in Isaac Sim.
+load_oli.py — Isaac Sim driver for HU_D04_01, the reference host app.
 
-Goal:
-  1. Boot Isaac Sim with an interactive viewport.
-  2. Load HU_D04_01.usd at /World/Oli, pinned at the root.
-  3. Print the joint name/index table (DOF order is what we'll use later
-     for sweeps and policy I/O).
-  4. Run the physics + render loop until the window is closed.
+Two modes:
+  --bridge (default): make Isaac a sim peer on the LimX MROS bus. Spawns the
+      Py 3.8 sidecar, constructs Oli(bridge=...), and runs the physics loop so
+      any humanoid-rl-deploy-python controller can drive Oli at `--ip`.
+  --no-bridge: kinematics-only smoke loader (loads Oli, holds rest pose, no SDK).
+
+This is intentionally thin — all Oli/bridge logic lives in `oli.py` / `bridge/`.
+Copy this loop into any recon / nav / SLAM / RL host app.
 
 Run:
   conda activate isaac
-  python humanoid/logic/simulation/isaacsim/load_oli.py
+  python humanoid/logic/simulation/isaacsim/load_oli.py            # bridge mode
+  python humanoid/logic/simulation/isaacsim/load_oli.py --no-bridge
+  python humanoid/logic/simulation/isaacsim/load_oli.py --headless --ip 127.0.0.1
 
-No joint commands are applied yet — Oli should hang motionless in the air,
-held by the pinned root, while gravity pulls limp arms/legs to their
-zero-effort poses (drives default to k_p≈1.7, k_d≈0.017, very soft).
+Then (bridge mode), in the limx env:
+  ROBOT_TYPE=HU_D04_01 python <humanoid-rl-deploy-python>/main.py 127.0.0.1
 """
 
-# ── 1. Bootstrap Kit BEFORE any other isaac/pxr imports ───────────────────
-# Use the FULL experience (same .kit file the `isaacsim` CLI loads) so we
-# get the editor UI: Stage panel, Property panel, Robotics/Physics/Sensors
-# menus, asset browser, etc. The base.python experience boots faster but is
-# bare — only viewport + physics. Worth the extra ~10s startup here.
-from pathlib import Path as _Path
+# ── 1. CLI parse BEFORE booting Kit (cheap, and picks headless) ───────────────
+import argparse
 
-from isaacsim import SimulationApp
 
-FULL_KIT = (
-    _Path("/home/may33/miniconda3/envs/isaac/lib/python3.11/"
-          "site-packages/isaacsim/apps/isaacsim.exp.full.kit")
+def _parse():
+    ap = argparse.ArgumentParser(description="Isaac HU_D04_01 driver")
+    ap.add_argument("--no-bridge", action="store_true",
+                    help="kinematics-only: load + hold rest pose, no SDK bridge")
+    ap.add_argument("--ip", default="127.0.0.1", help="MROS peer IP")
+    ap.add_argument("--socket", default="/tmp/limx-isaac-bridge.sock",
+                    help="bridge UDS socket path")
+    ap.add_argument("--headless", action="store_true", help="no viewport")
+    ap.add_argument("--render-decimation", type=int, default=20,
+                    help="render every N physics ticks (default 20)")
+    ap.add_argument("--max-ticks", type=int, default=0,
+                    help="stop after N ticks (0 = run until window closed; "
+                         "use for headless smoke tests)")
+    ap.add_argument("--debug", action="store_true", help="verbose sidecar log")
+    return ap.parse_args()
+
+
+ARGS = _parse()
+
+# ── 2. Bootstrap Kit BEFORE any other isaac/pxr imports ───────────────────────
+from pathlib import Path as _Path  # noqa: E402
+
+from isaacsim import SimulationApp  # noqa: E402
+
+_KIT_NAME = "isaacsim.exp.base.kit" if ARGS.headless else "isaacsim.exp.full.kit"
+KIT = _Path(
+    f"/home/may33/miniconda3/envs/isaac/lib/python3.11/site-packages/"
+    f"isaacsim/apps/{_KIT_NAME}"
 )
-SIM_APP = SimulationApp({"headless": False, "experience": str(FULL_KIT)})
+SIM_APP = SimulationApp({"headless": ARGS.headless, "experience": str(KIT)})
 
-# ── 2. Now safe to import the rest ────────────────────────────────────────
-from pathlib import Path
+# ── 3. Now safe to import the rest ────────────────────────────────────────────
+import sys  # noqa: E402
 
-from isaacsim.core.api import World
-from isaacsim.core.utils.stage import add_reference_to_stage
-from isaacsim.core.prims import SingleArticulation
-from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, PhysxSchema
+from isaacsim.core.api import World  # noqa: E402
 
-# ── 3. Paths ──────────────────────────────────────────────────────────────
-PROJECT_ROOT = Path("/home/may33/projects/ml_portfolio/robotics/humanoid")
-OLI_USD = PROJECT_ROOT / "assets/oli/usd/HU_D04_01.usd"
-ROBOT_PRIM_PATH = "/World/Oli"
-SPAWN_HEIGHT_M = 1.05  # lift base so legs clear the ground when pinned
+sys.path.insert(0, "/home/may33/projects/ml_portfolio/robotics")
+from humanoid.logic.simulation.isaacsim.oli import Oli  # noqa: E402
 
-# ── 4. Build the world ────────────────────────────────────────────────────
-world = World(stage_units_in_meters=1.0)
-world.scene.add_default_ground_plane()
+PHYSICS_DT = 1.0 / 1000.0
 
-# Reference the USD into the stage at /World/Oli
-add_reference_to_stage(usd_path=str(OLI_USD), prim_path=ROBOT_PRIM_PATH)
 
-# Lift /World/Oli before reset — fixRootLink pins the base at its current
-# pose at world.reset(), so the translate must be authored *before* reset.
-oli_xform = UsdGeom.Xformable(world.stage.GetPrimAtPath(ROBOT_PRIM_PATH))
-existing_ops = {op.GetOpName(): op for op in oli_xform.GetOrderedXformOps()}
-if "xformOp:translate" in existing_ops:
-    translate_op = existing_ops["xformOp:translate"]
-else:
-    translate_op = oli_xform.AddTranslateOp()
-translate_op.Set(Gf.Vec3d(0.0, 0.0, SPAWN_HEIGHT_M))
-print(f"[load_oli] Spawn height: {SPAWN_HEIGHT_M} m")
+def log(msg: str) -> None:
+    # print (not logging) — omni's carb logger swallows the root logger.
+    print(f"[load_oli] {msg}", flush=True)
 
-# ── 5. Pin the base ───────────────────────────────────────────────────────
-# The USD already has PhysxArticulationAPI applied to the articulation root.
-# We flip fixRootLink = True on that prim before reset().
-stage = world.stage
-oli_root_prim = stage.GetPrimAtPath(ROBOT_PRIM_PATH)
 
-articulation_root = None
-for prim in Usd.PrimRange(oli_root_prim):
-    if prim.HasAPI(UsdPhysics.ArticulationRootAPI):
-        articulation_root = prim
-        break
+def run(bridge) -> None:
+    """Build the world + Oli, then run the physics/render loop."""
+    world = World(stage_units_in_meters=1.0, physics_dt=PHYSICS_DT)
+    world.scene.add_default_ground_plane()
+    oli = Oli(world, bridge=bridge, spawn_pose=(0.0, 0.0, 1.05), pin_root=True)
+    log(f"Oli ready: {oli.num_dof} DOFs, base={oli.base_link_path}")
+    if bridge is not None:
+        log(f"bridge attached — Oli is a sim peer on MROS at {ARGS.ip}")
+    else:
+        log("no bridge — kinematics-only; Oli sags to zero-effort pose")
 
-assert articulation_root is not None, "No ArticulationRootAPI prim found under /World/Oli"
-print(f"[load_oli] Articulation root: {articulation_root.GetPath()}")
+    tick = 0
+    last_stats = 0
+    while SIM_APP.is_running():
+        oli.tick()
+        world.step(render=(tick % ARGS.render_decimation == 0))
+        tick += 1
+        if bridge is not None and tick - last_stats >= 5000:
+            s = oli.tick_latency_stats()
+            log(f"tick {tick} | latency p50={s['p50_us']:.0f}us "
+                f"p99={s['p99_us']:.0f}us")
+            last_stats = tick
+        if ARGS.max_ticks and tick >= ARGS.max_ticks:
+            log(f"reached --max-ticks={ARGS.max_ticks}, stopping")
+            break
 
-# Ensure PhysxArticulationAPI is applied (it is in the source USD, but Apply
-# is idempotent and ensures the schema accessor returns valid attrs).
-physx_art = PhysxSchema.PhysxArticulationAPI.Apply(articulation_root)
 
-# Pin the base. Across Isaac Sim versions the attribute name has been stable
-# but the schema accessor has shifted — use the raw attribute as the
-# version-tolerant path.
-fix_attr = articulation_root.GetAttribute("physxArticulation:fixRootLink")
-if not fix_attr or not fix_attr.IsValid():
-    fix_attr = articulation_root.CreateAttribute(
-        "physxArticulation:fixRootLink", Sdf.ValueTypeNames.Bool
-    )
-fix_attr.Set(True)
-print("[load_oli] physxArticulation:fixRootLink = True")
+def main() -> int:
+    if ARGS.no_bridge:
+        run(bridge=None)
+        SIM_APP.close()
+        return 0
 
-# ── 6. Reset world to materialize the articulation, then introspect joints
-world.reset()
+    # Bridge mode — spawn the Py 3.8 sidecar and run as a sim peer.
+    from humanoid.logic.simulation.isaacsim.bridge import OliBridge, BridgeClosedError
+    try:
+        with OliBridge.spawn_sidecar(
+            ip=ARGS.ip, socket=ARGS.socket, debug=ARGS.debug
+        ) as bridge:
+            run(bridge)
+    except BridgeClosedError as e:
+        log(f"bridge closed: {e} — shutting down")
+    finally:
+        SIM_APP.close()
+    return 0
 
-oli = SingleArticulation(prim_path=ROBOT_PRIM_PATH, name="oli")
-oli.initialize()
 
-print("\n[load_oli] DOF order (index → name):")
-print("─" * 60)
-for i, name in enumerate(oli.dof_names):
-    print(f"  [{i:>2}] {name}")
-print("─" * 60)
-print(f"[load_oli] Total DOFs: {oli.num_dof}")
-
-# ── 7. Main loop: step physics + render ───────────────────────────────────
-print("\n[load_oli] Entering render loop. Close the Isaac Sim window to exit.")
-while SIM_APP.is_running():
-    world.step(render=True)
-
-SIM_APP.close()
+if __name__ == "__main__":
+    sys.exit(main())

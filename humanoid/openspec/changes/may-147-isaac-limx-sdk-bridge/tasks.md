@@ -55,18 +55,18 @@
 - [x] 5.10 Rolling p50/p99 tick-latency via `tick_latency_stats()` — measured p50=115µs, p99=204µs (10× under the 2ms budget)
 - [x] 5.11 Standalone smoke (`_research/smoke_oli_nobridge.py`, `bridge=None`): Test 1 stable hold (velocity decays 23×, no ring), Test 2 joint step (commanded joint is biggest mover — permutation correct), Test 3 zero-cmd gravity sag. ALL PASS. Found + fixed the explicit-effort instability → implicit drive (D5)
 
-## 6. `OliBridge` class — Py 3.11 (Spec R-bridge, D6, D11, D15)
+## 6. `OliBridge` class — Py 3.11 (Spec R-bridge, D6, D11, D15) — *done 2026-06-22*
 
-- [ ] 6.1 Create `bridge/__init__.py` with `OliBridge` skeleton + the two factory constructors (`spawn_sidecar`, `connect`)
-- [ ] 6.2 Implement `OliBridge.connect(socket, timeout)`: open AF_UNIX SOCK_SEQPACKET client; connect with retry up to `timeout`, 100ms backoff; on failure log + raise `ConnectionError`
-- [ ] 6.3 Implement `OliBridge.spawn_sidecar(ip, socket, sidecar_py)`: resolve sidecar interpreter from kwarg → env var (`LIMX_BRIDGE_SIDECAR_PY`) → hardcoded default; `subprocess.Popen` the sidecar; pipe stdout/stderr through a thread that prefixes `[sidecar] ` and forwards; wait for socket file to appear with timeout; then call `connect`
-- [ ] 6.4 Implement `handshake(dof_names)`: send `HELLO`; receive ack; on EOF or version mismatch raise `BridgeProtocolError`
-- [ ] 6.5 Implement `send_state_imu(seq, stamp_ns, q, dq, tau, acc, gyro, quat)` — non-blocking `sendmsg`; drop on full buffer with a counter log
-- [ ] 6.6 Implement `poll_cmd()` — drain socket non-blocking, return last decoded `CMD` or `None`; intermediate frames silently dropped per D5
-- [ ] 6.7 Implement `__enter__`/`__exit__` (only meaningful for `spawn_sidecar`-created instances): `__exit__` SIGINTs the sidecar, waits 5s, escalates to SIGTERM then SIGKILL, then `close()`
-- [ ] 6.8 Implement `close()`: idempotent; close socket, unlink socket file if we created it, join the stdout-forwarder thread
-- [ ] 6.9 Smoke (`spawn_sidecar` path): `with OliBridge.spawn_sidecar(ip="127.0.0.1") as bridge: ...` from a `__main__` test in `bridge/__init__.py`; observe sidecar starts, socket appears, handshake succeeds with stub `dof_names`, clean shutdown on context exit
-- [ ] 6.10 Smoke (`connect` path): manually run sidecar in one shell; in another, `OliBridge.connect(...)` succeeds and the socket round-trips a HELLO+ack
+- [x] 6.1 `OliBridge` in `bridge/__init__.py` with both factory constructors (`spawn_sidecar`, `connect`)
+- [x] 6.2 `connect(socket, timeout)`: AF_UNIX SOCK_SEQPACKET client, retry to timeout @100ms backoff, raises `ConnectionError`
+- [x] 6.3 `spawn_sidecar(ip, socket, sidecar_py, debug)`: resolves interp (kwarg → `LIMX_BRIDGE_SIDECAR_PY` → default), `Popen`, daemon thread forwards stdout/stderr with `[sidecar]` prefix, waits for socket file (or surfaces early-exit code), then `connect`
+- [x] 6.4 `handshake(dof_names)`: send HELLO, recv ack, raises `BridgeProtocolError` on EOF/bad-ack/version mismatch; sets socket non-blocking after; idempotent
+- [x] 6.5 `send_state_imu(...)`: pack + `send`; drop on `BlockingIOError`; raises `BridgeClosedError` if sidecar gone
+- [x] 6.6 `poll_cmd()`: non-blocking recv; returns decoded CMD dict or None; EOF → `BridgeClosedError`; malformed → drop+log
+- [x] 6.7 `__enter__`/`__exit__` + `_kill` escalation (SIGINT → 5s → SIGTERM → 2s → SIGKILL)
+- [x] 6.8 `close()`: idempotent; closes socket, tears down owned subprocess, unlinks socket if left over
+- [x] 6.9 Smoke (`spawn_sidecar`, cross-env): `_research/smoke_oli_bridge.py` run in isaac env (Py 3.11) spawns sidecar in limx env (Py 3.8); handshake OK, 100 STATE_IMU → `state_pub=100`, clean SIGINT shutdown + socket unlinked. **Proves the cross-env two-process path end-to-end.**
+- [ ] 6.10 Smoke (`connect` path): *deferred to Phase 7* — exercised naturally when load_oli.py uses an externally-started sidecar
 
 ## 7. End-to-end smoke tests against deploy-python (Spec R-end-to-end)
 
