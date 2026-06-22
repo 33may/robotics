@@ -264,17 +264,19 @@ Captured via `humanoid/logic/simulation/mujoco/probe_contract.py` while the laun
 
 ### `RobotState` (sim → policy)
 
+Canonical struct: [`limxsdk::RobotState`](oli-corpus://limxsdk#datatypes.h). All vector fields are sized to motor count (31 for HU_D04_01).
+
 | Field | Shape | Notes |
 |---|---|---|
-| `q` | 31 | joint positions, radians |
-| `dq` | 31 | joint velocities, rad/s |
-| `tau` | 31 | joint torques (sim reads from `data.ctrl[i]`) |
-| `motor_names` | 31 strings | **PR space** — see table below |
-| `stamp` | int (ns) | `time.time_ns()` from sim |
+| `stamp` | `uint64` (ns) | `time.time_ns()` from the sim publisher |
+| `tau` | 31 × `float` | current estimated joint torques, N·m (sim reads from `data.ctrl[i]`) |
+| `q` | 31 × `float` | current joint angles, radians |
+| `dq` | 31 × `float` | current joint velocities, rad/s |
+| `motor_names` | 31 × `string` | PR-space names — ordering listed below |
 
-Observed publish rate: **~885 Hz** (MJCF nominal 1000 Hz; ~11.5 % real-time deficit caused by viewer + Python loop overhead on desktop. Real robot expected to hit nominal). Same packet over `subscribeRobotState` and `subscribeRobotStateForSim` — confirmed.
+Observed publish rate: **~884.5 Hz** (re-confirmed 2026-06-22; ≈885 Hz on 2026-06-19). MJCF nominal 1000 Hz; the ~11–12 % real-time deficit is viewer + Python loop overhead on desktop. Real robot expected to hit nominal. The packet is identical over `subscribeRobotState` (policy peer) and `subscribeRobotStateForSim` (sim peer) — confirmed via the role-flipped probe passes.
 
-`motor_names` ordering (confirms § 5 of this doc):
+`motor_names` ordering (PR-space, empirically captured):
 
 ```
  0  left_hip_pitch_joint        16  head_pitch_joint
@@ -295,38 +297,77 @@ Observed publish rate: **~885 Hz** (MJCF nominal 1000 Hz; ~11.5 % real-time defi
 15  head_yaw_joint
 ```
 
-Note: index 15/16 are `head_yaw` then `head_pitch` — **reversed from § 5's "head_pitch, head_yaw"**. § 5 was based on doc text; this probe is empirical. Trust the probe.
+**Head joint order discrepancy.** Probe captures `15 = head_yaw, 16 = head_pitch`. The `oli-corpus-mcp` tool `sdk_joint_order("HU_D04_01")` — which reads the comment-annotated arrays in `walk_param.yaml` (sourced via `oli-corpus://oli-main-2.2.12#install/etc/HU_D04_description/urdf/HU_D04_01.urdf`) — reports the opposite: `15 = head_pitch, 16 = head_yaw`. Since the probe is the live wire format, **trust the probe** for any Isaac-side index map. The `walk_param.yaml` comment annotation is likely stale and should be patched upstream.
 
 ### `ImuData` (sim → policy)
 
+Canonical struct: [`limxsdk::ImuData`](oli-corpus://limxsdk#datatypes.h). Unlike `RobotState`/`RobotCmd`, all numeric fields are **fixed-size C arrays**, not `std::vector<>`.
+
 | Field | Shape | Notes |
 |---|---|---|
-| `quat` | 4 floats | **(w, x, y, z)** convention — sample: `[0.998, -0.0009, -0.012, 0.060]` (Oli standing, slight forward lean) |
-| `gyro` | 3 floats | rad/s, body frame |
-| `acc` | 3 floats | m/s², body frame — gravity dominant: `[~0, ~0, ~9.4]` |
-| `stamp` | int (ns) | `time.time_ns()` |
+| `stamp` | `uint64` (ns) | `time.time_ns()` from the sim publisher |
+| `acc` | `float[3]` | linear acceleration, m/s², body frame |
+| `gyro` | `float[3]` | angular velocity, rad/s, body frame |
+| `quat` | `float[4]` | orientation, **(w, x, y, z)** convention |
 
-Observed publish rate: **~885 Hz** (same as RobotState — published in the same `simulator.py` loop iteration).
+Observed publish rate: **~884.5 Hz** (same as `RobotState` — both are published in the same `simulator.py` loop iteration).
 
-Quaternion convention: SDK returns `(w, x, y, z)`. Controllers (`walk`, `mimic`) then rotate to `(x, y, z, w)` for scipy via `quat = quat[1:] + quat[:1]`. Empirically the standing IMU sample matches identity-ish quaternion in (w,x,y,z) form (w ≈ 1.0).
+**Quaternion convention.** SDK returns `(w, x, y, z)`. Controllers (`walk`, `mimic`) rotate to `(x, y, z, w)` for scipy via `quat = quat[1:] + quat[:1]`. Empirically the standing IMU sample has `w ≈ 1.0`, confirming the convention.
+
+Two captured samples:
+
+| Pose | `quat` (w,x,y,z) | `gyro` (rad/s) | `acc` (m/s²) |
+|---|---|---|---|
+| Standing (2026-06-19) | `[0.998, -0.0009, -0.012, 0.060]` | `[~0, ~0, ~0]` | `[~0, ~0, ~9.4]` |
+| Walking (2026-06-22) | `[0.9996, -0.019, -0.019, 0.006]` | `[-0.095, 0.111, 0.015]` | `[0.67, -0.85, 9.16]` |
+
+The walking sample's non-zero gyro and tilted acc vector confirm the IMU is body-frame: gravity is no longer purely on z because Oli's torso oscillates during gait.
 
 ### `RobotCmd` (policy → sim)
 
-Pending re-run with `subscribeRobotCmdForSim` (initial probe used `subscribeRobotCmd` — policy-side subscription, sees 0 samples by design). Expected shape per `walk_controller.py`:
+Captured 2026-06-22 via `probe_contract.py --role sim` while the launcher was running with the **walk** ability active. Canonical struct definition: [`limxsdk::RobotCmd`](oli-corpus://limxsdk#datatypes.h).
 
 | Field | Shape | Notes |
 |---|---|---|
-| `q` | 31 floats | target joint positions, PR space, radians |
-| `dq` | 31 floats | typically all-zero from controllers |
-| `tau` | 31 floats | feed-forward torques, typically all-zero |
-| `Kp`, `Kd` | 31 floats each | per-joint gains; non-zero only for active ability |
-| `mode` | 31 ints | per-joint flag for PR↔AB conversion; **defaults to 0** in all shipped controllers |
-| `motor_names` | 31 strings | echoed back from `RobotState` by controllers |
+| `stamp` | `uint64` (ns) | `time.time_ns()` from the publishing controller |
+| `mode` | 31 × `uint8` | per-joint **control law**, not a PR/AB flag. `0` = torque-position hybrid PD, `1` = velocity, `2` = position, `3` = torque. All shipped controllers publish `mode[i] = 0` so the sim applies the standard PD + feed-forward law (see § 4.3). |
+| `q` | 31 × `float` | target joint angles, radians, PR-space order |
+| `dq` | 31 × `float` | target joint velocities, rad/s. Empirically all zero from `walk`/`stand`/`mimic`. |
+| `tau` | 31 × `float` | feed-forward torque, N·m. Empirically all zero from shipped controllers. |
+| `Kp` | 31 × `float` | per-joint position stiffness, N·m/rad |
+| `Kd` | 31 × `float` | per-joint velocity damping, N·m/(rad/s) |
+| `motor_names` | 31 × `string` | echoed back in PR-space order, matches `RobotState.motor_names` |
+| `parallel_solve_required` | 31 × `bool` | per-joint PR↔AB conversion flag. Defaults to `true` for every motor (see struct ctor). No shipped controller modifies it, so the SDK always converts PR-space targets to AB-space actuator commands transparently. This is the real flag we hypothesized in § 9, distinct from `mode`. |
 
-### Mode flag — empirical answer
+Observed publish rate: **~945.6 Hz** (2840 samples in 3.0 s; controllers' nominal `update_rate: 1000`). Slightly higher than `RobotState`'s 884.5 Hz — the deploy loop runs closer to its nominal kHz than the sim's publish loop does, so cmd publish and state publish are decoupled clocks on the bus, not lock-stepped.
 
-Walk + stand + mimic all run successfully with `RobotCmd.mode[i] = 0` for every joint. Combined with the fact that controllers operate in PR space (semantic joint names) and the SDK's auto-conversion routes targets to AB-space MJCF actuators correctly, **`mode = 0` = PR mode (SDK converts)**. This contradicts no explicit doc, but was previously a hypothesis — now confirmed.
+Active-controller fingerprint at capture (walk):
+
+```
+Kp[0:4]  = [139.41, 139.41, 139.41, 139.41, 0.0, 0.0, …]   # walk_param.yaml: hip pitch/roll/yaw, knee
+Kd[0:4]  = [ 17.75,  17.75,  17.75,  17.75, 0.0, 0.0, …]
+mode[:6] = [     0,      0,      0,      0,   0,   0, …]
+```
+
+`Kp[i] = 0` for ankle indices and onward is intentional under `walk`: the policy already encodes ankle behavior in the target `q`, and zero Kp leaves the ankle joints feed-forward-only. `stand` and `damping` fingerprint differently (see § 7).
+
+### Mode flag — empirical answer (corrected 2026-06-22)
+
+An earlier version of this section claimed `mode = 0` selects PR-space conversion. **That was wrong.** The canonical [`limxsdk::RobotCmd`](oli-corpus://limxsdk#datatypes.h) struct documents `mode` as the per-joint **control-law selector**:
+
+| `mode[i]` | Meaning |
+|---|---|
+| `0` | Torque-position hybrid control (PD + feed-forward — the law `simulator.py` applies, § 5) |
+| `1` | Velocity control |
+| `2` | Position control |
+| `3` | Pure torque control |
+
+All shipped controllers (`stand`, `walk`, `mimic`, `damping`) publish `mode[i] = 0` for every joint, because they all want the simulator (or motor firmware) to close the standard `τ = Kp(q_d − q) + Kd(dq_d − dq) + τ_ff` loop. Nothing in `mode` toggles PR vs AB.
+
+The PR↔AB conversion flag actually lives in `parallel_solve_required: vector<bool>`, defaulting to `true` for every motor in the struct constructor. No shipped controller touches it, so the SDK always parallel-solves (PR → AB) before the cmd reaches the actuator layer. This matches the SDK guide's note ([`oli-corpus://sdk-guide#5.1.6?part=1`](oli-corpus://sdk-guide#5.1.6?part=1)) that the SDK handles parallel-mechanism conversion transparently for upper layers.
 
 ### `kinematic_projection`
 
-Spawned as a subprocess by `simulator.py`. Without it, ankle/waist parallel mechanism conversion fails. Required for sim; presumably required on real robot too (where it lives inside the robot firmware rather than as a separate ELF).
+Spawned as a subprocess by `simulator.py`. Without it, the ankle/waist parallel-mechanism conversion in the MuJoCo path fails: the MJCF authors actuators in AB-space while the SDK accepts cmds in PR-space (see § 6), and `kinematic_projection` is what bridges them on the sim side.
+
+On the real robot, the equivalent conversion lives **inside the low-level motion control system** rather than as a separate ELF — per the SDK guide ([`oli-corpus://sdk-guide#5.1.6?part=1`](oli-corpus://sdk-guide#5.1.6?part=1)). That's why the same `publishRobotCmd` packet works for both sim and real: the upper layer always sends PR-space commands (with `parallel_solve_required[i] = true` by default), and whichever stack the bus connects to — MuJoCo + `kinematic_projection`, or real-robot firmware — is responsible for the PR→AB mapping.
