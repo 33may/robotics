@@ -1,0 +1,276 @@
+{
+  "name": "ood_smoke_15",
+  "version": "v1",
+  "description": "15-trial OOD smoke \u2014 siblings of id_smoke_15. Ducks spawn in two side bands flanking the workspace (3 LEFT + 2 RIGHT per cup); cups and prompt unchanged. Tests horizontal-displacement OOD with y matched to the ID zone so failure modes isolate the x-axis. Seed=13.",
+  "task": "pick up the duck and place it in the cup",
+  "total_trials": 15,
+  "id_count": 0,
+  "ood_count": 15,
+  "trials": [
+    {
+      "trial_id": 0,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        236,
+        250
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 272.7,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 1,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        181,
+        209
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 303.5,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 2,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        456,
+        304
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 240.7,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 3,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        514,
+        201
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 59.1,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 4,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        208,
+        290
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 198.7,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 5,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        510,
+        252
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 235.8,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 6,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        452,
+        212
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 222.5,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 7,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        259,
+        302
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 259.4,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 8,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        204,
+        261
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 216.0,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 9,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        170,
+        198
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 42.0,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 10,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        189,
+        250
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 321.5,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 11,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        216,
+        209
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 319.9,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 12,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        161,
+        277
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 352.3,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 13,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        529,
+        303
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 5.8,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 14,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        471,
+        262
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 31.5,
+      "cup_group": 4
+    }
+  ],
+  "cup_positions": [
+    [
+      221,
+      117
+    ],
+    [
+      321,
+      117
+    ],
+    [
+      421,
+      117
+    ]
+  ],
+  "cup_groups": [
+    5,
+    5,
+    5
+  ],
+  "workspace_bbox": [
+    270,
+    191,
+    424,
+    313
+  ],
+  "ood_bands": {
+    "LEFT": [
+      160,
+      191,
+      270,
+      313
+    ],
+    "RIGHT": [
+      424,
+      191,
+      540,
+      313
+    ]
+  },
+  "_generated_by": "vbti/logic/inference/protocols/generators/make_ood_smoke_15.py"
+}

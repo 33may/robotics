@@ -1,0 +1,22 @@
+{
+  "root": "/home/may33/projects/ml_portfolio/robotics",
+  "backend": "graphify",
+  "updated_at": "2026-06-17T12:14:20.217Z",
+  "artifacts": {
+    "map": "/home/may33/projects/ml_portfolio/robotics/.august/knowledge/map.md",
+    "status": "/home/may33/projects/ml_portfolio/robotics/.august/knowledge/status.json",
+    "review": "/home/may33/projects/ml_portfolio/robotics/.august/knowledge/graph-review.md",
+    "summary": "/home/may33/projects/ml_portfolio/robotics/.august/knowledge/graph-summary.md",
+    "edges": "/home/may33/projects/ml_portfolio/robotics/.august/knowledge/edges.json",
+    "curation": "/home/may33/projects/ml_portfolio/robotics/.august/knowledge/curation.md",
+    "graphJson": "/home/may33/projects/ml_portfolio/robotics/.graphify/graph.json",
+    "graphReport": "/home/may33/projects/ml_portfolio/robotics/.graphify/GRAPH_REPORT.md"
+  },
+  "edge_types": {
+    "explicit": 553,
+    "structural": 81,
+    "semantic-high": 210,
+    "semantic-low": 1089,
+    "curated": 0
+  }
+}

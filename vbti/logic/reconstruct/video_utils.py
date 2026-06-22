@@ -94,6 +94,7 @@ def extract_frames(
     output_dir: str,
     mode: str = "count",
     value: float = 200,
+    rotate: bool = False,
 ):
     """Extract sharp frames from video using sharp-frame-extractor.
 
@@ -105,8 +106,8 @@ def extract_frames(
     video_path = str(Path(video_path).resolve())
     output_dir = str(Path(output_dir).resolve())
 
-    # Auto-fix rotation (phones store rotation as metadata, OpenCV ignores it)
-    video_path = fix_rotation(video_path)
+    if rotate:
+        video_path = fix_rotation(video_path)
 
     if mode == "percentage":
         value = calculate_frame_count(video_path, value)

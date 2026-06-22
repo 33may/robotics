@@ -1,0 +1,1304 @@
+# Knowledge Graph Curation
+
+## Curated edge candidates
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> .claude/agent-memory/researcher/MEMORY.md (possibly_relates_to) - Shared terms: read, rendered, gallery, images, feedback, image, review, coordinator
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> docs/evaluation/evaluation_visual_review.md (possibly_relates_to) - Shared terms: review, each, image, feedback
+- [ ] .pytest_cache/README.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: pytest, cache, directory, contains, data, plugin, which, provides
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> docs/evaluation/evaluation_visual_review.md (possibly_relates_to) - Shared terms: evaluation, visualization, review, board, figures, feedback, version, dataset
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> docs/evaluation/evaluation_visualization_report.md (possibly_relates_to) - Shared terms: dataset, evaluation, report, version
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/evaluation/evaluation_visualization_audit.md (possibly_relates_to) - Shared terms: evaluation, visualization, document, generated
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/evaluation/evaluation_visualization_report.md (possibly_relates_to) - Shared terms: dataset, evaluation, each, figure, version
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> docs/evaluation/evaluation_visualization_report.md (possibly_relates_to) - Shared terms: checkpoint, sweep, evaluation, folder, v020, v024
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/plans/2026-04-13-delta-action-prediction.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/plans/2026-04-15-calibration-system.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/plans/2026-04-29-reflect-skill.md (possibly_relates_to) - Shared terms: skill, implementation, plan, agentic, workers, required, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/specs/2026-04-02-copilot-skill-design.md (possibly_relates_to) - Shared terms: copilot, skill, claude, skills
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: skill, session, claude, skills
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implement, start, implementation
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: knowledge, session, context, start
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: context, session, documents, start, development, task
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/plans/2026-04-15-calibration-system.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/plans/2026-04-29-reflect-skill.md (possibly_relates_to) - Shared terms: skill, implementation, plan, agentic, workers, required, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: delta, action, prediction, absolute, time, actions, step, wise
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: inference, real, task, writes, step, action
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: inference, convert, lerobot, dataset
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> README.md (possibly_relates_to) - Shared terms: driven, reconstructs, real, lerobot
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> docs/superpowers/plans/2026-04-29-reflect-skill.md (possibly_relates_to) - Shared terms: skill, implementation, plan, agentic, workers, required, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: calibration, profile, system, interactive, keyframe, based
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: robot, vbti, logic, task, build
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, build, based, robot, required, project
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: implementation, plan, agentic, workers, required, skill, superpowers, subagent
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: reflect, skill, session, claude, journaling, only, command
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: replace, source, real, task, writes
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implement, implementation, through
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: code, python, markdown, real, files, clean
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: source, only, thin, markdown
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: real, session, memory, sessions, clean, markdown
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: flow, session, development, task, real, source
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: source, markdown, files, only, file
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: replace, real, task, through
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, through, file, only, required
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: bake, parquet, implementation, plan, agentic, workers, required, skill
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> docs/superpowers/specs/2026-04-02-copilot-skill-design.md (possibly_relates_to) - Shared terms: skill, design, spec, 2026
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: prediction, design, spec, smolvla, policy, training, target
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: skill, design, 2026, only
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> docs/superpowers/specs/2026-05-13-smolvla-uva-design.md (possibly_relates_to) - Shared terms: smolvla, auxiliary, future, feature, prediction
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: inference, design, vbti, task, policy, path
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, they, design, specs, implementation
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: docs, class, script, local
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: docs, only, vbti, future
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: spec, only, script, extractor, identical
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: feature, task, class, path
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: policy, training, inference, directory, script, lerobot, dataset, only
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> README.md (possibly_relates_to) - Shared terms: driven, policy, training, lerobot
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: source, change, first, task, each, chunks
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: skill, change, implement, implementation
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: full, without, development, change, task, source
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: feature, while, preserving, task
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: source, feature, first, task
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: date, 2026, status, draft
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: skill, design, date, 2026, claude, skills
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: design, current, logic, observation, each, policy, step, predicts
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: change, step, build, design
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: source, control, already, vbti
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: design, them, real, reset, start
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: robot, control, start, currently, live, change, interface, later
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: replace, real, task, path
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: main, source, first, task
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, build, already, robot
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/commands/opsx/archive.md (possibly_relates_to) - Shared terms: name, opsx, description, change, experimental
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: name, opsx, description, change
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: name, opsx, description, change
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: name, openspec, apply, change, description, implement, tasks
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: name, openspec, change, description, experimental
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: name, openspec, description, change
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: name, openspec, description, change, tasks
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: name, openspec, description, change
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: name, opsx, description, change
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: name, opsx, description, change
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: name, archive, change, description, completed, experimental, workflow
+- [ ] humanoid/.claude/commands/opsx/explore.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: name, explore, description, enter, mode, ideas, problems, requirements
+- [ ] humanoid/.claude/commands/opsx/propose.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: name, opsx, description, change
+- [ ] humanoid/.claude/commands/opsx/propose.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: name, propose, description, change, artifacts, step
+- [ ] humanoid/.claude/commands/opsx/sync.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: name, description, change, specs
+- [ ] humanoid/.claude/commands/opsx/sync.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: name, sync, specs, description, delta, change, main
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, change, description, when, user, wants
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, description, when, user, wants, through
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, description, change, when, user, wants
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, description, change, when, user, wants
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: work, when, start, user
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: work, start, user, change
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, description, when, user, wants, change
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, description, change, when, user, wants
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, description, change, when, user, wants
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, description, change, when, user, wants
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, description, change, when, user, wants
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill, name, openspec, specs, description, change, when, user
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: proposal, they, user, change, ready
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: research, docs, recommendation, server, markdown, already
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: local, limx, server, files
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: extraction, research, html, base64, images, pandoc, post, pass
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: docs, stack, real, every, limx, initial, research, extraction
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: stack, full, pdfs, limx, documents, pages, every, real
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: markdown, limx, files, extraction, script, html, every
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: browser, https, code, server
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: https, real, images, class
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: every, already, contains, table, https
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: corpus, repo, source, server, over
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: docs, corpus, three, research, open, markdown
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: control, point, three, over, corpus, repo, source
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: corpus, produce, source, markdown, three, only
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: format, only, repo, github
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, encode, https, rights, reserved, redistribution, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, rights, reserved
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, encode, https, rights, reserved, redistribution, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, encode, https, rights, reserved, redistribution, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: copyright, 2020, rights, reserved, license
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, rights, reserved
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, encode, https, rights, reserved, redistribution, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, encode, https, rights, reserved, redistribution, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: copyright, rights, reserved, license
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, rights, reserved
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, rights, reserved
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: copyright, rights, reserved, license
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license, copyright, encode, https, rights, reserved, redistribution, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: copyright, rights, reserved, license
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: copyright, rights, reserved, license
+- [ ] humanoid/docs/oli-corpus/gaps.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: corpus, source, found, gaps
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: limx, quick, start, guide
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: limx, quick, start, guide
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: limx, quick, start, guide
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: limx, quick, start, guide
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: corpus, source, truth, agents, must, cite, search, files
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: corpus, agents, when, content, pass
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: agents, they, cite, curated, corpus, source
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: corpus, source, hand, files, under, sources, only, when
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: corpus, source, official, found, server
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: corpus, agents, documentation, official, limx
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: agents, limx, official, cite, over, documentation, corpus, repo
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: corpus, source, official, limx, documentation, hand, files, under
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: limx, source, corpus, sources
+- [ ] humanoid/docs/oli-corpus/source_map.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: corpus, official, guide, questions, http
+- [ ] humanoid/docs/oli-corpus/source_map.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: official, guide, corpus, interface, source
+- [ ] humanoid/docs/oli-corpus/source_map.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: corpus, source, official, guide
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: limx, preview, editor, default, images
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: preview, editor, default, content
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: limx, content, research, extraction, editor, preview, pandoc, language
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: limx, extraction, html, content
+- [ ] humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: guide, document, preview, class, editor, default, theme, scrn
+- [ ] humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: document, preview, class, editor, default, theme, scrn
+- [ ] humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: limx, quick, start, guide, editor, preview
+- [ ] humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: limx, quick, start, guide
+- [ ] humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: limx, quick, start, guide
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: document, preview, class, editor, default, theme, scrn, version
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: official, guide, editor, preview
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: official, content, editor, preview
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: work, continuously, coding, agents, humanoid, stack, need, context
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: corpus, layer, markdown, three, official, limx, documentation, quick
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: humanoid, docs, limx, corpus, clean
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: need, high, open, http, quick
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: corpus, source, three, official, limx, documentation, quick, start
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: humanoid, limx, source, corpus
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: data, https, source, need, task
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: data, official, repo, https
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, every, https, needs, robot
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https, user, data, robot
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> README.md (possibly_relates_to) - Shared terms: real, accurate, data, robot
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: limx, source, corpus, sources, meta, manifest, yaml
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: script, only, official, file
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: every, file, only, under
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: environments, through, https, environment, simulation
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: have, https, github, feature, functionality, task
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, through, environment, have, https
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https, github, functionality, including, relevant
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> README.md (possibly_relates_to) - Shared terms: simulation, robotic, through, real, environments, enabling, transfer
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: lerobot, only, environment, https, huggingface
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: leisaac, through, environment, tasks, your, https, only
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: leisaac, docs, https, your
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac, https, lerobot, huggingface
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: lerobot, code, only, community
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> README.md (possibly_relates_to) - Shared terms: simulation, through, environments, huggingface, lerobot
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: data, https, github, instructions
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: isaaclab, https, github, isaac
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, leisaac, have, example, https
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac, https, github, functionality, isaaclab, isaac, main, html
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: collected, teleoperation, script, dataset, environment, using
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: teleoperation, script, shell, python, scripts, environments
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: using, python, following, shell
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: environments, following, python, scripts
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: environment, file, https, only
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https, github, teleoperation, using, lerobot, huggingface, data, policy
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: policy, readme, https, github
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: policy, readme, https, github
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> README.md (possibly_relates_to) - Shared terms: data, policy, training, huggingface, lerobot
+- [ ] leisaac/docs/docs/docs/getting_started/teleoperation.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: available, environments, tasks, python, scripts
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https, github, isaaclab, isaac, using, related
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac, https, assets, robot
+- [ ] leisaac/docs/docs/resources/available_policy.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: available, page, lists, currently, supported, leisaac
+- [ ] leisaac/README.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: policy, https, github, isaac
+- [ ] leisaac/README.md -> README.md (possibly_relates_to) - Shared terms: data, policy, training, robot, isaac, huggingface, lerobot
+- [ ] lerobot/CODE_OF_CONDUCT.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: everyone, code, community, conduct
+- [ ] lerobot/docs/source/policy_act_README.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: policy, readme, https, bibtex, article
+- [ ] lerobot/docs/source/policy_act_README.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: policy, readme, https, github, bibtex
+- [ ] lerobot/docs/source/policy_act_README.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy, readme, https, bibtex, article
+- [ ] lerobot/docs/source/policy_diffusion_README.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: policy, readme, https, bibtex
+- [ ] lerobot/docs/source/policy_diffusion_README.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy, readme, https, bibtex, article
+- [ ] lerobot/docs/source/policy_groot_README.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy, readme, https, bibtex
+
+## Semantic-low candidate edges
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> .claude/agent-memory/researcher/feedback_image_review.md (possibly_relates_to) - Shared terms: feedback, name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> .claude/agent-memory/researcher/MEMORY.md (possibly_relates_to) - Shared terms: feedback
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> docs/evaluation/evaluation_visual_review_v2.md (possibly_relates_to) - Shared terms: feedback, fixed
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> docs/evaluation/evaluation_visual_review.md (possibly_relates_to) - Shared terms: feedback
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: duck
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: duck, positions
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: fixed
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/commands/opsx/archive.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/commands/opsx/explore.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: specific
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] .claude/agent-memory/researcher/feedback_duck_rotation.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> docs/evaluation/evaluation_visual_review_v2.md (possibly_relates_to) - Shared terms: review, feedback
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> docs/evaluation/evaluation_visualization_report.md (possibly_relates_to) - Shared terms: each
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: each
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: should, each
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: each, unless
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/commands/opsx/archive.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/commands/opsx/explore.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: name, description
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: name, description, when
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: name, description, when
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: name, description, when
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: name, description, when
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: name, description, when
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: rendered, image, images
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: open
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: when
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: explicitly, unless
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: images
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: images
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: when, open
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: when
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: open
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: images
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: agent
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] .claude/agent-memory/researcher/feedback_image_review.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: many
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> docs/evaluation/evaluation_visual_review_v2.md (possibly_relates_to) - Shared terms: review, feedback
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> docs/evaluation/evaluation_visual_review.md (possibly_relates_to) - Shared terms: review, image, feedback
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> docs/superpowers/plans/2026-04-02-copilot-skill.md (possibly_relates_to) - Shared terms: reads
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> docs/superpowers/plans/2026-04-13-delta-action-prediction.md (possibly_relates_to) - Shared terms: reads, writes
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> docs/superpowers/plans/2026-04-29-reflect-skill.md (possibly_relates_to) - Shared terms: memory, writes
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: writes
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: rendered, image, images
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: images
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: images
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: memory
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: images
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: agent
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: summary
+- [ ] .claude/agent-memory/researcher/MEMORY.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: memory
+- [ ] .pytest_cache/README.md -> docs/evaluation/evaluation_visual_review_v2.md (possibly_relates_to) - Shared terms: version
+- [ ] .pytest_cache/README.md -> docs/evaluation/evaluation_visual_review.md (possibly_relates_to) - Shared terms: version
+- [ ] .pytest_cache/README.md -> docs/evaluation/evaluation_visualization_audit.md (possibly_relates_to) - Shared terms: which, data
+- [ ] .pytest_cache/README.md -> docs/evaluation/evaluation_visualization_report.md (possibly_relates_to) - Shared terms: contains, version
+- [ ] .pytest_cache/README.md -> docs/superpowers/plans/2026-04-15-calibration-system.md (possibly_relates_to) - Shared terms: cache
+- [ ] .pytest_cache/README.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: directory
+- [ ] .pytest_cache/README.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: control, which
+- [ ] .pytest_cache/README.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: contains, data
+- [ ] .pytest_cache/README.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: control
+- [ ] .pytest_cache/README.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: version
+- [ ] .pytest_cache/README.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: version, control
+- [ ] .pytest_cache/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: control, data
+- [ ] .pytest_cache/README.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: data
+- [ ] .pytest_cache/README.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: data, directory
+- [ ] .pytest_cache/README.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: contains
+- [ ] .pytest_cache/README.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: control
+- [ ] .pytest_cache/README.md -> leisaac/README.md (possibly_relates_to) - Shared terms: provides, data
+- [ ] .pytest_cache/README.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: version
+- [ ] .pytest_cache/README.md -> README.md (possibly_relates_to) - Shared terms: data
+- [ ] datasets/sweep_no_offset/README.md -> docs/superpowers/plans/2026-04-02-copilot-skill.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> docs/superpowers/plans/2026-04-13-delta-action-prediction.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> docs/superpowers/plans/2026-04-15-calibration-system.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> docs/superpowers/plans/2026-04-29-reflect-skill.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license
+- [ ] datasets/sweep_no_offset/README.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license
+- [ ] datasets/sweep_no_offset/README.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license
+- [ ] datasets/sweep_no_offset/README.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license
+- [ ] datasets/sweep_no_offset/README.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: license
+- [ ] datasets/sweep_no_offset/README.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: categories
+- [ ] datasets/sweep_no_offset/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: readme
+- [ ] datasets/sweep_no_offset/README.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task
+- [ ] datasets/sweep_no_offset/README.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: apache, license
+- [ ] datasets/sweep_no_offset/README.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: readme
+- [ ] datasets/sweep_no_offset/README.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: readme
+- [ ] datasets/sweep_no_offset/README.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: readme
+- [ ] datasets/sweep_no_offset/README.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: readme
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> docs/evaluation/evaluation_visualization_audit.md (possibly_relates_to) - Shared terms: evaluation, visualization, were
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> docs/superpowers/plans/2026-04-13-delta-action-prediction.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: fixed
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: unclear
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: visual
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: size
+- [ ] docs/evaluation/evaluation_visual_review_v2.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/superpowers/plans/2026-04-02-copilot-skill.md (possibly_relates_to) - Shared terms: obsidian
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/superpowers/plans/2026-04-13-delta-action-prediction.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: style, dataset
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: dataset, each
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: place, each
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: each
+- [ ] docs/evaluation/evaluation_visual_review.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: generated
+- [ ] docs/evaluation/evaluation_visual_review.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: image
+- [ ] docs/evaluation/evaluation_visual_review.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: document, figure
+- [ ] docs/evaluation/evaluation_visual_review.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: document, version
+- [ ] docs/evaluation/evaluation_visual_review.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: document, version
+- [ ] docs/evaluation/evaluation_visual_review.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visual_review.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: place
+- [ ] docs/evaluation/evaluation_visual_review.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visual_review.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: v020
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: v020
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: text, which
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: artifacts
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: artifacts, generated, what
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: data
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: folder
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: used
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: mapped
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: document
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: document
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: document
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: data
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: data
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: data
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> leisaac/README.md (possibly_relates_to) - Shared terms: data
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: data, which
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: what
+- [ ] docs/evaluation/evaluation_visualization_audit.md -> README.md (possibly_relates_to) - Shared terms: data
+- [ ] docs/evaluation/evaluation_visualization_report.md -> docs/superpowers/plans/2026-04-13-delta-action-prediction.md (possibly_relates_to) - Shared terms: dataset, real
+- [ ] docs/evaluation/evaluation_visualization_report.md -> docs/superpowers/plans/2026-04-15-calibration-system.md (possibly_relates_to) - Shared terms: robot
+- [ ] docs/evaluation/evaluation_visualization_report.md -> docs/superpowers/plans/2026-04-29-reflect-skill.md (possibly_relates_to) - Shared terms: real
+- [ ] docs/evaluation/evaluation_visualization_report.md -> docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md (possibly_relates_to) - Shared terms: v020, dataset
+- [ ] docs/evaluation/evaluation_visualization_report.md -> docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md (possibly_relates_to) - Shared terms: dataset, v020, each
+- [ ] docs/evaluation/evaluation_visualization_report.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: each
+- [ ] docs/evaluation/evaluation_visualization_report.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visualization_report.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: robot, real, each
+- [ ] docs/evaluation/evaluation_visualization_report.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: ready
+- [ ] docs/evaluation/evaluation_visualization_report.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: contains, real
+- [ ] docs/evaluation/evaluation_visualization_report.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: folder, interpretation, intentionally
+- [ ] docs/evaluation/evaluation_visualization_report.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: figure
+- [ ] docs/evaluation/evaluation_visualization_report.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visualization_report.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visualization_report.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: real
+- [ ] docs/evaluation/evaluation_visualization_report.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: robot, ready, real
+- [ ] docs/evaluation/evaluation_visualization_report.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: real
+- [ ] docs/evaluation/evaluation_visualization_report.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visualization_report.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/evaluation/evaluation_visualization_report.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: contains, robot
+- [ ] docs/evaluation/evaluation_visualization_report.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: robot
+- [ ] docs/evaluation/evaluation_visualization_report.md -> leisaac/README.md (possibly_relates_to) - Shared terms: robot
+- [ ] docs/evaluation/evaluation_visualization_report.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: contains, version
+- [ ] docs/evaluation/evaluation_visualization_report.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: version
+- [ ] docs/evaluation/evaluation_visualization_report.md -> README.md (possibly_relates_to) - Shared terms: real, robot
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: session
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: start, vbti, task
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: implement
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: create
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implementation
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill, thinking
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, implementation
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: files, documents
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: index, vbti
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: gaps
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: start
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: files
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: files
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: gaps
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: start
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: start, files
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: create, task
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: task
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: required, create
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, required, project
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> leisaac/README.md (possibly_relates_to) - Shared terms: index
+- [ ] docs/superpowers/plans/2026-04-02-copilot-skill.md -> README.md (possibly_relates_to) - Shared terms: driven, robotics, framework
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/specs/2026-04-02-copilot-skill-design.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> docs/superpowers/specs/2026-05-13-smolvla-uva-design.md (possibly_relates_to) - Shared terms: prediction
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: implement
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/commands/opsx/explore.md (possibly_relates_to) - Shared terms: mode
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: step
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: delta
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implement, implementation
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implementation
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill, mode
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, step, implementation
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill, delta
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: real
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: support, development
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: state
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: real
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: development, task, real
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: real, task, mode
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: lerobot, support
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: task
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: required
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, required
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: support
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: inference
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> leisaac/README.md (possibly_relates_to) - Shared terms: lerobot, conversion
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: time
+- [ ] docs/superpowers/plans/2026-04-13-delta-action-prediction.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> docs/superpowers/specs/2026-04-02-copilot-skill-design.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: joint, logic
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: implement
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implement, implementation
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implementation
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, build, implementation
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: local
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: vbti
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: local
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: robot, development, task
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: interactive, task
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: task
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: required
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: stored, lerobot
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: lerobot, robot
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> leisaac/README.md (possibly_relates_to) - Shared terms: lerobot, robot
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: cache
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] docs/superpowers/plans/2026-04-15-calibration-system.md -> README.md (possibly_relates_to) - Shared terms: driven, robot, lerobot
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> docs/superpowers/specs/2026-04-02-copilot-skill-design.md (possibly_relates_to) - Shared terms: skill, claude
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: session
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: implement
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/.claude/commands/opsx/explore.md (possibly_relates_to) - Shared terms: through
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implementation
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill, through
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, implementation
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: source, only
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: only, files, source
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: source, files
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: source, seed
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source, clean
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: code
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: code, through, only
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: source, task
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: using, python
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: required, python
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: only, using, file
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: python
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: using, python
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: using
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: command, python
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: using
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> leisaac/README.md (possibly_relates_to) - Shared terms: using
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: memory
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: code
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: code, only
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: code
+- [ ] docs/superpowers/plans/2026-04-29-reflect-skill.md -> README.md (possibly_relates_to) - Shared terms: driven, through, real
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: 2026, dataset, future
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: implement
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: specs
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implement, implementation
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill, implementation
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill, specs, spec
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: 2026
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: only
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: only, they
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: local
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: class
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development, class
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: class
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: design, docs
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: they, development, task
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: docs, path
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: lerobot, docs, only
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: feature, task
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: dataset, script
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: script, required
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: script
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, only, required
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: policy, inference
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: lerobot, future
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: docs
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> leisaac/README.md (possibly_relates_to) - Shared terms: lerobot, policy, training
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: feature, docs
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: directory
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: video
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: lerobot, only
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/plans/2026-05-13-smolvla-uva-implementation.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy, smolvla
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> docs/superpowers/specs/2026-04-02-copilot-skill-design.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: smolvla, duck, each
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> docs/superpowers/specs/2026-04-15-calibration-system-design.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: skill, only
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> docs/superpowers/specs/2026-05-13-smolvla-uva-design.md (possibly_relates_to) - Shared terms: smolvla, feature
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: implement, change
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/commands/opsx/archive.md (possibly_relates_to) - Shared terms: change
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: change
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: change
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill, change, implementation
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill, change
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, change, implementation
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill, change, without
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: python, full
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: source, only
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source, without
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source, without
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source, without
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source, without
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: source, only
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: written, only, source
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: source, written
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: source, only, then
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: lerobot, only
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: dataset, python
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: required, python
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: lerobot, dataset, only
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: python
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: python
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: task, only, required
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: list, python
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> leisaac/README.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: feature
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: lerobot, only
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: smolvla
+- [ ] docs/superpowers/plans/2026-05-26-uva-bake-chunked-parquet-rewrite.md -> README.md (possibly_relates_to) - Shared terms: driven, lerobot
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md (possibly_relates_to) - Shared terms: design, spec
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: design
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, design
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill, spec
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: 2026
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: status
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: date
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: date
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: design
+- [ ] docs/superpowers/specs/2026-04-02-copilot-skill-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: spec
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: design, current
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> docs/superpowers/specs/2026-05-13-smolvla-uva-design.md (possibly_relates_to) - Shared terms: smolvla, prediction
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: step
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: delta
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: step, design
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: delta, spec
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: next
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: state
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: design, next
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: spec
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: policy, training
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> leisaac/docs/docs/docs/introduction.md (possibly_relates_to) - Shared terms: position
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: place
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> leisaac/README.md (possibly_relates_to) - Shared terms: policy, training
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: time
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy, smolvla
+- [ ] docs/superpowers/specs/2026-04-13-delta-action-prediction-design.md -> README.md (possibly_relates_to) - Shared terms: manipulation, policy, training
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> docs/superpowers/specs/2026-04-29-reflect-skill-design.md (possibly_relates_to) - Shared terms: session, date, 2026
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> docs/superpowers/specs/2026-05-13-smolvla-uva-design.md (possibly_relates_to) - Shared terms: future
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: future
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: 2026
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: status
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: date
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: date
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: session
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: session
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: interactive
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: dataset
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: based
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: future
+- [ ] docs/superpowers/specs/2026-04-15-calibration-system-design.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: scope
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md (possibly_relates_to) - Shared terms: design, current, commands
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: skill, design
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: skill
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: only
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: 2026
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: only
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: only
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: date
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: date
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: design, session
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: session
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: only
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: only, commands
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: only
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: only
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: command
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: free
+- [ ] docs/superpowers/specs/2026-04-29-reflect-skill-design.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: only
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> humanoid/docs/oli-corpus/_research/mcp_serving_research.md (possibly_relates_to) - Shared terms: future
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: may33
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: field
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: feature
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: feature
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: future
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: feature
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: value
+- [ ] docs/superpowers/specs/2026-05-13-smolvla-uva-design.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: smolvla
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/commands/opsx/apply.md (possibly_relates_to) - Shared terms: change
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/commands/opsx/archive.md (possibly_relates_to) - Shared terms: change
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: change, step
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: change, main
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: change, start
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: change
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: before, during, change
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: change, main, changes
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/_research/extraction_research.md (possibly_relates_to) - Shared terms: already, real
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: start
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: source
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: source, unless
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: source, interface
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: start
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: changes
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: main, control
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: source, start
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source, path
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: commands
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: policy, inference, will
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: control
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: policy, inference, currently
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: currently, will, robot
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> leisaac/README.md (possibly_relates_to) - Shared terms: main, policy, robot
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: which, control
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] docs/superpowers/specs/2026-05-27-dynamic-inference-prompt-design.md -> README.md (possibly_relates_to) - Shared terms: real, policy, robot
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/.claude/commands/opsx/explore.md (possibly_relates_to) - Shared terms: name, opsx, description
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: change
+- [ ] humanoid/.claude/commands/opsx/apply.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/commands/opsx/apply.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/commands/opsx/apply.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/commands/opsx/apply.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/commands/opsx/apply.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/commands/opsx/apply.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/apply.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/.claude/commands/opsx/explore.md (possibly_relates_to) - Shared terms: name, opsx, description
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: name, change, description
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: name, description, change
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: name, description, change
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: name, description, change
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/archive.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: change
+- [ ] humanoid/.claude/commands/opsx/archive.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/archive.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/commands/opsx/explore.md -> humanoid/.claude/commands/opsx/propose.md (possibly_relates_to) - Shared terms: name, opsx, description
+- [ ] humanoid/.claude/commands/opsx/explore.md -> humanoid/.claude/commands/opsx/sync.md (possibly_relates_to) - Shared terms: name, opsx, description
+- [ ] humanoid/.claude/commands/opsx/explore.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: name, description, through
+- [ ] humanoid/.claude/commands/opsx/explore.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: name, description
+- [ ] humanoid/.claude/commands/opsx/explore.md -> humanoid/.claude/skills/openspec-propose/SKILL.md (possibly_relates_to) - Shared terms: name, description
+- [ ] humanoid/.claude/commands/opsx/explore.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: name, description
+- [ ] humanoid/.claude/commands/opsx/explore.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/explore.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: through, mode
+- [ ] humanoid/.claude/commands/opsx/explore.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: through
+- [ ] humanoid/.claude/commands/opsx/explore.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: through
+- [ ] humanoid/.claude/commands/opsx/explore.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/explore.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/commands/opsx/explore.md -> README.md (possibly_relates_to) - Shared terms: through
+- [ ] humanoid/.claude/commands/opsx/propose.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: name, change, description
+- [ ] humanoid/.claude/commands/opsx/propose.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: name, change, description
+- [ ] humanoid/.claude/commands/opsx/propose.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: name, description, change
+- [ ] humanoid/.claude/commands/opsx/propose.md -> humanoid/.claude/skills/openspec-sync-specs/SKILL.md (possibly_relates_to) - Shared terms: name, description, change
+- [ ] humanoid/.claude/commands/opsx/propose.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/propose.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: change
+- [ ] humanoid/.claude/commands/opsx/propose.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: create
+- [ ] humanoid/.claude/commands/opsx/propose.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: generate
+- [ ] humanoid/.claude/commands/opsx/propose.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: create
+- [ ] humanoid/.claude/commands/opsx/propose.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/propose.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/commands/opsx/sync.md -> humanoid/.claude/skills/openspec-apply-change/SKILL.md (possibly_relates_to) - Shared terms: name, change, description
+- [ ] humanoid/.claude/commands/opsx/sync.md -> humanoid/.claude/skills/openspec-archive-change/SKILL.md (possibly_relates_to) - Shared terms: name, change, description
+- [ ] humanoid/.claude/commands/opsx/sync.md -> humanoid/.claude/skills/openspec-explore/SKILL.md (possibly_relates_to) - Shared terms: name, description, change
+- [ ] humanoid/.claude/commands/opsx/sync.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/sync.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: main
+- [ ] humanoid/.claude/commands/opsx/sync.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: change
+- [ ] humanoid/.claude/commands/opsx/sync.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: main
+- [ ] humanoid/.claude/commands/opsx/sync.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/commands/opsx/sync.md -> leisaac/README.md (possibly_relates_to) - Shared terms: main
+- [ ] humanoid/.claude/commands/opsx/sync.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: start
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: start
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: start, user, when
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: through
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: through, tasks
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: through, tasks
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> leisaac/README.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/skills/openspec-apply-change/SKILL.md -> README.md (possibly_relates_to) - Shared terms: through
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: when, user
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: user, change
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: user, when
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: complete
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> leisaac/README.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-archive-change/SKILL.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: when, user
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: user, change
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: user, when
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: through, mode
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: through
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: through
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> leisaac/README.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/skills/openspec-explore/SKILL.md -> README.md (possibly_relates_to) - Shared terms: through
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: when, they, want
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: design, when, user
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: user, when
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: complete
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: build, tasks, describe
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> leisaac/README.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/.claude/skills/openspec-propose/SKILL.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: what
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: without
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: without
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: without
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: without
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: description, changes, update
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: main
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: when, user
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: without, user, change
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: spec, user, when
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: update
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: main
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> leisaac/README.md (possibly_relates_to) - Shared terms: user, main
+- [ ] humanoid/.claude/skills/openspec-sync-specs/SKILL.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: name
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: limx
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: files, uris, pass
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: server
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: limx, class, images
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: class
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: class
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: docs, limx, clean
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: code, https, docs
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: data, https, html
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: script, python
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: script, python
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: data, script, https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: script, python
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https, python
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: table, python
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: page
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: page
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: docs, https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https, html, data
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: docs
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: contains, data
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: code
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: code
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https, research, code
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/_research/extraction_research.md -> README.md (possibly_relates_to) - Shared terms: real, data
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: corpus, source, only
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: corpus, only, source
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: corpus, source, server
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: research, server
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: control
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: docs, source, corpus
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: open, server
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: github
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: docs, only
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: github, source
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: github
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: custom, already, only
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: control
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: future
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: docs, built
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> leisaac/README.md (possibly_relates_to) - Shared terms: github, index
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: parser, docs, optional
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: control
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: only
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: github
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: research, github
+- [ ] humanoid/docs/oli-corpus/_research/mcp_serving_research.md -> README.md (possibly_relates_to) - Shared terms: built
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: binary
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: without, https, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: https, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpcore-1.0.9.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: binary
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: without, https, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: https, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: following
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https, following
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: following
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/httpx-0.28.1.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/idna-3.18.dist-info/licenses/LICENSE.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: contributors
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: binary
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: without, https, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: https, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/starlette-1.3.1.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/gaps.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: binary
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: without, https, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: https, source
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> leisaac/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/.venv/lib/python3.13/site-packages/uvicorn-0.49.0.dist-info/licenses/LICENSE.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/docs/oli-corpus/gaps.md -> humanoid/docs/oli-corpus/notes/README.md (possibly_relates_to) - Shared terms: corpus, only, source
+- [ ] humanoid/docs/oli-corpus/gaps.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: corpus, source, found
+- [ ] humanoid/docs/oli-corpus/gaps.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: corpus
+- [ ] humanoid/docs/oli-corpus/gaps.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: corpus, source
+- [ ] humanoid/docs/oli-corpus/gaps.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: corpus, source, only
+- [ ] humanoid/docs/oli-corpus/gaps.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source, corpus
+- [ ] humanoid/docs/oli-corpus/gaps.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: only
+- [ ] humanoid/docs/oli-corpus/gaps.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/gaps.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: only
+- [ ] humanoid/docs/oli-corpus/gaps.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: only
+- [ ] humanoid/docs/oli-corpus/gaps.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: none
+- [ ] humanoid/docs/oli-corpus/gaps.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: only
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: guide
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/docs/oli-corpus/README.md (possibly_relates_to) - Shared terms: limx
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: guide
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: limx
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: guide
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: limx
+- [ ] humanoid/docs/oli-corpus/LimX_EDU_Quick_Start_Guide.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: quick
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: corpus, source
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: pass, default, content
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: default
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: default
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: default, content
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source, corpus, sources
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: default
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: only
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: only, separate
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: only, under
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: only
+- [ ] humanoid/docs/oli-corpus/notes/README.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: under
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md -> humanoid/docs/oli-corpus/source_map.md (possibly_relates_to) - Shared terms: guide
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: guide
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: development, guide
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: guide
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: development, guide
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: guide
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: support
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_SDK_Development_Guide.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: support
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/design.md (possibly_relates_to) - Shared terms: user, manual
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: user, manual
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: user, manual
+- [ ] humanoid/docs/oli-corpus/Oli_EDU_User_Manual.md -> leisaac/README.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: default, limx, server
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: limx, default
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: default, official
+- [ ] humanoid/docs/oli-corpus/README.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: default, official
+- [ ] humanoid/docs/oli-corpus/README.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: server, default
+- [ ] humanoid/docs/oli-corpus/README.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/README.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: official, repo
+- [ ] humanoid/docs/oli-corpus/README.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: under
+- [ ] humanoid/docs/oli-corpus/README.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: documentation
+- [ ] humanoid/docs/oli-corpus/README.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: documentation, under
+- [ ] humanoid/docs/oli-corpus/source_map.md -> humanoid/docs/oli-corpus/sources/_meta/extraction_log.md (possibly_relates_to) - Shared terms: server
+- [ ] humanoid/docs/oli-corpus/source_map.md -> humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md (possibly_relates_to) - Shared terms: guide
+- [ ] humanoid/docs/oli-corpus/source_map.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: guide, official
+- [ ] humanoid/docs/oli-corpus/source_map.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md (possibly_relates_to) - Shared terms: official
+- [ ] humanoid/docs/oli-corpus/source_map.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: source, corpus
+- [ ] humanoid/docs/oli-corpus/source_map.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: http, server
+- [ ] humanoid/docs/oli-corpus/source_map.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/docs/oli-corpus/source_map.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: official
+- [ ] humanoid/docs/oli-corpus/source_map.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: questions
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md (possibly_relates_to) - Shared terms: preview, editor, default
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: limx
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: limx, extract
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: server, default
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: images
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: html
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: reuse, table
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: table
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> leisaac/README.md (possibly_relates_to) - Shared terms: html
+- [ ] humanoid/docs/oli-corpus/sources/_meta/extraction_log.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: research
+- [ ] humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: limx
+- [ ] humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: default, quick
+- [ ] humanoid/docs/oli-corpus/sources/LimX_EDU_Quick_Start_Guide.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: images, class
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: official, development, guide
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: official, guide
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md (possibly_relates_to) - Shared terms: update
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: default
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: class
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: official
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: latest
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: description
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: version
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_SDK_Development_Guide.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: version
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md (possibly_relates_to) - Shared terms: control, official
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md (possibly_relates_to) - Shared terms: official, content
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: default
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: class
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: main
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: official
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: control
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: latest
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> leisaac/README.md (possibly_relates_to) - Shared terms: main
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: package
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: version, control
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: please
+- [ ] humanoid/docs/oli-corpus/sources/Oli_EDU_User_Manual.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: version
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: real, arms
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: docs
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: need
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: official
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: every
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: need
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: docs
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> leisaac/README.md (possibly_relates_to) - Shared terms: user
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: docs
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: memory
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: questions, documentation
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: documentation
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: research
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/design.md -> README.md (possibly_relates_to) - Shared terms: real
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: need, https, quick
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: https, real, task
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: available
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: issue, https
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: available, control
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: available
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: available, currently, need
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: available, currently, robot
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: data, control
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: documentation
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: documentation
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/proposal.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md (possibly_relates_to) - Shared terms: quick
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: between
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: only
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: source, html
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: script
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: script
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: script
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: when
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> leisaac/README.md (possibly_relates_to) - Shared terms: user, html
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: between
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: only, documentation
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/specs/oli-docs-corpus/spec.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: documentation, under
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: path
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: docs, tasks
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: source
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: tasks
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: docs
+- [ ] humanoid/openspec/changes/may-139-oli-docs-corpus/tasks.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: docs
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/docs/features/digitaltwin_env.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/docs/features/envhub_support.md (possibly_relates_to) - Shared terms: leisaac, code, https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: https, need, leisaac
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: install, leisaac
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: leisaac, https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: leisaac
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: leisaac, need, install
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: leisaac
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: leisaac, https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac, https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: performance
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: code
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: code
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https, nvidia, code
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/cloud_simulation/nvidia_brev.md -> README.md (possibly_relates_to) - Shared terms: nvidia
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: simulation, environment, environments
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: components, create
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: environment, https, github
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: environments
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https, github, launch
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: simulation
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: environments
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: https, make
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: feature
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> lerobot/benchmarks/video/README.md (possibly_relates_to) - Shared terms: between
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: make
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https, github
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https, github
+- [ ] leisaac/docs/docs/docs/features/digitaltwin_env.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/docs/features/mimicgen_env.md (possibly_relates_to) - Shared terms: https, leisaac
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: simulation, environment, environments
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: leisaac
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: tasks, environments
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: support, simulation
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: environments, tasks, leisaac
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: leisaac, your
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: leisaac, lerobot
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: docs
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: code, community
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: huggingface
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https, code
+- [ ] leisaac/docs/docs/docs/features/envhub_support.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/docs/getting_started/dataset_replay.md (possibly_relates_to) - Shared terms: scripts
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: leisaac, below, isaaclab
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: below, scripts, teleop
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: so101
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: leisaac, scripts
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: leisaac, need, additional
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: leisaac
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: leisaac, https
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: feature
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: data
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https, github
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https, github, isaac
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/features/mimicgen_env.md -> README.md (possibly_relates_to) - Shared terms: data, isaac
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/docs/docs/getting_started/installation.md (possibly_relates_to) - Shared terms: script, python
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: environment
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: teleoperation, simulation, using
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: shell
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: using
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> leisaac/README.md (possibly_relates_to) - Shared terms: teleoperation, using
+- [ ] leisaac/docs/docs/docs/getting_started/dataset_replay.md -> README.md (possibly_relates_to) - Shared terms: simulation, environments
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/docs/docs/docs/getting_started/policy_support.md (possibly_relates_to) - Shared terms: script, conda, installation
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: script, below, python
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: isaaclab, python
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: leisaac, required
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: leisaac, bash, python
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: leisaac, install
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: leisaac
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: leisaac, bash
+- [ ] leisaac/docs/docs/docs/getting_started/installation.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac, isaaclab
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> leisaac/docs/docs/docs/getting_started/teleoperation.md (possibly_relates_to) - Shared terms: teleoperation, script
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: https, github, using
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: teleoperation, recommend, using
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: policy, inference
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: lerobot, will
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: using, https
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: directory, data
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: lerobot, only
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: huggingface
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: policy, readme, https
+- [ ] leisaac/docs/docs/docs/getting_started/policy_support.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy, readme, https
+- [ ] leisaac/docs/docs/docs/getting_started/teleoperation.md -> leisaac/docs/docs/docs/trouble_shooting.md (possibly_relates_to) - Shared terms: python, shell
+- [ ] leisaac/docs/docs/docs/getting_started/teleoperation.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: tasks, here
+- [ ] leisaac/docs/docs/docs/getting_started/teleoperation.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: available, teleoperation
+- [ ] leisaac/docs/docs/docs/getting_started/teleoperation.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: available, supported, shell
+- [ ] leisaac/docs/docs/docs/getting_started/teleoperation.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: available, supported, more
+- [ ] leisaac/docs/docs/docs/getting_started/teleoperation.md -> leisaac/README.md (possibly_relates_to) - Shared terms: teleoperation
+- [ ] leisaac/docs/docs/docs/getting_started/teleoperation.md -> README.md (possibly_relates_to) - Shared terms: environments
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> leisaac/docs/docs/docs/tutorials/custom_task.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> leisaac/docs/docs/resources/available_devices.md (possibly_relates_to) - Shared terms: using
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: following, python
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: shell
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: using, https
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https, github
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https, github, isaac
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/trouble_shooting.md -> README.md (possibly_relates_to) - Shared terms: isaac
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: table, tasks, leisaac
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: leisaac, your
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: leisaac, robot
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: leisaac, https, your
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: contains
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: only
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: under
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/docs/docs/tutorials/custom_task.md -> README.md (possibly_relates_to) - Shared terms: through, scenes, robot
+- [ ] leisaac/docs/docs/resources/available_devices.md -> leisaac/docs/docs/resources/available_env.md (possibly_relates_to) - Shared terms: available
+- [ ] leisaac/docs/docs/resources/available_devices.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: available
+- [ ] leisaac/docs/docs/resources/available_devices.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: available
+- [ ] leisaac/docs/docs/resources/available_devices.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: using
+- [ ] leisaac/docs/docs/resources/available_devices.md -> leisaac/README.md (possibly_relates_to) - Shared terms: teleoperation, using
+- [ ] leisaac/docs/docs/resources/available_devices.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: control
+- [ ] leisaac/docs/docs/resources/available_devices.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: experience
+- [ ] leisaac/docs/docs/resources/available_devices.md -> README.md (possibly_relates_to) - Shared terms: simulation
+- [ ] leisaac/docs/docs/resources/available_env.md -> leisaac/docs/docs/resources/available_policy.md (possibly_relates_to) - Shared terms: available, lists, leisaac
+- [ ] leisaac/docs/docs/resources/available_env.md -> leisaac/docs/docs/resources/available_robots.md (possibly_relates_to) - Shared terms: available, lists, leisaac
+- [ ] leisaac/docs/docs/resources/available_env.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: leisaac, bash
+- [ ] leisaac/docs/docs/resources/available_env.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac
+- [ ] leisaac/docs/docs/resources/available_env.md -> README.md (possibly_relates_to) - Shared terms: environments
+- [ ] leisaac/docs/docs/resources/available_policy.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: leisaac, your
+- [ ] leisaac/docs/docs/resources/available_policy.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac, policy
+- [ ] leisaac/docs/docs/resources/available_policy.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] leisaac/docs/docs/resources/available_policy.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] leisaac/docs/docs/resources/available_policy.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] leisaac/docs/docs/resources/available_policy.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy
+- [ ] leisaac/docs/docs/resources/available_policy.md -> README.md (possibly_relates_to) - Shared terms: policy
+- [ ] leisaac/docs/docs/resources/available_robots.md -> leisaac/docs/README.md (possibly_relates_to) - Shared terms: leisaac
+- [ ] leisaac/docs/docs/resources/available_robots.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac, lerobot, robot
+- [ ] leisaac/docs/docs/resources/available_robots.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: robots
+- [ ] leisaac/docs/docs/resources/available_robots.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] leisaac/docs/docs/resources/available_robots.md -> README.md (possibly_relates_to) - Shared terms: robot, lerobot
+- [ ] leisaac/docs/README.md -> leisaac/README.md (possibly_relates_to) - Shared terms: leisaac, https, using
+- [ ] leisaac/docs/README.md -> lerobot/.github/PULL_REQUEST_TEMPLATE.md (possibly_relates_to) - Shared terms: docs
+- [ ] leisaac/docs/README.md -> lerobot/CODE_OF_CONDUCT.md (possibly_relates_to) - Shared terms: make
+- [ ] leisaac/docs/README.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/README.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/README.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/README.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: https
+- [ ] leisaac/docs/README.md -> README.md (possibly_relates_to) - Shared terms: built
+- [ ] leisaac/README.md -> lerobot/.pytest_cache/README.md (possibly_relates_to) - Shared terms: data, provides
+- [ ] leisaac/README.md -> lerobot/CONTRIBUTING.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] leisaac/README.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: huggingface
+- [ ] leisaac/README.md -> lerobot/docs/source/policy_act_README.md (possibly_relates_to) - Shared terms: policy, https, github
+- [ ] leisaac/README.md -> lerobot/docs/source/policy_diffusion_README.md (possibly_relates_to) - Shared terms: policy, https
+- [ ] leisaac/README.md -> lerobot/docs/source/policy_smolvla_README.md (possibly_relates_to) - Shared terms: policy, https
+- [ ] lerobot/.pytest_cache/README.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: version
+- [ ] lerobot/.pytest_cache/README.md -> README.md (possibly_relates_to) - Shared terms: data
+- [ ] lerobot/CODE_OF_CONDUCT.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: code
+- [ ] lerobot/CONTRIBUTING.md -> lerobot/docs/README.md (possibly_relates_to) - Shared terms: documentation
+- [ ] lerobot/CONTRIBUTING.md -> lerobot/docs/source/policy_groot_README.md (possibly_relates_to) - Shared terms: code
+- [ ] lerobot/CONTRIBUTING.md -> README.md (possibly_relates_to) - Shared terms: lerobot
+- [ ] lerobot/docs/README.md -> README.md (possibly_relates_to) - Shared terms: huggingface
+- [ ] lerobot/docs/source/policy_act_README.md -> README.md (possibly_relates_to) - Shared terms: policy
+- [ ] lerobot/docs/source/policy_diffusion_README.md -> README.md (possibly_relates_to) - Shared terms: policy
+- [ ] lerobot/docs/source/policy_groot_README.md -> README.md (possibly_relates_to) - Shared terms: policy, nvidia, isaac
+- [ ] lerobot/docs/source/policy_smolvla_README.md -> README.md (possibly_relates_to) - Shared terms: policy

@@ -1,0 +1,1716 @@
+<div class="md-editor-preview default-theme md-editor-scrn" id="document-preview-preview"><table data-line="1">
+<thead data-line="1">
+<tr data-line="1">
+<th><strong>Document Version</strong></th>
+<th><strong>Revision Date</strong></th>
+<th><strong>Revision Content</strong></th>
+<th><strong>Applicable Main Control Software Version</strong> (If incompatible, please go to the Official Download Center to download and upgrade to the latest main control software package)</th>
+</tr>
+</thead>
+<tbody data-line="3">
+<tr data-line="3">
+<td>V1.4</td>
+<td>2026.04.23</td>
+<td>Add content for the language settings section</td>
+<td>V2.1.3 or later</td>
+</tr>
+<tr data-line="4">
+<td>V1.3</td>
+<td>2026.04.16</td>
+<td>Added battery-related maintenance precautions</td>
+<td>V2.1.3 and above</td>
+</tr>
+<tr data-line="5">
+<td>V1.2</td>
+<td>2026.04.14</td>
+<td>1. Deleted Studio operation instructions<br/>2. Deleted voice dialogue model, dialogue roles, and wake-up word settings</td>
+<td>V2.1.3 and above</td>
+</tr>
+<tr data-line="6">
+<td>V1.1</td>
+<td>2026.03.30</td>
+<td>1. Added operation precautions<br/>2. Updated dance list</td>
+<td>V2.1.3 and above</td>
+</tr>
+<tr data-line="7">
+<td>V1.0</td>
+<td>2026.02.27</td>
+<td>Initial release</td>
+<td>V2.1.21 and above</td>
+</tr>
+</tbody>
+</table>
+<h1 data-line="9" id="Disclaimer">Disclaimer</h1>
+<p data-line="11">To reduce the risk of legal liability, personal injury, or property damage, please read and fully understand the following terms and conditions before using this product.</p>
+<ol data-line="13">
+<li data-line="13"><strong>Use and Acceptance:</strong> Use of this product constitutes acceptance of this manual and all applicable terms, conditions, and instructions. The user assumes all risks arising from improper or unauthorized use.</li>
+<li data-line="14"><strong>Safety Distance:</strong> <u>DO NOT</u> use this product in crowded areas. Maintain a minimum safety distance of at least 1m between any person and the device. LimX Dynamics disclaims all liability for injuries or damages resulting from failure to follow safety requirements.</li>
+<li data-line="15"><strong>Environmental Restrictions:</strong> <u>DO NOT</u> operate this product in extreme or unsuitable environments, including but not limited to high or low temperatures, highly corrosive conditions, or strong magnetic fields. LimX Dynamics shall not be liable for any damage, malfunction, or abnormal performance esulting from operation under such environmental conditions.</li>
+<li data-line="16"><strong>Normal Wear and Tear:</strong> Performance degradation resulting from natural wear, battery aging, or reasonable component depreciation is not considered a product defect and is not covered under warranty.</li>
+<li data-line="17"><strong>Product Updates:</strong> This product is subject to continuous optimization and upgrades. The appearance, features, and configurations are subject to change. The actual product shall prevail.</li>
+<li data-line="18"><strong>Third-Party Components:</strong> Purchased third-party components or accessories are not covered by the service or support described in this manual. Any issues related to such products should be addressed directly with the original manufacturer.</li>
+<li data-line="19"><strong>Data Access:</strong> With user authorization and in compliance with applicable data protection laws, LimX Dynamics may access necessary data solely for maintenance, technical support, or service assurance.</li>
+<li data-line="20"><strong>Compliance with Laws:</strong> Users must ensure product use complies with all applicable local, national, and international laws and regulations, including but not limited to import/export controls, data security, and national security requirements. Users bear full responsibility for any violations of such laws or regulations.</li>
+<li data-line="21"><strong>Prohibited Uses:</strong> <u>DO NOT</u> use this product for any illegal, prohibited, or sensitive purposes, including but not limited to terrorist activities, military or defense-related applications, or the development of biological or chemical weapons. LimX Dynamics reserves the right to immediately terminate related services and take legal action against such misuse.</li>
+<li data-line="22"><strong>Intellectual Property:</strong> <u>DO NOT</u> use this product for resale, illegal disassembly, counterfeiting, or any other activities that infringe intellectual property rights. Use is limited to lawful and legitimate purposes only.</li>
+<li data-line="23"><strong>Restricted Entities:</strong> LimX Dynamics reserves the right to suspend product support and related services if the user is identified as a restricted or sanctioned entity.</li>
+<li data-line="24"><strong>Right to Interpret and Modify:</strong> LimX Dynamics reserves the right of final interpretation and revision of this disclaimer and the terms of use.</li>
+</ol>
+<h1 data-line="26" id="Safety Precautions">Safety Precautions</h1>
+<ol data-line="28">
+<li data-line="28">This product is a professional-grade device and is not recommended for independent use by individuals under 18 years of age. Users should possess the appropriate operational knowledge prior to use, or operate the device under the supervision or guidance of qualified personnel.</li>
+<li data-line="29">Keep this device out of reach of children. When operating the product in environments where children are present, exercise heightened caution and ensure that the device remains in a safe and controlled state at all times.</li>
+<li data-line="30">DO NOT directly touch any joints, moving parts, or actuators during transportation or after the device is powered on, as this may result in unintended pinching, impact, or other injuries.</li>
+<li data-line="31">Ensure the device remains within the operator’s line of sight at all times, and maintain a minimum safety distance of 1m between the operator and the device during operation.</li>
+<li data-line="32">Ensure the surrounding area is clear of obstacles and within the operator’s visual range during operation. When necessary, use auxiliary safety measures such as tethering or securing devices to prevent accidental movement, tipping, or injury to personnel.</li>
+</ol>
+<h1 data-line="34" id="1 LimX Oli EDU Overview">1 LimX Oli EDU Overview</h1>
+<h2 data-line="36" id="1.1 Component Description">1.1 Component Description</h2>
+<p data-line="38">The LimX Oli EDU is a full-sized humanoid robot featuring 31 degrees of freedom (DOF), including 6 DOF per leg, 7 DOF per arm, 3 DOF in the waist, and 2 DOF in the neck, providing highly biomimetic motion performance.</p>
+<p data-line="40">Its body is constructed from aerospace-grade aluminium and titanium alloys, offering an optimal balance of strength and lightness. The robot weighs approximately 55 kg, and key exterior areas are fitted with soft protective materials to improve impact and fall resistance.</p>
+<p data-line="42"><img alt="figure" src="images/user_manual_01_438ffd7b81b9.webp"/><br/>
+<img alt="figure" src="images/user_manual_02_bff87af9d469.webp"/><br/>
+<img alt="figure" src="images/user_manual_03_486e589bdfd0.webp"/></p>
+<ul data-line="46">
+<li data-line="46"><strong>Rear Lower Electrical Interfaces</strong></li>
+</ul>
+<figure data-line="48"><img alt="figure" class="md-zoom" src="images/user_manual_04_05e5a7978f0a.webp"/></figure>
+<table data-line="50">
+<thead data-line="50">
+<tr data-line="50">
+<th><strong>No.</strong></th>
+<th><strong>Interface type</strong></th>
+<th><strong>Abbr.</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody data-line="52">
+<tr data-line="52">
+<td>1</td>
+<td>Type-C</td>
+<td>Type-C</td>
+<td>Supports USB3.2 Host 5V/1.5A Power Output</td>
+</tr>
+<tr data-line="53">
+<td>2</td>
+<td>USB</td>
+<td>USB</td>
+<td>Supports USB3.2 Host 5V/1.5A Power Output</td>
+</tr>
+<tr data-line="54">
+<td>3</td>
+<td>RJ45</td>
+<td>1000 BASE-T</td>
+<td>Gigabit Ethernet</td>
+</tr>
+<tr data-line="55">
+<td>4</td>
+<td>RJ45</td>
+<td>1000 BASE-T</td>
+<td>Gigabit Ethernet</td>
+</tr>
+<tr data-line="56">
+<td>5</td>
+<td>XT30PW-M30.G.Y</td>
+<td>12V</td>
+<td>12V/5A Power Output</td>
+</tr>
+<tr data-line="57">
+<td>6</td>
+<td>XT30PW-M30.G.Y</td>
+<td>12V</td>
+<td>12V/5A Power Output</td>
+</tr>
+<tr data-line="58">
+<td>7</td>
+<td>XT30PW-F20.G.Y</td>
+<td>24V</td>
+<td>24V/5A Power Output</td>
+</tr>
+<tr data-line="59">
+<td>8</td>
+<td>XT30PW-F20.G.Y</td>
+<td>24V</td>
+<td>24V/5A Power Output</td>
+</tr>
+</tbody>
+</table>
+<ul data-line="61">
+<li data-line="61"><strong>Inner/Outer Hand Interface</strong></li>
+</ul>
+<figure data-line="63"><img alt="figure" class="md-zoom" src="images/user_manual_05_da155b42377d.webp"/></figure>
+<table data-line="65">
+<thead data-line="65">
+<tr data-line="65">
+<th><strong>No.</strong></th>
+<th><strong>Interface type</strong></th>
+<th><strong>Abbr.</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody data-line="67">
+<tr data-line="67">
+<td>1</td>
+<td>MX3.0</td>
+<td>DC +24V</td>
+<td>Power Positive Terminal 24V</td>
+</tr>
+<tr data-line="68">
+<td>2</td>
+<td>MX3.0</td>
+<td>DC GND</td>
+<td>Power Negative Terminal GND</td>
+</tr>
+<tr data-line="69">
+<td>3</td>
+<td>MX3.0</td>
+<td>RS485_A</td>
+<td>RS-485 Differential Positive Logic Line</td>
+</tr>
+<tr data-line="70">
+<td>4</td>
+<td>MX3.0</td>
+<td>RS485_B</td>
+<td>RS-485 Differential Negative Logic Line</td>
+</tr>
+</tbody>
+</table>
+<blockquote data-line="72">
+<p data-line="72"><strong>Note：</strong><br/>
+The <strong>inner</strong> hand interface is only compatible with** **BrainCo's Revo 2 dexterous hand.<br/>
+The <strong>outer</strong> hand interface is only compatible with Inspire-Robots' EG2-4C2 electric gripper.</p>
+</blockquote>
+<h2 data-line="76" id="1.2 Onboard Computer">1.2 Onboard Computer</h2>
+<p data-line="78">Oli EDU is equipped with 1「Development Computing Unit 」and 1「Motion Control Computing Unit」 as standard.</p>
+<table data-line="80">
+<thead data-line="80">
+<tr data-line="80">
+<th><strong>Parameters</strong></th>
+<th><strong>Development Computing Unit</strong></th>
+</tr>
+</thead>
+<tbody data-line="82">
+<tr data-line="82">
+<td>Model</td>
+<td>Jetson Orin NX 16GB</td>
+</tr>
+<tr data-line="83">
+<td>AI performance</td>
+<td>157 TOPS</td>
+</tr>
+<tr data-line="84">
+<td>GPU</td>
+<td>1024-core NVIDIA Ampere architecture GPU with 32 Tensor Cores</td>
+</tr>
+<tr data-line="85">
+<td>GPU max frequency</td>
+<td>1173MHz</td>
+</tr>
+<tr data-line="86">
+<td>CPU</td>
+<td>8-core Arm® Cortex®-A78AE v8.2 64-bit CPU 2MB L2 + 4MB L3</td>
+</tr>
+<tr data-line="87">
+<td>CPU max frequency</td>
+<td>2 GHz</td>
+</tr>
+<tr data-line="88">
+<td>DL accelerator</td>
+<td>2x NVDLA v2</td>
+</tr>
+<tr data-line="89">
+<td>DLA max frequency</td>
+<td>1.23 GHz</td>
+</tr>
+<tr data-line="90">
+<td>Vision Accelerator</td>
+<td>1x PVA v2</td>
+</tr>
+<tr data-line="91">
+<td>Memory</td>
+<td>16GB 128-bit LPDDR5 102.4GB/s</td>
+</tr>
+</tbody>
+</table>
+<h3 data-line="93" id="1.2.1 Jetson Orin NX Network Setup:">1.2.1 Jetson Orin NX Network Setup:</h3>
+<p data-line="95">To establish a stable network connection for the Orin NX module, please select your Wi-Fi configuration method and follow the corresponding setup steps:</p>
+<h4 data-line="97" id="1.2.1.1 Wired Connection">1.2.1.1 Wired Connection</h4>
+<h5 data-line="99" id="1.2.1.1.1 Built-in Wi-Fi">1.2.1.1.1 Built-in Wi-Fi</h5>
+<ol data-line="101">
+<li data-line="101"><strong>Prepare a Router:</strong> Ensure a fully functional router is available, equipped with both WAN and LAN ports.</li>
+<li data-line="102"><strong>Connect the Robot to the Router:</strong> Use an Ethernet cable to connect the router’s LAN port to the robot's lower rear Ethernet port.</li>
+<li data-line="103"><strong>Connect the Router to the Internet:</strong> Connect the router’s WAN port to an active internet line.</li>
+<li data-line="104"><strong>Configure Router LAN Subnet:</strong>  1. Access the router management interface and set the <strong>LAN subnet</strong> to <code>10.192.1.x</code></li>
+<li data-line="105">Assign the router’s <strong>LAN IP address</strong> to <code>10.192.1.1</code>.</li>
+</ol>
+<p data-line="107">Upon completing these steps, the Orin NX module will be able to access external networks through the router.</p>
+<h5 data-line="109" id="1.2.1.1.2 External Wi-Fi">1.2.1.1.2 External Wi-Fi</h5>
+<ol data-line="111">
+<li data-line="111"><strong>Prepare a Router:</strong> Ensure a fully functional router is available, equipped with both WAN and LAN ports.</li>
+<li data-line="112"><strong>Connect the Robot to the Router:</strong> Use an Ethernet cable to connect the router’s LAN port to the robot's lower rear Ethernet port.</li>
+<li data-line="113"><strong>Connect the Router to the Internet:</strong> Connect the router’s WAN port to an active internet line.</li>
+<li data-line="114"><strong>Configure Router LAN Subnet:</strong>  1. Access the router management interface and set the <strong>LAN subnet</strong> to <code>10.192.1.x</code></li>
+<li data-line="115">Assign the router’s <strong>LAN IP address</strong> to <code>10.192.1.10</code>, and set the Orin NX gateway address to <code>10.192.1.10</code></li>
+</ol>
+<p data-line="117">Upon completing these steps, the Orin NX module will be able to access external networks through the router.</p>
+<h4 data-line="119" id="1.2.1.2 Wireless Connection">1.2.1.2 Wireless Connection</h4>
+<ol data-line="121">
+<li data-line="121"><strong>Access the Web Interface:</strong> Open a browser and navigate to <code>http://10.192.1.2:8080</code> to enter the <strong>[Config]</strong> page.</li>
+<li data-line="122"><strong>Configuration:</strong> Enter the Wi-Fi SSID, Wi-Fi password, and the robot router’s administrator password as prompted.</li>
+<li data-line="123"><strong>Connect:</strong> Click <strong>[Confirm]</strong> to enable external network access for the Orin NX.<br/>
+<img alt="figure" src="images/user_manual_06_9c19d00ae264.webp"/></li>
+</ol>
+<h2 data-line="126" id="1.3 Battery Status Indicator">1.3 Battery Status Indicator</h2>
+<figure data-line="128"><img alt="figure" class="md-zoom" src="images/user_manual_07_a2236bb834e3.webp"/></figure>
+<table data-line="130">
+<thead data-line="130">
+<tr data-line="130">
+<th><strong>Battery Status Indicator (Discharge)</strong></th>
+<th><strong>Battery Level</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody data-line="132">
+<tr data-line="132">
+<td>5 green LEDs on</td>
+<td>100%</td>
+<td>Fully charged</td>
+</tr>
+<tr data-line="133">
+<td>4 green LEDs on, 1 half-lit</td>
+<td>81%-99%</td>
+<td>Sufficient power</td>
+</tr>
+<tr data-line="134">
+<td>3 green LEDs on, 1 half-lit</td>
+<td>61%-80%</td>
+<td>Sufficient power</td>
+</tr>
+<tr data-line="135">
+<td>2 green LEDs on, 1 half-lit</td>
+<td>41%-60%</td>
+<td>Moderate power</td>
+</tr>
+<tr data-line="136">
+<td>1 green LED on, 1 half-lit</td>
+<td>21%-40%</td>
+<td>Low power, check battery</td>
+</tr>
+<tr data-line="137">
+<td>1 red LED blinking slowly</td>
+<td>6%-20%</td>
+<td>Insufficient power, recharge soon</td>
+</tr>
+<tr data-line="138">
+<td>1 red LED blinking rapidly</td>
+<td>0%-5%</td>
+<td>Critically low power, recharge immediately</td>
+</tr>
+</tbody>
+</table>
+<table data-line="140">
+<thead data-line="140">
+<tr data-line="140">
+<th><strong>Battery Status Indicator (Recharge)</strong></th>
+<th><strong>Battery Level</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody data-line="142">
+<tr data-line="142">
+<td>1 green LED blinking rapidly</td>
+<td>0%-5%</td>
+<td>Initial charging stage, critically low power</td>
+</tr>
+<tr data-line="143">
+<td>1 green LED blinking slowly</td>
+<td>6%-20%</td>
+<td>Early charging stage, Insufficient power</td>
+</tr>
+<tr data-line="144">
+<td>1 green LED on, 1 blinking slowly</td>
+<td>21%-40%</td>
+<td>Low power; not recommended to disconnect</td>
+</tr>
+<tr data-line="145">
+<td>2 green LEDs on, 1 blinking slowly</td>
+<td>41%-60%</td>
+<td>Moderate power, suggested continuing charging.</td>
+</tr>
+<tr data-line="146">
+<td>3 green LEDs on, 1 blinking slowly</td>
+<td>61%-80%</td>
+<td>Sufficient power, suggested continuing charging.</td>
+</tr>
+<tr data-line="147">
+<td>4 green LEDs on, 1 blinking slowly</td>
+<td>81%-99%</td>
+<td>Sufficient power, suggested continuing charging.</td>
+</tr>
+<tr data-line="148">
+<td>5 green LEDs on</td>
+<td>100%</td>
+<td>Fully charged, safe to disconnect power.</td>
+</tr>
+</tbody>
+</table>
+<h2 data-line="150" id="1.4 Field of View of Cameras">1.4 Field of View of Cameras</h2>
+<p data-line="152">Limx Oli EDU is equipped with Intel RealSense D435i depth cameras on its head and chest, providing exceptional visual perception capabilities that enable accurate sensing and understanding of the surrounding environment.</p>
+<figure data-line="154"><img alt="figure" class="md-zoom" src="images/user_manual_08_691701749b2b.webp"/></figure>
+<h3 data-line="156" id="1.4.1 Camera Position Coordinates">1.4.1 Camera Position Coordinates</h3>
+<p data-line="158">The installation positions and orientations of the chest camera and head camera in the <strong>base_link</strong> coordinate frame are as follows:</p>
+<ul data-line="160">
+<li data-line="160"><strong>Chest Camera:</strong> Positioned at [0.092, 0.0175, 0.4336] relative to <em>base_link</em>, with a 35° downward angle from the horizontal.</li>
+<li data-line="161"><strong>Head Camera:</strong> Positioned at [0.0615, 0.0175, 0.652] relative to <em>base_link</em>, with a 0° angle to the horizontal.</li>
+</ul>
+<h2 data-line="163" id="1.5 Joint Index and Joint Limits">1.5 Joint Index and Joint Limits</h2>
+<table data-line="165">
+<thead data-line="165">
+<tr data-line="165">
+<th><strong>Joint Index</strong></th>
+<th><strong>Joint Name</strong></th>
+<th><strong>Limit (rad)</strong></th>
+</tr>
+</thead>
+<tbody data-line="167">
+<tr data-line="167">
+<td>1</td>
+<td>left_hip_pitch_joint</td>
+<td>-2.617994 ~ 2.617994</td>
+</tr>
+<tr data-line="168">
+<td>2</td>
+<td>left_hip_roll_joint</td>
+<td>-0.872665 ~ 2.094395</td>
+</tr>
+<tr data-line="169">
+<td>3</td>
+<td>left_hip_yaw_joint</td>
+<td>-2.617994 ~ 2.617994</td>
+</tr>
+<tr data-line="170">
+<td>4</td>
+<td>left_knee_joint</td>
+<td>-0.087266 ~ 2.583087</td>
+</tr>
+<tr data-line="171">
+<td>5</td>
+<td>left_ankle_pitch_joint</td>
+<td>-1.012291 ~ 0.610865</td>
+</tr>
+<tr data-line="172">
+<td>6</td>
+<td>left_ankle_roll_joint</td>
+<td>-0.436332 ~ 0.436332</td>
+</tr>
+<tr data-line="173">
+<td>7</td>
+<td>right_hip_pitch_joint</td>
+<td>-2.617994 ~ 2.617994</td>
+</tr>
+<tr data-line="174">
+<td>8</td>
+<td>right_hip_roll_joint</td>
+<td>-2.094395 ~ 0.872665</td>
+</tr>
+<tr data-line="175">
+<td>9</td>
+<td>right_hip_yaw_joint</td>
+<td>-2.617994 ~ 2.617994</td>
+</tr>
+<tr data-line="176">
+<td>10</td>
+<td>right_knee_joint</td>
+<td>-0.087266 ~ 2.583087</td>
+</tr>
+<tr data-line="177">
+<td>11</td>
+<td>right_ankle_pitch_joint</td>
+<td>-1.012291 ~ 0.610865</td>
+</tr>
+<tr data-line="178">
+<td>12</td>
+<td>right_ankle_roll_joint</td>
+<td>-0.436332 ~ 0.436332</td>
+</tr>
+<tr data-line="179">
+<td>13</td>
+<td>waist_yaw_joint</td>
+<td>-2.617994 ~ 2.617994</td>
+</tr>
+<tr data-line="180">
+<td>14</td>
+<td>waist_roll_joint</td>
+<td>-0.523599 ~ 0.523599</td>
+</tr>
+<tr data-line="181">
+<td>15</td>
+<td>waist_pitch_joint</td>
+<td>-0.523599 ~ 0.785398</td>
+</tr>
+<tr data-line="182">
+<td>16</td>
+<td>head_yaw_joint</td>
+<td>-0.785398 ~ 0.785398</td>
+</tr>
+<tr data-line="183">
+<td>17</td>
+<td>head_pitch_joint</td>
+<td>-0.523599 ~ 0.785398</td>
+</tr>
+<tr data-line="184">
+<td>18</td>
+<td>left_shoulder_pitch_joint</td>
+<td>-2.792527 ~ 2.792527</td>
+</tr>
+<tr data-line="185">
+<td>19</td>
+<td>left_shoulder_roll_joint</td>
+<td>-0.087266 ~ 3.228859</td>
+</tr>
+<tr data-line="186">
+<td>20</td>
+<td>left_shoulder_yaw_joint</td>
+<td>-3.403392 ~ 1.570796</td>
+</tr>
+<tr data-line="187">
+<td>21</td>
+<td>left_elbow_joint</td>
+<td>-2.443～1.187</td>
+</tr>
+<tr data-line="188">
+<td>22</td>
+<td>left_wrist_yaw_joint</td>
+<td>-2.356194 ~ 0.785398</td>
+</tr>
+<tr data-line="189">
+<td>23</td>
+<td>left_wrist_pitch_joint</td>
+<td>-1.570796 ~ 1.570796</td>
+</tr>
+<tr data-line="190">
+<td>24</td>
+<td>left_wrist_roll_joint</td>
+<td>-1.570796 ~ 1.570796</td>
+</tr>
+<tr data-line="191">
+<td>25</td>
+<td>right_shoulder_pitch_joint</td>
+<td>-2.792527 ~ 2.792527</td>
+</tr>
+<tr data-line="192">
+<td>26</td>
+<td>right_shoulder_roll_joint</td>
+<td>-3.228859 ~ 0.087266</td>
+</tr>
+<tr data-line="193">
+<td>27</td>
+<td>right_shoulder_yaw_joint</td>
+<td>-1.570796 ~ 3.403392</td>
+</tr>
+<tr data-line="194">
+<td>28</td>
+<td>right_elbow_joint</td>
+<td>-2.443～1.187</td>
+</tr>
+<tr data-line="195">
+<td>29</td>
+<td>right_wrist_yaw_joint</td>
+<td>-0.785398 ~ 2.356194</td>
+</tr>
+<tr data-line="196">
+<td>30</td>
+<td>right_wrist_pitch_joint</td>
+<td>-1.570796 ~ 1.570796</td>
+</tr>
+<tr data-line="197">
+<td>31</td>
+<td>right_wrist_roll_joint</td>
+<td>-1.570796 ~ 1.570796</td>
+</tr>
+</tbody>
+</table>
+<hr data-line="199"/>
+<h2 data-line="201" id="1.6 Coordinate Systems, Joint Rotation Axes, and Joint Zero Points">1.6 Coordinate Systems, Joint Rotation Axes, and Joint Zero Points</h2>
+<p data-line="203">When all joints are at 0°, the coordinate systems are shown below.<br/>
+The <strong>red</strong>, <strong>green</strong>, and <strong>blue</strong> axes represent the <strong>X</strong>, <strong>Y</strong>, and <strong>Z</strong> axes, respectively.</p>
+<figure data-line="206"><img alt="figure" class="md-zoom" src="images/user_manual_09_fb4e7e276e1b.webp"/></figure>
+<h2 data-line="208" id="1.7 Specifications">1.7 Specifications</h2>
+<table>
+<tr>
+<td>Model</td><td>Oli EDU</td></tr>
+<tr>
+<td colspan="2"> Mechanical Parameters </td></tr>
+<tr>
+<td>Height </td><td>≈165cm / 5'5"</td></tr>
+<tr>
+<td>Shoulder Width </td><td>≈55cm / 21.7in</td></tr>
+<tr>
+<td>Arm Length</td><td>≈70cm /  27.6in</td></tr>
+<tr>
+<td>Weight (Battery Included)</td><td>≈55kg / 121.3lbs</td></tr>
+<tr>
+<td>Active DoF (Total)[1]</td><td>31～43</td></tr>
+<tr>
+<td>Single Leg DoF</td><td>6</td></tr>
+<tr>
+<td>Single Arm DoF</td><td>7</td></tr>
+<tr>
+<td>Waist DoF</td><td>3</td></tr>
+<tr>
+<td>Neck DoF</td><td>2</td></tr>
+<tr>
+<td colspan="2">End Effectors</td></tr>
+<tr>
+<td>Hand Model</td><td>✔️</td></tr>
+<tr>
+<td>2-Finger Gripper (1 DoF)</td><td>✔️</td></tr>
+<tr>
+<td>5-Finger Hand (6 DoF）</td><td>o </td></tr>
+<tr>
+<td>Self-Developed 3-Finger Gripper (4 DoF)</td><td>o</td></tr>
+<tr>
+<td colspan="2">Joint Range of Motion</td></tr>
+<tr>
+<td>Neck Joint</td><td>P-30° ~ 45°、Y±45°</td></tr>
+<tr>
+<td>Shoulder Joint</td><td>P±160°、R-5°~185°、Y-90°~195°</td></tr>
+<tr>
+<td>Elbow Joint</td><td>P-66°~137°</td></tr>
+<tr>
+<td>Wrist Joint</td><td>P±90°、R±90°、Y-45°~135°</td></tr>
+<tr>
+<td>Waist Joint </td><td>P-30°~45°、R±30° 、Y±150° </td></tr>
+<tr>
+<td>Hip Joint</td><td>P±150°、R-50°~120°、Y±150°</td></tr>
+<tr>
+<td>Knee Joint</td><td>P+5°-148°</td></tr>
+<tr>
+<td>Ankle Joint</td><td>P-35°~58°、R±25°</td></tr>
+<tr>
+<td colspan="2">Controller</td></tr>
+<tr>
+<td>Remote Controller </td><td>✔️</td></tr>
+<tr>
+<td colspan="2">Thermal Management</td></tr>
+<tr>
+<td>Air-Cooled Main Control Area</td><td>✔️ (Optimized) </td></tr>
+<tr>
+<td colspan="2">Communication Interfaces</td></tr>
+<tr>
+<td>WiFi 6</td><td>✔️</td></tr>
+<tr>
+<td>Bluetooth</td><td>✔️</td></tr>
+<tr>
+<td>USB3.0/3.2 (USB Hub Supported)</td><td>✔️</td></tr>
+<tr>
+<td>Gigabit Ethernet (RJ45)</td><td>✔️</td></tr>
+<tr>
+<td colspan="2">Power Supply Interfaces</td></tr>
+<tr>
+<td>24V 5A</td><td>✔️ (x2)</td></tr>
+<tr>
+<td>12V 5A</td><td>✔️ (x2)</td></tr>
+<tr>
+<td colspan="2">Perception Sensors</td></tr>
+<tr>
+<td>IMU</td><td>6-Axis</td></tr>
+<tr>
+<td>Head Depth Camera</td><td>✔️</td></tr>
+<tr>
+<td>Chest Depth Camera</td><td>✔️</td></tr>
+<tr>
+<td colspan="2">Battery</td></tr>
+<tr>
+<td>Battery Capacity</td><td>9500mAH</td></tr>
+<tr>
+<td>Battery Life [2]</td><td>About 1.5H</td></tr>
+<tr>
+<td>Charger </td><td>58.8V 10A</td></tr>
+<tr>
+<td>Slide-Out Battery Module</td><td>✔️</td></tr>
+<tr>
+<td colspan="2">Capability</td></tr>
+<tr>
+<td>Maximum Load Capacity (Single Arm) [3]</td><td>3kg / 6.6lbs</td></tr>
+<tr>
+<td>Maximum Moving Speed</td><td>5km/h</td></tr>
+<tr>
+<td>Maximum Joint Torque [4]</td><td>150N·m</td></tr>
+<tr>
+<td>Computing Configuration</td><td>Motion Control：- RK3588 SoC + 8G RAM+ 64G Storage Perception ：- Orin NX SoC+16G RAM+1T Storage+157TOPS</td></tr>
+<tr>
+<td colspan="2">Feature</td></tr>
+<tr>
+<td>Voice Interaction Module</td><td>✔️</td></tr>
+<tr>
+<td>LED Indicators</td><td>✔️</td></tr>
+<tr>
+<td>System Status Monitoring</td><td>✔️</td></tr>
+<tr>
+<td>Basic Motion Library [5]</td><td>✔️</td></tr>
+<tr>
+<td>Motion Library Expansion Service</td><td>✔️</td></tr>
+<tr>
+<td colspan="2">Developer Tools</td></tr>
+<tr>
+<td>Custom Development</td><td>✔️</td></tr>
+<tr>
+<td>Remote Control API</td><td>✔️</td></tr>
+<tr>
+<td>Sensor API</td><td>- Visual Perception Data  - IMU Data</td></tr>
+<tr>
+<td>Low-Level Motion Control API [6]</td><td>✔️</td></tr>
+<tr>
+<td>High-Level Motion Control API [7]</td><td>✔️</td></tr>
+<tr>
+<td>OTA Updates</td><td>✔️</td></tr>
+<tr>
+<td>Studio Package (Optional) [8]</td><td>o</td></tr>
+</table>
+<blockquote data-line="343">
+<p data-line="343"><strong>Note:</strong><br/>
+*<strong>Products are continuously iterated and optimized; appearance and configuration are subject to change. Please refer to the actual product received.</strong><br/>
+<strong>[1]</strong> Total Degrees of Freedom (DoF) refers to the combined DoF of the robot's base body and the installed end-effector (e.g., hand model, two-finger gripper, three-finger gripper, or five-finger dexterous hand).<br/>
+<strong>[2]</strong> The data above was measured at the LimX Dynamics laboratory. Actual results may vary depending on environment, usage, device status, and software version. Please refer to the actual operating performance.<br/>
+<strong>[3]</strong> The arm’s maximum load varies with its extension and posture. Values may differ under different configurations. Please refer to the actual operating performance.<br/>
+<strong>[4]</strong> The maximum torque differs among motors. The value shown represents the maximum torque of the highest-torque motor.<br/>
+<strong>[5]</strong> The action library includes three categories: Basic Interaction, Gestures, and Dance.<br/>
+<strong>[6]</strong> Supports both joint-level control and end-effector control.<br/>
+<strong>[7]</strong> Supports humanoid walking, mobile operation, stationary operation, and remote operation.<br/>
+<strong>[8]</strong> Supports hardware status monitoring, voice configuration, data collection, motion choreography, and one-click simulation verification.</p>
+</blockquote>
+<h1 data-line="354" id="2 Remote Controller Description">2 Remote Controller Description</h1>
+<h2 data-line="356" id="2.1 Specifications">2.1 Specifications</h2>
+<table data-line="358">
+<thead data-line="358">
+<tr data-line="358">
+<th style="text-align:left">Category</th>
+<th style="text-align:left">Description</th>
+</tr>
+</thead>
+<tbody data-line="360">
+<tr data-line="360">
+<td style="text-align:left"><strong>Product Name</strong></td>
+<td style="text-align:left">Humanoid Robot Remote Controller</td>
+</tr>
+<tr data-line="361">
+<td style="text-align:left"><strong>Dimensions</strong></td>
+<td style="text-align:left">≈ 162 × 98 × 52mm (L × W × H)</td>
+</tr>
+<tr data-line="362">
+<td style="text-align:left"><strong>Weight</strong></td>
+<td style="text-align:left">≈ 210g</td>
+</tr>
+<tr data-line="363">
+<td style="text-align:left"><strong>Display Screen</strong></td>
+<td style="text-align:left">- TFT display 1.47 inch<br/>- Resolution 320 × 172</td>
+</tr>
+<tr data-line="364">
+<td style="text-align:left"><strong>Interface Configuration</strong></td>
+<td style="text-align:left">Full-speed USB 2.0 port × 1</td>
+</tr>
+<tr data-line="365">
+<td style="text-align:left"><strong>Connection Method</strong></td>
+<td style="text-align:left">2.4G wireless connection</td>
+</tr>
+<tr data-line="366">
+<td style="text-align:left"><strong>Charging Specifications</strong></td>
+<td style="text-align:left">Input voltage: 5V / 500mA</td>
+</tr>
+<tr data-line="367">
+<td style="text-align:left"><strong>Operating Temperature</strong></td>
+<td style="text-align:left">5°C – 35°C</td>
+</tr>
+<tr data-line="368">
+<td style="text-align:left"><strong>Battery Life</strong></td>
+<td style="text-align:left">Full charge: &gt; 4 hours</td>
+</tr>
+<tr data-line="369">
+<td style="text-align:left"><strong>Effective Control Distance</strong></td>
+<td style="text-align:left">&gt; 20m (In ideal unobstructed conditions)</td>
+</tr>
+</tbody>
+</table>
+<h2 data-line="371" id="2.2 Component Description">2.2 Component Description</h2>
+<p data-line="373"><img alt="figure" src="images/user_manual_10_4309cdf599c3.webp"/><br/>
+<img alt="figure" src="images/user_manual_11_a263da0407d8.webp"/></p>
+<p data-line="376">A ---- Directional Pad (D-Pad): UP, LEFT, DOWN, RIGHT<br/>
+B ---- SHARE Button<br/>
+C ---- Display Screen<br/>
+D ---- Speaker<br/>
+E ---- OPTIONS Button<br/>
+F ---- Δ / O / × / □ Buttons<br/>
+G ---- Right Joystick: Controls robot rotation direction<br/>
+H ---- Power Button: Power On / Off<br/>
+I ---- Left Joystick: Controls robot movement (forward, backward, left, right)<br/>
+J ---- R1 Button<br/>
+K ---- R2 Button<br/>
+L ---- Light Bar<br/>
+M ---- L1 Button<br/>
+N ---- L2 Button<br/>
+O ---- Type-C Charging Port</p>
+<blockquote data-line="392">
+<p data-line="392"><strong>Note：</strong></p>
+<ul data-line="393">
+<li data-line="393">The remote controller is pre-paired with the robot before shipment and is ready for use immediately after startup.</li>
+<li data-line="394">To control another Oli robot, please refer to the "Remote Controller Pairing" tutorial video available on the Limx Dynamics** **Support Center.</li>
+<li data-line="395">If the remote controller has been paired with another robot, it must be re-paired with the original unit to regain control.</li>
+</ul>
+</blockquote>
+<h2 data-line="397" id="2.3 Power On/Off  Operation">2.3 Power On/Off  Operation</h2>
+<figure data-line="399"><img alt="figure" class="md-zoom" src="images/user_manual_12_d7ae49f6e7fd.webp"/></figure>
+<ul data-line="401">
+<li data-line="401"><strong>Power On:</strong></li>
+</ul>
+<p data-line="403">Press and hold the 【Power button】for 3 seconds on the remote controller. A single beep indicates that the controller has powered on and entered the default interface. The controller is now ready for operation.</p>
+<ul data-line="405">
+<li data-line="405"><strong>Power Off:</strong></li>
+</ul>
+<p data-line="407">Press and hold the【Power button】for 2 seconds on the remote controller. A single beep indicates that the controller has powered off and the display has turned off.</p>
+<h2 data-line="409" id="2.4  Display Screen Descriptions">2.4  Display Screen Descriptions</h2>
+<p data-line="411">After the remote controller is powered on, it automatically enters the Home Page interface.<br/>
+The display layout is shown below.</p>
+<figure data-line="414"><img alt="figure" class="md-zoom" src="images/user_manual_13_9e79d41c1fb9.webp"/></figure>
+<table data-line="416">
+<thead data-line="416">
+<tr data-line="416">
+<th><strong>No.</strong></th>
+<th><strong>Description</strong></th>
+<th><strong>No.</strong></th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody data-line="418">
+<tr data-line="418">
+<td><strong>1</strong></td>
+<td>The connection signal strength between the remote controller and the robot. A higher number of bars indicates a stronger signal.</td>
+<td><strong>7</strong></td>
+<td><strong>Emergency stop status</strong>:<br/>- 0: Not triggered<br/>- 1: Triggered</td>
+</tr>
+<tr data-line="419">
+<td><strong>2</strong></td>
+<td><strong>Current robot operating mode:</strong><br/>- Remote Control Mode<br/>- Low-Level Developer Mode<br/>- High-Level Developer Mode</td>
+<td><strong>8</strong></td>
+<td><strong>Error code (32-bit) display</strong><br/>- 00000000: No error<br/>- Other codes: Error present (see <u>Section 4.2 </u><em><u>Error Code List</u></em>)</td>
+</tr>
+<tr data-line="420">
+<td><strong>3</strong></td>
+<td>- Home Page Icon (default display)</td>
+<td><strong>9</strong></td>
+<td>Robot Battery Level (real-time)</td>
+</tr>
+<tr data-line="421">
+<td><strong>4/5</strong></td>
+<td><strong>Remote controller battery level</strong>:<br/>- 4: Icon display<br/>- 5: Numeric display</td>
+<td><strong>10</strong></td>
+<td><strong>Robot Motor Power Status:</strong><br/>- ON: Powered on<br/>- OFF: Powered off</td>
+</tr>
+<tr data-line="422">
+<td><strong>6</strong></td>
+<td>- Unique serial number (SN) of the currently connected robot</td>
+<td><strong>11</strong></td>
+<td>Robot real-time status (see Section 4.1 <em>Robot Status List</em>)</td>
+</tr>
+</tbody>
+</table>
+<h2 data-line="425" id="2.5 Language Settings">2.5 Language Settings</h2>
+<p data-line="427">The remote control supports both Chinese and English interfaces, and you can switch the display language at any time by following the steps below. After changing the language, the remote control will automatically restart to apply the settings.</p>
+<h3 data-line="429" id="2.5.1 Switching from Chinese to English">2.5.1 Switching from Chinese to English</h3>
+<ol data-line="431">
+<li data-line="431">Power on the remote control, then double-press the power button to enter the function menu.</li>
+<li data-line="432">Use the Up/Down arrow keys to select the 5th item: Setting rc system parameters, then press the Right arrow key to enter the settings page.</li>
+<li data-line="433">Press the Up arrow key repeatedly to adjust the value to 1.</li>
+<li data-line="434">Press the Left arrow key to exit the menu. The remote control will automatically restart, and the interface language will switch to English.</li>
+</ol>
+<h3 data-line="436" id="2.5.2 Switching from English to Chinese">2.5.2 Switching from English to Chinese</h3>
+<ol data-line="438">
+<li data-line="438">Power on the remote control, then double-press the power button to enter the function menu.</li>
+<li data-line="439">Use the Up/Down arrow keys to select the 5th item: Setting rc system parameters, then press the Right arrow key to enter the settings page.</li>
+<li data-line="440">Press the Up arrow key repeatedly to adjust the value to 0.</li>
+<li data-line="441">Press the Left arrow key to exit the menu. The remote control will automatically restart, and the interface language will switch to Chinese.</li>
+</ol>
+<h1 data-line="443" id="3 Operation Guide">3 Operation Guide</h1>
+<h2 data-line="445" id="3.1 Startup Procedure">3.1 Startup Procedure</h2>
+<blockquote data-line="447">
+<p data-line="447"><strong>Note:</strong><br/>
+<strong>After powering on, ensure the robot is in Remote Control Mode.</strong><br/>
+If in Developer Mode (purple system status indicator), press 【L2 + ○】 to enter Zero-Torque mode, then press 【R1 + Left】 to switch to <strong>Remote Control Mode (enters Damping Mode automatically).</strong></p>
+</blockquote>
+<h3 data-line="451" id="3.1.1 Powering On in Packing Posture">3.1.1 Powering On in Packing Posture</h3>
+<p data-line="453"><strong>Step 1: Powering On</strong></p>
+<ol data-line="455">
+<li data-line="455">
+<p data-line="455">Insert one battery from the accessory layer into Oli. Briefly press and release the power button, then press and hold it for 2 seconds to power on.<br/>
+<img alt="figure" src="images/user_manual_14_9ffcdd05f558.webp"/></p>
+</li>
+<li data-line="458">
+<p data-line="458">The system status indicator will display a white, one-directional filling animation, accompanied by a system startup confirmation tone.</p>
+</li>
+<li data-line="459">
+<p data-line="459">When the system status indicator turns solid white, Oli enters Zero-Torque Mode.</p>
+</li>
+</ol>
+<p data-line="461"><strong>Step 2: Exit from the Flight Case</strong></p>
+<ol data-line="463">
+<li data-line="463">Press <strong>[R1 + Left]</strong> to enter Remote Control Mode in the Damping State</li>
+<li data-line="464">Press <strong>[L2 + UP]</strong> to switch to the Standing Posture</li>
+<li data-line="465">Push the left joystick on the remote controller forward to initiate Oli’s autonomous walk out of the case<br/>
+<img alt="figure" src="images/user_manual_15_bb3da81a4448.webp"/></li>
+</ol>
+<blockquote data-line="468">
+<p data-line="468"><strong>Note：</strong></p>
+<ol data-line="469">
+<li data-line="469">Ensure that the area around the flight case is clear and that the floor is level and free of obstacles.</li>
+<li data-line="470">During the autonomous exit process, carefully <strong>control the robot’s speed and direction</strong> to avoid collisions between the arms and the case, and ensure the robot is <strong>properly supported</strong> to prevent accidental drops.</li>
+</ol>
+</blockquote>
+<h3 data-line="472" id="3.1.2 Powering On in Lying Position">3.1.2 Powering On in Lying Position</h3>
+<p data-line="474"><strong>Step 1: Positioning the Robot</strong></p>
+<p data-line="476">Ensure Oli is placed flat on a stable and spacious surface. Keep its arms and legs naturally positioned.<br/>
+<img alt="figure" src="images/user_manual_16_74cf9c19c24b.webp"/></p>
+<p data-line="479"><strong>Step 2: Powering On</strong></p>
+<ol data-line="481">
+<li data-line="481">Briefly press and release the power button, then press and hold it for 2 seconds to power on</li>
+<li data-line="482">The system status indicator will display a white, one-directional filling animation, accompanied by a system startup confirmation tone</li>
+<li data-line="483">When the indicator turns solid white, Oli enters <strong>Zero Torque State:</strong>  1. Press <strong>[R1 + Left]</strong> to switch to <strong>Damping State</strong></li>
+<li data-line="484">Press <strong>[L2 + △]</strong> to switch to <strong>Standing Posture</strong></li>
+</ol>
+<h3 data-line="486" id="3.1.3 Powering On in Hanging Position">3.1.3 Powering On in Hanging Position</h3>
+<p data-line="488"><strong>Step 1: Suspend the Robot</strong><br/>
+Secure Oli using the protective frame in a natural hanging position. Ensure the feet are clear of the ground, with a minimum clearance of <strong>15cm</strong>.</p>
+<figure data-line="491"><img alt="figure" class="md-zoom" src="images/user_manual_17_17e877dbe25f.webp"/></figure>
+<p data-line="493"><strong>Step 2: Powering On</strong></p>
+<ol data-line="495">
+<li data-line="495">Briefly press and release the power button, then press and hold it for 2 seconds to power on.</li>
+<li data-line="496">The system status indicator will display a white, one-directional filling animation, accompanied by a system startup confirmation tone</li>
+<li data-line="497">When the indicator turns solid white, Oli enters <strong>Zero Torque State:</strong>  1. Press <strong>[R1 + Left]</strong> to switch to <strong>Damping State in remote control mode</strong>.</li>
+<li data-line="498">Press **[L2 + △] **to command Oli to stand up and enter <strong>Standing State</strong>.</li>
+</ol>
+<p data-line="500"><strong>Step 3: Lowering the Suspension</strong></p>
+<p data-line="502">After Oli enters the Standing State, gradually lower the suspension rope until both feet are firmly on the ground.</p>
+<p data-line="504"><strong>Step 4: Detach the Suspension</strong></p>
+<p data-line="506">Once Oli maintains stable motion, carefully detach the suspension rope. Oli is now ready for operation.</p>
+<blockquote data-line="508">
+<p data-line="508"><strong>Note：</strong></p>
+<ul data-line="509">
+<li data-line="509">If Oli encounters an unexpected condition, press <strong>[L2+DOWN+X]</strong> to switch to <strong>Damping State</strong>. Oli will gently lower itself to the ground in a controlled manner.</li>
+<li data-line="510">If the battery level is below <strong>5%</strong> during startup, the system will prevent normal powering on. Please charge it immediately.</li>
+</ul>
+</blockquote>
+<h3 data-line="512" id="3.1.4 Power On Self-Test">3.1.4 Power On Self-Test</h3>
+<p data-line="514">During power-on, Oli will automatically perform a self-test. The system status indicator will transition from a white, one-directional filling animation:</p>
+<ul data-line="516">
+<li data-line="516">If a malfunction is detected, the system status indicator will flash red, and a voice prompt will announce the specific faulty component.</li>
+<li data-line="517">If everything is functioning well, the system status indicator will transition from a blue breathing light to a solid white, with the voice prompt "hi, I'm Oli".</li>
+</ul>
+<p data-line="519"><strong>Power-On Self-Test Status Description</strong></p>
+<table data-line="521">
+<thead data-line="521">
+<tr data-line="521">
+<th><strong>Status Phase</strong></th>
+<th><strong>System Status Indicator Status</strong></th>
+<th><strong>Voice Prompt</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody data-line="523">
+<tr data-line="523">
+<td>Power-on → Self-testing</td>
+<td>white, one-directional filling animation</td>
+<td>-</td>
+<td>The system is starting and preparing for a self-test.</td>
+</tr>
+<tr data-line="524">
+<td>Self-test → function well</td>
+<td>Solid White</td>
+<td>"beep-beep"</td>
+<td>The system functions well and is ready for operation.</td>
+</tr>
+<tr data-line="525">
+<td>Self-test → Malfunction</td>
+<td>Flashing Red</td>
+<td>Specific component fault (e.g., "Right knee motor error")</td>
+<td>A malfunction has been detected; troubleshooting or repair is required.</td>
+</tr>
+</tbody>
+</table>
+<h2 data-line="527" id="3.2 Remote Control Operation">3.2 Remote Control Operation</h2>
+<h3 data-line="529" id="3.2.1 Control Mode">3.2.1 Control Mode</h3>
+<h4 data-line="531" id="3.2.1.1 Remote Control Mode">3.2.1.1 Remote Control Mode</h4>
+<p data-line="533">When Oli is in Zero Torque Status, press <strong>[R1 + Left]</strong> to switch to <strong>Remote Control Mode</strong>.</p>
+<h4 data-line="535" id="3.2.1.2 Developer Mode">3.2.1.2 Developer Mode</h4>
+<ul data-line="537">
+<li data-line="537"><strong><u>Switching</u> to Developer Mode</strong></li>
+</ul>
+<p data-line="539">When Oli is suspended and in <strong>Zero Torque Status</strong>:</p>
+<ul data-line="541">
+<li data-line="541"><strong><u>Exiting</u> Developer Mode</strong></li>
+</ul>
+<p data-line="543">While in Developer Mode, press <strong>[L2 + ○]</strong> to exit.</p>
+<h3 data-line="545" id="3.2.2 Mode/State Switching">3.2.2 Mode/State Switching</h3>
+<figure data-line="547"><img alt="3.2.2 Mode/State Switching" class="md-zoom" src="images/user_manual_18_9932d30951d8.png"/></figure>
+<ul data-line="549">
+<li data-line="549">Before switching modes, ensure the robot is in Zero Torque State, then follow the global control instructions to switch modes. When switching to Damping State, the robot automatically enters  Remote Control Mode.</li>
+<li data-line="550">Oli will automatically enter Zero Torque State on startup if no mode is set. <strong>The selected mode will be automatically saved and loaded at the next startup.</strong></li>
+<li data-line="551">During transitions between standing and sitting, Oli will first enter a lying position. Maintain a minimum safety distance of 1m during operation.</li>
+<li data-line="552">The global control buttons remain functional regardless of the robot’s current state.</li>
+</ul>
+<blockquote data-line="554">
+<p data-line="554"><strong>Note：</strong><br/>
+Please operate the robot on a flat, level surface when performing forward/backward movement, lateral movement, or in-place turning/marching to prevent potential damage.</p>
+</blockquote>
+<h3 data-line="557" id="3.2.3 Button Functions">3.2.3 Button Functions</h3>
+<table>
+<tr>
+<td>Type</td><td>Mode/Action</td><td>Description</td><td>Button</td><td>Prerequisite States</td></tr>
+<tr>
+<td rowspan="11">Mode/State Switching</td><td>Remote Control Mode</td><td>Enables robot movement/action control via the remote controller. (Voice interaction is available in this mode.)</td><td>R1 + Left</td><td>-</td></tr>
+<tr>
+<td>Developer Mode - High-Level Control</td><td rowspan="2">Allows advanced development, including high-level command execution and low-level joint control. Ensure Oli is securely suspended using a protective frame or equivalent equipment during development.</td><td>R1 + Up</td><td>Developer Mode only</td></tr>
+<tr>
+<td>Developer Mode - Low-Level Control</td><td>R1 + Down</td><td>Developer Mode only</td></tr>
+<tr>
+<td>Zero-Torque State</td><td>All joints are torque-free and can be manually adjusted.</td><td>L2 + ○</td><td>-</td></tr>
+<tr>
+<td>Zero-Point Calibration</td><td>All joints reset to the mechanical zero position.</td><td>Press &amp; Hold L1 + R1</td><td>Zero Torque State</td></tr>
+<tr>
+<td>Damping State</td><td>Applies damping torque to joints to prevent free swinging.</td><td>L2 + Down + X</td><td>-</td></tr>
+<tr>
+<td>Lying State</td><td>Transitions the robot to a lying position (following a zero-torque or damping transition).</td><td>L2 + Left</td><td>Damping State / Standing State</td></tr>
+<tr>
+<td rowspan="2">Standing State</td><td rowspan="2">Engages preload torque to maintain balance and await commands.</td><td>L2 + △</td><td>Hanging State</td></tr>
+<tr>
+<td>L2 + UP</td><td>Packing Pose State/Lying State/Sitting State</td></tr>
+<tr>
+<td>Packing Pose State</td><td>Seated posture required during packing and transport</td><td>DOWN + □</td><td>Damping State / Standing State</td></tr>
+<tr>
+<td>Sitting State</td><td>Command the robot to sit in place via remote controller</td><td>L2 + Right</td><td>Damping State / Standing State</td></tr>
+<tr>
+<td rowspan="4">Movement Control</td><td>Move Forward/Backwards</td><td>Moves the robot forward or backwards via the remote controller.</td><td>Left Joystick ↕</td><td>Standing State</td></tr>
+<tr>
+<td>Lateral Movement</td><td>Moves the robot left or right via the remote controller.</td><td>Left Joystick ↔</td><td>Standing State</td></tr>
+<tr>
+<td>In-place Turning</td><td>Rotates the robot on the spot via remote controller.</td><td>Right Joystick ↔︎</td><td>Standing State</td></tr>
+<tr>
+<td>In-place Marching</td><td>Performs marching motion in a standing position.</td><td>Press &amp; Hold R1</td><td>Standing State</td></tr>
+<tr>
+<td rowspan="7">Interactive Actions/ Functions</td><td>Action/Dance Library - Access</td><td>Access the action library menu via the remote controller.</td><td>Press OPTIONS</td><td>Standing State</td></tr>
+<tr>
+<td>Action/Dance Library - Select</td><td>Select Action or Dance Library via remote controller</td><td>Press Right</td><td>Standing State</td></tr>
+<tr>
+<td>Action/Dance Library - Switching </td><td>Switches between actions/dances in the action/dance library.</td><td>Press UP / DOWN</td><td>Standing State</td></tr>
+<tr>
+<td>Action/Dance Library - Select &amp; Execute</td><td>Selects and executes between actions/dances in the action/dance library.</td><td>Press SHARE</td><td>Standing State</td></tr>
+<tr>
+<td>Custom Action Sequence</td><td>Executes a customized action sequence via the remote controller; no action if none is available.</td><td>L2 + R1</td><td>Standing State</td></tr>
+<tr>
+<td>Voice Wake-Up</td><td>Forces activation of voice interaction.</td><td>Press &amp; Hold R2</td><td>-</td></tr>
+<tr>
+<td>Teleoperation Initialization</td><td>Switches to teleoperation and begins initialization via the remote controller.</td><td>L1 + Up + △</td><td>Standing State</td></tr>
+<tr>
+<td rowspan="2">Safety Protection</td><td>Emergency Stop Active</td><td>Joints are immediately powered off and will not respond to any motion commands.</td><td>Press Left &amp; Right Joystick</td><td>-</td></tr>
+<tr>
+<td>Emergency Stop Released</td><td>Joints perform a self-check and power on again, then enter Zero-Torque Mode.</td><td>Press Right Joystick</td><td>Emergency Stop Active</td></tr>
+</table>
+<blockquote data-line="612">
+<p data-line="612"><strong>Note：</strong><br/>
+<strong>Prerequisite States:</strong> Indicates that switching to a new action or state is only permitted when the robot is in the required preceding state.<br/>
+<strong>Emergency stop activation is a high-risk operation</strong> and may cause the robot to lose balance and fall. Before activation, ensure that a clear area with a minimum radius of <strong>2m</strong> around the robot is free of personnel and obstacles to avoid personal injury or property damage.</p>
+</blockquote>
+<h3 data-line="616" id="3.2.4 Motion Control Status, System Status Indicator and Buzzer Indications">3.2.4 Motion Control Status, System Status Indicator and Buzzer Indications</h3>
+<table data-line="618">
+<thead data-line="618">
+<tr data-line="618">
+<th><strong>Control Status / Mode</strong></th>
+<th><strong>Indicator Status</strong></th>
+<th><strong>Buzzer Prompt</strong></th>
+<th><strong>Voice Prompt</strong></th>
+</tr>
+</thead>
+<tbody data-line="620">
+<tr data-line="620">
+<td>Powering On</td>
+<td>⚪️ white unidirectional fill animation</td>
+<td>–</td>
+<td>Startup confirmation tone</td>
+</tr>
+<tr data-line="621">
+<td>Basic State (Zero Torque / Calibrating / Damping)</td>
+<td>⚪️ Solid white</td>
+<td>–</td>
+<td></td>
+</tr>
+<tr data-line="622">
+<td>Remote Control Mode</td>
+<td>🔵 Solid blue</td>
+<td>–</td>
+<td></td>
+</tr>
+<tr data-line="623">
+<td>Developer Mode - Low Level</td>
+<td>🟣 Purple breathing</td>
+<td>–</td>
+<td></td>
+</tr>
+<tr data-line="624">
+<td>Developer Mode - High Level</td>
+<td>🟣 Solid purple</td>
+<td></td>
+<td></td>
+</tr>
+<tr data-line="625">
+<td>Emergency Stop</td>
+<td>🔴 Solid red</td>
+<td>–</td>
+<td></td>
+</tr>
+<tr data-line="626">
+<td>Low Battery Warning (≤ 20%)</td>
+<td>🟠 Orange breathing</td>
+<td>–</td>
+<td>"Low battery. Please recharge."</td>
+</tr>
+<tr data-line="627">
+<td>Critical Battery Warning (≤ 5%)</td>
+<td>🔴 Red slow flash</td>
+<td>Intermittent "beep–beep"</td>
+<td>"Low battery. Please recharge."</td>
+</tr>
+<tr data-line="628">
+<td>System Abnormal Warning</td>
+<td>🟡 Yellow slow flashing</td>
+<td>–</td>
+<td></td>
+</tr>
+<tr data-line="629">
+<td>System Critical Fault</td>
+<td>🔴 Red fast flash</td>
+<td>Continuous "beep–beep–beep"</td>
+<td></td>
+</tr>
+<tr data-line="630">
+<td>Voice Wake-up Standby</td>
+<td>Cyan endpoint breathing</td>
+<td>–</td>
+<td>"I’m here. Please speak."</td>
+</tr>
+<tr data-line="631">
+<td>Voice Input Receiving</td>
+<td>Cyan bidirectional scanning</td>
+<td>–</td>
+<td></td>
+</tr>
+<tr data-line="632">
+<td>Voice Response Output</td>
+<td>Cyan center-out expansion</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 data-line="634" id="3.3 Shutdown Procedure">3.3 Shutdown Procedure</h2>
+<h3 data-line="636" id="3.3.1 Shutdown in Packing Posture">3.3.1 Shutdown in Packing Posture</h3>
+<p data-line="638"><strong>Step 1: Preparation</strong></p>
+<ol data-line="640">
+<li data-line="640">Place the flight case on a stable, level surface.</li>
+<li data-line="641">Verify the internal padding is properly installed.</li>
+<li data-line="642">Position the robot directly in front of the case, facing the opening, at a distance of at least <strong>1m</strong>.<br/>
+<img alt="figure" src="images/user_manual_19_6e28d931dbdd.webp"/></li>
+</ol>
+<p data-line="645"><strong>Step 2: Move the Robot into the Flight Case</strong></p>
+<ol data-line="647">
+<li data-line="647">Push the left joystick forward to move the robot straight ahead.</li>
+<li data-line="648">Continue until the robot is fully inside the case and standing stably.<br/>
+<img alt="figure" src="images/user_manual_20_94fadc2f94dc.webp"/><br/>
+<img alt="figure" src="images/user_manual_21_61ef886dc4c4.webp"/></li>
+</ol>
+<p data-line="652"><strong>Note：</strong></p>
+<blockquote data-line="653">
+<ol data-line="653">
+<li data-line="653">Ensure that the area around the flight case is clear and that the floor is level and free of obstacles.</li>
+<li data-line="654">During the placement process, carefully <strong>control the robot’s speed and direction</strong> to avoid collisions between the arms and the case, and ensure the robot is <strong>properly supported</strong> to prevent accidental drops.</li>
+</ol>
+</blockquote>
+<p data-line="656"><strong>Step 3: Posture Adjustment</strong></p>
+<ol data-line="658">
+<li data-line="658">
+<p data-line="658">Push the right joystick left or right to rotate the robot in place until it faces the opening of the case.<br/>
+<img alt="figure" src="images/user_manual_22_9065d01487f4.webp"/></p>
+</li>
+<li data-line="661">
+<p data-line="661">Push the left joystick backwards to slowly move the robot rearward until the back of the feet are positioned near the internal foam padding<br/>
+<img alt="figure" src="images/user_manual_23_bef3aaff22b0.webp"/></p>
+</li>
+<li data-line="664">
+<p data-line="664">Press <strong>[Down + □]</strong> to switch to the packing pose.</p>
+</li>
+</ol>
+<p data-line="666"><strong>Step 4: Power Off</strong></p>
+<ol data-line="668">
+<li data-line="668">After the robot is seated and stable, briefly press and release the power button, then press and hold for <strong>2 seconds</strong> to shut down.</li>
+<li data-line="669">Align the robot’s feet with the designated positions at the bottom of the case.</li>
+<li data-line="670">Remove the battery and store it in the accessory tray.</li>
+</ol>
+<blockquote data-line="672">
+<p data-line="672"><strong>Note：</strong><br/>
+Before closing the case, ensure that the robot’s arms are positioned correctly (as shown in the figure) to prevent equipment damage caused by compression or impact.<br/>
+<img alt="figure" src="images/user_manual_24_20f6f3f17985.webp"/></p>
+</blockquote>
+<h3 data-line="676" id="3.3.2 Shutdown in Sitting Position">3.3.2 Shutdown in Sitting Position</h3>
+<p data-line="678"><strong>Step 1: Posture Adjustment</strong></p>
+<ol data-line="680">
+<li data-line="680">Ensure the robot is in the <strong>Standing Position</strong>.</li>
+<li data-line="681">Press <strong>[L2 + Right]</strong> to switch Oli to the Sitting Posture.</li>
+</ol>
+<blockquote data-line="683">
+<p data-line="683"><strong>Note：</strong><br/>
+During the transition from <u>standing</u> to <u>sitting</u>, Oli will first move into a lying position and then adjust to the sitting posture. Please maintain a safety distance of <strong>1m</strong> from the robot during this process.<br/>
+<img alt="figure" src="images/user_manual_25_26e1b00eae9e.webp"/></p>
+</blockquote>
+<p data-line="687"><strong>Step 2: Power Off</strong></p>
+<ul data-line="689">
+<li data-line="689">After the robot is seated and stable, briefly press and release the power button, then press and hold for <strong>2 seconds</strong> to shut down.</li>
+</ul>
+<h3 data-line="691" id="3.3.3 Shutdown in Lying Position">3.3.3 Shutdown in Lying Position</h3>
+<p data-line="693"><strong>Step 1: State Adjustment</strong></p>
+<ol data-line="695">
+<li data-line="695">Ensure <strong>Oli</strong> is lying stably on a flat surface. Press <strong>[L2 + Down + X]</strong> to switch to the <strong>Damping State</strong>.</li>
+<li data-line="696">Press <strong>[L2 + ○]</strong> to switch to <strong>Zero-Torque Mode</strong>.</li>
+</ol>
+<p data-line="698"><strong>Step 2: Power Off</strong></p>
+<ul data-line="700">
+<li data-line="700">After Oli has entered the <strong>Damping State</strong>, briefly press and release the power button, then press and hold for <strong>2 seconds</strong> to shut down.</li>
+</ul>
+<h3 data-line="702" id="3.3.4 Shutdown in Hanging Position">3.3.4 Shutdown in Hanging Position</h3>
+<p data-line="704"><strong>Step 1: Posture Adjustment</strong></p>
+<ol data-line="706">
+<li data-line="706">Press <strong>[L2 + △]</strong> to switch <strong>Oli</strong> to the <strong>Standing Posture</strong>.</li>
+<li data-line="707">Press <strong>[L2 + Down + X]</strong> to switch to the <strong>Damping State</strong>.</li>
+</ol>
+<p data-line="709"><strong>Step 2: Power Off</strong></p>
+<ul data-line="711">
+<li data-line="711">After <strong>Oli</strong> has entered the <strong>Damping State</strong>, briefly press and release the power button, then press and hold for <strong>2 seconds</strong> to shut down.</li>
+</ul>
+<blockquote data-line="713">
+<p data-line="713"><strong>Note：</strong><br/>
+The robot automatically shuts down when the battery level falls below 1%. Recharge the battery before it drops below <strong>20%</strong> to ensure normal operation.</p>
+</blockquote>
+<h2 data-line="716" id="3.4 Battery Replacement Procedure in Sitting Position">3.4 Battery Replacement Procedure in Sitting Position</h2>
+<p data-line="718"><strong>Step 1: Power Off</strong></p>
+<ul data-line="720">
+<li data-line="720">Shut down Oli by following the procedure described in Section<u>「3.3.2 Shutdown in Sitting Position」</u></li>
+</ul>
+<p data-line="722"><strong>Step 2: Replace the Battery</strong></p>
+<ul data-line="724">
+<li data-line="724">Remove the battery from Oli, then insert a fully charged battery.</li>
+</ul>
+<p data-line="726"><strong>Step 3: Power On</strong></p>
+<ul data-line="728">
+<li data-line="728">Briefly press and release the power button, then press and hold for <strong>2 seconds</strong> to power on.</li>
+</ul>
+<p data-line="730"><strong>Step 4: Stand Up</strong></p>
+<ol data-line="732">
+<li data-line="732">When the system status indicator turns solid white, <strong>Oli</strong> enters <strong>Zero-Torque Mode</strong>.</li>
+<li data-line="733">Press <strong>[R1 + Left]</strong> to enter <strong>Remote Control Mode</strong> in the <strong>Damping State</strong>.</li>
+<li data-line="734">Press <strong>[L2 + UP]</strong> to switch to the <strong>Standing Posture</strong>.</li>
+</ol>
+<blockquote data-line="736">
+<p data-line="736"><strong>Note：</strong><br/>
+During the transition from <u>sitting</u> to standing, Oli will first move into a lying position and then adjust to the standing posture. Please maintain a safety distance of <strong>1m</strong> from the robot during this process.</p>
+</blockquote>
+<h2 data-line="739" id="3.5 Voice Interaction Instructions">3.5 Voice Interaction Instructions</h2>
+<p data-line="741">Once connected to the Internet, the voice interaction feature enables conversational control and action execution. If the network connection fails, offline dialogue mode remains available.</p>
+<figure data-line="743"><img alt="figure" class="md-zoom" src="images/user_manual_26_58cd81653c85.webp"/></figure>
+<hr data-line="745"/>
+<h3 data-line="747" id="3.5.1 Mode Description">3.5.1 Mode Description</h3>
+<ul data-line="749">
+<li data-line="749">
+<p data-line="749"><strong>Online Mode:</strong> Supports voice recognition, action control, and advanced conversational interaction.</p>
+</li>
+<li data-line="750">
+<p data-line="750"><strong>Offline Mode:</strong> Supports basic command execution (e.g., switching to lying posture).</p>
+</li>
+<li data-line="751">
+<p data-line="751"><strong>Mode Switching:</strong>  - Automatically switches to Offline Mode when the network is disconnected or the detected network speed drops below 1 Mbps.</p>
+<ul data-line="753">
+<li data-line="753">Automatically switches to Online Mode once the network connection is restored, accompanied by the voice prompt: "Network connected. Switched to Online Mode."</li>
+</ul>
+</li>
+</ul>
+<h3 data-line="755" id="3.5.2 Wake-Up Methods">3.5.2 Wake-Up Methods</h3>
+<ul data-line="757">
+<li data-line="757"><strong>Remote Controller Wake-up:</strong> Press and hold R2.</li>
+<li data-line="758"><strong>Wake-Up Feedback:</strong> In Remote Mode while standing, after wake-up Oli automatically turns toward the speaker, responds with "I'm here, go ahead," and the chest status indicator displays a cyan breathing light.</li>
+</ul>
+<h3 data-line="760" id="3.5.3 Dialogue Mode">3.5.3 Dialogue Mode</h3>
+<ul data-line="762">
+<li data-line="762"><strong>Conversation Mode:</strong> After a successful wake-up, Oli supports continuous, multi-turn conversations. The dialogue will automatically end if no voice input is detected for <strong>15 seconds</strong>, requiring a re-wake-up.</li>
+<li data-line="763"><strong>Conversation Interruption:</strong> If the response is interrupted by other sounds, the current reply will be terminated, and a new dialogue session will begin.</li>
+</ul>
+<h3 data-line="765" id="3.5.4 Voice-Based Motion Control">3.5.4 Voice-Based Motion Control</h3>
+<ul data-line="767">
+<li data-line="767">Oli supports motion control via voice commands while operating in Remote Control Mode. The following motion categories are supported:
+<ol data-line="768">
+<li data-line="768">Custom action sequences</li>
+<li data-line="769">Action Library (e.g., “Perform a series of flying kisses”)</li>
+<li data-line="770">Dance Library (e.g., “Do a warm-up dance”)</li>
+<li data-line="771">Locomotion control (e.g., “Move forward two steps”)</li>
+<li data-line="772">Posture control (e.g., stand up, sit down)</li>
+</ol>
+</li>
+</ul>
+<h3 data-line="774" id="3.5.5 Multilingual Switching">3.5.5 Multilingual Switching</h3>
+<ul data-line="776">
+<li data-line="776">Supports recognition and responses in <strong>Chinese</strong> and <strong>English</strong>.</li>
+<li data-line="777">Language Switching: Automatically switches based on detected language or via voice command (e.g., “Switch to English”).</li>
+</ul>
+<h3 data-line="779" id="3.5.6 Multi-Audio Device Support">3.5.6 Multi-Audio Device Support</h3>
+<ul data-line="781">
+<li data-line="781"><strong>Head Microphone:</strong> Default audio input and output device.</li>
+<li data-line="782"><strong>Lavalier Microphone:</strong> Supports external audio input; audio output remains routed through the head microphone.
+<ul data-line="783">
+<li data-line="783">
+<p data-line="783">When <strong>connected</strong>, the audio input source automatically switches to the lavalier microphone.</p>
+</li>
+<li data-line="785">
+<p data-line="785">When <strong>disconnected</strong>, the audio input source automatically switches back to the head microphone.</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 data-line="787" id="3.5.7 Interaction Deactivation">3.5.7 Interaction Deactivation</h3>
+<ul data-line="789">
+<li data-line="789"><strong>Automatic Deactivation:</strong> When not in Dance Mode, voice interaction automatically ends if no valid voice input is detected within <strong>15 seconds</strong>.</li>
+<li data-line="790"><strong>Command-Based Deactivation:</strong> Voice interaction can be deactivated by issuing termination commands, such as <em>“Turn off voice,” “Goodbye,”</em> or <em>“Stop.”</em></li>
+</ul>
+<p data-line="792">After deactivation, the system enters a sleep state and stops audio recording. No audio data is collected or processed.</p>
+<blockquote data-line="794">
+<p data-line="794"><strong>Note:</strong></p>
+<ol data-line="795">
+<li data-line="795">In noisy environments, if the system status indicator does not display a blue breathing light while speaking, it indicates a failed voice reception. In this case, please move closer to the robot and speak again.</li>
+<li data-line="796">When the battery level drops below 20%, non-core response functions will be automatically disabled.</li>
+</ol>
+</blockquote>
+<h2 data-line="798" id="3.6 Action/Dance Library Interaction Instructions">3.6 Action/Dance Library Interaction Instructions</h2>
+<h3 data-line="800" id="3.6.1 Action Library List">3.6.1 Action Library List</h3>
+<table>
+<tr>
+<td>Category</td><td>Action ID</td><td>Motion Name</td><td>Category</td><td>Action ID</td><td>Motion Name</td></tr>
+<tr>
+<td rowspan="11">Basic Interactions</td><td>1</td><td>This way, please</td><td rowspan="6">Gestures</td><td>7</td><td>Blow kisses</td></tr>
+<tr>
+<td>2</td><td>Bow</td><td>8</td><td>Left-Hand Heart</td></tr>
+<tr>
+<td>3</td><td>Wave</td><td>9</td><td>Right-Hand Heart</td></tr>
+<tr>
+<td>4</td><td>Nod</td><td>10</td><td>Hand Heart</td></tr>
+<tr>
+<td>5</td><td>Shake one's Head</td><td>11</td><td>High-Five Someone</td></tr>
+<tr>
+<td>6</td><td>Take a bow</td><td>12</td><td>Clap </td></tr>
+<tr>
+<td>18</td><td>Shake hands</td><td rowspan="5">Dance</td><td>13</td><td>Warm-Up Dance</td></tr>
+<tr>
+<td>19</td><td>Raise hand to introduce</td><td>14</td><td>Swag Dance</td></tr>
+<tr>
+<td>20</td><td>Casual Gesture 1 (40s）</td><td>15</td><td>Idol Dance 1</td></tr>
+<tr>
+<td>21</td><td>Casual Gesture 2 (10s）</td><td>16</td><td>Idol Dance 2</td></tr>
+<tr>
+<td>22</td><td>Take a photo (Dexterous hand required）</td><td>17</td><td>Power-up Dance</td></tr>
+</table>
+<h3 data-line="829" id="3.6.2 Dance Library List">3.6.2 Dance Library List</h3>
+<table data-line="831">
+<thead data-line="831">
+<tr data-line="831">
+<th><strong>No.</strong></th>
+<th>Dance Name</th>
+<th><strong>No.</strong></th>
+<th>Dance Name</th>
+</tr>
+</thead>
+<tbody data-line="833">
+<tr data-line="833">
+<td><strong>0</strong></td>
+<td>Victory Dance</td>
+<td><strong>9</strong></td>
+<td>Gee</td>
+</tr>
+<tr data-line="834">
+<td><strong>1</strong></td>
+<td>One and Only Dance</td>
+<td><strong>10</strong></td>
+<td>Abracadabra Hip-Sway Dance</td>
+</tr>
+<tr data-line="835">
+<td><strong>2</strong></td>
+<td>Pulp Fiction Dance</td>
+<td><strong>11</strong></td>
+<td>Karla Forever OK</td>
+</tr>
+<tr data-line="836">
+<td><strong>3</strong></td>
+<td>Smooth Sailing and Prosperity</td>
+<td><strong>12</strong></td>
+<td>Let's Bounce</td>
+</tr>
+<tr data-line="837">
+<td><strong>4</strong></td>
+<td>All Things Grow Dance</td>
+<td><strong>13</strong></td>
+<td>Egyptian Shake</td>
+</tr>
+<tr data-line="838">
+<td><strong>5</strong></td>
+<td>Popping</td>
+<td><strong>14</strong></td>
+<td>Gentleman</td>
+</tr>
+<tr data-line="839">
+<td><strong>6</strong></td>
+<td>Love Each Other Dance</td>
+<td><strong>15</strong></td>
+<td>Whatever the Music Is</td>
+</tr>
+<tr data-line="840">
+<td><strong>7</strong></td>
+<td>APT</td>
+<td><strong>16</strong></td>
+<td>Solo Shake</td>
+</tr>
+<tr data-line="841">
+<td><strong>8</strong></td>
+<td>Sweep Kick Dance</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<blockquote data-line="843">
+<p data-line="843"><strong>Note：</strong><br/>
+The action/dance library will be continuously updated, and the latest content can be obtained directly via <strong>OTA updates</strong>.</p>
+</blockquote>
+<h3 data-line="846" id="3.6.3 Action/Dance Display">3.6.3 Action/Dance Display</h3>
+<ul data-line="848">
+<li data-line="848">All actions and dances can be demonstrated and operated through the remote controller.</li>
+</ul>
+<h1 data-line="850" id="4 Status and Troubleshooting">4 Status and Troubleshooting</h1>
+<h2 data-line="852" id="4.1 Robot Status List">4.1 Robot Status List</h2>
+<table data-line="854">
+<thead data-line="854">
+<tr data-line="854">
+<th><strong>Index</strong></th>
+<th><strong>Description</strong></th>
+<th><strong>Index</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody data-line="856">
+<tr data-line="856">
+<td><strong>0</strong></td>
+<td>Calibrating...</td>
+<td><strong>18</strong></td>
+<td>Teleoperation Initialization</td>
+</tr>
+<tr data-line="857">
+<td><strong>1</strong></td>
+<td>Developer Mode - Low_Level</td>
+<td><strong>19</strong></td>
+<td>Teleoperation Tracking</td>
+</tr>
+<tr data-line="858">
+<td><strong>2</strong></td>
+<td>Developer Mode - High_Level</td>
+<td><strong>20</strong></td>
+<td>Teleoperation Holding</td>
+</tr>
+<tr data-line="859">
+<td><strong>3</strong></td>
+<td>Damping</td>
+<td><strong>21</strong></td>
+<td>Human-Like Walking</td>
+</tr>
+<tr data-line="860">
+<td><strong>4</strong></td>
+<td>Remote Mode</td>
+<td><strong>22</strong></td>
+<td>Exception with LBWalk</td>
+</tr>
+<tr data-line="861">
+<td><strong>5</strong></td>
+<td>Zero Torque</td>
+<td><strong>23</strong></td>
+<td>Exception with Damped</td>
+</tr>
+<tr data-line="862">
+<td><strong>6</strong></td>
+<td>Standing</td>
+<td><strong>24</strong></td>
+<td>Packing Pose</td>
+</tr>
+<tr data-line="863">
+<td><strong>7</strong></td>
+<td>Lying</td>
+<td><strong>25</strong></td>
+<td>Sitting</td>
+</tr>
+<tr data-line="864">
+<td><strong>8</strong></td>
+<td>Action Library</td>
+<td><strong>26</strong></td>
+<td>Action Library – Action Name</td>
+</tr>
+<tr data-line="865">
+<td><strong>9</strong></td>
+<td>Turn Left</td>
+<td><strong>27</strong></td>
+<td>Dance Library – Action Name</td>
+</tr>
+<tr data-line="866">
+<td><strong>10</strong></td>
+<td>Turn Right</td>
+<td><strong>28</strong></td>
+<td>Emergency Stop Active</td>
+</tr>
+<tr data-line="867">
+<td><strong>11</strong></td>
+<td>Move Forward</td>
+<td><strong>29</strong></td>
+<td>Powering On</td>
+</tr>
+<tr data-line="868">
+<td><strong>12</strong></td>
+<td>Move Backward</td>
+<td><strong>30</strong></td>
+<td>Power On Successful</td>
+</tr>
+<tr data-line="869">
+<td><strong>13</strong></td>
+<td>Strafe Left</td>
+<td><strong>31</strong></td>
+<td>Stationary Teleoperation Tracking</td>
+</tr>
+<tr data-line="870">
+<td><strong>14</strong></td>
+<td>Strafe Right</td>
+<td><strong>32</strong></td>
+<td>Mobile Teleoperation Tracking</td>
+</tr>
+<tr data-line="871">
+<td><strong>15</strong></td>
+<td>In-place March</td>
+<td><strong>33</strong></td>
+<td>Mobile Teleoperation Holding</td>
+</tr>
+<tr data-line="872">
+<td><strong>16</strong></td>
+<td>Execute Action Sequence</td>
+<td><strong>34</strong></td>
+<td>Exit Mobile Teleoperation</td>
+</tr>
+<tr data-line="873">
+<td><strong>17</strong></td>
+<td>Activate Voice</td>
+<td><strong>35</strong></td>
+<td>Exit Stationary Teleoperation</td>
+</tr>
+</tbody>
+</table>
+<h2 data-line="875" id="4.2 Error Code List">4.2 Error Code List</h2>
+<table data-line="877">
+<thead data-line="877">
+<tr data-line="877">
+<th><strong>Error Code</strong></th>
+<th><strong>Description</strong></th>
+<th><strong>Error Code</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody data-line="879">
+<tr data-line="879">
+<td><strong>0x0001</strong></td>
+<td>IMU abnormality</td>
+<td><strong>0x0080</strong></td>
+<td>Right-hand power fault</td>
+</tr>
+<tr data-line="880">
+<td><strong>0x0002</strong></td>
+<td>Ethercat communication error</td>
+<td><strong>0x0100</strong></td>
+<td>Left-hand power fault</td>
+</tr>
+<tr data-line="881">
+<td><strong>0x0004</strong></td>
+<td>Low battery</td>
+<td><strong>0x0200</strong></td>
+<td>Left leg power fault</td>
+</tr>
+<tr data-line="882">
+<td><strong>0x0008</strong></td>
+<td>Battery fault</td>
+<td><strong>0x0400</strong></td>
+<td>Right leg power fault</td>
+</tr>
+<tr data-line="883">
+<td><strong>0x0010</strong></td>
+<td>24V power supply fault</td>
+<td><strong>0x0800</strong></td>
+<td>Motor pre-charge fault</td>
+</tr>
+<tr data-line="884">
+<td><strong>0x0020</strong></td>
+<td>15V power supply fault</td>
+<td><strong>0x8000000000</strong></td>
+<td>Other hardware abnormality</td>
+</tr>
+<tr data-line="885">
+<td><strong>0x0040</strong></td>
+<td>12V power supply fault</td>
+<td><strong>-</strong></td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h2 data-line="887" id="4.3 Remote Controller Pairing">4.3 Remote Controller Pairing</h2>
+<p data-line="889">To pair the remote controller with a different robot, follow the steps below:</p>
+<ol data-line="891">
+<li data-line="891"><strong>Enter pairing preparation mode:</strong> Before pairing, press the Emergency Stop (E-stop) button. Pairing can only be performed while the system is in the E-stop state. Successful pairing does not affect normal operation.</li>
+</ol>
+<figure data-line="893"><img alt="figure" class="md-zoom" src="images/user_manual_27_2d4bc64c0876.webp"/></figure>
+<ol data-line="895" start="2">
+<li data-line="895"><strong>Access the pairing interface:</strong> Use the **[Up/Down] button **to select option 4, then press the <strong>[Right] button</strong> to enter the pairing interface.</li>
+</ol>
+<figure data-line="897"><img alt="figure" class="md-zoom" src="images/user_manual_28_7d2de6ad3381.webp"/></figure>
+<ol data-line="899" start="3">
+<li data-line="899"><strong>Search for and select a device:</strong> The controller automatically searches for robots within its frequency range, and detected devices are displayed in a list. If multiple devices are found, use the controls below:</li>
+</ol>
+<ul data-line="900">
+<li data-line="900"><strong>[Up/Down] button:</strong> Select the target robot</li>
+<li data-line="901"><strong>[Right] button:</strong> Confirm selection and start pairing</li>
+<li data-line="902"><strong>[Left] button:</strong> Exit</li>
+</ul>
+<figure data-line="904"><img alt="figure" class="md-zoom" src="images/user_manual_29_137c70f0e83c.webp"/></figure>
+<ol data-line="906" start="4">
+<li data-line="906"><strong>Complete pairing and establish a connection:</strong> After successful pairing, a confirmation message appears on the screen. Press the <strong>[Left] button</strong> to exit the pairing interface, and the controller will automatically establish a connection with the robot.</li>
+</ol>
+<figure data-line="908"><img alt="figure" class="md-zoom" src="images/user_manual_30_b95b12b16371.webp"/></figure>
+<h2 data-line="910" id="4.4 Remote Controller Joystick Calibration">4.4 Remote Controller Joystick Calibration</h2>
+<p data-line="912">If the robot exhibits slight unintended movement when the joysticks are not being operated, this is typically caused by minor wear or joystick offset due to prolonged use. Follow the steps below to recalibrate the joysticks and restore control accuracy:</p>
+<ol data-line="914">
+<li data-line="914"><strong>Access the calibration interface:</strong> Use the <strong>[Up/Down] button</strong> to select option 3, then press the <strong>[Right] button</strong> to enter the calibration interface.</li>
+</ol>
+<figure data-line="916"><img alt="figure" class="md-zoom" src="images/user_manual_31_56f6730d0da5.webp"/></figure>
+<ol data-line="918" start="2">
+<li data-line="918"><strong>Keep the joysticks stationary:</strong> The screen will display "Please static the joystick." Do not touch the joysticks at this time.</li>
+</ol>
+<figure data-line="920"><img alt="figure" class="md-zoom" src="images/user_manual_32_ad6c7dfedebd.webp"/></figure>
+<ol data-line="922" start="2">
+<li data-line="922"><strong>Perform full-range calibration:</strong> After approximately 3 seconds of inactivity, the prompt will indicate that the joysticks can be moved. Move both joysticks to their maximum range in all directions and rotate them fully several times.</li>
+</ol>
+<figure data-line="924"><img alt="figure" class="md-zoom" src="images/user_manual_33_489f95280542.webp"/></figure>
+<ol data-line="926" start="4">
+<li data-line="926"><strong>Save calibration data:</strong> Press the <strong>[Right] button</strong> to save the calibration data. A green "Calibration Successful" message will appear on the screen. The calibration process is then complete.</li>
+</ol>
+<figure data-line="928"><img alt="figure" class="md-zoom" src="images/user_manual_34_0fe48dc210d6.webp"/></figure>
+<h1 data-line="930" id="5 Care and Maintenance">5 Care and Maintenance</h1>
+<h2 data-line="932" id="5.1 Power and Charging Management">5.1 Power and Charging Management</h2>
+<h3 data-line="934" id="5.1.1 Remote Controller Charging">5.1.1 Remote Controller Charging</h3>
+<ul data-line="936">
+<li data-line="936">Low Battery Indicators:  - <strong>Battery level &lt; 20%:</strong> The battery icon changes from green to red.
+<ul data-line="937">
+<li data-line="937"><strong>Battery level &lt; 4%:</strong> A red LED flashes at the bottom of the screen.</li>
+<li data-line="938"><strong>Battery level = 0%:</strong> The controller automatically powers off after approximately 5 seconds.</li>
+</ul>
+</li>
+</ul>
+<p data-line="940">When the battery level is low, use the supplied Type-C charging cable to connect the controller to a power adapter for charging (as shown below).</p>
+<figure data-line="942"><img alt="figure" class="md-zoom" src="images/user_manual_35_49234978a394.webp"/></figure>
+<h3 data-line="944" id="5.1.2 Robot Charging">5.1.2 Robot Charging</h3>
+<h4 data-line="946" id="5.1.2.1 Battery Charging">5.1.2.1 Battery Charging</h4>
+<ol data-line="948">
+<li data-line="948">Connect the charging dock to the power source.</li>
+</ol>
+<figure data-line="950"><img alt="figure" class="md-zoom" src="images/user_manual_36_cecf9181ab2e.webp"/></figure>
+<ol data-line="952" start="2">
+<li data-line="952">Insert the battery into the charging dock. A flashing green indicator light indicates that charging has started.</li>
+</ol>
+<figure data-line="954"><img alt="figure" class="md-zoom" src="images/user_manual_37_8772a18a8dc4.webp"/></figure>
+<h4 data-line="956" id="5.1.2.2 Direct Charging via Robot Charging Port (Only when not in operation)">5.1.2.2 Direct Charging via Robot Charging Port (Only when not in operation)</h4>
+<ol data-line="958">
+<li data-line="958">Open the charging port cover and ensure the port is dry and clean.</li>
+</ol>
+<figure data-line="960"><img alt="figure" class="md-zoom" src="images/user_manual_38_87cc83cec6bc.webp"/></figure>
+<ol data-line="962" start="2">
+<li data-line="962">Align the aviation connector with the guide slot and insert it securely into the charging port.</li>
+</ol>
+<figure data-line="964"><img alt="figure" class="md-zoom" src="images/user_manual_39_9f473bfaa5f7.webp"/></figure>
+<ol data-line="966" start="3">
+<li data-line="966">Plug the power adapter into an appropriate AC outlet (refer to adapter rating label).</li>
+</ol>
+<figure data-line="968"><img alt="figure" class="md-zoom" src="images/user_manual_40_011b4b53cb98.webp"/></figure>
+<blockquote data-line="970">
+<p data-line="970"><strong>Note：</strong><br/>
+<strong>Do not charge the robot via the charging port while it is in operation.</strong> Ensure that the robot is completely stopped before charging.</p>
+</blockquote>
+<h3 data-line="973" id="5.1.3 Stop Charging">5.1.3 Stop Charging</h3>
+<ol data-line="975">
+<li data-line="975">Unplug the power adapter from the outlet to disconnect the power supply.</li>
+</ol>
+<figure data-line="977"><img alt="figure" class="md-zoom" src="images/user_manual_41_58e89d511e7e.webp"/></figure>
+<ol data-line="979" start="2">
+<li data-line="979">Carefully remove the charging connector.</li>
+</ol>
+<figure data-line="981"><img alt="figure" class="md-zoom" src="images/user_manual_42_870bfe748b57.webp"/></figure>
+<ol data-line="983" start="3">
+<li data-line="983">Close the charging port cover to prevent dust or foreign objects from entering.</li>
+</ol>
+<figure data-line="985"><img alt="figure" class="md-zoom" src="images/user_manual_43_f8c82a1c9589.webp"/></figure>
+<h3 data-line="987" id="5.1.4 Battery and Charging Maintenance">5.1.4 Battery and Charging Maintenance</h3>
+<ol data-line="989">
+<li data-line="989">Do not power on or operate the device while charging via the robot's charging port. This ensures a safe and stable charging process.</li>
+<li data-line="990">While charging the battery, ensure that the power adapter is not subjected to pressure, stepping, tipping, or frequent movement, and keep it placed on a stable surface.</li>
+<li data-line="991">If the system indicates that the battery level is critically low, promptly power off the device and recharge the battery to prevent system abnormalities caused by sudden power loss.</li>
+<li data-line="992">Before long-term storage, maintain the battery level at 50%-60% (avoid storing the battery fully charged or fully discharged). During storage, perform a full charge-discharge cycle every three months, then restore the battery level to 50%-60% to help minimize performance degradation over time.</li>
+<li data-line="993">Do not plug or unplug the battery while the robot is powered on or in operation. This prevents burn damage to the power connector pins and damage to the interface circuit.</li>
+<li data-line="994">When plugging or unplugging the battery, apply steady, even force perpendicular to the interface. Do not pry with uneven force, pull violently, or wiggle the connector.</li>
+</ol>
+<h2 data-line="996" id="5.2  Exterior and Structural Maintenance">5.2  Exterior and Structural Maintenance</h2>
+<ol data-line="998">
+<li data-line="998">Regularly clean dust from the robot’s exterior surfaces and joint areas, and verify that all screws and fasteners are securely tightened.</li>
+<li data-line="999">If the robot is used in dusty environments, promptly wipe the housing with a clean microfiber cloth.</li>
+</ol>
+<h2 data-line="1001" id="5.3 Storage and Transportation">5.3 Storage and Transportation</h2>
+<ol data-line="1003">
+<li data-line="1003">Use a transport case specifically designed for the robot during storage and transportation to minimize impact and vibration.</li>
+<li data-line="1004">When storing the remote controller, avoid applying external pressure to the joysticks and ensure that all ports remain clean.</li>
+</ol>
+<h2 data-line="1006" id="5.4 Software and System Maintenance">5.4 Software and System Maintenance</h2>
+<ol data-line="1008">
+<li data-line="1008">Regularly update the official firmware to resolve potential system issues and optimize motion control algorithms.</li>
+<li data-line="1009">If the device remains powered on but unused for an extended period, enable mechanical or software-based “suspension protection” to prevent unintended movement.</li>
+</ol>
+<h1 data-line="1011" id="6 FAQ">6 FAQ</h1>
+<table>
+<tr>
+<td><b>Issues Category</b></td><td><b>Issue Description</b></td><td><b>Possible Causes</b></td><td><b>Troubleshooting &amp; Solutions</b></td></tr>
+<tr>
+<td rowspan="3"><b>Power Related</b></td><td><b>Failure to Power On</b></td><td>- Depleted battery - Emergency stop button pressed</td><td>- Check charge status and recharge  - Ensure the emergency stop button is released</td></tr>
+<tr>
+<td><b>Sudden Motor Shutdown</b></td><td>- Safety protection triggered  - Loose connection  - Power supply abnormality</td><td>- Check the emergency stop status.  - Reconnect the power cable or check connectors - Restart the system.</td></tr>
+<tr>
+<td><b>Failure to Charge</b></td><td>- Incorrect connection sequence  - Adapter malfunction - Loose connection</td><td>- Insert the aviation plug first, then power on. - Check the indicator light (Red = Charging, Green = Full) - Tighten screw sleeve, check contact</td></tr>
+<tr>
+<td rowspan="4"><b>Control &amp; Execution</b></td><td><b>No Buzzer Prompt After Startup</b></td><td>- Self-check incomplete - Remote controller pairing failed</td><td>- Wait 1 minute for initialization. - Re-pair the remote controller</td></tr>
+<tr>
+<td><b>Remote Controller Unresponsive</b></td><td>- Pairing unsuccessful - Remote controller low battery - Severe wireless interference</td><td>- Long-press the "Sync Button" for 3s to re-pair.  - Replace the remote controller battery.  - Move away from strong interference sources.</td></tr>
+<tr>
+<td><b>Motor No Response</b></td><td>- No power applied - Pairing incomplete - Control signal lost</td><td>- Confirm the remote controller is paired.  - Press the right stick to power on - Check the remote controller status</td></tr>
+<tr>
+<td><b>Zero Calibration Failure</b></td><td>- Restricted space - Incorrect posture - Command not sent successfully</td><td>- Ensure no obstacles within 2m/6' 6.74" - Perform in a natural hanging position - Check the remote controller button operation</td></tr>
+<tr>
+<td rowspan="2"><b>Communication &amp; Network</b></td><td><b>Unable to connect to Wi-Fi</b></td><td>- Weak signal - Incorrect password - Module malfunction</td><td>- Move closer to the robot and reconnect.  - Verify the password is `12345678` - Restart the robot</td></tr>
+<tr>
+<td><b>Unable to access 10.192.1.2</b></td><td>- IP not on the same subnet - Network configuration error</td><td>- For wired connection: manually set the IP to `10.192.1.x` subnet. - For wireless connection: automatic IP address assignment, no manual configuration needed.</td></tr>
+</table>
+</div>

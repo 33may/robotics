@@ -1,0 +1,3 @@
+[submodule "humanoid/vendor/humanoid-rl-deploy-python"]
+	path = humanoid/vendor/humanoid-rl-deploy-python
+	url = https://github.com/limxdynamics/humanoid-rl-deploy-python.git

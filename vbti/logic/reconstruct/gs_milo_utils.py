@@ -21,7 +21,7 @@ import yaml
 from loguru import logger
 
 # MILo lives in vbti/libs/MILo/milo/
-MILO_DIR = Path(__file__).resolve().parent.parent / "libs" / "MILo" / "milo"
+MILO_DIR = Path(__file__).resolve().parents[2] / "libs" / "MILo" / "milo"
 
 # Fedora 42 build environment — GCC 15 unsupported by CUDA, use 14
 # NOTE: Do NOT set CPLUS_INCLUDE_PATH=/usr/include here — it breaks
@@ -49,6 +49,7 @@ CONFIG_FIELDS = {
     "rasterizer":   ("radegs",  "GS rasterizer: radegs supports depth/normal rendering"),
     "iterations":   (18000,     "training iterations: 18000=fast, 30000=quality"),
     "data_device":  ("cpu",     "image loading device: cpu saves VRAM, cuda faster"),
+    "resolution":   (4,         "image downsample factor: 4 is safe for 4K/12MP inputs, 2 is sharper but heavier"),
     # Mesh Extraction
     "refine_iter":  (1000,      "SDF refinement iterations: 1000=fast, 2000-3000=better quality"),
     "remove_oof":   (True,      "remove vertices not visible from any training camera"),
@@ -137,6 +138,7 @@ def train_gs(
     rasterizer: str = "radegs",
     iterations: int = 18000,
     data_device: str = "cpu",
+    resolution: int = 4,
 ):
     """Train MILo Gaussian Splatting model.
 
@@ -161,11 +163,12 @@ def train_gs(
         "--rasterizer", rasterizer,
         "--mesh_config", mesh_config,
         "--data_device", data_device,
+        "--resolution", str(resolution),
         "--iterations", str(iterations),
         "--config_path", config_path,
     ]
 
-    logger.info(f"Training MILo GS ({mesh_config}, {iterations} iters)")
+    logger.info(f"Training MILo GS ({mesh_config}, {iterations} iters, resolution={resolution})")
     logger.debug(f"Source: {source_dir}")
     logger.debug(f"Output: {model_dir}")
     subprocess.run(cmd, cwd=str(MILO_DIR), env=MILO_ENV, check=True)
@@ -238,6 +241,7 @@ def reconstruct_mesh(
     iterations: int = 18000,
     refine_iter: int = 1000,
     data_device: str = "cpu",
+    resolution: int = 4,
     remove_oof: bool = True,
 ):
     """Full MILo pipeline: GS training → mesh extraction.
@@ -256,11 +260,12 @@ def reconstruct_mesh(
         iterations = cfg["iterations"]
         refine_iter = cfg["refine_iter"]
         data_device = cfg["data_device"]
+        resolution = cfg["resolution"]
         remove_oof = cfg["remove_oof"]
         logger.info(f"Loaded config: {config_path}")
 
     logger.info("Stage 1: GS Training")
-    train_gs(source_dir, model_dir, mesh_config, imp_metric, rasterizer, iterations, data_device)
+    train_gs(source_dir, model_dir, mesh_config, imp_metric, rasterizer, iterations, data_device, resolution)
 
     logger.info("Stage 2: Mesh Extraction")
     extract_mesh(source_dir, model_dir, mesh_config, imp_metric, rasterizer, refine_iter, remove_oof)

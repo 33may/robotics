@@ -1,0 +1,1686 @@
+{
+  "configuration" : { },
+  "description" : "C4 architecture model focused on modular reuse across 3D reconstruction and AI model workflows.",
+  "documentation" : { },
+  "id" : 1,
+  "lastModifiedDate" : "2026-06-03T08:49:32Z",
+  "model" : {
+    "deploymentNodes" : [ {
+      "containerInstances" : [ {
+        "containerId" : "12",
+        "environment" : "Local Development Machine",
+        "id" : "86",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.edfe0698-0ba7-4a1f-9e4a-652341769103"
+        },
+        "relationships" : [ {
+          "description" : "Extract frames and normalize media",
+          "destinationId" : "87",
+          "id" : "88",
+          "linkedRelationshipId" : "37",
+          "sourceId" : "86"
+        }, {
+          "description" : "Recover cameras and sparse geometry",
+          "destinationId" : "89",
+          "id" : "90",
+          "linkedRelationshipId" : "38",
+          "sourceId" : "86"
+        }, {
+          "description" : "Train splats and extract meshes",
+          "destinationId" : "92",
+          "id" : "93",
+          "linkedRelationshipId" : "39",
+          "sourceId" : "86"
+        }, {
+          "description" : "Convert assets and add physics/collision",
+          "destinationId" : "95",
+          "id" : "96",
+          "linkedRelationshipId" : "40",
+          "sourceId" : "86"
+        }, {
+          "description" : "Compose simulator scenes and tasks",
+          "destinationId" : "98",
+          "id" : "99",
+          "linkedRelationshipId" : "41",
+          "sourceId" : "86"
+        }, {
+          "description" : "Prepare augmentation controls",
+          "destinationId" : "101",
+          "id" : "102",
+          "linkedRelationshipId" : "42",
+          "sourceId" : "86"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "13",
+        "environment" : "Local Development Machine",
+        "id" : "87",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.710c2653-c414-4e99-aa70-03c9efdd9587"
+        },
+        "relationships" : [ {
+          "description" : "Prepared frames",
+          "destinationId" : "89",
+          "id" : "91",
+          "linkedRelationshipId" : "43",
+          "sourceId" : "87"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "14",
+        "environment" : "Local Development Machine",
+        "id" : "89",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.f65cd80b-85ea-4aec-aa0b-5da05581c441"
+        },
+        "relationships" : [ {
+          "description" : "Undistorted images and COLMAP cameras",
+          "destinationId" : "92",
+          "id" : "94",
+          "linkedRelationshipId" : "44",
+          "sourceId" : "89"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "15",
+        "environment" : "Local Development Machine",
+        "id" : "92",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.1f22ba53-2005-4ac7-80f1-d4fe79f0d7eb"
+        },
+        "relationships" : [ {
+          "description" : "PLY meshes, point clouds, splats, GLB assets",
+          "destinationId" : "95",
+          "id" : "97",
+          "linkedRelationshipId" : "45",
+          "sourceId" : "92"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "16",
+        "environment" : "Local Development Machine",
+        "id" : "95",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.4967584f-7f99-4478-a15a-beca6d32957e"
+        },
+        "relationships" : [ {
+          "description" : "USD/USDA assets and collision meshes",
+          "destinationId" : "98",
+          "id" : "100",
+          "linkedRelationshipId" : "46",
+          "sourceId" : "95"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "17",
+        "environment" : "Local Development Machine",
+        "id" : "98",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.07192ea4-a495-4787-9406-f367147758ae"
+        },
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "18",
+        "environment" : "Local Development Machine",
+        "id" : "101",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.90bd561d-1626-41b5-b3a3-0c3bb157194c"
+        },
+        "relationships" : [ {
+          "description" : "Consumes HDF5 episodes from",
+          "destinationId" : "103",
+          "id" : "104",
+          "linkedRelationshipId" : "51",
+          "sourceId" : "101"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "20",
+        "environment" : "Local Development Machine",
+        "id" : "103",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.f16d629a-5105-47fc-9fc5-1c3fe7b2cea9"
+        },
+        "relationships" : [ {
+          "description" : "Provides LeRobot datasets to",
+          "destinationId" : "105",
+          "id" : "107",
+          "linkedRelationshipId" : "66",
+          "sourceId" : "103"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "23",
+        "environment" : "Local Development Machine",
+        "id" : "105",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.2a3121d4-a8c7-4313-b1b0-a191c52ba92d"
+        },
+        "relationships" : [ {
+          "description" : "Trains on prepared datasets",
+          "destinationId" : "103",
+          "id" : "106",
+          "linkedRelationshipId" : "71",
+          "sourceId" : "105"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "26",
+        "environment" : "Local Development Machine",
+        "id" : "108",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.58369605-3e97-4083-8107-35eb3154e85a"
+        },
+        "relationships" : [ {
+          "description" : "Uses generated environments from",
+          "destinationId" : "98",
+          "id" : "109",
+          "linkedRelationshipId" : "77",
+          "sourceId" : "108"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "28",
+        "environment" : "Local Development Machine",
+        "id" : "110",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "devMachine.localNode.7c7af4ed-efea-4d19-aad3-8d39ad675c7a"
+        },
+        "relationships" : [ {
+          "description" : "Documents 3D pipeline entry points",
+          "destinationId" : "86",
+          "id" : "111",
+          "linkedRelationshipId" : "82",
+          "sourceId" : "110"
+        }, {
+          "description" : "Documents dataset formats and process gotchas",
+          "destinationId" : "103",
+          "id" : "112",
+          "linkedRelationshipId" : "83",
+          "sourceId" : "110"
+        }, {
+          "description" : "Documents experiments and decisions",
+          "destinationId" : "105",
+          "id" : "113",
+          "linkedRelationshipId" : "84",
+          "sourceId" : "110"
+        } ],
+        "tags" : "Container Instance"
+      } ],
+      "description" : "Developer machine",
+      "environment" : "Local Development Machine",
+      "id" : "85",
+      "instances" : "1",
+      "name" : "Fedora Workstation",
+      "properties" : {
+        "structurizr.dsl.identifier" : "devMachine.localNode"
+      },
+      "tags" : "Element,Deployment Node",
+      "technology" : "Fedora Linux, RTX GPU"
+    }, {
+      "containerInstances" : [ {
+        "containerId" : "19",
+        "environment" : "Robot / Remote Machine",
+        "id" : "115",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.remoteNode.3fbefcb3-9d26-4e7f-8fdd-68e5df06f95d"
+        },
+        "relationships" : [ {
+          "description" : "Calibrates and commands",
+          "destinationId" : "128",
+          "id" : "129",
+          "linkedRelationshipId" : "58",
+          "sourceId" : "115"
+        }, {
+          "description" : "Reads teleoperation input from",
+          "destinationId" : "130",
+          "id" : "131",
+          "linkedRelationshipId" : "56",
+          "sourceId" : "115"
+        }, {
+          "description" : "Configures and reads",
+          "destinationId" : "132",
+          "id" : "133",
+          "linkedRelationshipId" : "52",
+          "sourceId" : "115"
+        }, {
+          "description" : "Supports task setup for",
+          "destinationId" : "134",
+          "id" : "135",
+          "linkedRelationshipId" : "60",
+          "sourceId" : "115"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "21",
+        "environment" : "Robot / Remote Machine",
+        "id" : "116",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.remoteNode.adf10dba-e342-4c8b-b55e-ff2e6c880977"
+        },
+        "relationships" : [ {
+          "description" : "Provides realtime detections/state augmentation",
+          "destinationId" : "118",
+          "id" : "120",
+          "linkedRelationshipId" : "69",
+          "sourceId" : "116"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "22",
+        "environment" : "Robot / Remote Machine",
+        "id" : "117",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.remoteNode.1b730392-4db6-4530-a714-806b1c01b518"
+        },
+        "relationships" : [ {
+          "description" : "Provides depth features for realtime inputs",
+          "destinationId" : "118",
+          "id" : "121",
+          "linkedRelationshipId" : "70",
+          "sourceId" : "117"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "24",
+        "environment" : "Robot / Remote Machine",
+        "id" : "118",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.remoteNode.47435bd0-fbe6-415c-8db5-f5c69c8b045f"
+        },
+        "relationships" : [ {
+          "description" : "Sends policy actions and reads observations through",
+          "destinationId" : "115",
+          "id" : "119",
+          "linkedRelationshipId" : "74",
+          "sourceId" : "118"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "25",
+        "environment" : "Robot / Remote Machine",
+        "id" : "122",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.remoteNode.52a2e725-835c-4124-a883-0034c180bec5"
+        },
+        "relationships" : [ {
+          "description" : "Uses workcell setup and cameras through",
+          "destinationId" : "115",
+          "id" : "123",
+          "linkedRelationshipId" : "76",
+          "sourceId" : "122"
+        }, {
+          "description" : "Runs policy trials through",
+          "destinationId" : "118",
+          "id" : "124",
+          "linkedRelationshipId" : "75",
+          "sourceId" : "122"
+        } ],
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "27",
+        "environment" : "Robot / Remote Machine",
+        "id" : "125",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.remoteNode.d3024434-4a33-49d1-9717-16da88aa5d60"
+        },
+        "relationships" : [ {
+          "description" : "Launches remote evaluation",
+          "destinationId" : "122",
+          "id" : "126",
+          "linkedRelationshipId" : "80",
+          "sourceId" : "125"
+        } ],
+        "tags" : "Container Instance"
+      } ],
+      "description" : "Machine attached to robot workcell",
+      "environment" : "Robot / Remote Machine",
+      "id" : "114",
+      "instances" : "1",
+      "name" : "Robot PC",
+      "properties" : {
+        "structurizr.dsl.identifier" : "robotMachine.remoteNode"
+      },
+      "tags" : "Element,Deployment Node",
+      "technology" : "Linux, USB cameras/servos"
+    }, {
+      "containerInstances" : [ {
+        "containerId" : "7",
+        "environment" : "Robot / Remote Machine",
+        "id" : "128",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.workcellNode.045ec29f-c21a-4914-a275-f1926dfe4c76"
+        },
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "8",
+        "environment" : "Robot / Remote Machine",
+        "id" : "130",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.workcellNode.51751be5-71bc-407b-bcfe-ca74e64e4098"
+        },
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "9",
+        "environment" : "Robot / Remote Machine",
+        "id" : "132",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.workcellNode.c71a33ac-90fc-4ad9-826c-60d6f9bc34bc"
+        },
+        "tags" : "Container Instance"
+      }, {
+        "containerId" : "10",
+        "environment" : "Robot / Remote Machine",
+        "id" : "134",
+        "instanceId" : 1,
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotMachine.workcellNode.d542d3e9-2142-4800-86c3-c8a3cb2ebf74"
+        },
+        "tags" : "Container Instance"
+      } ],
+      "description" : "Robot hardware and task setup",
+      "environment" : "Robot / Remote Machine",
+      "id" : "127",
+      "instances" : "1",
+      "name" : "Physical Workcell",
+      "properties" : {
+        "structurizr.dsl.identifier" : "robotMachine.workcellNode"
+      },
+      "tags" : "Element,Deployment Node"
+    } ],
+    "people" : [ {
+      "description" : "Collects demonstrations, prepares assets, launches training/evaluation, and monitors robot behaviour.",
+      "id" : "1",
+      "name" : "Human Operator",
+      "properties" : {
+        "structurizr.dsl.identifier" : "operator"
+      },
+      "relationships" : [ {
+        "description" : "Starts reconstruction and scene-generation workflows",
+        "destinationId" : "12",
+        "id" : "29",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Starts reconstruction and scene-generation workflows",
+        "destinationId" : "11",
+        "id" : "30",
+        "linkedRelationshipId" : "29",
+        "sourceId" : "1"
+      }, {
+        "description" : "Uses for setup, calibration, collection, and troubleshooting",
+        "destinationId" : "19",
+        "id" : "31",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Starts training experiments",
+        "destinationId" : "23",
+        "id" : "32",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Runs evaluation protocols",
+        "destinationId" : "25",
+        "id" : "33",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Runs policy deployment/evaluation",
+        "destinationId" : "24",
+        "id" : "34",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    } ],
+    "softwareSystems" : [ {
+      "description" : "Videos, photos, depth captures, and object scans used as reconstruction input.",
+      "documentation" : { },
+      "id" : "2",
+      "name" : "Raw Capture Sources",
+      "properties" : {
+        "structurizr.dsl.identifier" : "rawMedia"
+      },
+      "relationships" : [ {
+        "description" : "Provides videos/photos/depth captures",
+        "destinationId" : "13",
+        "id" : "35",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Provides videos/photos/depth captures",
+        "destinationId" : "11",
+        "id" : "36",
+        "linkedRelationshipId" : "35",
+        "sourceId" : "2"
+      } ],
+      "tags" : "Element,Software System,External"
+    }, {
+      "description" : "Stores LeRobot datasets and trained policy checkpoints.",
+      "documentation" : { },
+      "id" : "3",
+      "name" : "Hugging Face Hub",
+      "properties" : {
+        "structurizr.dsl.identifier" : "hf"
+      },
+      "tags" : "Element,Software System,External"
+    }, {
+      "description" : "Simulation runtime, scene rendering, synthetic data generation, and generated task execution.",
+      "documentation" : { },
+      "id" : "4",
+      "name" : "Isaac Sim / Isaac Lab",
+      "properties" : {
+        "structurizr.dsl.identifier" : "isaac"
+      },
+      "tags" : "Element,Software System,External"
+    }, {
+      "description" : "Photorealistic video augmentation for sim-to-real data variation.",
+      "documentation" : { },
+      "id" : "5",
+      "name" : "Cosmos Transfer",
+      "properties" : {
+        "structurizr.dsl.identifier" : "cosmos"
+      },
+      "tags" : "Element,Software System,External"
+    }, {
+      "containers" : [ {
+        "description" : "Executes policy actions on the real SO-ARM101 robot.",
+        "documentation" : { },
+        "id" : "7",
+        "name" : "Follower Arm",
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotHardware.followerArm"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Feetech servos"
+      }, {
+        "description" : "Teleoperation input device for demonstration collection.",
+        "documentation" : { },
+        "id" : "8",
+        "name" : "Leader Arm",
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotHardware.leaderArm"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Feetech servos"
+      }, {
+        "description" : "Multi-view RGB/depth capture for observations and calibration.",
+        "documentation" : { },
+        "id" : "9",
+        "name" : "RealSense Cameras",
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotHardware.cameras"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Intel RealSense D405"
+      }, {
+        "description" : "Cup, duck, table, and workspace objects used for training/evaluation tasks.",
+        "documentation" : { },
+        "id" : "10",
+        "name" : "Task Scene",
+        "properties" : {
+          "structurizr.dsl.identifier" : "robotHardware.taskScene"
+        },
+        "tags" : "Element,Container"
+      } ],
+      "description" : "Physical robot arm, leader arm, RealSense cameras, table scene, and task objects.",
+      "documentation" : { },
+      "id" : "6",
+      "name" : "SO-ARM101 Robot Workcell",
+      "properties" : {
+        "structurizr.dsl.identifier" : "robotHardware"
+      },
+      "tags" : "Element,Software System"
+    }, {
+      "containers" : [ {
+        "description" : "CLI entry point that chains video processing, COLMAP, GS/MILo reconstruction, USD export, scene composition, and IsaacLab export.",
+        "documentation" : { },
+        "group" : "3D Reconstruction Pipeline",
+        "id" : "12",
+        "name" : "Reconstruction Orchestrator",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.reconstructionCli"
+        },
+        "relationships" : [ {
+          "description" : "Extract frames and normalize media",
+          "destinationId" : "13",
+          "id" : "37",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Recover cameras and sparse geometry",
+          "destinationId" : "14",
+          "id" : "38",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Train splats and extract meshes",
+          "destinationId" : "15",
+          "id" : "39",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Convert assets and add physics/collision",
+          "destinationId" : "16",
+          "id" : "40",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Compose simulator scenes and tasks",
+          "destinationId" : "17",
+          "id" : "41",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Prepare augmentation controls",
+          "destinationId" : "18",
+          "id" : "42",
+          "sourceId" : "12",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/reconstruct/master.py"
+      }, {
+        "description" : "Extracts sharp frames from raw videos/photos, fixes phone rotation metadata, and prepares image folders for reconstruction.",
+        "documentation" : { },
+        "group" : "3D Reconstruction Pipeline",
+        "id" : "13",
+        "name" : "Media Processing Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.mediaProcessing"
+        },
+        "relationships" : [ {
+          "description" : "Prepared frames",
+          "destinationId" : "14",
+          "id" : "43",
+          "sourceId" : "13",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/reconstruct/video_utils.py"
+      }, {
+        "description" : "Runs Nerfstudio/COLMAP, validates sparse models, selects the best model, and undistorts images.",
+        "documentation" : { },
+        "group" : "3D Reconstruction Pipeline",
+        "id" : "14",
+        "name" : "SfM / Camera Reconstruction",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.sfmReconstruction"
+        },
+        "relationships" : [ {
+          "description" : "Undistorted images and COLMAP cameras",
+          "destinationId" : "15",
+          "id" : "44",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/reconstruct/colmap_utils.py"
+      }, {
+        "description" : "Trains Gaussian splats with MILo and extracts meshes through learnable SDF or Poisson repair scripts.",
+        "documentation" : { },
+        "group" : "3D Reconstruction Pipeline",
+        "id" : "15",
+        "name" : "Gaussian Splat + Mesh Reconstruction",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.gsMeshReconstruction"
+        },
+        "relationships" : [ {
+          "description" : "PLY meshes, point clouds, splats, GLB assets",
+          "destinationId" : "16",
+          "id" : "45",
+          "sourceId" : "15",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/reconstruct/gs_milo_utils.py, scripts/3d/"
+      }, {
+        "description" : "Converts splats, point clouds, GLB, PLY, meshes, USD/USDA, collision meshes, and deformable assets for simulation use.",
+        "documentation" : { },
+        "group" : "3D Reconstruction Pipeline",
+        "id" : "16",
+        "name" : "3D Format + Physics Export",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.assetExport"
+        },
+        "relationships" : [ {
+          "description" : "USD/USDA assets and collision meshes",
+          "destinationId" : "17",
+          "id" : "46",
+          "sourceId" : "16",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/reconstruct/format_utils.py, clean_mesh.py, scripts/3d/"
+      }, {
+        "description" : "Extracts scene config and generates LeIsaac/IsaacLab scene assets, task boilerplate, environment configs, cameras, lights, and robot placement.",
+        "documentation" : { },
+        "group" : "3D Reconstruction Pipeline",
+        "id" : "17",
+        "name" : "Scene + Simulation Asset Generation",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.sceneGeneration"
+        },
+        "relationships" : [ {
+          "description" : "Generates runnable scenes/tasks for",
+          "destinationId" : "4",
+          "id" : "47",
+          "sourceId" : "17",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/reconstruct/isaac_cfg_utils.py, robot_utils.py"
+      }, {
+        "description" : "Extracts HDF5 camera modalities, prepares RGB/depth/edge/seg videos, and writes Cosmos transfer configs.",
+        "documentation" : { },
+        "group" : "3D Reconstruction Pipeline",
+        "id" : "18",
+        "name" : "Cosmos Augmentation Preparation",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.cosmosPrep"
+        },
+        "relationships" : [ {
+          "description" : "Sends control videos/configs to",
+          "destinationId" : "5",
+          "id" : "49",
+          "sourceId" : "18",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Consumes HDF5 episodes from",
+          "destinationId" : "20",
+          "id" : "51",
+          "sourceId" : "18",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/reconstruct/cosmos_transfer.py"
+      }, {
+        "description" : "Camera discovery/viewing/calibration/reset plus servo scanning, calibration, profiles, rest/unlock, and raw robot setup helpers.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "19",
+        "name" : "Hardware Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.hardwareUtils"
+        },
+        "relationships" : [ {
+          "description" : "Configures and reads",
+          "destinationId" : "9",
+          "id" : "52",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Configures and reads",
+          "destinationId" : "6",
+          "id" : "53",
+          "linkedRelationshipId" : "52",
+          "sourceId" : "19"
+        }, {
+          "description" : "Reads teleoperation input from",
+          "destinationId" : "8",
+          "id" : "56",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Calibrates and commands",
+          "destinationId" : "7",
+          "id" : "58",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Supports task setup for",
+          "destinationId" : "10",
+          "id" : "60",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Provides recorded episodes to",
+          "destinationId" : "20",
+          "id" : "62",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/cameras/, logic/servos/"
+      }, {
+        "description" : "Converts, trims, augments, subsamples, inspects, replays, validates, and edits LeRobot/HDF5 datasets.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "20",
+        "name" : "Dataset Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.datasetUtils"
+        },
+        "relationships" : [ {
+          "description" : "Consumes recorded observations/actions",
+          "destinationId" : "19",
+          "id" : "63",
+          "sourceId" : "20",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Can add object/phase annotations through",
+          "destinationId" : "21",
+          "id" : "64",
+          "sourceId" : "20",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Can add or transform depth features through",
+          "destinationId" : "22",
+          "id" : "65",
+          "sourceId" : "20",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Provides LeRobot datasets to",
+          "destinationId" : "23",
+          "id" : "66",
+          "sourceId" : "20",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Publishes and loads datasets from",
+          "destinationId" : "3",
+          "id" : "67",
+          "sourceId" : "20",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/dataset/"
+      }, {
+        "description" : "Runs object detection, phase detection, async detection, dataset processing, and distilled detector training/export.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "21",
+        "name" : "Perception + Detection Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.perceptionUtils"
+        },
+        "relationships" : [ {
+          "description" : "Provides realtime detections/state augmentation",
+          "destinationId" : "24",
+          "id" : "69",
+          "sourceId" : "21",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/detection/, logic/inference/async_detector.py"
+      }, {
+        "description" : "Bakes, colorizes, compares, captures, estimates, and adds gripper/depth features to datasets and realtime inference inputs.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "22",
+        "name" : "Depth Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.depthUtils"
+        },
+        "relationships" : [ {
+          "description" : "Provides depth features for realtime inputs",
+          "destinationId" : "24",
+          "id" : "70",
+          "sourceId" : "22",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/depth/, dataset depth tools"
+      }, {
+        "description" : "Configures, launches, monitors, chains, and remotely runs SmolVLA/GR00T training backends and experiment utilities.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "23",
+        "name" : "Training Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.trainingUtils"
+        },
+        "relationships" : [ {
+          "description" : "Trains on prepared datasets",
+          "destinationId" : "20",
+          "id" : "71",
+          "sourceId" : "23",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Pulls/pushes datasets and checkpoints",
+          "destinationId" : "3",
+          "id" : "72",
+          "sourceId" : "23",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/train/"
+      }, {
+        "description" : "Runs real policy inference, prompt/voice input, async chunk execution, policy loading, and closed-loop action dispatch.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "24",
+        "name" : "Inference Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.inferenceUtils"
+        },
+        "relationships" : [ {
+          "description" : "Loads trained checkpoints from",
+          "destinationId" : "23",
+          "id" : "73",
+          "sourceId" : "24",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Sends policy actions and reads observations through",
+          "destinationId" : "19",
+          "id" : "74",
+          "sourceId" : "24",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/inference/"
+      }, {
+        "description" : "Defines protocols, checkpoint sweeps, rendering, trial helpers, eval engine, and generated evaluation scenarios.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "25",
+        "name" : "Evaluation Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.evaluationUtils"
+        },
+        "relationships" : [ {
+          "description" : "Runs policy trials through",
+          "destinationId" : "24",
+          "id" : "75",
+          "sourceId" : "25",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Uses workcell setup and cameras through",
+          "destinationId" : "19",
+          "id" : "76",
+          "sourceId" : "25",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/inference/eval_*, protocols/"
+      }, {
+        "description" : "Runs simulation playgrounds, generated Isaac/LeIsaac tasks, synthetic data paths, and domain-randomized environments.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "26",
+        "name" : "Simulation Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.simulationUtils"
+        },
+        "relationships" : [ {
+          "description" : "Uses generated environments from",
+          "destinationId" : "17",
+          "id" : "77",
+          "sourceId" : "26",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Runs simulated tasks in",
+          "destinationId" : "4",
+          "id" : "78",
+          "sourceId" : "26",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "scripts/sim/, generated IsaacLab/LeIsaac configs"
+      }, {
+        "description" : "Synchronizes code/data/checkpoints and launches training/evaluation jobs on the robot or training machine.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "27",
+        "name" : "Remote Execution Utilities",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.remoteExecution"
+        },
+        "relationships" : [ {
+          "description" : "Launches remote training",
+          "destinationId" : "23",
+          "id" : "79",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Launches remote evaluation",
+          "destinationId" : "25",
+          "id" : "80",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Syncs artifacts with",
+          "destinationId" : "3",
+          "id" : "81",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "logic/train/remote.py, remote.yaml"
+      }, {
+        "description" : "Generated codegraph, August memory, module docs, process docs, and design DSL used to ground future architecture work.",
+        "documentation" : { },
+        "group" : "AI Model Pipeline",
+        "id" : "28",
+        "name" : "Design Knowledge Base",
+        "properties" : {
+          "structurizr.dsl.identifier" : "vbti.knowledgeBase"
+        },
+        "relationships" : [ {
+          "description" : "Documents 3D pipeline entry points",
+          "destinationId" : "12",
+          "id" : "82",
+          "sourceId" : "28",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Documents dataset formats and process gotchas",
+          "destinationId" : "20",
+          "id" : "83",
+          "sourceId" : "28",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Documents experiments and decisions",
+          "destinationId" : "23",
+          "id" : "84",
+          "sourceId" : "28",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : ".august/knowledge, .august/memory, docs/"
+      } ],
+      "description" : "Reusable project platform for reconstructing task environments and training/evaluating robot-learning policies.",
+      "documentation" : { },
+      "id" : "11",
+      "name" : "VBTI Modular Robot Learning Platform",
+      "properties" : {
+        "structurizr.dsl.identifier" : "vbti"
+      },
+      "relationships" : [ {
+        "description" : "Generates runnable scenes/tasks for",
+        "destinationId" : "4",
+        "id" : "48",
+        "linkedRelationshipId" : "47",
+        "sourceId" : "11"
+      }, {
+        "description" : "Sends control videos/configs to",
+        "destinationId" : "5",
+        "id" : "50",
+        "linkedRelationshipId" : "49",
+        "sourceId" : "11"
+      }, {
+        "description" : "Configures and reads",
+        "destinationId" : "9",
+        "id" : "54",
+        "linkedRelationshipId" : "52",
+        "sourceId" : "11"
+      }, {
+        "description" : "Configures and reads",
+        "destinationId" : "6",
+        "id" : "55",
+        "linkedRelationshipId" : "52",
+        "sourceId" : "11"
+      }, {
+        "description" : "Reads teleoperation input from",
+        "destinationId" : "8",
+        "id" : "57",
+        "linkedRelationshipId" : "56",
+        "sourceId" : "11"
+      }, {
+        "description" : "Calibrates and commands",
+        "destinationId" : "7",
+        "id" : "59",
+        "linkedRelationshipId" : "58",
+        "sourceId" : "11"
+      }, {
+        "description" : "Supports task setup for",
+        "destinationId" : "10",
+        "id" : "61",
+        "linkedRelationshipId" : "60",
+        "sourceId" : "11"
+      }, {
+        "description" : "Publishes and loads datasets from",
+        "destinationId" : "3",
+        "id" : "68",
+        "linkedRelationshipId" : "67",
+        "sourceId" : "11"
+      } ],
+      "tags" : "Element,Software System"
+    } ]
+  },
+  "name" : "VBTI Modular Robot Learning Platform",
+  "properties" : {
+    "structurizr.inspection.error" : "95",
+    "structurizr.dsl" : "d29ya3NwYWNlICJWQlRJIE1vZHVsYXIgUm9ib3QgTGVhcm5pbmcgUGxhdGZvcm0iICJDNCBhcmNoaXRlY3R1cmUgbW9kZWwgZm9jdXNlZCBvbiBtb2R1bGFyIHJldXNlIGFjcm9zcyAzRCByZWNvbnN0cnVjdGlvbiBhbmQgQUkgbW9kZWwgd29ya2Zsb3dzLiIgewogICAgIWlkZW50aWZpZXJzIGhpZXJhcmNoaWNhbAoKICAgIG1vZGVsIHsKICAgICAgICBvcGVyYXRvciA9IHBlcnNvbiAiSHVtYW4gT3BlcmF0b3IiICJDb2xsZWN0cyBkZW1vbnN0cmF0aW9ucywgcHJlcGFyZXMgYXNzZXRzLCBsYXVuY2hlcyB0cmFpbmluZy9ldmFsdWF0aW9uLCBhbmQgbW9uaXRvcnMgcm9ib3QgYmVoYXZpb3VyLiIKCiAgICAgICAgcmF3TWVkaWEgPSBzb2Z0d2FyZVN5c3RlbSAiUmF3IENhcHR1cmUgU291cmNlcyIgIlZpZGVvcywgcGhvdG9zLCBkZXB0aCBjYXB0dXJlcywgYW5kIG9iamVjdCBzY2FucyB1c2VkIGFzIHJlY29uc3RydWN0aW9uIGlucHV0LiIgIkV4dGVybmFsIgogICAgICAgIGhmID0gc29mdHdhcmVTeXN0ZW0gIkh1Z2dpbmcgRmFjZSBIdWIiICJTdG9yZXMgTGVSb2JvdCBkYXRhc2V0cyBhbmQgdHJhaW5lZCBwb2xpY3kgY2hlY2twb2ludHMuIiAiRXh0ZXJuYWwiCiAgICAgICAgaXNhYWMgPSBzb2Z0d2FyZVN5c3RlbSAiSXNhYWMgU2ltIC8gSXNhYWMgTGFiIiAiU2ltdWxhdGlvbiBydW50aW1lLCBzY2VuZSByZW5kZXJpbmcsIHN5bnRoZXRpYyBkYXRhIGdlbmVyYXRpb24sIGFuZCBnZW5lcmF0ZWQgdGFzayBleGVjdXRpb24uIiAiRXh0ZXJuYWwiCiAgICAgICAgY29zbW9zID0gc29mdHdhcmVTeXN0ZW0gIkNvc21vcyBUcmFuc2ZlciIgIlBob3RvcmVhbGlzdGljIHZpZGVvIGF1Z21lbnRhdGlvbiBmb3Igc2ltLXRvLXJlYWwgZGF0YSB2YXJpYXRpb24uIiAiRXh0ZXJuYWwiCgogICAgICAgIHJvYm90SGFyZHdhcmUgPSBzb2Z0d2FyZVN5c3RlbSAiU08tQVJNMTAxIFJvYm90IFdvcmtjZWxsIiAiUGh5c2ljYWwgcm9ib3QgYXJtLCBsZWFkZXIgYXJtLCBSZWFsU2Vuc2UgY2FtZXJhcywgdGFibGUgc2NlbmUsIGFuZCB0YXNrIG9iamVjdHMuIiB7CiAgICAgICAgICAgIGZvbGxvd2VyQXJtID0gY29udGFpbmVyICJGb2xsb3dlciBBcm0iICJFeGVjdXRlcyBwb2xpY3kgYWN0aW9ucyBvbiB0aGUgcmVhbCBTTy1BUk0xMDEgcm9ib3QuIiAiRmVldGVjaCBzZXJ2b3MiCiAgICAgICAgICAgIGxlYWRlckFybSA9IGNvbnRhaW5lciAiTGVhZGVyIEFybSIgIlRlbGVvcGVyYXRpb24gaW5wdXQgZGV2aWNlIGZvciBkZW1vbnN0cmF0aW9uIGNvbGxlY3Rpb24uIiAiRmVldGVjaCBzZXJ2b3MiCiAgICAgICAgICAgIGNhbWVyYXMgPSBjb250YWluZXIgIlJlYWxTZW5zZSBDYW1lcmFzIiAiTXVsdGktdmlldyBSR0IvZGVwdGggY2FwdHVyZSBmb3Igb2JzZXJ2YXRpb25zIGFuZCBjYWxpYnJhdGlvbi4iICJJbnRlbCBSZWFsU2Vuc2UgRDQwNSIKICAgICAgICAgICAgdGFza1NjZW5lID0gY29udGFpbmVyICJUYXNrIFNjZW5lIiAiQ3VwLCBkdWNrLCB0YWJsZSwgYW5kIHdvcmtzcGFjZSBvYmplY3RzIHVzZWQgZm9yIHRyYWluaW5nL2V2YWx1YXRpb24gdGFza3MuIgogICAgICAgIH0KCiAgICAgICAgdmJ0aSA9IHNvZnR3YXJlU3lzdGVtICJWQlRJIE1vZHVsYXIgUm9ib3QgTGVhcm5pbmcgUGxhdGZvcm0iICJSZXVzYWJsZSBwcm9qZWN0IHBsYXRmb3JtIGZvciByZWNvbnN0cnVjdGluZyB0YXNrIGVudmlyb25tZW50cyBhbmQgdHJhaW5pbmcvZXZhbHVhdGluZyByb2JvdC1sZWFybmluZyBwb2xpY2llcy4iIHsKICAgICAgICAgICAgZ3JvdXAgIjNEIFJlY29uc3RydWN0aW9uIFBpcGVsaW5lIiB7CiAgICAgICAgICAgICAgICByZWNvbnN0cnVjdGlvbkNsaSA9IGNvbnRhaW5lciAiUmVjb25zdHJ1Y3Rpb24gT3JjaGVzdHJhdG9yIiAiQ0xJIGVudHJ5IHBvaW50IHRoYXQgY2hhaW5zIHZpZGVvIHByb2Nlc3NpbmcsIENPTE1BUCwgR1MvTUlMbyByZWNvbnN0cnVjdGlvbiwgVVNEIGV4cG9ydCwgc2NlbmUgY29tcG9zaXRpb24sIGFuZCBJc2FhY0xhYiBleHBvcnQuIiAibG9naWMvcmVjb25zdHJ1Y3QvbWFzdGVyLnB5IgogICAgICAgICAgICAgICAgbWVkaWFQcm9jZXNzaW5nID0gY29udGFpbmVyICJNZWRpYSBQcm9jZXNzaW5nIFV0aWxpdGllcyIgIkV4dHJhY3RzIHNoYXJwIGZyYW1lcyBmcm9tIHJhdyB2aWRlb3MvcGhvdG9zLCBmaXhlcyBwaG9uZSByb3RhdGlvbiBtZXRhZGF0YSwgYW5kIHByZXBhcmVzIGltYWdlIGZvbGRlcnMgZm9yIHJlY29uc3RydWN0aW9uLiIgImxvZ2ljL3JlY29uc3RydWN0L3ZpZGVvX3V0aWxzLnB5IgogICAgICAgICAgICAgICAgc2ZtUmVjb25zdHJ1Y3Rpb24gPSBjb250YWluZXIgIlNmTSAvIENhbWVyYSBSZWNvbnN0cnVjdGlvbiIgIlJ1bnMgTmVyZnN0dWRpby9DT0xNQVAsIHZhbGlkYXRlcyBzcGFyc2UgbW9kZWxzLCBzZWxlY3RzIHRoZSBiZXN0IG1vZGVsLCBhbmQgdW5kaXN0b3J0cyBpbWFnZXMuIiAibG9naWMvcmVjb25zdHJ1Y3QvY29sbWFwX3V0aWxzLnB5IgogICAgICAgICAgICAgICAgZ3NNZXNoUmVjb25zdHJ1Y3Rpb24gPSBjb250YWluZXIgIkdhdXNzaWFuIFNwbGF0ICsgTWVzaCBSZWNvbnN0cnVjdGlvbiIgIlRyYWlucyBHYXVzc2lhbiBzcGxhdHMgd2l0aCBNSUxvIGFuZCBleHRyYWN0cyBtZXNoZXMgdGhyb3VnaCBsZWFybmFibGUgU0RGIG9yIFBvaXNzb24gcmVwYWlyIHNjcmlwdHMuIiAibG9naWMvcmVjb25zdHJ1Y3QvZ3NfbWlsb191dGlscy5weSwgc2NyaXB0cy8zZC8iCiAgICAgICAgICAgICAgICBhc3NldEV4cG9ydCA9IGNvbnRhaW5lciAiM0QgRm9ybWF0ICsgUGh5c2ljcyBFeHBvcnQiICJDb252ZXJ0cyBzcGxhdHMsIHBvaW50IGNsb3VkcywgR0xCLCBQTFksIG1lc2hlcywgVVNEL1VTREEsIGNvbGxpc2lvbiBtZXNoZXMsIGFuZCBkZWZvcm1hYmxlIGFzc2V0cyBmb3Igc2ltdWxhdGlvbiB1c2UuIiAibG9naWMvcmVjb25zdHJ1Y3QvZm9ybWF0X3V0aWxzLnB5LCBjbGVhbl9tZXNoLnB5LCBzY3JpcHRzLzNkLyIKICAgICAgICAgICAgICAgIHNjZW5lR2VuZXJhdGlvbiA9IGNvbnRhaW5lciAiU2NlbmUgKyBTaW11bGF0aW9uIEFzc2V0IEdlbmVyYXRpb24iICJFeHRyYWN0cyBzY2VuZSBjb25maWcgYW5kIGdlbmVyYXRlcyBMZUlzYWFjL0lzYWFjTGFiIHNjZW5lIGFzc2V0cywgdGFzayBib2lsZXJwbGF0ZSwgZW52aXJvbm1lbnQgY29uZmlncywgY2FtZXJhcywgbGlnaHRzLCBhbmQgcm9ib3QgcGxhY2VtZW50LiIgImxvZ2ljL3JlY29uc3RydWN0L2lzYWFjX2NmZ191dGlscy5weSwgcm9ib3RfdXRpbHMucHkiCiAgICAgICAgICAgICAgICBjb3Ntb3NQcmVwID0gY29udGFpbmVyICJDb3Ntb3MgQXVnbWVudGF0aW9uIFByZXBhcmF0aW9uIiAiRXh0cmFjdHMgSERGNSBjYW1lcmEgbW9kYWxpdGllcywgcHJlcGFyZXMgUkdCL2RlcHRoL2VkZ2Uvc2VnIHZpZGVvcywgYW5kIHdyaXRlcyBDb3Ntb3MgdHJhbnNmZXIgY29uZmlncy4iICJsb2dpYy9yZWNvbnN0cnVjdC9jb3Ntb3NfdHJhbnNmZXIucHkiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJBSSBNb2RlbCBQaXBlbGluZSIgewogICAgICAgICAgICAgICAgaGFyZHdhcmVVdGlscyA9IGNvbnRhaW5lciAiSGFyZHdhcmUgVXRpbGl0aWVzIiAiQ2FtZXJhIGRpc2NvdmVyeS92aWV3aW5nL2NhbGlicmF0aW9uL3Jlc2V0IHBsdXMgc2Vydm8gc2Nhbm5pbmcsIGNhbGlicmF0aW9uLCBwcm9maWxlcywgcmVzdC91bmxvY2ssIGFuZCByYXcgcm9ib3Qgc2V0dXAgaGVscGVycy4iICJsb2dpYy9jYW1lcmFzLywgbG9naWMvc2Vydm9zLyIKICAgICAgICAgICAgICAgIGRhdGFzZXRVdGlscyA9IGNvbnRhaW5lciAiRGF0YXNldCBVdGlsaXRpZXMiICJDb252ZXJ0cywgdHJpbXMsIGF1Z21lbnRzLCBzdWJzYW1wbGVzLCBpbnNwZWN0cywgcmVwbGF5cywgdmFsaWRhdGVzLCBhbmQgZWRpdHMgTGVSb2JvdC9IREY1IGRhdGFzZXRzLiIgImxvZ2ljL2RhdGFzZXQvIgogICAgICAgICAgICAgICAgcGVyY2VwdGlvblV0aWxzID0gY29udGFpbmVyICJQZXJjZXB0aW9uICsgRGV0ZWN0aW9uIFV0aWxpdGllcyIgIlJ1bnMgb2JqZWN0IGRldGVjdGlvbiwgcGhhc2UgZGV0ZWN0aW9uLCBhc3luYyBkZXRlY3Rpb24sIGRhdGFzZXQgcHJvY2Vzc2luZywgYW5kIGRpc3RpbGxlZCBkZXRlY3RvciB0cmFpbmluZy9leHBvcnQuIiAibG9naWMvZGV0ZWN0aW9uLywgbG9naWMvaW5mZXJlbmNlL2FzeW5jX2RldGVjdG9yLnB5IgogICAgICAgICAgICAgICAgZGVwdGhVdGlscyA9IGNvbnRhaW5lciAiRGVwdGggVXRpbGl0aWVzIiAiQmFrZXMsIGNvbG9yaXplcywgY29tcGFyZXMsIGNhcHR1cmVzLCBlc3RpbWF0ZXMsIGFuZCBhZGRzIGdyaXBwZXIvZGVwdGggZmVhdHVyZXMgdG8gZGF0YXNldHMgYW5kIHJlYWx0aW1lIGluZmVyZW5jZSBpbnB1dHMuIiAibG9naWMvZGVwdGgvLCBkYXRhc2V0IGRlcHRoIHRvb2xzIgogICAgICAgICAgICAgICAgdHJhaW5pbmdVdGlscyA9IGNvbnRhaW5lciAiVHJhaW5pbmcgVXRpbGl0aWVzIiAiQ29uZmlndXJlcywgbGF1bmNoZXMsIG1vbml0b3JzLCBjaGFpbnMsIGFuZCByZW1vdGVseSBydW5zIFNtb2xWTEEvR1IwMFQgdHJhaW5pbmcgYmFja2VuZHMgYW5kIGV4cGVyaW1lbnQgdXRpbGl0aWVzLiIgImxvZ2ljL3RyYWluLyIKICAgICAgICAgICAgICAgIGluZmVyZW5jZVV0aWxzID0gY29udGFpbmVyICJJbmZlcmVuY2UgVXRpbGl0aWVzIiAiUnVucyByZWFsIHBvbGljeSBpbmZlcmVuY2UsIHByb21wdC92b2ljZSBpbnB1dCwgYXN5bmMgY2h1bmsgZXhlY3V0aW9uLCBwb2xpY3kgbG9hZGluZywgYW5kIGNsb3NlZC1sb29wIGFjdGlvbiBkaXNwYXRjaC4iICJsb2dpYy9pbmZlcmVuY2UvIgogICAgICAgICAgICAgICAgZXZhbHVhdGlvblV0aWxzID0gY29udGFpbmVyICJFdmFsdWF0aW9uIFV0aWxpdGllcyIgIkRlZmluZXMgcHJvdG9jb2xzLCBjaGVja3BvaW50IHN3ZWVwcywgcmVuZGVyaW5nLCB0cmlhbCBoZWxwZXJzLCBldmFsIGVuZ2luZSwgYW5kIGdlbmVyYXRlZCBldmFsdWF0aW9uIHNjZW5hcmlvcy4iICJsb2dpYy9pbmZlcmVuY2UvZXZhbF8qLCBwcm90b2NvbHMvIgogICAgICAgICAgICAgICAgc2ltdWxhdGlvblV0aWxzID0gY29udGFpbmVyICJTaW11bGF0aW9uIFV0aWxpdGllcyIgIlJ1bnMgc2ltdWxhdGlvbiBwbGF5Z3JvdW5kcywgZ2VuZXJhdGVkIElzYWFjL0xlSXNhYWMgdGFza3MsIHN5bnRoZXRpYyBkYXRhIHBhdGhzLCBhbmQgZG9tYWluLXJhbmRvbWl6ZWQgZW52aXJvbm1lbnRzLiIgInNjcmlwdHMvc2ltLywgZ2VuZXJhdGVkIElzYWFjTGFiL0xlSXNhYWMgY29uZmlncyIKICAgICAgICAgICAgICAgIHJlbW90ZUV4ZWN1dGlvbiA9IGNvbnRhaW5lciAiUmVtb3RlIEV4ZWN1dGlvbiBVdGlsaXRpZXMiICJTeW5jaHJvbml6ZXMgY29kZS9kYXRhL2NoZWNrcG9pbnRzIGFuZCBsYXVuY2hlcyB0cmFpbmluZy9ldmFsdWF0aW9uIGpvYnMgb24gdGhlIHJvYm90IG9yIHRyYWluaW5nIG1hY2hpbmUuIiAibG9naWMvdHJhaW4vcmVtb3RlLnB5LCByZW1vdGUueWFtbCIKICAgICAgICAgICAgICAgIGtub3dsZWRnZUJhc2UgPSBjb250YWluZXIgIkRlc2lnbiBLbm93bGVkZ2UgQmFzZSIgIkdlbmVyYXRlZCBjb2RlZ3JhcGgsIEF1Z3VzdCBtZW1vcnksIG1vZHVsZSBkb2NzLCBwcm9jZXNzIGRvY3MsIGFuZCBkZXNpZ24gRFNMIHVzZWQgdG8gZ3JvdW5kIGZ1dHVyZSBhcmNoaXRlY3R1cmUgd29yay4iICIuYXVndXN0L2tub3dsZWRnZSwgLmF1Z3VzdC9tZW1vcnksIGRvY3MvIgogICAgICAgICAgICB9CgogICAgICAgICAgICBvcGVyYXRvciAtPiByZWNvbnN0cnVjdGlvbkNsaSAiU3RhcnRzIHJlY29uc3RydWN0aW9uIGFuZCBzY2VuZS1nZW5lcmF0aW9uIHdvcmtmbG93cyIKICAgICAgICAgICAgb3BlcmF0b3IgLT4gaGFyZHdhcmVVdGlscyAiVXNlcyBmb3Igc2V0dXAsIGNhbGlicmF0aW9uLCBjb2xsZWN0aW9uLCBhbmQgdHJvdWJsZXNob290aW5nIgogICAgICAgICAgICBvcGVyYXRvciAtPiB0cmFpbmluZ1V0aWxzICJTdGFydHMgdHJhaW5pbmcgZXhwZXJpbWVudHMiCiAgICAgICAgICAgIG9wZXJhdG9yIC0+IGV2YWx1YXRpb25VdGlscyAiUnVucyBldmFsdWF0aW9uIHByb3RvY29scyIKICAgICAgICAgICAgb3BlcmF0b3IgLT4gaW5mZXJlbmNlVXRpbHMgIlJ1bnMgcG9saWN5IGRlcGxveW1lbnQvZXZhbHVhdGlvbiIKCiAgICAgICAgICAgIHJhd01lZGlhIC0+IG1lZGlhUHJvY2Vzc2luZyAiUHJvdmlkZXMgdmlkZW9zL3Bob3Rvcy9kZXB0aCBjYXB0dXJlcyIKICAgICAgICAgICAgcmVjb25zdHJ1Y3Rpb25DbGkgLT4gbWVkaWFQcm9jZXNzaW5nICJFeHRyYWN0IGZyYW1lcyBhbmQgbm9ybWFsaXplIG1lZGlhIgogICAgICAgICAgICByZWNvbnN0cnVjdGlvbkNsaSAtPiBzZm1SZWNvbnN0cnVjdGlvbiAiUmVjb3ZlciBjYW1lcmFzIGFuZCBzcGFyc2UgZ2VvbWV0cnkiCiAgICAgICAgICAgIHJlY29uc3RydWN0aW9uQ2xpIC0+IGdzTWVzaFJlY29uc3RydWN0aW9uICJUcmFpbiBzcGxhdHMgYW5kIGV4dHJhY3QgbWVzaGVzIgogICAgICAgICAgICByZWNvbnN0cnVjdGlvbkNsaSAtPiBhc3NldEV4cG9ydCAiQ29udmVydCBhc3NldHMgYW5kIGFkZCBwaHlzaWNzL2NvbGxpc2lvbiIKICAgICAgICAgICAgcmVjb25zdHJ1Y3Rpb25DbGkgLT4gc2NlbmVHZW5lcmF0aW9uICJDb21wb3NlIHNpbXVsYXRvciBzY2VuZXMgYW5kIHRhc2tzIgogICAgICAgICAgICByZWNvbnN0cnVjdGlvbkNsaSAtPiBjb3Ntb3NQcmVwICJQcmVwYXJlIGF1Z21lbnRhdGlvbiBjb250cm9scyIKCiAgICAgICAgICAgIG1lZGlhUHJvY2Vzc2luZyAtPiBzZm1SZWNvbnN0cnVjdGlvbiAiUHJlcGFyZWQgZnJhbWVzIgogICAgICAgICAgICBzZm1SZWNvbnN0cnVjdGlvbiAtPiBnc01lc2hSZWNvbnN0cnVjdGlvbiAiVW5kaXN0b3J0ZWQgaW1hZ2VzIGFuZCBDT0xNQVAgY2FtZXJhcyIKICAgICAgICAgICAgZ3NNZXNoUmVjb25zdHJ1Y3Rpb24gLT4gYXNzZXRFeHBvcnQgIlBMWSBtZXNoZXMsIHBvaW50IGNsb3Vkcywgc3BsYXRzLCBHTEIgYXNzZXRzIgogICAgICAgICAgICBhc3NldEV4cG9ydCAtPiBzY2VuZUdlbmVyYXRpb24gIlVTRC9VU0RBIGFzc2V0cyBhbmQgY29sbGlzaW9uIG1lc2hlcyIKICAgICAgICAgICAgc2NlbmVHZW5lcmF0aW9uIC0+IGlzYWFjICJHZW5lcmF0ZXMgcnVubmFibGUgc2NlbmVzL3Rhc2tzIGZvciIKICAgICAgICAgICAgY29zbW9zUHJlcCAtPiBjb3Ntb3MgIlNlbmRzIGNvbnRyb2wgdmlkZW9zL2NvbmZpZ3MgdG8iCiAgICAgICAgICAgIGNvc21vc1ByZXAgLT4gZGF0YXNldFV0aWxzICJDb25zdW1lcyBIREY1IGVwaXNvZGVzIGZyb20iCgogICAgICAgICAgICBoYXJkd2FyZVV0aWxzIC0+IHJvYm90SGFyZHdhcmUuY2FtZXJhcyAiQ29uZmlndXJlcyBhbmQgcmVhZHMiCiAgICAgICAgICAgIGhhcmR3YXJlVXRpbHMgLT4gcm9ib3RIYXJkd2FyZS5sZWFkZXJBcm0gIlJlYWRzIHRlbGVvcGVyYXRpb24gaW5wdXQgZnJvbSIKICAgICAgICAgICAgaGFyZHdhcmVVdGlscyAtPiByb2JvdEhhcmR3YXJlLmZvbGxvd2VyQXJtICJDYWxpYnJhdGVzIGFuZCBjb21tYW5kcyIKICAgICAgICAgICAgaGFyZHdhcmVVdGlscyAtPiByb2JvdEhhcmR3YXJlLnRhc2tTY2VuZSAiU3VwcG9ydHMgdGFzayBzZXR1cCBmb3IiCiAgICAgICAgICAgIGhhcmR3YXJlVXRpbHMgLT4gZGF0YXNldFV0aWxzICJQcm92aWRlcyByZWNvcmRlZCBlcGlzb2RlcyB0byIKCiAgICAgICAgICAgIGRhdGFzZXRVdGlscyAtPiBoYXJkd2FyZVV0aWxzICJDb25zdW1lcyByZWNvcmRlZCBvYnNlcnZhdGlvbnMvYWN0aW9ucyIKICAgICAgICAgICAgZGF0YXNldFV0aWxzIC0+IHBlcmNlcHRpb25VdGlscyAiQ2FuIGFkZCBvYmplY3QvcGhhc2UgYW5ub3RhdGlvbnMgdGhyb3VnaCIKICAgICAgICAgICAgZGF0YXNldFV0aWxzIC0+IGRlcHRoVXRpbHMgIkNhbiBhZGQgb3IgdHJhbnNmb3JtIGRlcHRoIGZlYXR1cmVzIHRocm91Z2giCiAgICAgICAgICAgIGRhdGFzZXRVdGlscyAtPiB0cmFpbmluZ1V0aWxzICJQcm92aWRlcyBMZVJvYm90IGRhdGFzZXRzIHRvIgogICAgICAgICAgICBkYXRhc2V0VXRpbHMgLT4gaGYgIlB1Ymxpc2hlcyBhbmQgbG9hZHMgZGF0YXNldHMgZnJvbSIKICAgICAgICAgICAgcGVyY2VwdGlvblV0aWxzIC0+IGluZmVyZW5jZVV0aWxzICJQcm92aWRlcyByZWFsdGltZSBkZXRlY3Rpb25zL3N0YXRlIGF1Z21lbnRhdGlvbiIKICAgICAgICAgICAgZGVwdGhVdGlscyAtPiBpbmZlcmVuY2VVdGlscyAiUHJvdmlkZXMgZGVwdGggZmVhdHVyZXMgZm9yIHJlYWx0aW1lIGlucHV0cyIKICAgICAgICAgICAgdHJhaW5pbmdVdGlscyAtPiBkYXRhc2V0VXRpbHMgIlRyYWlucyBvbiBwcmVwYXJlZCBkYXRhc2V0cyIKICAgICAgICAgICAgdHJhaW5pbmdVdGlscyAtPiBoZiAiUHVsbHMvcHVzaGVzIGRhdGFzZXRzIGFuZCBjaGVja3BvaW50cyIKICAgICAgICAgICAgaW5mZXJlbmNlVXRpbHMgLT4gdHJhaW5pbmdVdGlscyAiTG9hZHMgdHJhaW5lZCBjaGVja3BvaW50cyBmcm9tIgogICAgICAgICAgICBpbmZlcmVuY2VVdGlscyAtPiBoYXJkd2FyZVV0aWxzICJTZW5kcyBwb2xpY3kgYWN0aW9ucyBhbmQgcmVhZHMgb2JzZXJ2YXRpb25zIHRocm91Z2giCiAgICAgICAgICAgIGV2YWx1YXRpb25VdGlscyAtPiBpbmZlcmVuY2VVdGlscyAiUnVucyBwb2xpY3kgdHJpYWxzIHRocm91Z2giCiAgICAgICAgICAgIGV2YWx1YXRpb25VdGlscyAtPiBoYXJkd2FyZVV0aWxzICJVc2VzIHdvcmtjZWxsIHNldHVwIGFuZCBjYW1lcmFzIHRocm91Z2giCiAgICAgICAgICAgIHNpbXVsYXRpb25VdGlscyAtPiBzY2VuZUdlbmVyYXRpb24gIlVzZXMgZ2VuZXJhdGVkIGVudmlyb25tZW50cyBmcm9tIgogICAgICAgICAgICBzaW11bGF0aW9uVXRpbHMgLT4gaXNhYWMgIlJ1bnMgc2ltdWxhdGVkIHRhc2tzIGluIgogICAgICAgICAgICByZW1vdGVFeGVjdXRpb24gLT4gdHJhaW5pbmdVdGlscyAiTGF1bmNoZXMgcmVtb3RlIHRyYWluaW5nIgogICAgICAgICAgICByZW1vdGVFeGVjdXRpb24gLT4gZXZhbHVhdGlvblV0aWxzICJMYXVuY2hlcyByZW1vdGUgZXZhbHVhdGlvbiIKICAgICAgICAgICAgcmVtb3RlRXhlY3V0aW9uIC0+IGhmICJTeW5jcyBhcnRpZmFjdHMgd2l0aCIKICAgICAgICAgICAga25vd2xlZGdlQmFzZSAtPiByZWNvbnN0cnVjdGlvbkNsaSAiRG9jdW1lbnRzIDNEIHBpcGVsaW5lIGVudHJ5IHBvaW50cyIKICAgICAgICAgICAga25vd2xlZGdlQmFzZSAtPiBkYXRhc2V0VXRpbHMgIkRvY3VtZW50cyBkYXRhc2V0IGZvcm1hdHMgYW5kIHByb2Nlc3MgZ290Y2hhcyIKICAgICAgICAgICAga25vd2xlZGdlQmFzZSAtPiB0cmFpbmluZ1V0aWxzICJEb2N1bWVudHMgZXhwZXJpbWVudHMgYW5kIGRlY2lzaW9ucyIKICAgICAgICB9CgogICAgICAgIGRldk1hY2hpbmUgPSBkZXBsb3ltZW50RW52aXJvbm1lbnQgIkxvY2FsIERldmVsb3BtZW50IE1hY2hpbmUiIHsKICAgICAgICAgICAgbG9jYWxOb2RlID0gZGVwbG95bWVudE5vZGUgIkZlZG9yYSBXb3Jrc3RhdGlvbiIgIkRldmVsb3BlciBtYWNoaW5lIiAiRmVkb3JhIExpbnV4LCBSVFggR1BVIiB7CiAgICAgICAgICAgICAgICBjb250YWluZXJJbnN0YW5jZSB2YnRpLnJlY29uc3RydWN0aW9uQ2xpCiAgICAgICAgICAgICAgICBjb250YWluZXJJbnN0YW5jZSB2YnRpLm1lZGlhUHJvY2Vzc2luZwogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2UgdmJ0aS5zZm1SZWNvbnN0cnVjdGlvbgogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2UgdmJ0aS5nc01lc2hSZWNvbnN0cnVjdGlvbgogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2UgdmJ0aS5hc3NldEV4cG9ydAogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2UgdmJ0aS5zY2VuZUdlbmVyYXRpb24KICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHZidGkuY29zbW9zUHJlcAogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2UgdmJ0aS5kYXRhc2V0VXRpbHMKICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHZidGkudHJhaW5pbmdVdGlscwogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2UgdmJ0aS5zaW11bGF0aW9uVXRpbHMKICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHZidGkua25vd2xlZGdlQmFzZQogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICByb2JvdE1hY2hpbmUgPSBkZXBsb3ltZW50RW52aXJvbm1lbnQgIlJvYm90IC8gUmVtb3RlIE1hY2hpbmUiIHsKICAgICAgICAgICAgcmVtb3RlTm9kZSA9IGRlcGxveW1lbnROb2RlICJSb2JvdCBQQyIgIk1hY2hpbmUgYXR0YWNoZWQgdG8gcm9ib3Qgd29ya2NlbGwiICJMaW51eCwgVVNCIGNhbWVyYXMvc2Vydm9zIiB7CiAgICAgICAgICAgICAgICBjb250YWluZXJJbnN0YW5jZSB2YnRpLmhhcmR3YXJlVXRpbHMKICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHZidGkucGVyY2VwdGlvblV0aWxzCiAgICAgICAgICAgICAgICBjb250YWluZXJJbnN0YW5jZSB2YnRpLmRlcHRoVXRpbHMKICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHZidGkuaW5mZXJlbmNlVXRpbHMKICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHZidGkuZXZhbHVhdGlvblV0aWxzCiAgICAgICAgICAgICAgICBjb250YWluZXJJbnN0YW5jZSB2YnRpLnJlbW90ZUV4ZWN1dGlvbgogICAgICAgICAgICB9CgogICAgICAgICAgICB3b3JrY2VsbE5vZGUgPSBkZXBsb3ltZW50Tm9kZSAiUGh5c2ljYWwgV29ya2NlbGwiICJSb2JvdCBoYXJkd2FyZSBhbmQgdGFzayBzZXR1cCIgewogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2Ugcm9ib3RIYXJkd2FyZS5mb2xsb3dlckFybQogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2Ugcm9ib3RIYXJkd2FyZS5sZWFkZXJBcm0KICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHJvYm90SGFyZHdhcmUuY2FtZXJhcwogICAgICAgICAgICAgICAgY29udGFpbmVySW5zdGFuY2Ugcm9ib3RIYXJkd2FyZS50YXNrU2NlbmUKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KCiAgICB2aWV3cyB7CiAgICAgICAgc3lzdGVtQ29udGV4dCB2YnRpICJTeXN0ZW1Db250ZXh0IiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IGxyCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICJUaGUgbW9kdWxhciBWQlRJIHBsYXRmb3JtIGluIGl0cyBvcGVyYXRpb25hbCBjb250ZXh0LiIKICAgICAgICB9CgogICAgICAgIGNvbnRhaW5lciB2YnRpICJDb250YWluZXJzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IGxyCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICJUaGUgcGxhdGZvcm0gc3BsaXQgaW50byB0d28gcmV1c2FibGUgcHJvZHVjdCBsYXllcnM6IDNEIHJlY29uc3RydWN0aW9uIGFuZCBBSSBtb2RlbCBwaXBlbGluZSB1dGlsaXRpZXMuIgogICAgICAgIH0KCiAgICAgICAgZHluYW1pYyB2YnRpICJSZWNvbnN0cnVjdGlvbkZsb3ciICJSYXcgbWVkaWEgdG8gc2ltdWxhdG9yLXJlYWR5IHNjZW5lLiIgewogICAgICAgICAgICByYXdNZWRpYSAtPiB2YnRpLm1lZGlhUHJvY2Vzc2luZyAiVmlkZW9zL3Bob3RvcyIKICAgICAgICAgICAgdmJ0aS5tZWRpYVByb2Nlc3NpbmcgLT4gdmJ0aS5zZm1SZWNvbnN0cnVjdGlvbiAiRnJhbWVzIgogICAgICAgICAgICB2YnRpLnNmbVJlY29uc3RydWN0aW9uIC0+IHZidGkuZ3NNZXNoUmVjb25zdHJ1Y3Rpb24gIkNPTE1BUCBjYW1lcmFzL2ltYWdlcyIKICAgICAgICAgICAgdmJ0aS5nc01lc2hSZWNvbnN0cnVjdGlvbiAtPiB2YnRpLmFzc2V0RXhwb3J0ICJTcGxhdHMvbWVzaGVzL1BMWSIKICAgICAgICAgICAgdmJ0aS5hc3NldEV4cG9ydCAtPiB2YnRpLnNjZW5lR2VuZXJhdGlvbiAiVVNEL2NvbGxpc2lvbiBhc3NldHMiCiAgICAgICAgICAgIHZidGkuc2NlbmVHZW5lcmF0aW9uIC0+IGlzYWFjICJSdW5uYWJsZSB0YXNrL2VudiIKICAgICAgICAgICAgYXV0b0xheW91dCBscgogICAgICAgIH0KCiAgICAgICAgZHluYW1pYyB2YnRpICJNb2RlbEZsb3ciICJEYXRhc2V0IHRvIHRyYWluZWQgYW5kIGV2YWx1YXRlZCByb2JvdCBwb2xpY3kuIiB7CiAgICAgICAgICAgIG9wZXJhdG9yIC0+IHZidGkuaGFyZHdhcmVVdGlscyAiQ29sbGVjdC9zZXR1cCIKICAgICAgICAgICAgdmJ0aS5oYXJkd2FyZVV0aWxzIC0+IHZidGkuZGF0YXNldFV0aWxzICJSZWNvcmRlZCBlcGlzb2RlcyIKICAgICAgICAgICAgdmJ0aS5kYXRhc2V0VXRpbHMgLT4gdmJ0aS50cmFpbmluZ1V0aWxzICJMZVJvYm90IGRhdGFzZXQiCiAgICAgICAgICAgIHZidGkudHJhaW5pbmdVdGlscyAtPiBoZiAiQ2hlY2twb2ludCIKICAgICAgICAgICAgdmJ0aS5ldmFsdWF0aW9uVXRpbHMgLT4gdmJ0aS5pbmZlcmVuY2VVdGlscyAiVHJpYWwgcHJvdG9jb2wiCiAgICAgICAgICAgIHZidGkuaW5mZXJlbmNlVXRpbHMgLT4gdmJ0aS5oYXJkd2FyZVV0aWxzICJDbG9zZWQtbG9vcCBhY3Rpb25zIgogICAgICAgICAgICBhdXRvTGF5b3V0IGxyCiAgICAgICAgfQoKICAgICAgICBkZXBsb3ltZW50ICogIkxvY2FsIERldmVsb3BtZW50IE1hY2hpbmUiICJMb2NhbERldmVsb3BtZW50RGVwbG95bWVudCIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dCBscgogICAgICAgICAgICBkZXNjcmlwdGlvbiAiUHJvamVjdCBjb250YWluZXJzIHJ1bm5pbmcgb24gdGhlIGxvY2FsIGRldmVsb3BtZW50IHdvcmtzdGF0aW9uLiIKICAgICAgICB9CgogICAgICAgIGRlcGxveW1lbnQgKiAiUm9ib3QgLyBSZW1vdGUgTWFjaGluZSIgIlJvYm90UmVtb3RlRGVwbG95bWVudCIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dCBscgogICAgICAgICAgICBkZXNjcmlwdGlvbiAiUHJvamVjdCBjb250YWluZXJzIHJ1bm5pbmcgb24gdGhlIHJvYm90L3JlbW90ZSBtYWNoaW5lIGFuZCBjb25uZWN0ZWQgcGh5c2ljYWwgd29ya2NlbGwuIgogICAgICAgIH0KCiAgICAgICAgc3R5bGVzIHsKICAgICAgICAgICAgZWxlbWVudCAiUGVyc29uIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBwZXJzb24KICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzE3NEE3QwogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIlNvZnR3YXJlIFN5c3RlbSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2NDY2CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiRXh0ZXJuYWwiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzZjNzU3ZAogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkNvbnRhaW5lciIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMkM3QTdCCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiR3JvdXAiIHsKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgICAgIHN0cm9rZSAjNGZkMWM1CiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiRGVwbG95bWVudCBOb2RlIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICNmOGY5ZmEKICAgICAgICAgICAgICAgIGNvbG9yICMyMTI1MjkKICAgICAgICAgICAgfQogICAgICAgICAgICByZWxhdGlvbnNoaXAgIlJlbGF0aW9uc2hpcCIgewogICAgICAgICAgICAgICAgY29sb3IgI2FkYjViZAogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICB0aGVtZSBkZWZhdWx0CiAgICB9Cn0=",
+    "structurizr.inspection.info" : "0",
+    "structurizr.inspection.ignore" : "0",
+    "structurizr.inspection.warning" : "0"
+  },
+  "views" : {
+    "configuration" : {
+      "styles" : {
+        "elements" : [ {
+          "background" : "#2c7a7b",
+          "color" : "#ffffff",
+          "tag" : "Container"
+        }, {
+          "background" : "#f8f9fa",
+          "color" : "#212529",
+          "tag" : "Deployment Node"
+        }, {
+          "background" : "#6c757d",
+          "color" : "#ffffff",
+          "tag" : "External"
+        }, {
+          "color" : "#ffffff",
+          "stroke" : "#4fd1c5",
+          "tag" : "Group"
+        }, {
+          "background" : "#174a7c",
+          "color" : "#ffffff",
+          "shape" : "Person",
+          "tag" : "Person"
+        }, {
+          "background" : "#116466",
+          "color" : "#ffffff",
+          "tag" : "Software System"
+        } ],
+        "relationships" : [ {
+          "color" : "#adb5bd",
+          "tag" : "Relationship"
+        } ]
+      },
+      "terminology" : { },
+      "themes" : [ "https://static.structurizr.com/themes/default/theme.json" ]
+    },
+    "containerViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "The platform split into two reusable product layers: 3D reconstruction and AI model pipeline utilities.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "15",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "20",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "21",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "22",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "23",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "25",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "27",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "28",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "Containers",
+      "name" : "Container View: VBTI Modular Robot Learning Platform",
+      "order" : 2,
+      "relationships" : [ {
+        "id" : "29"
+      }, {
+        "id" : "31"
+      }, {
+        "id" : "32"
+      }, {
+        "id" : "33"
+      }, {
+        "id" : "34"
+      }, {
+        "id" : "35"
+      }, {
+        "id" : "37"
+      }, {
+        "id" : "38"
+      }, {
+        "id" : "39"
+      }, {
+        "id" : "40"
+      }, {
+        "id" : "41"
+      }, {
+        "id" : "42"
+      }, {
+        "id" : "43"
+      }, {
+        "id" : "44"
+      }, {
+        "id" : "45"
+      }, {
+        "id" : "46"
+      }, {
+        "id" : "47"
+      }, {
+        "id" : "49"
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "53"
+      }, {
+        "id" : "62"
+      }, {
+        "id" : "63"
+      }, {
+        "id" : "64"
+      }, {
+        "id" : "65"
+      }, {
+        "id" : "66"
+      }, {
+        "id" : "67"
+      }, {
+        "id" : "69"
+      }, {
+        "id" : "70"
+      }, {
+        "id" : "71"
+      }, {
+        "id" : "72"
+      }, {
+        "id" : "73"
+      }, {
+        "id" : "74"
+      }, {
+        "id" : "75"
+      }, {
+        "id" : "76"
+      }, {
+        "id" : "77"
+      }, {
+        "id" : "78"
+      }, {
+        "id" : "79"
+      }, {
+        "id" : "80"
+      }, {
+        "id" : "81"
+      }, {
+        "id" : "82"
+      }, {
+        "id" : "83"
+      }, {
+        "id" : "84"
+      } ],
+      "softwareSystemId" : "11"
+    } ],
+    "deploymentViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "Project containers running on the local development workstation.",
+      "elements" : [ {
+        "id" : "85",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "86",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "87",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "89",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "92",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "95",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "98",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "101",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "103",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "105",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "108",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "110",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "environment" : "Local Development Machine",
+      "key" : "LocalDevelopmentDeployment",
+      "name" : "Deployment View: Local Development Machine",
+      "order" : 5,
+      "relationships" : [ {
+        "id" : "100"
+      }, {
+        "id" : "102"
+      }, {
+        "id" : "104"
+      }, {
+        "id" : "106"
+      }, {
+        "id" : "107"
+      }, {
+        "id" : "109"
+      }, {
+        "id" : "111"
+      }, {
+        "id" : "112"
+      }, {
+        "id" : "113"
+      }, {
+        "id" : "88"
+      }, {
+        "id" : "90"
+      }, {
+        "id" : "91"
+      }, {
+        "id" : "93"
+      }, {
+        "id" : "94"
+      }, {
+        "id" : "96"
+      }, {
+        "id" : "97"
+      }, {
+        "id" : "99"
+      } ]
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "Project containers running on the robot/remote machine and connected physical workcell.",
+      "elements" : [ {
+        "id" : "114",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "115",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "116",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "117",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "118",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "122",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "125",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "127",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "128",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "130",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "132",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "134",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "environment" : "Robot / Remote Machine",
+      "key" : "RobotRemoteDeployment",
+      "name" : "Deployment View: Robot / Remote Machine",
+      "order" : 6,
+      "relationships" : [ {
+        "id" : "119"
+      }, {
+        "id" : "120"
+      }, {
+        "id" : "121"
+      }, {
+        "id" : "123"
+      }, {
+        "id" : "124"
+      }, {
+        "id" : "126"
+      }, {
+        "id" : "129"
+      }, {
+        "id" : "131"
+      }, {
+        "id" : "133"
+      }, {
+        "id" : "135"
+      } ]
+    } ],
+    "dynamicViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "Raw media to simulator-ready scene.",
+      "elementId" : "11",
+      "elements" : [ {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "15",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalBoundariesVisible" : false,
+      "key" : "ReconstructionFlow",
+      "name" : "Dynamic View: VBTI Modular Robot Learning Platform",
+      "order" : 3,
+      "relationships" : [ {
+        "description" : "Videos/photos",
+        "id" : "35",
+        "order" : "1",
+        "response" : false
+      }, {
+        "description" : "Frames",
+        "id" : "43",
+        "order" : "2",
+        "response" : false
+      }, {
+        "description" : "COLMAP cameras/images",
+        "id" : "44",
+        "order" : "3",
+        "response" : false
+      }, {
+        "description" : "Splats/meshes/PLY",
+        "id" : "45",
+        "order" : "4",
+        "response" : false
+      }, {
+        "description" : "USD/collision assets",
+        "id" : "46",
+        "order" : "5",
+        "response" : false
+      }, {
+        "description" : "Runnable task/env",
+        "id" : "47",
+        "order" : "6",
+        "response" : false
+      } ]
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "Dataset to trained and evaluated robot policy.",
+      "elementId" : "11",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "20",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "23",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "25",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalBoundariesVisible" : false,
+      "key" : "ModelFlow",
+      "name" : "Dynamic View: VBTI Modular Robot Learning Platform",
+      "order" : 4,
+      "relationships" : [ {
+        "description" : "Collect/setup",
+        "id" : "31",
+        "order" : "1",
+        "response" : false
+      }, {
+        "description" : "Recorded episodes",
+        "id" : "62",
+        "order" : "2",
+        "response" : false
+      }, {
+        "description" : "LeRobot dataset",
+        "id" : "66",
+        "order" : "3",
+        "response" : false
+      }, {
+        "description" : "Checkpoint",
+        "id" : "72",
+        "order" : "4",
+        "response" : false
+      }, {
+        "description" : "Trial protocol",
+        "id" : "75",
+        "order" : "5",
+        "response" : false
+      }, {
+        "description" : "Closed-loop actions",
+        "id" : "74",
+        "order" : "6",
+        "response" : false
+      } ]
+    } ],
+    "systemContextViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "The modular VBTI platform in its operational context.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "SystemContext",
+      "name" : "System Context View: VBTI Modular Robot Learning Platform",
+      "order" : 1,
+      "relationships" : [ {
+        "id" : "30"
+      }, {
+        "id" : "36"
+      }, {
+        "id" : "48"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "55"
+      }, {
+        "id" : "68"
+      } ],
+      "softwareSystemId" : "11"
+    } ]
+  }
+}

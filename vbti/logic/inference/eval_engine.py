@@ -27,6 +27,7 @@ os.environ["HF_HUB_OFFLINE"] = "1"
 
 import time
 import json
+import re
 import numpy as np
 import torch
 import cv2
@@ -139,6 +140,15 @@ def _pick_pretrained(step_dir: Path) -> Path:
     """Return pretrained_model subfolder if it exists, else step_dir itself."""
     pm = step_dir / "pretrained_model"
     return pm if pm.exists() else step_dir
+
+
+def _ckpt_label(ckpt_path: Path) -> str:
+    if ckpt_path.name == "pretrained_model":
+        parent = ckpt_path.parent.name
+        label = f"step_{int(parent):06d}" if parent.isdigit() else parent
+    else:
+        label = ckpt_path.name
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", label).strip("_") or "checkpoint"
 
 
 def _find_latest_session(version_d: Path, ckpt_label: str,
@@ -601,8 +611,7 @@ def run(
     version_d  = _version_dir(experiment, version)
 
     ckpt_path  = _resolve_ckpt_path(checkpoint, experiment)
-    ckpt_label = ckpt_path.name if ckpt_path.name != "pretrained_model" else \
-                 f"step_{int(ckpt_path.parent.name):06d}"
+    ckpt_label = _ckpt_label(ckpt_path)
 
     # ── Session dir: resume vs fresh ──────────────────────────────────────────
     latest = (_find_latest_session(version_d, ckpt_label, action_horizon, protocol)
@@ -849,17 +858,18 @@ def run(
             # ── Guidance phase — 4 cameras, markers on top cam, wait SPACE ──
             while True:
                 frames = _capture(cam_devices)
-                if "top" in frames:
+                top_key = "top" if "top" in frames else "top_cam" if "top_cam" in frames else None
+                if top_key is not None:
                     frames = dict(frames)
                     if is_entity:
-                        frames["top"] = _mark_top_camera_entities(
-                            frames["top"], trial,
+                        frames[top_key] = _mark_top_camera_entities(
+                            frames[top_key], trial,
                             nogo_bbox=nogo_bbox,
                             workspace_bbox=workspace_bbox,
                         )
                     else:
-                        frames["top"] = _mark_top_camera(
-                            frames["top"], trial, cup_positions)
+                        frames[top_key] = _mark_top_camera(
+                            frames[top_key], trial, cup_positions)
                 grid = _build_grid_frame(frames, cam_names, 0, None,
                                          right_column=(["gripper_depth"] if depth else None),
                                          gato=gato)

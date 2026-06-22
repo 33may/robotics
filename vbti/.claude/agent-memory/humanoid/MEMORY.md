@@ -1,0 +1,5 @@
+- [Humanoid repo location](humanoid_repo_location.md) — humanoid code lives at robotics/humanoid/, not robotics/ or vbti/; OpenSpec initialized there
+- [Oli corpus MCP setup](oli_corpus_mcp_setup.md) — MAY-139 docs corpus path, hum conda env, MCP executable, FTS/vector/hybrid search, and August/OpenCode config caveat
+- [LimX SDK role gating](limx_sdk_role_gating.md) — RobotCmd only flows to sim-role peers (`Robot(type, True)`); policy-role subs see 0 cmd packets
+- [LimX orphan subprocess](limx_orphan_subprocess.md) — main.py's os.system child orphans to PID 1 on crash, keeps SDK HTTP port → next launch EADDRINUSE; reaper required
+- [Oli head joint order reversed](oli_head_joint_order_reversed.md) — RobotState head order is yaw=15 then pitch=16; LimX parallel-joint doc has it swapped

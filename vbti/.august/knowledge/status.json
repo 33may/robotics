@@ -1,0 +1,22 @@
+{
+  "root": "/home/may33/projects/ml_portfolio/robotics/vbti",
+  "backend": "graphify",
+  "updated_at": "2026-06-03T08:05:10.823Z",
+  "artifacts": {
+    "map": "/home/may33/projects/ml_portfolio/robotics/vbti/.august/knowledge/map.md",
+    "status": "/home/may33/projects/ml_portfolio/robotics/vbti/.august/knowledge/status.json",
+    "review": "/home/may33/projects/ml_portfolio/robotics/vbti/.august/knowledge/graph-review.md",
+    "summary": "/home/may33/projects/ml_portfolio/robotics/vbti/.august/knowledge/graph-summary.md",
+    "edges": "/home/may33/projects/ml_portfolio/robotics/vbti/.august/knowledge/edges.json",
+    "curation": "/home/may33/projects/ml_portfolio/robotics/vbti/.august/knowledge/curation.md",
+    "graphJson": "/home/may33/projects/ml_portfolio/robotics/vbti/.graphify/graph.json",
+    "graphReport": "/home/may33/projects/ml_portfolio/robotics/vbti/.graphify/GRAPH_REPORT.md"
+  },
+  "edge_types": {
+    "explicit": 119,
+    "structural": 81,
+    "semantic-high": 587,
+    "semantic-low": 1209,
+    "curated": 0
+  }
+}

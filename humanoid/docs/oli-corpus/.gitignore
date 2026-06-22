@@ -1,0 +1,4 @@
+.venv/
+index/corpus.sqlite
+__pycache__/
+*.pyc

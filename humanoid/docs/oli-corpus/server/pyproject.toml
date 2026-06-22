@@ -1,0 +1,19 @@
+[project]
+name = "oli-corpus-mcp"
+version = "0.1.0"
+description = "Local stdio MCP server for the Oli documentation corpus"
+requires-python = ">=3.10"
+dependencies = [
+  "mcp>=1.9,<2",
+  "mistune>=3,<4",
+  "numpy>=2,<3",
+  "pyyaml>=6,<7",
+  "sentence-transformers>=5,<6",
+]
+
+[project.scripts]
+oli-corpus-mcp = "oli_corpus_mcp.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

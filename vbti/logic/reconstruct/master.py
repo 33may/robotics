@@ -38,8 +38,9 @@ def video_processing(
     output_dir: str,
     mode: str = "count",
     value: float = 200,
+    rotate: bool = False,
 ):
-    extract_frames(video_path, output_dir, mode, value)
+    extract_frames(video_path, output_dir, mode, value, rotate)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

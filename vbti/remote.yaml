@@ -1,7 +1,8 @@
 # Remote training machine config
 # Used by vbti/logic/train/remote.py
 
-host: vbti@10.11.100.151
+# host: vbti@10.11.100.151
+host: vbti@10.11.100.156
 password: vbti25robot
 
 # Remote paths

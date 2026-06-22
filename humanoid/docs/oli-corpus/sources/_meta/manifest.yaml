@@ -1,0 +1,98 @@
+docs:
+- id: '831851699013554176'
+  doc_id: quick-start
+  title: LimX EDU Quick Start Guide
+  source_url: https://limx.cn/en/documents/831851699013554176
+  fetched_at: '2026-06-17T12:16:59+00:00'
+  raw_sha256: 9dd0442f04267d71c7353ed3578a5170f08bf8bdf40c3a75e19c4e45cb8ccb10
+  clean_sha256: d2de60ebf0020b88ac8d0a45ce2288159cad1ac565d3076f0b424947cb85e4b3
+  filename: LimX_EDU_Quick_Start_Guide.md
+  counts:
+    html_pre: 0
+    html_tables: 0
+    html_language_classes_total: 0
+    html_language_classes:
+      bash: 0
+      cpp: 0
+      html: 0
+      json: 0
+      python: 0
+      shell: 0
+      c: 0
+      javascript: 0
+      typescript: 0
+      yaml: 0
+    md_fences_by_lang: {}
+    md_fences_total: 0
+    md_tables: 0
+    images_extracted: 2
+  fidelity:
+    copy_marker_absent: true
+    tupian_placeholder_absent: true
+- id: '823924477418147840'
+  doc_id: user-manual
+  title: Oli EDU User Manual
+  source_url: https://limx.cn/en/documents/823924477418147840
+  fetched_at: '2026-06-17T12:16:59+00:00'
+  raw_sha256: 8c6a23bcd8608aabe49db0ca51889a0c5544466dd221e233572753b7f0da1fc0
+  clean_sha256: c845ed57f3fcd599f590509d0d76ab463988c6bbd0412f5659d14a72a6b38ae7
+  filename: Oli_EDU_User_Manual.md
+  counts:
+    html_pre: 0
+    html_tables: 18
+    html_language_classes_total: 0
+    html_language_classes:
+      bash: 0
+      cpp: 0
+      html: 0
+      json: 0
+      python: 0
+      shell: 0
+      c: 0
+      javascript: 0
+      typescript: 0
+      yaml: 0
+    md_fences_by_lang: {}
+    md_fences_total: 0
+    md_tables: 18
+    images_extracted: 43
+  fidelity:
+    copy_marker_absent: true
+    tupian_placeholder_absent: true
+- id: '823930550015365120'
+  doc_id: sdk-guide
+  title: Oli EDU SDK Development Guide
+  source_url: https://limx.cn/en/documents/823930550015365120
+  fetched_at: '2026-06-17T12:17:00+00:00'
+  raw_sha256: c0baaff78284318725449f6e4a47f3057584b12b33d17efca06ab52685a2d813
+  clean_sha256: e0a4230a2efdc5a69ceecd5f50592bacc7f489da1ffcc8929f241ed94a12eeed
+  filename: Oli_EDU_SDK_Development_Guide.md
+  counts:
+    html_pre: 209
+    html_tables: 34
+    html_language_classes_total: 216
+    html_language_classes:
+      bash: 17
+      cpp: 16
+      html: 1
+      json: 133
+      python: 31
+      shell: 2
+      c: 16
+      javascript: 0
+      typescript: 0
+      yaml: 0
+    md_fences_by_lang:
+      _none_: 9
+      json: 133
+      python: 31
+      bash: 17
+      cpp: 16
+      html: 1
+      shell: 2
+    md_fences_total: 209
+    md_tables: 34
+    images_extracted: 24
+  fidelity:
+    copy_marker_absent: true
+    tupian_placeholder_absent: true

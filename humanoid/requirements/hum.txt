@@ -1,0 +1,10 @@
+# Humanoid repo Python dependencies.
+# Primary environment: conda env `hum`.
+
+# Oli corpus extraction/index/MCP tooling.
+beautifulsoup4>=4.15,<5
+mcp>=1.9,<2
+mistune>=3,<4
+numpy>=2,<3
+pyyaml>=6,<7
+sentence-transformers>=5,<6
