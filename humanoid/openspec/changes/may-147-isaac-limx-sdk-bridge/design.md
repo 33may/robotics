@@ -134,15 +134,15 @@ No `BYE` / `HEARTBEAT` / `ACK` messages in v1. UDS EOF detection handles both di
 
 All payload joint arrays are exactly 31 entries (Oli's PR joint count). Joint ordering on the wire is the SDK's PR ordering as observed empirically and documented in `humanoid/docs/vendor/humanoid-rl-deploy-python.md` § 11 — the 31-row table from index 0 (`left_hip_pitch_joint`) to index 30 (`right_wrist_roll_joint`). **Note**: indices 15 and 16 are `head_yaw_joint` and `head_pitch_joint` respectively (yaw before pitch — the on-robot `head_config.yaml` and the live wire probe agree; the `sdk_joint_order` MCP tool currently reports them swapped due to a stale `walk_param.yaml` extraction. Trust the probe).
 
-Approximate sizes:
+Sizes (verified by `struct.calcsize` in `bridge/protocol.py`, 2026-06-22):
 
-| Message | Size | Calc |
+| Message | Total wire size | Calc |
 |---|---|---|
-| `HELLO` | 8 + 4 + 31×32 = **1004 B** | header + dof_count + names |
-| `CMD` | 8 + 8 + 31×(1+4+4+4+4+4+1) = **702 B** | header + stamp + per-joint fields (mode+q+dq+tau+Kp+Kd+parallel_solve_required) |
-| `STATE_IMU` | 8 + 8 + 31×3×4 + 12+12+16 = **440 B** | header + stamp + q/dq/tau + IMU(acc[3]+gyro[3]+quat[4]) |
+| `HELLO` | 8 + 996 = **1004 B** | header + payload (4 dof_count + 31×32 names = 996) |
+| `CMD` | 8 + 690 = **698 B** | header + payload (8 stamp + 31×(1+4+4+4+4+4+1) = 690) |
+| `STATE_IMU` | 8 + 420 = **428 B** | header + payload (8 stamp + 31×3×4 q/dq/tau + 12+12+16 acc/gyro/quat = 420) |
 
-`struct.pack`/`unpack` byte layouts are identical between CPython 3.8 and 3.11 — verified by writing a 100-byte mixed-type pack in each env and comparing sha256 (added as a v1 unit test).
+`struct.pack`/`unpack` byte layouts are identical between CPython 3.8 and 3.11 — verified by `_research/test_protocol_cross_version.py` (Phase 3): canned `HELLO`/`CMD`/`STATE_IMU` packed in both envs produce identical sha256 digests.
 
 Single source of truth: `bridge/protocol.py`. Both processes import it; in v1 we keep two copies in sync via a `make sync-protocol` recipe that diffs the file from the Isaac env's copy. (Both envs share the same filesystem path, so simple symlinks via a checked-in `bridge/protocol.py` work — no copies needed.)
 
@@ -154,17 +154,28 @@ Target cadence is **1 kHz** (`world = World(physics_dt=1/1000)`); realistic empi
 
 Inside `Oli.tick()` (with a bridge attached):
 
-1. Read articulation `q`, `dq`, `tau` from `SingleArticulation.get_joint_positions/velocities/efforts`.
+1. Read articulation `q`, `dq`, `tau` from `SingleArticulation.get_joint_positions/velocities/get_measured_joint_efforts`.
 2. Read IMU from the dedicated `IMUSensor` prim (D8).
 3. Permute Isaac DOF order → PR order using the cached `isaac_to_pr` index.
 4. Call `bridge.send_state_imu(...)` (which packs + non-blocking `sendmsg`).
-5. Call `bridge.poll_cmd()` — non-blocking; drain all pending CMD frames, keep only the latest.
-6. Compute `tau_apply[i] = Kp[i]*(q_d[i] − q[i]) + Kd[i]*(dq_d[i] − dq[i]) + tau_ff[i]` in PR space.
-7. Permute PR → Isaac DOF via `pr_to_isaac`; call `articulation.set_joint_efforts(tau_apply_isaac)`.
+5. Call `bridge.poll_cmd()` — non-blocking; drain all pending CMD frames, keep only the latest; update the cached cmd.
+6. **Realize the cached PD cmd via the PhysX implicit drive** (see "PD realization" below).
 
 The host then calls `world.step(render=...)` separately. `Oli.tick()` does NOT step or render.
 
-With `bridge=None`, `tick()` is a no-op for steps 3–7 (nothing to send/receive, no cmd to apply). Apps that drive Oli directly (RL, ONNX, teleop) call `oli.apply_cmd(q_d, dq_d, tau_ff, kp, kd)` instead — this updates the cached cmd and runs steps 6–7 only.
+With `bridge=None`, steps 1–5 are skipped; `tick()` just re-applies the cached cmd (step 6) against the latest articulation state. Apps that drive Oli directly (RL, ONNX, teleop) call `oli.apply_cmd(q_d, dq_d, tau_ff, kp, kd)` to update the cache.
+
+#### PD realization: PhysX implicit drive, NOT explicit `set_joint_efforts` (verified 2026-06-22)
+
+The PD-with-feedforward law `τ = Kp(q_d − q) + Kd(dq_d − dq) + τ_ff` is realized by pushing `Kp`/`Kd` into the joint **drive gains** (`articulation_view.set_gains`) and commanding **position + velocity targets** (`set_joint_position_targets` / `set_joint_velocity_targets`), letting PhysX integrate the PD term implicitly. The feedforward `τ_ff` is added separately via `set_joint_efforts` (additive on top of the drive).
+
+**Why not compute `τ` ourselves and call `set_joint_efforts`?** That applies the cmd's `Kd` as an *explicit, one-step-lagged* external force. The deploy controllers' gains (`Kd≈17`) are tuned for implicit integration (real motor firmware + MuJoCo's implicit damping). Applied explicitly in Isaac, the discrete stability bound `Kd·dt/I ≲ 2` is violated for the light links (knee `izz≈0.003` → `17·0.001/0.003 ≈ 5.6`), producing a sustained velocity limit-cycle (~±1.8 rad/s ringing — measured). The implicit drive integrates the *identical* formula stably, exactly as the real motor controller and MuJoCo do, with **no gain retuning** (the gains come from LimX over the wire — we can't retune them). This is also how IsaacLab itself implements actuators.
+
+Empirical confirmation (`_research/smoke_oli_nobridge.py`, `bridge=None`): explicit effort rang at ±1.8 rad/s indefinitely; implicit drive decayed peak velocity 12.5 → 0.54 rad/s (23×) and held the spawn pose to 0.087 rad. Tick latency p50=115µs, p99=204µs.
+
+**Gains are re-written only on change.** `set_gains` is called only when the incoming cmd's `Kp`/`Kd` differ from the last-written values (the walk/stand controllers send constant gains, so this is rare). Position/velocity targets + `τ_ff` are written every tick.
+
+**Steady-state droop is expected.** With finite `Kp` and no gravity feedforward, a held joint settles at `q ≈ q_d − τ_gravity/Kp`. The shipped controllers compensate via `τ_ff` and tuned per-joint gains; faithful holding/tracking against gravity is MAY-148's concern, not the bridge's.
 
 Latching policy: most recent cmd wins — no queue, no interpolation. This matches `humanoid-mujoco-sim/simulator.py` exactly. Empirically, cmd arrives at ~945 Hz while state publishes at ~885 Hz — the two clocks are independent on the MROS bus and `Oli` must NOT lock them together. Cold start: all-zero cmd; Oli sags to its rest pose with the soft default drive gains baked into the USD.
 

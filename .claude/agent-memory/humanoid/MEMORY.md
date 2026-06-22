@@ -22,6 +22,7 @@
 
 ## Isaac
 - [Isaac Oli smoke loader](isaac_oli_smoke_loader.md) — `humanoid/logic/simulation/isaacsim/load_oli.py` already loads HU_D04_01.usd at /World/Oli, pinned root, prints DOF order. Baseline for MAY-147.
+- [Isaac PD via implicit drive](isaac_pd_implicit_drive.md) — Realize deploy PD via PhysX drive (set_gains + targets), NOT explicit set_joint_efforts; the latter rings unstably for MuJoCo-tuned Kd.
 
 ## Feedback
 - [Branch naming: 33may not antonnedf](feedback-branch-naming-33may.md) — Use `33may/` prefix for all branches; ignore Linear's `gitBranchName` field default.

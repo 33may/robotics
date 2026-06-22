@@ -7,58 +7,53 @@
 - [x] 1.5 Author `specs/isaac-limx-sdk-bridge/spec.md`
 - [x] 1.6 `openspec validate may-147-isaac-limx-sdk-bridge` — reported valid 2026-06-22
 
-## 2. Environment + asset prechecks (D11, OQ2, OQ3)
+## 2. Environment + asset prechecks (D11, OQ2, OQ3) — *done 2026-06-22*
 
-- [ ] 2.1 Confirm `limx` conda env has `limxsdk` 4.0.1 installed: `/home/may33/miniconda3/envs/limx/bin/python -c "import limxsdk; print(limxsdk.__version__)"`
-- [ ] 2.2 Confirm `isaac` conda env has `isaacsim` 5.0.0 installed and importable from a fresh shell
-- [ ] 2.3 Run `load_oli.py` once and capture printed DOF list to `_research/isaac_dof_dump.txt`
-- [ ] 2.4 Compare against MAY-145 § 11 PR joint order; confirm count == 31; record any name mismatches in `_research/joint_name_audit.md`
-- [ ] 2.5 Enumerate IMU sensor prims under `/World/Oli`: open USD in Isaac, list prims with `omni.isaac.sensor.IMUSensor` schema. Record findings in `_research/imu_prim_audit.md` (OQ2)
-- [ ] 2.6 Inspect `MROS_IP_LIST` value used by `humanoid-mujoco-sim/simulator.py`; record canonical form for sidecar to copy verbatim
+- [x] 2.1 `limx` env confirmed: Py 3.8.18, `limxsdk` importable, `Robot`/`RobotType.Humanoid`/`datatypes` all resolve
+- [x] 2.2 `isaac` env confirmed: Py 3.11.14, `isaacsim` 5.0.0 importable
+- [x] 2.3 Isaac DOF order captured via `_research/audit_isaac_oli.py` → `_research/isaac_dof_dump.txt` (headless Isaac boot, 31 DOFs)
+- [x] 2.4 Compared to PR §11: count = 31 ✓, set equality ✓, permutation table computed + verified in `_research/joint_name_audit.md`. Head joint order = yaw-then-pitch (matches PR canonical; the corpus `sdk_joint_order` MCP tool is the only outlier — confirms OQ8)
+- [x] 2.5 IMU prim audit via the same audit script → `_research/imu_prim_audit.{txt,md}`. **No IMU prim ships in HU_D04_01.usd.** `Oli.__init__` must attach `omni.isaac.sensor.IMUSensor` at `base_link` at runtime (D8 confirmed; OQ2 fully resolved)
+- [x] 2.6 `MROS_IP_LIST` form captured from `humanoid-mujoco-sim/simulator.py:226`: literal `f"{a}.{b}.{c}.x"` (last octet replaced with `x`). For `127.0.0.1` → `MROS_IP_LIST=127.0.0.x`
 
-## 3. Protocol layer (Spec R-protocol)
+## 3. Protocol layer (Spec R-protocol) — *done 2026-06-22*
 
-- [ ] 3.1 Create `humanoid/logic/simulation/isaacsim/bridge/__init__.py`
-- [ ] 3.2 Implement `bridge/protocol.py`: message-type constants (`HELLO=0`, `CMD=1`, `STATE_IMU=2`), version=`0`, struct formats per design D3+D4
-- [ ] 3.3 Implement `pack_hello(dof_names) -> bytes` and `unpack_hello(buf) -> (dof_count, dof_names)`
-- [ ] 3.4 Implement `pack_cmd(seq, stamp, mode, q, dq, tau, kp, kd, parallel_solve_required) -> bytes` and `unpack_cmd(buf)`
-- [ ] 3.5 Implement `pack_state_imu(seq, stamp, q, dq, tau, quat_xyzw, gyro, accel) -> bytes` and `unpack_state_imu(buf)`
-- [ ] 3.6 Cross-version pack identity test: produce a canned 100-byte packet in both `limx` (Py 3.8) and `isaac` (Py 3.11) envs; assert sha256 match
-- [ ] 3.7 Round-trip test: pack → unpack returns identical values within float32 tolerance
-- [ ] 3.8 Document the byte layout in `protocol.py` module docstring with an ASCII offset table
+- [x] 3.1 Created `humanoid/logic/simulation/isaacsim/bridge/__init__.py`
+- [x] 3.2 Implemented `bridge/protocol.py`: `MsgType` enum (`HELLO=0`, `CMD=1`, `STATE_IMU=2`), `PROTOCOL_VERSION=0`, struct formats per design D3+D4
+- [x] 3.3 Implemented `pack_hello(seq, dof_names) -> bytes` and `unpack_hello(buf) -> (seq, dof_count, dof_names)`
+- [x] 3.4 Implemented `pack_cmd(seq, stamp_ns, mode, q, dq, tau, kp, kd, parallel_solve_required) -> bytes` and `unpack_cmd(buf)`
+- [x] 3.5 Implemented `pack_state_imu(seq, stamp_ns, q, dq, tau, acc, gyro, quat_wxyz) -> bytes` and `unpack_state_imu(buf)` — note IMU field order is `acc, gyro, quat` (struct order), quaternion is `(w, x, y, z)` per D8
+- [x] 3.6 Cross-version pack identity test (`_research/test_protocol_cross_version.py`): canned HELLO/CMD/STATE_IMU produce identical sha256 in Py 3.8.18 and Py 3.11.14
+- [x] 3.7 Round-trip test: HELLO/CMD/STATE_IMU pack→unpack lossless (uint64/uint32 bit-exact; floats within 1e-6); version mismatch + unknown type_code both correctly raise `ProtocolError`
+- [x] 3.8 Module docstring documents header layout + payload sizes (HELLO=1004 B, CMD=698 B, STATE_IMU=428 B — corrected from earlier design hand-math)
 
-## 4. Sidecar — Py 3.8 process (Spec R-sidecar, D1, D6)
+## 4. Sidecar — Py 3.8 process (Spec R-sidecar, D1, D6) — *done 2026-06-22*
 
-- [ ] 4.1 Implement `bridge/sidecar.py` skeleton with argparse: `--ip` (default `127.0.0.1`), `--socket` (default `/tmp/limx-isaac-bridge.sock`)
-- [ ] 4.2 Set `MROS_IP_LIST` env var from `--ip` (form copied from § 2.6 audit)
-- [ ] 4.3 Construct `Robot(RobotType.Humanoid, True)`; call `robot.init(ip)`
-- [ ] 4.4 Open AF_UNIX SOCK_SEQPACKET socket; bind to `--socket`; listen(1); accept one client
-- [ ] 4.5 Receive `HELLO`; verify `dof_count == 31`; build set-equality check against expected PR joint names; close + exit non-zero on mismatch
-- [ ] 4.6 Ack `HELLO` (sidecar sends a zero-payload HELLO back so the driver knows it's good to start)
-- [ ] 4.7 Register `subscribeRobotCmdForSim(callback)`; callback packs the cmd and writes it to the socket (non-blocking; drop on full buffer with a counter log)
-- [ ] 4.8 Main loop: blocking `recv()` on the socket for `STATE_IMU`; unpack; call `robot.publishRobotStateForSim(state)` + `robot.publishImuDataForSim(imu)`
-- [ ] 4.9 EOF on socket → log + clean exit (unlink socket file; call `robot.deinit()` if exposed)
-- [ ] 4.10 Catch `SIGTERM` from launcher → clean exit
-- [ ] 4.11 Smoke 4.10: run sidecar standalone, run `humanoid-rl-deploy-python` damping controller; observe `subscribeRobotCmdForSim` callback fires and cmd bytes arrive in the socket buffer (no Isaac yet; sidecar prints recv'd cmd to stderr in debug mode)
+- [x] 4.1 Implemented `bridge/sidecar.py` with argparse: `--ip` (default `127.0.0.1`), `--socket` (default `/tmp/limx-isaac-bridge.sock`), `--debug`
+- [x] 4.2 Set `MROS_IP_LIST` from `--ip` matching `humanoid-mujoco-sim/simulator.py:226` (`f"{a}.{b}.{c}.x"`)
+- [x] 4.3 Construct `Robot(RobotType.Humanoid, True)`; call `robot.init(ip)` — verified returns `True` for `127.0.0.1`
+- [x] 4.4 Open AF_UNIX SOCK_SEQPACKET socket; bind to `--socket`; listen(1); accept one client
+- [x] 4.5 Receive `HELLO`; verify `dof_count == 31` and joint-name set-equality against PR canonical; close + exit non-zero on mismatch
+- [x] 4.6 Ack `HELLO` with header-only frame (`pack_header(HELLO, payload_len=0, seq=0)`)
+- [x] 4.7 Register `subscribeRobotCmdForSim(callback)`; callback runs in SDK thread; packs cmd + non-blocking `send` under a lock; drop+count on `BlockingIOError`
+- [x] 4.8 Main loop: `selectors`-based read; unpack `STATE_IMU`; call `publishImuDataForSim(imu)` then `publishRobotStateForSim(state)` (matches MuJoCo reference publish order)
+- [x] 4.9 EOF on socket → log + clean exit (unlink socket file in `finally`)
+- [x] 4.10 SIGTERM/SIGINT handlers flip a running flag; main loop exits at next select wakeup
+- [x] 4.11 Smoke verified via `_research/fake_driver_smoke.py`: sidecar accepts connection, HELLO ok, decodes 50 STATE_IMU frames (`state_pub=50`), exits cleanly on driver EOF, unlinks socket file. Spec R1/R2/R4/R10/R11 scenarios green. *Deferred to Phase 7 integration*: live deploy-python damping verification.
 
-## 5. `Oli` class — Py 3.11 (Spec R-oli, D5, D7, D14)
+## 5. `Oli` class — Py 3.11 (Spec R-oli, D5, D7, D14) — *done 2026-06-22*
 
-- [ ] 5.1 Create `humanoid/logic/simulation/isaacsim/oli.py` with `Oli` skeleton: `__init__`, properties `dof_names` / `num_dof`, methods `tick`, `apply_cmd`, `read_state`, `read_imu`
-- [ ] 5.2 `__init__` flow: `add_reference_to_stage(HU_D04_01.usd)` (variant-selectable), set spawn translate before reset, set `physxArticulation:fixRootLink = True` if `pin_root`, `world.reset()`, init `SingleArticulation`
-- [ ] 5.3 IMU sensor setup at `base_link` (D8): prefer existing IMU prim in `_sensor.usd` layer if present (per task 2.5 audit); otherwise attach `omni.isaac.sensor.IMUSensor`
-- [ ] 5.4 Build `pr_to_isaac` and `isaac_to_pr` numpy index arrays from PR canonical joint list (§ 11) against `oli.dof_names`; assert `num_dof == 31` and set-equality of names
-- [ ] 5.5 Initialize `cached_cmd` with zero arrays (`q_d`, `dq_d`, `tau_ff`, `Kp`, `Kd` — all 31, float32)
-- [ ] 5.6 Implement `apply_cmd(q_d=..., dq_d=None, ...)`: update only the kwargs that were passed; PR-space arrays only; assert length 31
-- [ ] 5.7 Implement `tick()` with optional bridge:
-  - read `q`, `dq`, `tau` from articulation (verify exact Isaac API — likely `get_joint_positions()` etc.)
-  - read IMU sample (`acc`, `gyro`, `quat_wxyz`)
-  - if bridge attached: permute Isaac→PR, `bridge.send_state_imu(...)`, `bridge.poll_cmd()` → update `cached_cmd` if non-None
-  - compute `tau_apply_pr = Kp*(q_d − q_pr) + Kd*(dq_d − dq_pr) + tau_ff`
-  - permute PR→Isaac; `articulation.set_joint_efforts(tau_apply_isaac)`
-- [ ] 5.8 Implement `read_state()` returning `{stamp, q, dq, tau, motor_names}` PR-ordered
-- [ ] 5.9 Implement `read_imu()` returning `{stamp, acc, gyro, quat_wxyz}`
-- [ ] 5.10 Instrument tick with `time.perf_counter`: maintain rolling p50/p99 histograms for the host to query
-- [ ] 5.11 Standalone smoke (`bridge=None`): instantiate `Oli`, run a host loop that calls `oli.apply_cmd(...)` with a hand-crafted PR-space target moving one joint by 0.1 rad; observe expected motion
+- [x] 5.1 Created `humanoid/logic/simulation/isaacsim/oli.py` with `Oli`: `__init__`, props `dof_names`/`num_dof`/`base_link_path`, methods `tick`/`apply_cmd`/`read_state`/`read_imu`/`tick_latency_stats`
+- [x] 5.2 `__init__` flow: `add_reference_to_stage` (variant-selectable USD), spawn translate before reset, `fixRootLink=True` if `pin_root`, `world.reset()`, `SingleArticulation.initialize()`
+- [x] 5.3 IMU sensor attached at `base_link` via `isaacsim.sensors.physics.IMUSensor` (task 2.5 confirmed no IMU prim ships in the USD). Quat confirmed `(w,x,y,z)` native — no reorder
+- [x] 5.4 Built `pr_to_isaac` / `isaac_to_pr` index arrays at runtime from PR §11 vs `oli.dof_names`; asserts `num_dof == 31` + name set-equality
+- [x] 5.5 `_CachedCmd` zero-initialized (q_d/dq_d/tau_ff/Kp/Kd float32, mode/parallel_solve int)
+- [x] 5.6 `apply_cmd(q_d=..., dq_d=None, ...)` updates only passed kwargs; accepts numpy or sequence; asserts shape (31,)
+- [x] 5.7 `tick()`: (bridge) read state+IMU → permute Isaac→PR → `send_state_imu` → drain `poll_cmd` → realize cmd. **PD realized via PhysX implicit drive** (`set_gains` on Kp/Kd change + position/velocity targets + additive `tau_ff` effort), NOT explicit `set_joint_efforts(tau)` — the latter rings unstably (D5 PD-realization)
+- [x] 5.8 `read_state()` → `{stamp, q, dq, tau, motor_names}` PR-ordered
+- [x] 5.9 `read_imu()` → `{stamp, acc, gyro, quat_wxyz}`
+- [x] 5.10 Rolling p50/p99 tick-latency via `tick_latency_stats()` — measured p50=115µs, p99=204µs (10× under the 2ms budget)
+- [x] 5.11 Standalone smoke (`_research/smoke_oli_nobridge.py`, `bridge=None`): Test 1 stable hold (velocity decays 23×, no ring), Test 2 joint step (commanded joint is biggest mover — permutation correct), Test 3 zero-cmd gravity sag. ALL PASS. Found + fixed the explicit-effort instability → implicit drive (D5)
 
 ## 6. `OliBridge` class — Py 3.11 (Spec R-bridge, D6, D11, D15)
 
