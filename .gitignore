@@ -1,7 +1,57 @@
-# Heavy experiment outputs (datasets / raw sensor dumps)
+# =====================================================================
+# robotics .gitignore — keep `git status` showing only real changes
+# =====================================================================
+
+# ---- Python ---------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# ---- Editor / IDE / runtime UI state --------------------------------
+.vscode/
+.polyscope.ini
+imgui.ini
+
+# ---- Tool caches ----------------------------------------------------
+.cache/
+.superpowers/
+
+# ---- ML training run outputs (regeneratable artifacts) --------------
+wandb/
+outputs/
+vbti/outputs/
+vbti/experiments/**/lerobot_output*/
+vbti/experiments/**/eval/
+vbti/experiments/**/eval_sessions/
+vbti/experiments/**/checkpoints/
+
+# ---- Heavy experiment data (datasets / raw sensor dumps) ------------
 vbti/experiments/enea/
 vbti/experiments/duck_cup_smolvla/v016/data/d405_gripper_sample/color_uint8.npy
 vbti/experiments/duck_cup_smolvla/v016/data/d405_gripper_sample/depth_uint16.npy
+vbti/research/how_to_mask_right/cached_frames/
+vbti/research/how_to_mask_right/exp01_umap/images/
+vbti/tmp_data/
+vbti/data/
+vbti/env/
 
-# Runtime logs from vendor sims
+# ---- Vendored / cloned external libs (re-clone per machine) ---------
+vbti/libs/
+lerobot/
+leisaac/
+datasets/
+models/
+
+# ---- Old diffusion experiment artifacts -----------------------------
+old/wandb/
+old/diffusion/data/
+old/diffusion/models/
+old/diffusion/results/
+old/diffusion/gym_pusht/
+old/diffusion/model_src/partial_movie_files/
+old/diffusion/model_src/.ipynb_checkpoints/
+old/diffusion/model_src/*.mp4
+
+# ---- Vendor submodule runtime logs ----------------------------------
 humanoid/vendor/humanoid-mujoco-sim/MUJOCO_LOG.TXT

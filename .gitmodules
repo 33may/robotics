@@ -1,3 +1,18 @@
 [submodule "humanoid/vendor/humanoid-rl-deploy-python"]
 	path = humanoid/vendor/humanoid-rl-deploy-python
 	url = https://github.com/limxdynamics/humanoid-rl-deploy-python.git
+
+[submodule "humanoid/vendor/humanoid-mujoco-sim"]
+	path = humanoid/vendor/humanoid-mujoco-sim
+	url = git@github.com:limxdynamics/humanoid-mujoco-sim.git
+	ignore = untracked
+
+[submodule "old/diffusion/robosuite_src"]
+	path = old/diffusion/robosuite_src
+	url = https://github.com/ARISE-Initiative/robosuite.git
+	ignore = untracked
+
+[submodule "robots/SO-ARM101"]
+	path = robots/SO-ARM101
+	url = git@github.com:TheRobotStudio/SO-ARM100.git
+	ignore = untracked

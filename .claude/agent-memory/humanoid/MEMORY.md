@@ -15,6 +15,7 @@
 ## Vendor / external repos
 - [humanoid-mujoco-sim](vendor_humanoid_mujoco_sim.md) — LimX MuJoCo harness at `humanoid/vendor/`; canonical Oli assets, SDK wheel, reference simulator.
 - [Oli corpus MCP](reference_oli-corpus-mcp.md) — Always-use queryable Oli/LimX docs with `oli-corpus://` citation URIs; FTS quirks.
+- [Oli Main Software tarball](oli_main_software_tarball.md) — v2.2.12 EDU colcon ROS2 install (148 pkgs); MROS clone, control headers, URDFs, configs; 0 .msg files.
 
 ## Feedback
 - [General, not task-scoped docs](feedback_general_not_task_scoped_docs.md) — Document modules/vendors/configs as reusable references; keep task-context in memory.
