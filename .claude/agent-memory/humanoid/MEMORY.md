@@ -19,6 +19,7 @@
 - [Oli Main Software tarball](oli_main_software_tarball.md) — v2.2.12 EDU colcon ROS2 install (148 pkgs); MROS clone, control headers, URDFs, configs; 0 .msg files.
 - [Vendor submodule conversion](vendor-submodule-conversion.md) — Patch-extract→re-clone procedure; current submodule pin/ignore state; patches live in working trees only (MAY-146).
 - [LimX SDK role gating](limx-sdk-role-gating.md) — MROS bus is role-gated bidirectionally; sim vs policy peers see different topics. Probe needs two passes.
+- [kinematic_projection bus relay](limx_kinematic_projection_bus_relay.md) — kinematic_projection is a REQUIRED MROS relay for RobotState+RobotCmd (IMU goes direct); without it, state/cmd silently deliver zero between sim and policy peers.
 
 ## Isaac
 - [Isaac Oli smoke loader](isaac_oli_smoke_loader.md) — `humanoid/logic/simulation/isaacsim/load_oli.py` already loads HU_D04_01.usd at /World/Oli, pinned root, prints DOF order. Baseline for MAY-147.

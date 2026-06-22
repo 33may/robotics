@@ -289,9 +289,16 @@ def main() -> int:  # noqa: C901 — single linear flow, easier kept whole
                     log.error("STATE_IMU unpack failed: %s", e)
                     continue
 
-                state.q = q
-                state.dq = dq
-                state.tau = tau
+                # RobotState q/dq/tau are std::vector<float> — mutate IN PLACE
+                # (element-wise), NOT wholesale `state.q = list`. Wholesale
+                # rebinds the Python attr without updating the C++ vector, so the
+                # published state carries empty vectors and subscribers drop it.
+                # IMU fields are fixed C arrays, so wholesale assignment is fine.
+                # (matches humanoid-mujoco-sim/simulator.py element-wise pattern)
+                for i in range(p.NUM_JOINTS):
+                    state.q[i] = q[i]
+                    state.dq[i] = dq[i]
+                    state.tau[i] = tau[i]
                 state.stamp = stamp_ns
 
                 imu.acc = acc
