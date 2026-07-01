@@ -350,3 +350,18 @@ gain flag and belong to a LimX-informed effort.
 **Tools built/kept this run:** `walkmatch/ankle_jacobian.py` (measure the achilles Jacobian +
 effective coupled stiffness in MuJoCo — reusable for any "is there ankle coupling" question).
 All Isaac fixes remain OPT-IN flags; World defaults UNCHANGED.
+
+### F13 — lateral OBS-fidelity check: NOT an obs bug; it's the first single-support step
+Ran the F4 command-vs-realized comparison but on the ROLL/LATERAL axis: Isaac (implicit ×3, falls
+2.25 s) vs MuJoCo (walks), same brain, vx=0.1, from the `OLI_TRACE` q/dq/qdes/gyro/quat taps
+(`/tmp/latcmp.py`). Result:
+- **Base roll is small and comparable in BOTH sims through t≈1.5 s** (Isaac stays within −0.7°,
+  MuJoCo within +0.9°) and the **early ankle-roll COMMANDS match** (~+0.11 rad L in both). → the
+  policy receives good lateral obs early; this is NOT a hidden obs/frame bug like the dead-IMU was.
+- The divergence is ABRUPT at the **first swing step (~1.75–2.0 s)**: MuJoCo holds roll within ±1.5°;
+  Isaac snaps to −8° (t=2.0) then −28° (t=2.25) and tips. Only early tell: Isaac's ankle-roll q
+  DRIFTS (+0.06/+0.07 rad by 1.5 s under the compliant serial joint) while MuJoCo's stays flat (~0)
+  — but F9 proved stiffening roll overshoots, so there is no gain sweet spot.
+- **Conclusion:** the lateral failure is a first-step single-support DYNAMICS/CONTACT gap, confirmed
+  independently from the observation side. This closes the loop: gain/actuator tuning AND obs
+  fidelity both exonerated → the residual is body/contact fidelity, i.e. LimX-gated. (Tool: `latcmp.py`.)
