@@ -365,3 +365,39 @@ Ran the F4 command-vs-realized comparison but on the ROLL/LATERAL axis: Isaac (i
 - **Conclusion:** the lateral failure is a first-step single-support DYNAMICS/CONTACT gap, confirmed
   independently from the observation side. This closes the loop: gain/actuator tuning AND obs
   fidelity both exonerated → the residual is body/contact fidelity, i.e. LimX-gated. (Tool: `latcmp.py`.)
+
+---
+
+## Post-verdict: Anton chose the FREE-A/B path (2026-07-01) — built, tested, run
+
+After the verdict Anton chose to pursue option (2): emulate the real dual-motor achilles on the
+serial ankle in SOFTWARE (free A/B + kinematic constraint, no rods → no PhysX loop blowup). Built
+it faithfully as opt-in `--ankle-parallel` (module `isaacsim/ankle_parallel.py`, 10 committed
+brain-env tests): each ankle driven by motor-space PD (per-motor ±42 clip) mapped through the
+linkage Jacobian Jᵀ, + reflected rotor inertia diag(Jᵀdiag(I)J)≈[0.424,0.376] as ankle armature;
+forces explicit control (the law is per-substep torque). The per-motor clip BEFORE Jᵀ is the
+faithful shared-authority nonlinearity (pure pitch→motors differential ~90 N·m; pure roll→additive
+~85 N·m) that scalar scaling can't express.
+
+| # | config (vx=0.1) | fall onset | vs baseline (2.25 s) |
+|---|-----------------|-----------|----------------------|
+| C1 | implicit + `--armature` + Jacobian stiffness ×2.3/×2.04 | 0.75 s | WORSE |
+| C2 | explicit + `--armature` + Jacobian stiffness ×2.3/×2.04 | 1.0 s | WORSE |
+| D1 | **`--ankle-parallel`** (faithful: motor-space PD + Jᵀ + reflected inertia) | 1.5 s | WORSE |
+
+### F14 — free-A/B faithful emulation = 1.5 s: best explicit variant, still < implicit baseline
+The faithful dual-motor ankle holds Oli solid (base≈origin, pg_z=−1.00) through t=1.0 s — better
+than every other explicit/parallel variant (A2/C2 fell ~1.0 s) — then the first-step lateral tip
+takes it at ~1.5 s. It does NOT beat the plain implicit pitch×3 baseline (2.25 s), for a clean
+structural reason: the faithful emulation NEEDS the reflected ankle inertia to make its explicit
+PD stable, but adding reflected inertia to the IMPLICIT drive destabilizes it (C1: 0.75 s). So
+faithful-ankle forces EXPLICIT body control, and explicit body is less stable than implicit in
+Isaac (implicit's semi-implicit damping). No free lunch:
+- implicit body + stiff ankle (no reflected inertia) = baseline 2.25 s  ← best
+- explicit body + faithful ankle (reflected inertia) = D1 1.5 s
+- implicit body + faithful ankle (reflected inertia) = C1-like 0.75 s (inertia destabilizes implicit)
+A hybrid (implicit body + explicit-feedforward ankle) would inherit C1's instability → not worth
+building. **The ankle is now faithfully solved; the residual first-step LATERAL CONTACT gap (F13)
+dominates regardless — 10 s in Isaac remains gated on body/contact fidelity, not the ankle.**
+`--ankle-parallel` is committed as the most-faithful ankle model (opt-in; defaults unchanged) — the
+right serial-ankle actuator to pair with a future contact-fidelity fix or LimX's training config.
