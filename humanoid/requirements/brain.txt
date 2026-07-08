@@ -1,0 +1,19 @@
+# Humanoid repo Python dependencies — `brain` conda env (Python 3.11).
+#
+# Purpose: the deployment-invariant Oli BRAIN (Reason + Action) — the loop,
+# the walk ONNX policy + obs builder, the joystick teleop, and the operator pad.
+# Imports NO isaacsim and NO limxsdk; it drives the World over the UDS contract
+# (see logic/oli/). Stays env-constant across sim (Isaac/MuJoCo) and real.
+#
+# Install:
+#   conda create -n brain -c conda-forge python=3.11 -y
+#   conda activate brain
+#   pip install -r requirements/brain.txt
+#
+# Smoke test:
+#   python -c "import numpy, onnxruntime, scipy.spatial.transform, pygame; print('ok')"
+
+numpy>=2,<3
+onnxruntime>=1.20,<2
+scipy>=1.13,<2
+pygame>=2.6,<3        # operator joystick pad: logic/oli/reason/teleoperation/joystick/app.py

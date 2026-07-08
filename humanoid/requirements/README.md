@@ -6,6 +6,7 @@ its own `requirements/<env>.txt` here.
 
 | Env | Python | File | Purpose |
 |---|---|---|---|
+| `brain` | 3.11 | [brain.txt](brain.txt) | Deployment-invariant Oli brain (Reason+Action): loop, walk ONNX, joystick teleop + pad |
 | `hum` | 3.12 | [hum.txt](hum.txt) | Oli corpus extraction, MCP tooling, repo-side docs work |
 | `limx` | 3.8 | [limx.txt](limx.txt) | Runtime for any process importing `limxsdk` (sim + RL deploy) |
 
@@ -32,6 +33,14 @@ See [`docs/vendor/humanoid-rl-deploy-python.md`](../docs/vendor/humanoid-rl-depl
 for the sim ↔ policy ↔ real wire contract.
 
 ## Creating an env
+
+`brain`:
+
+```bash
+conda create -n brain -c conda-forge python=3.11 -y
+conda activate brain
+pip install -r requirements/brain.txt
+```
 
 `hum`:
 
