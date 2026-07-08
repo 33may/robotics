@@ -12,6 +12,17 @@ import numpy as np
 import yaml
 from sentence_transformers import SentenceTransformer
 
+from . import (
+    extract_configs,
+    extract_headers,
+    extract_launch,
+    extract_packages,
+    extract_sdk_joint_order,
+    extract_urdf,
+    structured_schema,
+)
+from .structured_schema import DOC_ID_LIMXSDK, DOC_ID_TARBALL
+
 ROOT = Path(__file__).resolve().parent.parent
 SOURCES = ROOT / "sources"
 NOTES = ROOT / "notes"
@@ -19,6 +30,16 @@ INDEX = ROOT / "index" / "corpus.sqlite"
 VECTORS = ROOT / "index" / "vectors.npz"
 TOKEN_LIMIT = 500
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+
+# Repo root: ROOT is humanoid/docs/oli-corpus; repo root is two parents up.
+REPO_ROOT = ROOT.parents[2]
+
+# Source roots for the structured extractors. Each maps doc_id → vendored dir.
+STRUCTURED_SOURCE_ROOTS: dict[str, Path] = {
+    DOC_ID_TARBALL: REPO_ROOT / "humanoid" / "vendor" / "oli-main-software-2.2.12",
+    "limxsdk": REPO_ROOT / "humanoid" / "vendor" / "humanoid-mujoco-sim" / "limxsdk-lowlevel" / "include" / "limxsdk",
+    "rl-deploy-python": REPO_ROOT / "humanoid" / "vendor" / "humanoid-rl-deploy-python",
+}
 
 DOC_ID_BY_FILE = {
     "LimX_EDU_Quick_Start_Guide.md": "quick-start",
@@ -141,6 +162,78 @@ def note_chunks() -> list[Chunk]:
     return chunks
 
 
+def _structured_chunk(uchunk: object, source_root: Path) -> Chunk:
+    """Convert any extractor's emitted chunk dataclass into a Chunk row.
+
+    All structured extractor chunk types share the same shape (doc_id, section,
+    heading, body) so we duck-type on attribute access.
+    """
+    doc_id: str = uchunk.doc_id  # type: ignore[attr-defined]
+    section: str = uchunk.section  # type: ignore[attr-defined]
+    heading: str = uchunk.heading  # type: ignore[attr-defined]
+    body: str = uchunk.body  # type: ignore[attr-defined]
+    rel_to_repo = (source_root / section).relative_to(REPO_ROOT).as_posix()
+    section_sha = sha(body)
+    return Chunk(
+        doc_id=doc_id,
+        section=section,
+        part=None,
+        heading=heading,
+        body=body,
+        layer="source",
+        path=rel_to_repo,
+        section_sha=section_sha,
+        chunk_sha=section_sha,
+    )
+
+
+def structured_chunks(db: sqlite3.Connection) -> list[Chunk]:
+    """Run all structured extractors, return chunks for FTS insertion.
+
+    Each extractor writes its typed tables directly; the returned chunks go
+    through the regular chunks/FTS insert path.
+    """
+    chunks: list[Chunk] = []
+    tarball_root = STRUCTURED_SOURCE_ROOTS[DOC_ID_TARBALL]
+    limxsdk_root = STRUCTURED_SOURCE_ROOTS[DOC_ID_LIMXSDK]
+
+    if not tarball_root.exists():
+        print(f"warning: tarball root not present, skipping tarball extraction: {tarball_root}")
+    else:
+        for uc in extract_urdf.run(db, tarball_root):
+            chunks.append(_structured_chunk(uc, tarball_root))
+        for pc in extract_packages.run(db, tarball_root):
+            chunks.append(_structured_chunk(pc, tarball_root))
+        for lc in extract_launch.run(db, tarball_root):
+            chunks.append(_structured_chunk(lc, tarball_root))
+
+    # Headers walk both tarball and limxsdk roots, so call once.
+    header_chunks = extract_headers.run(
+        db,
+        tarball_root=tarball_root if tarball_root.exists() else None,
+        limxsdk_root=limxsdk_root if limxsdk_root.exists() else None,
+    )
+    for hc in header_chunks:
+        # Each HeaderChunk knows its own doc_id; map back to its source root.
+        source_root = STRUCTURED_SOURCE_ROOTS[hc.doc_id]
+        chunks.append(_structured_chunk(hc, source_root))
+
+    # Configs: flat FTS only, no typed table.
+    deploy_root = STRUCTURED_SOURCE_ROOTS["rl-deploy-python"]
+    config_chunks = extract_configs.run(
+        db,
+        tarball_root=tarball_root if tarball_root.exists() else None,
+        deploy_root=deploy_root if deploy_root.exists() else None,
+    )
+    for cc in config_chunks:
+        source_root = STRUCTURED_SOURCE_ROOTS[cc.doc_id]
+        chunks.append(_structured_chunk(cc, source_root))
+
+    # SDK joint order: depends on URDF rows already being in `joints`, so run last.
+    extract_sdk_joint_order.run(db, deploy_root)
+    return chunks
+
+
 def doc_metadata() -> list[tuple[str, str, str, str, str]]:
     manifest = yaml.safe_load((SOURCES / "_meta" / "manifest.yaml").read_text(encoding="utf-8"))
     rows = []
@@ -168,7 +261,7 @@ def build_vectors(db: sqlite3.Connection) -> None:
 
 def build() -> None:
     INDEX.parent.mkdir(parents=True, exist_ok=True)
-    rows = source_chunks() + note_chunks()
+    webpage_rows = source_chunks() + note_chunks()
     with sqlite3.connect(INDEX) as db:
         db.executescript(
             """
@@ -203,23 +296,33 @@ def build() -> None:
             );
             """
         )
+        # Install structured typed tables (robots, joints, links, packages, ...)
+        structured_schema.install(db)
+
+        # Insert all doc metadata (existing webpages + structured source roots)
         db.executemany("INSERT INTO docs VALUES (?, ?, ?, ?, ?)", doc_metadata())
+        structured_schema.insert_structured_doc_metadata(db)
+
+        # Run structured extractors — they populate typed tables AND return FTS chunks.
+        structured_rows = structured_chunks(db)
+        all_rows = webpage_rows + structured_rows
+
         db.executemany(
             """
             INSERT INTO chunks(doc_id, section, part, heading, body, layer, path, section_sha, chunk_sha)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            [(c.doc_id, c.section, c.part, c.heading, c.body, c.layer, c.path, c.section_sha, c.chunk_sha) for c in rows],
+            [(c.doc_id, c.section, c.part, c.heading, c.body, c.layer, c.path, c.section_sha, c.chunk_sha) for c in all_rows],
         )
         db.execute("INSERT INTO chunks_fts(chunks_fts) VALUES ('rebuild')")
         db.execute(
             "CREATE TABLE vector_index(model TEXT NOT NULL, path TEXT NOT NULL, chunk_count INTEGER NOT NULL)"
         )
         build_vectors(db)
-        db.execute("INSERT INTO vector_index VALUES (?, ?, ?)", (EMBEDDING_MODEL, VECTORS.name, len(rows)))
+        db.execute("INSERT INTO vector_index VALUES (?, ?, ?)", (EMBEDDING_MODEL, VECTORS.name, len(all_rows)))
 
     by_doc: dict[str, tuple[int, set[str]]] = {}
-    for c in rows:
+    for c in all_rows:
         if c.layer != "source":
             continue
         count, sections = by_doc.get(c.doc_id, (0, set()))

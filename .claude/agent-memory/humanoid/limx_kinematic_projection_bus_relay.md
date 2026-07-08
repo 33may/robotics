@@ -34,10 +34,10 @@ It logs "joint calibration finished" after ~3 s; only then does it relay. Per-ro
 
 This **partially overturns design D9**, which deemed `kinematic_projection` out of scope because Isaac runs serial USD = PR space. That was right for *physics* but wrong for *bus routing*: deploy-python cannot see Isaac's state, and Isaac cannot see deploy's cmd, unless the relay is on the bus.
 
-But it does AB↔PR conversion assuming the sim is in **AB (parallel) space** (MuJoCo's MJCF). Our Isaac sim is in **PR (serial) space**. So naively spawning it would double-convert the ankle/waist joints. Unresolved options:
+But it does AB↔PR conversion assuming the sim is in **AB (parallel) space** (MuJoCo's MJCF). Our Isaac sim is in **PR (serial) space**. So naively spawning it would double-convert the ankle/waist joints. Options:
 1. Spawn kinematic_projection anyway and accept mis-converted ankle/waist (other 27 joints pass through) — measure how bad.
-2. Build a thin pure-Python relay that republishes state/cmd identity (no AB↔PR) — Isaac is already PR, so identity is correct.
-3. Configure kinematic_projection with an identity/serial model.
-Decision pending with Anton.
+2. ❌ **IMPOSSIBLE in Python** — a pure-Python identity relay cannot work: limxsdk's Python `Robot` exposes no `subscribeRobotStateForSim` (can't tap the sim's raw state) and `subscribeRobotCmd` is self-loopback only (can't tap the policy's raw cmd). kinematic_projection relays via a lower-level C++ MROS API not surfaced in the Python wheel. Proven 2026-06-22 (MAY-147). Don't re-attempt.
+3. Configure kinematic_projection with an identity/serial model (untested).
+4. **ONNX-direct**: run the exported policy inside the Isaac process (PR obs → PR actions applied via Oli's PD law), skipping MROS/kinproj entirely — aligns with the invariant-interface endgame ([[project_invariant_oli_interface]]).
 
 Related: [[limx-sdk-role-gating]], [[isaac-pd-implicit-drive]], [[vendor-humanoid-mujoco-sim]].
