@@ -1,110 +1,86 @@
 """
-oli.py — `Oli`, the reusable Isaac Sim component for the HU_D04_01 humanoid.
+oli.py — `Oli`, the HU_D04_01 articulation body inside an Isaac world.
 
-`Oli` owns everything Oli-specific inside an Isaac world: USD loading, root
-pinning, articulation init, an IMU sensor at `base_link`, the PR↔Isaac joint
-permutation, and the PD-with-feedforward actuator law. Host apps construct one
-`Oli` against their own `World` and call `oli.tick()` once per physics step.
+`Oli` is the SIM World's body: USD loading, root pinning, articulation init, an IMU
+sensor at `base_link`, and the PD-with-feedforward actuator law realized via PhysX's
+implicit drive. It speaks ISAAC DOF ORDER only — the PR↔Isaac permutation and all
+contract/policy knowledge live in `SimComm` (D4). The brain never sees this object.
 
-Two modes:
-  - `Oli(world, bridge=some_bridge)` — `tick()` reads state, sends it over the
-    bridge, drains incoming cmds, applies the PD law. (MAY-147 deploy workflow.)
-  - `Oli(world, bridge=None)` — `tick()` only applies whatever `apply_cmd(...)`
-    last set. No IPC, no sidecar. (RL eval / ONNX / teleop / kinematics-only.)
+Body interface that `SimComm` depends on (duck-typed):
+    oli.dof_names                                  -> list[str]   (Isaac order)
+    oli.read_joints_isaac()                        -> (q, dq, tau)   each (num_dof,)
+    oli.read_imu()                                 -> (acc, gyro, quat_wxyz)
+    oli.apply_isaac(q_des, dq_des, tau_ff, kp, kd)                  each (num_dof,)
 
-The bridge is duck-typed: any object exposing `handshake(dof_names)`,
-`send_state_imu(...)`, and `poll_cmd()` works. This keeps `Oli` decoupled from
-the IPC implementation so a future in-process SDK adapter can drop in unchanged.
+This module MUST run in the `isaac` conda env (CPython 3.11 + isaacsim 5.0). It must
+NOT import `limxsdk`. PD realization (memory `isaac-pd-implicit-drive`): push Kp/Kd
+into the joint drives + position/velocity targets so PhysX integrates
+τ = Kp(q_d−q) + Kd(dq_d−dq) implicitly (stable for real-tuned gains); τ_ff is added
+additively via `set_joint_efforts`. NOT explicit-effort PD (that rings unstably).
 
-This module MUST run in the `isaac` conda env (CPython 3.11 + isaacsim 5.0).
-It MUST NOT import `limxsdk` (ABI-incompatible) or anything from `bridge/`.
-
-References:
-  - design.md D5 (tick cadence), D7 (permutation), D8 (IMU), D14 (Oli API)
-  - spec.md "Oli is a reusable Isaac component", "Oli.tick() applies PD law"
-  - joint audit: openspec/changes/may-147-isaac-limx-sdk-bridge/_research/joint_name_audit.md
+References: design.md D4 (Comm owns permutation), D8 (IMU), D9 (freeze: the host owns
+`world.step()`; Oli never steps), Oli body API.
 """
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Protocol, Sequence, Union
+from typing import List, Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-# Accept python sequences OR numpy arrays for all array-valued args.
 FloatArray = Union[Sequence[float], np.ndarray]
 
-# ── PR canonical joint order (HU_D04_01) — MAY-145 § 11 ──────────────────────
-# The single source of truth for the wire ordering. The permutation between this
-# and Isaac's DOF order is computed at runtime in __init__ (never hard-coded), so
-# a USD re-import that reshuffles Isaac's DOF order is handled automatically.
-PR_ORDER: List[str] = [
-    "left_hip_pitch_joint", "left_hip_roll_joint", "left_hip_yaw_joint",
-    "left_knee_joint", "left_ankle_pitch_joint", "left_ankle_roll_joint",
-    "right_hip_pitch_joint", "right_hip_roll_joint", "right_hip_yaw_joint",
-    "right_knee_joint", "right_ankle_pitch_joint", "right_ankle_roll_joint",
-    "waist_yaw_joint", "waist_roll_joint", "waist_pitch_joint",
-    "head_yaw_joint", "head_pitch_joint",
-    "left_shoulder_pitch_joint", "left_shoulder_roll_joint",
-    "left_shoulder_yaw_joint", "left_elbow_joint",
-    "left_wrist_yaw_joint", "left_wrist_pitch_joint", "left_wrist_roll_joint",
-    "right_shoulder_pitch_joint", "right_shoulder_roll_joint",
-    "right_shoulder_yaw_joint", "right_elbow_joint",
-    "right_wrist_yaw_joint", "right_wrist_pitch_joint", "right_wrist_roll_joint",
-]
 NUM_JOINTS: int = 31
-assert len(PR_ORDER) == NUM_JOINTS
 
-DEFAULT_USD = Path(
-    "/home/may33/projects/ml_portfolio/robotics/humanoid/assets/oli/usd/HU_D04_01.usd"
+# Shipped USD — the CORRECT Isaac model: it stands rock-solid under the walk policy.
+# (Tested the URDF-imported training model HU_D04_01_rl.usd via build_rl_usd.py — it could
+# not even stand: Isaac's stock URDF importer mangles the canted hip-pitch axis it warns
+# about reorienting, which LimX's USD build handles correctly. So the shipped USD is the
+# more faithful model; the forward-walk whip is a separate issue on it. See
+# isaac_walk_physics_fidelity memory.)
+DEFAULT_USD = (
+    Path(__file__).resolve().parents[3] / "assets" / "oli" / "usd" / "HU_D04_01.usd"
 )
-
-# Variant → USD filename suffix
 _VARIANT_SUFFIX = {"bare": "", "gripper": "_with_gripper", "hand": "_with_hand"}
 
 
-# ── Duck-typed bridge interface (D14 reversibility) ─────────────────────────
+def pd_torque(q_des, q, dq_des, dq, kp, kd, tau_ff) -> np.ndarray:
+    """Explicit PD torque, legged_gym `_compute_torques` form (control_type "P"):
 
-class BridgeLike(Protocol):
-    """Structural interface `Oli` needs from a bridge — IPC or in-process."""
+        τ = kp·(q_des − q) + kd·(dq_des − dq) + tau_ff
 
-    def handshake(self, dof_names: Sequence[str]) -> None: ...
-
-    def send_state_imu(
-        self, seq: int, stamp_ns: int,
-        q: Sequence[float], dq: Sequence[float], tau: Sequence[float],
-        acc: Sequence[float], gyro: Sequence[float], quat_wxyz: Sequence[float],
-    ) -> None: ...
-
-    def poll_cmd(self) -> Optional[Dict]: ...
-
-
-# ── Cached cmd state ────────────────────────────────────────────────────────
-
-class _CachedCmd:
-    """Latched PR-space command. Zero-initialized (cold start = no torque)."""
-
-    def __init__(self) -> None:
-        z = np.zeros(NUM_JOINTS, dtype=np.float32)
-        self.q_d = z.copy()
-        self.dq_d = z.copy()
-        self.tau_ff = z.copy()
-        self.kp = z.copy()
-        self.kd = z.copy()
-        self.mode = np.zeros(NUM_JOINTS, dtype=np.int32)
-        self.parallel_solve_required = np.ones(NUM_JOINTS, dtype=np.int32)
+    Pure/array-broadcast → unit-testable without isaacsim. The World calls this every
+    physics substep with the LATEST q/dq (effort mode), exactly as TRON1 training does,
+    instead of letting PhysX's implicit drive integrate the PD internally.
+    """
+    return (
+        np.asarray(kp, dtype=np.float32) * (np.asarray(q_des, dtype=np.float32) - np.asarray(q, dtype=np.float32))
+        + np.asarray(kd, dtype=np.float32) * (np.asarray(dq_des, dtype=np.float32) - np.asarray(dq, dtype=np.float32))
+        + np.asarray(tau_ff, dtype=np.float32)
+    ).astype(np.float32)
 
 
-# ── Oli ─────────────────────────────────────────────────────────────────────
+def _quat_rotate_inverse(q_wxyz, v) -> np.ndarray:
+    """Rotate a WORLD-frame vector into the body frame (legged_gym `quat_rotate_inverse`),
+    quaternion in wxyz. Used to express base angular velocity / gravity in the body frame,
+    matching how MuJoCo's gyro/framequat and the deploy obs are defined.
+    """
+    q = np.asarray(q_wxyz, dtype=np.float64)
+    w, vec = q[0], q[1:4]
+    v = np.asarray(v, dtype=np.float64)
+    a = v * (2.0 * w * w - 1.0)
+    b = np.cross(vec, v) * (2.0 * w)
+    c = vec * (np.dot(vec, v) * 2.0)
+    return (a - b + c).astype(np.float32)
+
 
 class Oli:
-    """Reusable HU_D04_01 component inside an Isaac `World`.
+    """HU_D04_01 articulation body inside an Isaac `World` (Isaac DOF order).
 
-    Construct after the `World` exists but the caller still owns stepping and
-    rendering. `Oli.tick()` performs one physics-tick's worth of state read +
-    cmd apply but never calls `world.step()` or renders — that's the host's job.
+    Construct after the `World` exists. `Oli` reads/applies a single physics tick's
+    worth of state but never calls `world.step()` or renders — the host (the World
+    main loop) owns stepping, so it can freeze-until-cmd and pace rendering (D9).
     """
 
     def __init__(
@@ -116,20 +92,18 @@ class Oli:
         spawn_pose: Sequence[float] = (0.0, 0.0, 1.05),
         pin_root: bool = True,
         variant: Literal["bare", "gripper", "hand"] = "bare",
-        bridge: Optional[BridgeLike] = None,
         imu_offset_pitch: float = 0.0,
         imu_offset_roll: float = 0.0,
+        cameras: bool = False,
+        camera_resolution: Tuple[int, int] = (1280, 720),
     ) -> None:
-        # Imports are deferred to __init__ so the module is importable for
-        # static analysis / unit imports without a live Kit runtime.
+        # Deferred isaac imports so this module is importable for static analysis.
         from isaacsim.core.utils.stage import add_reference_to_stage
         from isaacsim.core.prims import SingleArticulation
         from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, PhysxSchema
 
         self._world = world
         self._prim_path = prim_path
-        self._bridge = bridge
-        self._seq = 0
 
         if usd_path is None:
             suffix = _VARIANT_SUFFIX[variant]
@@ -178,61 +152,46 @@ class Oli:
         world.reset()
         self._art = SingleArticulation(prim_path=prim_path, name="oli")
         self._art.initialize()
-
         if self._art.num_dof != NUM_JOINTS:
             raise RuntimeError(
-                f"expected {NUM_JOINTS} DOFs, got {self._art.num_dof} "
-                f"— USD has extra joints not in PR canonical"
+                f"expected {NUM_JOINTS} DOFs, got {self._art.num_dof}"
             )
 
-        # ── PD realized via PhysX implicit drive (design.md D5, Option B) ───
-        # We do NOT compute torque ourselves and call set_joint_efforts for the
-        # PD term — that applies the cmd's Kd as an explicit one-step-lagged
-        # force, which rings unstably for MuJoCo/real-robot-tuned gains. Instead
-        # we push Kp/Kd into the joint drives and command position+velocity
-        # targets, so PhysX integrates τ = Kp(q_d−q) + Kd(dq_d−dq) implicitly
-        # (stable, identical formula, same as the real motor controller). The
-        # feedforward τ_ff is added separately via set_joint_efforts (additive).
-        #
-        # Drive gains start at zero; they're written on the first cmd and only
-        # re-written when Kp/Kd change (the walk/stand controllers send constant
-        # gains, so this is rare). `_drive_gains_isaac` caches the last-written
-        # gains (Isaac order) so we can detect changes cheaply.
-        self._drive_gains_isaac = None  # (kps_isaac, kds_isaac) or None
+        # ── PD via PhysX implicit drive (memory: isaac-pd-implicit-drive) ───
+        # Gains start at zero; written on the first apply and only when they
+        # change (controllers send constant gains per mode → rare re-writes).
+        self._drive_gains = None  # (kps, kds) in Isaac order, or None
+        self._cmd = None  # stored explicit-torque target (Isaac order), or None
+        self._max_effort = None  # per-joint effort clip for explicit torque, or None
+        self._parallel_ankles = None  # [(pitch_idx, roll_idx, J), ...] Isaac order, or None
         self._art._articulation_view.set_gains(
             kps=np.zeros((1, NUM_JOINTS), dtype=np.float32),
             kds=np.zeros((1, NUM_JOINTS), dtype=np.float32),
         )
 
-        # ── Build permutation tables (D7) ───────────────────────────────────
-        isaac_names = list(self._art.dof_names)
-        pr_set, isaac_set = set(PR_ORDER), set(isaac_names)
-        if pr_set != isaac_set:
-            raise RuntimeError(
-                f"joint-name set mismatch. In Isaac not PR: "
-                f"{sorted(isaac_set - pr_set)}; in PR not Isaac: "
-                f"{sorted(pr_set - isaac_set)}"
-            )
-        # pr_to_isaac[pr_idx] = isaac_idx of the same joint
-        self._pr_to_isaac = np.array(
-            [isaac_names.index(n) for n in PR_ORDER], dtype=np.int64
-        )
-        # isaac_to_pr[isaac_idx] = pr_idx of the same joint (inverse)
-        self._isaac_to_pr = np.empty(NUM_JOINTS, dtype=np.int64)
-        self._isaac_to_pr[self._pr_to_isaac] = np.arange(NUM_JOINTS)
+        # ── IMU sensor at base_link (D8) — now OPTIONAL ─────────────────────
+        # read_imu() derives orientation + body-frame gyro from the articulation ROOT state
+        # (the Isaac IMUSensor doesn't update in our manual step loop). So the sensor prim
+        # is unused; attach it best-effort and never fail the load on a base_link mismatch
+        # (the URDF-imported model may name/merge links differently than the shipped USD).
+        try:
+            self._imu = self._attach_imu(imu_offset_pitch, imu_offset_roll)
+        except Exception as e:  # pragma: no cover - defensive
+            self._imu = None
+            print(f"[oli] IMU sensor attach skipped ({e}); read_imu uses root state",
+                  flush=True)
 
-        # ── Attach an IMU sensor at base_link (D8) ──────────────────────────
-        self._imu = self._attach_imu(imu_offset_pitch, imu_offset_roll)
-
-        # ── Cached cmd + latency stats ──────────────────────────────────────
-        self._cmd = _CachedCmd()
-        self._tick_latencies_us: List[float] = []
-
-        # ── Bridge handshake (if attached) ──────────────────────────────────
-        if self._bridge is not None:
-            self._bridge.handshake(isaac_names)
-
-    # ── IMU setup ───────────────────────────────────────────────────────────
+        # ── Cameras (oli-perception, MAY-149) — flag-gated (render cost, D7/D8) ──
+        # The camera prims are baked into the USD sensor layer (build_camera_usd.py);
+        # here we just wrap them with the render sensor. Off by default so the walk
+        # path pays nothing. The host owns render(); get_rgba/depth read the last frame.
+        self._cameras = {}  # name -> (Camera sensor, CameraMount)
+        if cameras:
+            try:
+                self._attach_cameras(camera_resolution)
+            except Exception as e:  # pragma: no cover - defensive
+                self._cameras = {}
+                print(f"[oli] camera attach skipped ({e})", flush=True)
 
     def _attach_imu(self, offset_pitch: float, offset_roll: float):
         from isaacsim.sensors.physics import IMUSensor
@@ -245,19 +204,54 @@ class Oli:
                 np.array([offset_roll, offset_pitch, 0.0]), degrees=False
             )
         imu = IMUSensor(
-            prim_path=imu_path,
-            name="oli_imu",
-            translation=np.zeros(3),
-            orientation=orientation,
+            prim_path=imu_path, name="oli_imu",
+            translation=np.zeros(3), orientation=orientation,
         )
         imu.initialize()
         return imu
+
+    def _attach_cameras(self, resolution: Tuple[int, int]) -> None:
+        """Wrap the baked D435i camera prims (build_camera_usd.py) with render sensors."""
+        from isaacsim.sensors.camera import Camera
+
+        from humanoid.logic.oli.camera_mounts import CAMERAS
+
+        self._camera_resolution = (int(resolution[0]), int(resolution[1]))
+        for mount in CAMERAS:
+            path = f"{self._prim_path}/{mount.parent_link}/{mount.name}_camera"
+            cam = Camera(prim_path=path, resolution=self._camera_resolution)
+            cam.initialize()
+            cam.add_distance_to_image_plane_to_frame()  # planar Z depth, meters
+            self._cameras[mount.name] = (cam, mount)
+
+    @property
+    def camera_names(self) -> List[str]:
+        return list(self._cameras.keys())
+
+    def read_camera_rgbd(self, name: str) -> Tuple[np.ndarray, np.ndarray]:
+        """(rgb (H,W,3) uint8, depth (H,W) float32 m) for a camera. The host must have
+        rendered (`world.step(render=True)`) this tick for the frame to be current."""
+        cam, _mount = self._cameras[name]
+        rgba = cam.get_rgba()
+        rgb = np.ascontiguousarray(rgba[:, :, :3], dtype=np.uint8)
+        depth = np.asarray(
+            cam.get_current_frame()["distance_to_image_plane"], dtype=np.float32
+        )
+        return rgb, depth
+
+    def camera_intrinsics(self, name: str):
+        """D435i-like intrinsics at this camera's render resolution (CameraIntrinsics)."""
+        from humanoid.logic.oli.camera_mounts import rgb_intrinsics
+
+        _cam, mount = self._cameras[name]
+        w, h = self._camera_resolution
+        return rgb_intrinsics(width=w, height=h, hfov_deg=mount.hfov_deg)
 
     # ── Public properties ───────────────────────────────────────────────────
 
     @property
     def dof_names(self) -> List[str]:
-        """Isaac DOF order (not PR order)."""
+        """Isaac DOF order (SimComm builds the PR↔Isaac permutation from this)."""
         return list(self._art.dof_names)
 
     @property
@@ -268,180 +262,228 @@ class Oli:
     def base_link_path(self) -> str:
         return self._base_link_path
 
-    # ── Reading articulation + IMU (PR-ordered out) ─────────────────────────
+    # ── Body interface (Isaac DOF order; SimComm does PR↔Isaac) ──────────────
 
-    def _read_q_dq_tau_pr(self):
-        q_isaac = np.asarray(self._art.get_joint_positions(), dtype=np.float32)
-        dq_isaac = np.asarray(self._art.get_joint_velocities(), dtype=np.float32)
-        tau_isaac = np.asarray(
-            self._art.get_measured_joint_efforts(), dtype=np.float32
-        )
-        # Permute Isaac → PR
-        return (
-            q_isaac[self._pr_to_isaac],
-            dq_isaac[self._pr_to_isaac],
-            tau_isaac[self._pr_to_isaac],
-        )
+    def read_joints_isaac(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """(q, dq, tau) in Isaac DOF order."""
+        q = np.asarray(self._art.get_joint_positions(), dtype=np.float32)
+        dq = np.asarray(self._art.get_joint_velocities(), dtype=np.float32)
+        tau = np.asarray(self._art.get_measured_joint_efforts(), dtype=np.float32)
+        return q, dq, tau
 
-    def _read_imu(self):
-        frame = self._imu.get_current_frame()
-        acc = np.asarray(frame["lin_acc"], dtype=np.float32).reshape(-1)[:3]
-        gyro = np.asarray(frame["ang_vel"], dtype=np.float32).reshape(-1)[:3]
-        quat_wxyz = np.asarray(frame["orientation"], dtype=np.float32).reshape(-1)[:4]
-        return acc, gyro, quat_wxyz
+    def read_imu(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """(acc, gyro, quat_wxyz) — base frame.
 
-    def read_state(self) -> Dict:
-        """RobotState-shaped dict in PR order: {stamp, q, dq, tau, motor_names}."""
-        q, dq, tau = self._read_q_dq_tau_pr()
-        return {
-            "stamp": time.time_ns(),
-            "q": q,
-            "dq": dq,
-            "tau": tau,
-            "motor_names": list(PR_ORDER),
-        }
-
-    def read_imu(self) -> Dict:
-        """ImuData-shaped dict: {stamp, acc, gyro, quat_wxyz}."""
-        acc, gyro, quat_wxyz = self._read_imu()
-        return {
-            "stamp": time.time_ns(),
-            "acc": acc,
-            "gyro": gyro,
-            "quat_wxyz": quat_wxyz,
-        }
-
-    # ── Command application ─────────────────────────────────────────────────
-
-    def apply_cmd(
-        self,
-        q_d: FloatArray,
-        dq_d: Optional[FloatArray] = None,
-        tau_ff: Optional[FloatArray] = None,
-        kp: Optional[FloatArray] = None,
-        kd: Optional[FloatArray] = None,
-    ) -> None:
-        """Low-level escape hatch — set the cached cmd directly (PR order).
-
-        Only the kwargs you pass are updated; the rest keep their previous
-        values. This is what RL / ONNX / teleop call instead of a bridge.
+        Derived from the articulation ROOT STATE, NOT Isaac's `IMUSensor`: that sensor's
+        orientation + angular velocity DO NOT update inside our manual `world.step()` loop
+        — it returns identity quat + zero gyro no matter the real motion (verified by
+        `imu_probe.py`: the base tilts to 54° while the sensor still reads upright). That
+        left the walk policy blind to its own tilt → it walked open-loop and toppled, immune
+        to every physics/actuator change. `get_world_pose` is probe-confirmed correct and
+        matches MuJoCo's `framequat`; the body-frame gyro matches MuJoCo's `Body_Gyro`.
+        `acc` is the body-frame gravity reaction (a sane accelerometer proxy; the walk obs
+        ignores it).
         """
-        def _set(name: str, val: Optional[FloatArray]) -> None:
-            if val is None:
-                return
-            arr = np.asarray(val, dtype=np.float32)
-            if arr.shape != (NUM_JOINTS,):
-                raise ValueError(
-                    f"apply_cmd '{name}' must be shape ({NUM_JOINTS},), "
-                    f"got {arr.shape}"
-                )
-            setattr(self._cmd, name, arr)
+        _, quat_wxyz = self._art.get_world_pose()
+        quat = np.asarray(quat_wxyz, dtype=np.float32).reshape(-1)[:4]
+        ang_world = np.asarray(
+            self._art.get_angular_velocity(), dtype=np.float32).reshape(-1)[:3]
+        gyro = _quat_rotate_inverse(quat, ang_world)  # world → body frame
+        acc = _quat_rotate_inverse(quat, np.array([0.0, 0.0, 9.81], dtype=np.float32))
+        return acc, gyro, quat
 
-        _set("q_d", q_d)
-        _set("dq_d", dq_d)
-        _set("tau_ff", tau_ff)
-        _set("kp", kp)
-        _set("kd", kd)
+    def base_world_position(self) -> np.ndarray:
+        """Base-link world position (x, y, z) — for tracking translation / height."""
+        pos, _ = self._art.get_world_pose()
+        return np.asarray(pos, dtype=np.float32).reshape(-1)[:3]
 
-    def _update_cmd_from_bridge_msg(self, msg: Dict) -> None:
-        """Replace the cached cmd from a decoded bridge CMD message (PR order)."""
-        c = self._cmd
-        c.q_d = np.asarray(msg["q"], dtype=np.float32)
-        c.dq_d = np.asarray(msg["dq"], dtype=np.float32)
-        c.tau_ff = np.asarray(msg["tau"], dtype=np.float32)
-        c.kp = np.asarray(msg["kp"], dtype=np.float32)
-        c.kd = np.asarray(msg["kd"], dtype=np.float32)
-        c.mode = np.asarray(msg["mode"], dtype=np.int32)
-        c.parallel_solve_required = np.asarray(
-            msg["parallel_solve_required"], dtype=np.int32
-        )
+    def base_world_quat_wxyz(self) -> np.ndarray:
+        """Base-link world orientation as a wxyz quaternion (ground-truth tilt)."""
+        _, quat = self._art.get_world_pose()
+        return np.asarray(quat, dtype=np.float32).reshape(-1)[:4]
 
-    # ── The tick ────────────────────────────────────────────────────────────
+    def set_base_pose(self, position, quat_wxyz) -> None:
+        """Set the base (root) world pose — position (x,y,z) + orientation (wxyz).
 
-    def _push_cmd_to_drive(self) -> None:
-        """Realize the cached PR-space cmd via PhysX's implicit drive (D5/B).
-
-        τ = Kp(q_d−q) + Kd(dq_d−dq) is integrated by PhysX from the drive gains
-        + position/velocity targets (stable). τ_ff is added as explicit effort.
-        Gains are only re-written when they change (cheap change-detection).
+        For probes / initial conditions: drops the articulation at a known tilt so the IMU
+        can be checked against ground truth. The articulation must be initialized.
         """
-        c = self._cmd
+        pos = np.asarray(position, dtype=np.float32).reshape(3)
+        quat = np.asarray(quat_wxyz, dtype=np.float32).reshape(4)
+        self._art.set_world_pose(position=pos, orientation=quat)
+
+    def set_base_velocity(self, linear, angular) -> None:
+        """Set the base spatial velocity — linear (3,) + angular (3,), world frame.
+        For the gyro check: spin the base at a known rate and read the IMU back."""
+        vel = np.concatenate([
+            np.asarray(linear, dtype=np.float32).reshape(3),
+            np.asarray(angular, dtype=np.float32).reshape(3),
+        ])
+        self._art.set_world_velocity(vel)
+
+    def set_joint_state(self, q_isaac: FloatArray, dq_isaac: Optional[FloatArray] = None) -> None:
+        """Set joint positions (and velocities, default zero) directly — Isaac order.
+
+        Used to spawn Oli into an initial condition (the home crouch) before the
+        World starts serving; writes the physics state so the next read/step sees it.
+        The PR→Isaac permutation is the caller's job (SimComm) — this stays pure.
+        """
+        q = np.asarray(q_isaac, dtype=np.float32).reshape(-1)
+        if q.shape != (NUM_JOINTS,):
+            raise ValueError(f"set_joint_state expects {NUM_JOINTS} positions, got {q.shape}")
+        dq = (
+            np.zeros(NUM_JOINTS, dtype=np.float32)
+            if dq_isaac is None
+            else np.asarray(dq_isaac, dtype=np.float32).reshape(-1)
+        )
+        self._art.set_joint_positions(q)
+        self._art.set_joint_velocities(dq)
+
+    def set_actuation_limits(self, names, effort=None, velocity=None) -> None:
+        """Cap max effort (N·m) and/or max velocity (rad/s) on the NAMED joints (Isaac
+        index resolved from dof_names). Used to match the TRAINING URDF's ankle limits
+        (effort 42, velocity 13.6) on the serial ankle: the deploy walk_param allows ~80,
+        which over-torques the bare serial ankle into the whip the policy never saw in
+        training (the real ankle is geared down by the achilles, so 80 is safe there).
+        """
+        dn = list(self.dof_names)
+        idxs = [dn.index(n) for n in names if n in dn]
+        if not idxs:
+            return
         view = self._art._articulation_view
+        j = np.asarray(idxs, dtype=np.int64)
+        if effort is not None:
+            view.set_max_efforts(
+                np.full((1, len(idxs)), float(effort), dtype=np.float32), joint_indices=j)
+        if velocity is not None:
+            view.set_max_joint_velocities(
+                np.full((1, len(idxs)), float(velocity), dtype=np.float32), joint_indices=j)
 
-        # Permute PR → Isaac
-        kps_isaac = c.kp[self._isaac_to_pr]
-        kds_isaac = c.kd[self._isaac_to_pr]
-        q_d_isaac = c.q_d[self._isaac_to_pr]
-        dq_d_isaac = c.dq_d[self._isaac_to_pr]
-        tau_ff_isaac = c.tau_ff[self._isaac_to_pr]
+    def set_armature(self, armature_isaac: FloatArray) -> None:
+        """Set per-joint rotor inertia (armature) on the drive — Isaac DOF order.
 
-        # Re-write gains only when they change (controllers send constant gains)
-        if (
-            self._drive_gains_isaac is None
-            or not np.array_equal(self._drive_gains_isaac[0], kps_isaac)
-            or not np.array_equal(self._drive_gains_isaac[1], kds_isaac)
-        ):
-            view.set_gains(
-                kps=kps_isaac.reshape(1, -1),
-                kds=kds_isaac.reshape(1, -1),
-            )
-            self._drive_gains_isaac = (kps_isaac.copy(), kds_isaac.copy())
-
-        # Position + velocity targets drive the implicit PD
-        view.set_joint_position_targets(q_d_isaac.reshape(1, -1))
-        view.set_joint_velocity_targets(dq_d_isaac.reshape(1, -1))
-        # Feedforward torque is additive on top of the implicit PD
-        self._art.set_joint_efforts(tau_ff_isaac)
-
-    def tick(self) -> None:
-        """One physics-tick worth of work. Does NOT step or render the world.
-
-        With a bridge: read state+IMU → send → drain cmd → push cmd to drive.
-        Without a bridge: push the last `apply_cmd` cache to the drive.
+        Isaac's USD ships armature=0 on every joint; the walk policy was tuned against
+        real rotor inertia (HU_D04 MJCF). A high-kp drive (legs kp≈139) on a massless
+        rotor at 1 kHz buzzes into divergence — independent of loop timing, which is why
+        lock-step didn't help. Mirrors IsaacLab's ImplicitActuatorCfg.armature; the
+        PR→Isaac permutation is the caller's job (SimComm), so this stays pure.
         """
-        t0 = time.perf_counter()
+        a = np.asarray(armature_isaac, dtype=np.float32).reshape(-1)
+        if a.shape != (NUM_JOINTS,):
+            raise ValueError(f"set_armature expects {NUM_JOINTS} values, got {a.shape}")
+        self._art._articulation_view.set_armatures(a.reshape(1, -1))
 
-        if self._bridge is not None:
-            q_pr, dq_pr, tau_pr = self._read_q_dq_tau_pr()
-            acc, gyro, quat_wxyz = self._read_imu()
-            self._bridge.send_state_imu(
-                seq=self._seq,
-                stamp_ns=time.time_ns(),
-                q=q_pr.tolist(),
-                dq=dq_pr.tolist(),
-                tau=tau_pr.tolist(),
-                acc=acc.tolist(),
-                gyro=gyro.tolist(),
-                quat_wxyz=quat_wxyz.tolist(),
-            )
-            self._seq += 1
-            # Drain all pending cmds; keep the most recent
-            latest = None
-            while True:
-                msg = self._bridge.poll_cmd()
-                if msg is None:
-                    break
-                latest = msg
-            if latest is not None:
-                self._update_cmd_from_bridge_msg(latest)
+    def set_solver_iteration_counts(
+        self, position: Optional[int] = None, velocity: Optional[int] = None
+    ) -> None:
+        """Override the articulation's PhysX solver iteration counts (TGS).
 
-        # Realize the cached cmd via the implicit drive (mode is recorded, not applied)
-        self._push_cmd_to_drive()
+        IsaacLab trains HU_D04 with position=4 / velocity=4; our USD defaults to a low
+        velocity-iteration count, which under-resolves the stiff leg drives. Each arg is
+        applied only if given (None = leave the USD value untouched), so callers can move
+        one knob at a time.
+        """
+        view = self._art._articulation_view
+        if position is not None:
+            view.set_solver_position_iteration_counts(
+                np.full((1,), int(position), dtype=np.int32))
+        if velocity is not None:
+            view.set_solver_velocity_iteration_counts(
+                np.full((1,), int(velocity), dtype=np.int32))
 
-        dt_us = (time.perf_counter() - t0) * 1e6
-        self._tick_latencies_us.append(dt_us)
-        if len(self._tick_latencies_us) > 10000:
-            self._tick_latencies_us = self._tick_latencies_us[-5000:]
+    # ── Explicit per-substep torque control (legged_gym / TRON1 reproduction) ────
 
-    # ── Stats ───────────────────────────────────────────────────────────────
+    def set_effort_mode(self) -> Optional[np.ndarray]:
+        """Zero the implicit drive gains so PhysX adds NO PD of its own — control becomes
+        pure applied effort (legged_gym `default_dof_drive_mode = EFFORT`). Pair with
+        `set_command_isaac` + `apply_torque_isaac`. Call once before explicit control.
 
-    def tick_latency_stats(self) -> Dict[str, float]:
-        """p50/p99 tick latency in microseconds over the rolling window."""
-        if not self._tick_latencies_us:
-            return {"p50_us": 0.0, "p99_us": 0.0, "n": 0}
-        arr = np.asarray(self._tick_latencies_us)
-        return {
-            "p50_us": float(np.percentile(arr, 50)),
-            "p99_us": float(np.percentile(arr, 99)),
-            "n": len(arr),
-        }
+        Also caches the per-joint effort limit (USD drive maxForce = URDF effort limit =
+        legged_gym `torque_limits`) so explicit torque is clipped EVERY substep — without
+        the clip the high-kp PD positive-feedbacks into divergence. Returns the cached
+        limit (Isaac order) for logging, or None if unavailable.
+        """
+        view = self._art._articulation_view
+        z = np.zeros((1, NUM_JOINTS), dtype=np.float32)
+        view.set_gains(kps=z, kds=z)
+        self._drive_gains = (np.zeros(NUM_JOINTS, dtype=np.float32),
+                             np.zeros(NUM_JOINTS, dtype=np.float32))
+        try:
+            eff = np.asarray(view.get_max_efforts(), dtype=np.float32).reshape(-1)
+            self._max_effort = eff if eff.shape == (NUM_JOINTS,) else None
+        except Exception:  # pragma: no cover - defensive; clip is optional
+            self._max_effort = None
+        return self._max_effort
+
+    def configure_parallel_ankle(self, ankles) -> None:
+        """Enable the faithful dual-motor achilles law for the given ankle pairs (the "free A/B
+        + software kinematic constraint" path). `ankles` = list of (pitch_idx, roll_idx, J) in
+        ISAAC DOF order (SimComm resolves names→indices + picks J_LEFT/J_RIGHT). Under explicit
+        control, `apply_torque_isaac` then OVERWRITES these ankle joints' joint-space PD with the
+        motor-space parallel law (per-motor clip + Jᵀ). No effect under implicit control.
+        """
+        self._parallel_ankles = list(ankles) if ankles else None
+
+    def set_command_isaac(self, q_des, dq_des, tau_ff, kp, kd) -> None:
+        """Store a PD target (Isaac DOF order) for explicit per-substep torque control.
+
+        The World recomputes torque every physics substep from this target + the latest
+        q/dq via `apply_torque_isaac` — unlike `apply_isaac`, which hands the PD to the
+        PhysX drive once. SimComm does the PR→Isaac permutation, so this stays pure.
+        """
+        self._cmd = (
+            np.asarray(q_des, dtype=np.float32).reshape(-1),
+            np.asarray(dq_des, dtype=np.float32).reshape(-1),
+            np.asarray(tau_ff, dtype=np.float32).reshape(-1),
+            np.asarray(kp, dtype=np.float32).reshape(-1),
+            np.asarray(kd, dtype=np.float32).reshape(-1),
+        )
+
+    def apply_torque_isaac(self) -> None:
+        """Apply ONE substep of explicit PD torque (legged_gym `_compute_torques`): recompute
+        τ from the LATEST q/dq against the stored target and push it as pure joint effort.
+        Requires `set_effort_mode` (drive gains 0) so PhysX doesn't double the PD.
+        """
+        if self._cmd is None:
+            return
+        q_des, dq_des, tau_ff, kp, kd = self._cmd
+        q = np.asarray(self._art.get_joint_positions(), dtype=np.float32).reshape(-1)
+        dq = np.asarray(self._art.get_joint_velocities(), dtype=np.float32).reshape(-1)
+        tau = pd_torque(q_des, q, dq_des, dq, kp, kd, tau_ff)
+        if self._max_effort is not None:  # legged_gym clips τ to torque_limits each substep
+            np.clip(tau, -self._max_effort, self._max_effort, out=tau)
+        if self._parallel_ankles is not None:
+            # Faithful dual-motor achilles: replace the ankle joints' joint-space PD with the
+            # motor-space law (per-motor ±42 clip BEFORE Jᵀ). Applied AFTER the joint-effort clip
+            # so the ankle's authority is governed by the per-motor clip, not the joint cap.
+            from humanoid.logic.simulation.isaacsim.ankle_parallel import apply_to_torque_vector
+            tau = apply_to_torque_vector(tau, q, dq, q_des, dq_des, self._parallel_ankles)
+        self._art.set_joint_efforts(tau)
+
+    def apply_isaac(
+        self,
+        q_des: FloatArray,
+        dq_des: FloatArray,
+        tau_ff: FloatArray,
+        kp: FloatArray,
+        kd: FloatArray,
+    ) -> None:
+        """Apply a PD command (Isaac DOF order) via the implicit drive.
+
+        τ = Kp(q_des−q) + Kd(dq_des−dq) integrated by PhysX from the drive gains +
+        position/velocity targets (stable); τ_ff added as explicit effort. Gains are
+        re-written only when they change.
+        """
+        view = self._art._articulation_view
+        kps = np.asarray(kp, dtype=np.float32)
+        kds = np.asarray(kd, dtype=np.float32)
+        if (
+            self._drive_gains is None
+            or not np.array_equal(self._drive_gains[0], kps)
+            or not np.array_equal(self._drive_gains[1], kds)
+        ):
+            view.set_gains(kps=kps.reshape(1, -1), kds=kds.reshape(1, -1))
+            self._drive_gains = (kps.copy(), kds.copy())
+        view.set_joint_position_targets(np.asarray(q_des, dtype=np.float32).reshape(1, -1))
+        view.set_joint_velocity_targets(np.asarray(dq_des, dtype=np.float32).reshape(1, -1))
+        self._art.set_joint_efforts(np.asarray(tau_ff, dtype=np.float32))

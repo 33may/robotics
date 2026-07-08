@@ -29,6 +29,11 @@ Run without joystick (headless tests):
 
   python humanoid/logic/simulation/mujoco/simulator.py --no-joystick
 
+Run sim + kinematic_projection ELF ONLY — no LimX deploy policy — so OUR limx edge
+(`limx_world_main.py`) drives it as the policy peer (implies --no-joystick):
+
+  python humanoid/logic/simulation/mujoco/simulator.py --no-deploy
+
 Notes
 -----
 
@@ -86,6 +91,9 @@ def parse_args() -> argparse.Namespace:
                    help="Robot IP. Loopback for sim, 10.192.1.2 for real robot. Default: 127.0.0.1.")
     p.add_argument("--no-joystick", action="store_true",
                    help="Do not launch the visual SensorJoy pad (headless tests).")
+    p.add_argument("--no-deploy", action="store_true",
+                   help="Run sim + ELF only; do NOT launch the LimX deploy policy. Use when "
+                        "OUR edge (limx_world_main.py) is the policy peer. Implies --no-joystick.")
     p.add_argument("--initial-mode", default="stand",
                    choices=["stand", "walk", "mimic", "damping"],
                    help="Ability to re-trigger after a sim restart. Default: stand. (Bring-up uses controllers.yaml autostart and does not call cli switch.)")
@@ -236,13 +244,17 @@ class Launcher:
             cmd=[sys.executable, str(SIM_ENTRY), args.ip],
             cwd=SIM_REPO, env=env,
         )
-        self.deploy = Proc(
-            name="deploy",
-            cmd=[sys.executable, str(DEPLOY_ENTRY), args.ip],
-            cwd=DEPLOY_REPO, env=env,
-        )
+        self.deploy: Optional[Proc] = None
+        if not args.no_deploy:
+            self.deploy = Proc(
+                name="deploy",
+                cmd=[sys.executable, str(DEPLOY_ENTRY), args.ip],
+                cwd=DEPLOY_REPO, env=env,
+            )
+        # The LimX SensorJoy pad only feeds the deploy policy; with --no-deploy our
+        # brain owns the joystick, so there is nothing to feed — skip it.
         self.joystick: Optional[Proc] = None
-        if not args.no_joystick:
+        if not args.no_joystick and not args.no_deploy:
             self.joystick = Proc(
                 name="joystick",
                 cmd=[str(JOYSTICK_BIN)],
@@ -259,21 +271,26 @@ class Launcher:
     def bring_up(self) -> None:
         reap_orphans(label="startup")          # clear leftovers from any prior crashed run
         self.sim.start()
-        time.sleep(1.0)            # let MuJoCo load XML before deploy attaches
-        self.deploy.start()
+        time.sleep(1.0)            # let MuJoCo load XML before a controller attaches
+        if self.deploy:
+            self.deploy.start()
         if self.joystick:
             self.joystick.start()
 
-        # No cli_switch needed here: controllers.yaml has `stand.autostart: true`,
-        # so the deploy stack publishes RobotCmd the moment it finishes initialising.
-        # Oli stands within ~tens of ms of sim being up, not 2+ seconds.
-        log.info("ready. autostarted mode = stand. press joystick buttons to switch.")
+        if self.deploy:
+            # No cli_switch needed: controllers.yaml has `stand.autostart: true`, so the
+            # deploy stack publishes RobotCmd the moment it finishes initialising.
+            log.info("ready. autostarted mode = stand. press joystick buttons to switch.")
+        else:
+            log.info("ready — sim + ELF only, NO deploy policy. Now drive it with OUR stack:")
+            log.info("    conda run -n limx  python logic/simulation/mujoco/limx_world_main.py")
+            log.info("    conda run -n brain python logic/oli/brain_main.py --joystick socket")
         self._print_help()
 
     def shutdown(self) -> None:
         # Release current ability cleanly — but only if the deploy stack is still
         # alive. Talking to a half-dead HTTP server raises ConnectionResetError.
-        if self.deploy.alive():
+        if self.deploy and self.deploy.alive():
             cli_switch(self.ALL_MODES, "", timeout=1.0, quiet=True)
         for p in (self.joystick, self.deploy, self.sim):
             if p:
@@ -293,11 +310,14 @@ class Launcher:
             time.sleep(0.5)
             self.sim.start()
             time.sleep(1.0)         # let MuJoCo reload the XML + open viewer
-            # Re-trigger the initial mode: StandController.on_start() re-reads
-            # robot_state.q as init_joint_angles, so the 2 s linear ramp now runs
-            # from the *fresh* sim's rest pose to stand_pos — smooth, no jerk.
-            cli_switch(self.ALL_MODES, self.args.initial_mode, timeout=2.0)
-            log.info("=== restart complete, mode = %s ===", self.args.initial_mode)
+            if self.deploy:
+                # Re-trigger the initial mode: StandController.on_start() re-reads
+                # robot_state.q as init_joint_angles, so the 2 s linear ramp now runs
+                # from the *fresh* sim's rest pose to stand_pos — smooth, no jerk.
+                cli_switch(self.ALL_MODES, self.args.initial_mode, timeout=2.0)
+                log.info("=== restart complete, mode = %s ===", self.args.initial_mode)
+            else:
+                log.info("=== restart complete (sim only); our edge resumes on the fresh sim ===")
         finally:
             self._restarting.clear()
 
@@ -364,11 +384,12 @@ def main() -> int:
     args = parse_args()
 
     # sanity-check vendor presence
-    for p in (SIM_ENTRY, DEPLOY_ENTRY):
+    required = [SIM_ENTRY] if args.no_deploy else [SIM_ENTRY, DEPLOY_ENTRY]
+    for p in required:
         if not p.exists():
             log.error("vendor file not found: %s", p)
             return 2
-    if not args.no_joystick and not JOYSTICK_BIN.exists():
+    if not args.no_joystick and not args.no_deploy and not JOYSTICK_BIN.exists():
         log.error("joystick binary not found: %s (use --no-joystick to skip)", JOYSTICK_BIN)
         return 2
 
