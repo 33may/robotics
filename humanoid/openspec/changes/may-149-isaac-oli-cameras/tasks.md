@@ -64,4 +64,4 @@
 
 - [x] 11.1 AI-native doc `logic/oli/comm/CAMERA_STREAMING.md` (producer + transport surface: data flow, entry points, invariants, failure modes, tests); complements the dev app's consumer `devapp/sources/README.md`
 - [x] 11.2 Agent memory: updated `oli-perception-camera-design` (build outcome + module map + per-name refinement); new `isaac-camera-first-render-not-ready` gotcha; index updated
-- [ ] 11.3 Update today's humanoid daily note (draft → approve → write)
+- [x] 11.3 Update today's humanoid daily note (draft → approve → write)
