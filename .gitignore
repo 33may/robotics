@@ -55,3 +55,8 @@ old/diffusion/model_src/*.mp4
 
 # ---- Vendor submodule runtime logs ----------------------------------
 humanoid/vendor/humanoid-mujoco-sim/MUJOCO_LOG.TXT
+
+# ---- Oli Main Software vendored payload (downloaded per-machine) ----
+# Tracked in repo: README + manifest.yaml + .gitignore inside the dir.
+# Untracked: the 2.5 GB install/ payload.
+humanoid/vendor/oli-main-software-*/install/

@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1840,height=1120,initial-scale=1">
+  <link rel="stylesheet" href="diagram-framework.css">
+  <style>
+    body { width: 1840px; height: 1120px; }
+    .stage {
+      display: flex; width: 1840px; height: 1120px;
+      background: #fbf7f1;
+    }
+    .stage::after { display: none; }  /* drop the heavy grid overlay */
+
+    .panel {
+      position: relative; width: 920px; height: 1120px;
+      padding: 92px 52px 40px 52px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .panel--b { border-left: 1px solid rgba(80,60,40,0.16); }
+
+    .panel__title {
+      position: absolute; top: 30px; left: 52px; right: 52px; text-align: center;
+      font-size: 22px; font-weight: 800; letter-spacing: 0.02em; color: #4f4136;
+    }
+    .panel__sub {
+      position: absolute; top: 62px; left: 52px; right: 52px; text-align: center;
+      font-size: 14px; font-weight: 650; color: #7c6d61;
+    }
+
+    /* generic tier — flat fill, soft shadow */
+    .tier {
+      position: relative; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      width: 600px; border-radius: 12px; padding: 16px 18px;
+      border: 1.3px solid rgba(80,60,40,0.22);
+      box-shadow: 0 2px 6px rgba(98,66,43,0.07);
+      color: #564a40; background: #fbf8f3;
+    }
+    .tier__name { font-size: 21px; font-weight: 800; }
+    .tier__sub  { font-size: 13px; font-weight: 650; color: #82746a; margin-top: 2px; }
+    .tier__inner { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+    .chip {
+      font-size: 14px; font-weight: 700; color: #695a50;
+      background: #ffffff;
+      border: 1px solid rgba(80,60,40,0.16); border-radius: 8px; padding: 7px 12px;
+    }
+    .env-tag { font-size: 13px; font-weight: 750; color: #94755a; margin-left: 6px; }
+
+    /* flat tints (sim/real distinguish world only; not good/bad) */
+    .reason { background: #efedf6; border-color: rgba(120,104,158,0.30); }
+    .action { background: #f6efe6; border-color: rgba(150,118,80,0.30); padding: 0; overflow: hidden; }
+    .sim    { background: #eef2f6; border-color: rgba(86,110,132,0.28); }
+    .real   { background: #f9f1e8; border-color: rgba(190,110,60,0.28); }
+
+    .action__body { padding: 16px 18px 14px 18px; display:flex; flex-direction:column; align-items:center; }
+    .port {
+      width: 100%; text-align: center;
+      font-size: 12.5px; font-weight: 800; letter-spacing: 0.10em; text-transform: uppercase;
+      color: #6c5648; padding: 7px 0; background: rgba(120,90,55,0.055);
+    }
+    .port--top { border-bottom: 1px solid rgba(80,60,40,0.16); }
+    .port--bot { border-top: 1px solid rgba(80,60,40,0.16); }
+    .port em { font-style: normal; color: #94755a; }
+
+    /* a tier that carries a contract face on its bottom edge */
+    .has-bot { padding: 0; overflow: hidden; }
+    .has-bot__body { padding: 16px 18px 14px 18px; display:flex; flex-direction:column; align-items:center; }
+
+    .world { width: 600px; display: flex; gap: 16px; }
+    .world .tier { width: 292px; }
+
+    /* bidirectional connector */
+    .biLink { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 8px 0; }
+    .biLink .tri-up { width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:10px solid #9a8b7e; }
+    .biLink .tri-dn { width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-top:10px solid #9a8b7e; }
+    .biLink .name { font-size: 13px; font-weight: 800; color: #564a40; margin: 1px 0; }
+    .biLink .io   { font-size: 11px; font-weight: 700; color: #82746a; }
+    .biLink--plain { margin: 6px 0; }
+
+    .note {
+      margin-top: 12px; font-size: 13.5px; font-weight: 750;
+      color: #6c5b50; background: #ffffff;
+      border: 1px solid rgba(80,60,40,0.16); border-radius: 999px; padding: 7px 16px;
+    }
+  </style>
+</head>
+<body>
+<main class="stage">
+
+  <!-- ============ OPTION A ============ -->
+  <section class="panel">
+    <div class="panel__title">Option A · policy runner inside the Action Interface</div>
+    <div class="panel__sub">one py3.8 process below reasoning · runner and communication share memory</div>
+
+    <div class="world">
+      <div class="tier sim"><div class="tier__name">Sim runner</div><div class="tier__sub">Isaac · py3.11</div></div>
+      <div class="tier real"><div class="tier__name">Real robot</div><div class="tier__sub">hardware</div></div>
+    </div>
+
+    <div class="biLink">
+      <div class="tri-up"></div><div class="name">World Contract</div><div class="io">in · out</div><div class="tri-dn"></div>
+    </div>
+
+    <div class="tier action">
+      <div class="port port--top">World contract &nbsp;·&nbsp; <em>in | out</em></div>
+      <div class="action__body">
+        <div class="tier__name">Action Interface <span class="env-tag">py3.8</span></div>
+        <div class="tier__sub">policy runner + communication in one process</div>
+        <div class="tier__inner">
+          <span class="chip">Policy Store</span>
+          <span class="chip">Action Bank</span>
+          <span class="chip">VLA (ONNX)</span>
+          <span class="chip">Walk (ONNX)</span>
+          <span class="chip">Communication</span>
+        </div>
+      </div>
+      <div class="port port--bot">Reason contract &nbsp;·&nbsp; <em>in | out</em></div>
+    </div>
+
+    <div class="biLink">
+      <div class="tri-up"></div><div class="name">Reason Contract</div><div class="io">in · out</div><div class="tri-dn"></div>
+    </div>
+
+    <div class="tier reason">
+      <div class="tier__name">Reasoning <span class="env-tag">modern py</span></div>
+      <div class="tier__inner">
+        <span class="chip">SLAM</span><span class="chip">Navigation</span><span class="chip">Planning</span>
+        <span class="chip">Memory</span><span class="chip">Task logic</span>
+      </div>
+    </div>
+
+    <div class="note">runner ↔ communication is a direct in-process call</div>
+  </section>
+
+  <!-- ============ OPTION B ============ -->
+  <section class="panel panel--b">
+    <div class="panel__title">Option B · policy runner as a separate process</div>
+    <div class="panel__sub">runner runs a newer python · communication stays a thin transport</div>
+
+    <div class="world">
+      <div class="tier sim"><div class="tier__name">Sim runner</div><div class="tier__sub">Isaac · py3.11</div></div>
+      <div class="tier real"><div class="tier__name">Real robot</div><div class="tier__sub">hardware</div></div>
+    </div>
+
+    <div class="biLink">
+      <div class="tri-up"></div><div class="name">World Contract</div><div class="io">in · out</div><div class="tri-dn"></div>
+    </div>
+
+    <!-- Communication Interface: ONLY a World contract face, no Runner contract inside it -->
+    <div class="tier action">
+      <div class="port port--top">World contract &nbsp;·&nbsp; <em>in | out</em></div>
+      <div class="action__body">
+        <div class="tier__name">Communication Interface <span class="env-tag">py3.8</span></div>
+        <div class="tier__sub">transport only</div>
+        <div class="tier__inner"><span class="chip">Communication</span></div>
+      </div>
+    </div>
+
+    <!-- plain process-boundary link, unlabeled -->
+    <div class="biLink biLink--plain"><div class="tri-up"></div><div class="tri-dn"></div></div>
+
+    <!-- Policy runner carries the Reason contract face on its bottom edge -->
+    <div class="tier reason has-bot">
+      <div class="has-bot__body">
+        <div class="tier__name">Policy runner <span class="env-tag">newer py</span></div>
+        <div class="tier__sub">policy execution as its own process</div>
+        <div class="tier__inner">
+          <span class="chip">Policy Store</span><span class="chip">Action Bank</span>
+          <span class="chip">VLA (ONNX)</span><span class="chip">Walk (ONNX)</span>
+        </div>
+      </div>
+      <div class="port port--bot">Reason contract &nbsp;·&nbsp; <em>in | out</em></div>
+    </div>
+
+    <div class="biLink">
+      <div class="tri-up"></div><div class="name">Reason Contract</div><div class="io">in · out</div><div class="tri-dn"></div>
+    </div>
+
+    <div class="tier reason">
+      <div class="tier__name">Reasoning <span class="env-tag">modern py</span></div>
+      <div class="tier__inner">
+        <span class="chip">SLAM</span><span class="chip">Navigation</span><span class="chip">Planning</span>
+        <span class="chip">Memory</span><span class="chip">Task logic</span>
+      </div>
+    </div>
+
+    <div class="note">runner ↔ communication becomes a process boundary</div>
+  </section>
+
+</main>
+</body>
+</html>
