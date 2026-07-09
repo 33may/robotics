@@ -1,0 +1,24 @@
+"""humanoid.logic.oli.reason.nav — the navigation reasoning stack (2D PoC).
+
+Composes a `Localizer` (pose source) + costmap + planner into a Nav reason module that emits a
+base-velocity `Intent` toward a goal — reusing the existing glide path (`GlideAction` →
+`GLIDE_CMD`) unchanged. Everything here is world-invariant (no isaacsim/limxsdk), guarded by the
+`brain` pytest marker. See docs/architecture/architecture.md §6–7 and reason/AGENTS.md.
+"""
+
+from .controller import PurePursuit
+from .costmap import OccupancyGrid
+from .localizer import GroundTruthLocalizer, Localizer
+from .nav import Nav
+from .planner import plan_path
+from .types import RobotPose
+
+__all__ = [
+    "RobotPose",
+    "Localizer",
+    "GroundTruthLocalizer",
+    "OccupancyGrid",
+    "plan_path",
+    "PurePursuit",
+    "Nav",
+]
