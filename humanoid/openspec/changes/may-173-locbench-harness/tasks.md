@@ -4,14 +4,14 @@
 
 - [x] 1.1 `proposal.md` / `design.md` rewritten on the settled architecture (in-brain hosting, 3 processes, shadow mode) — Anton-approved 2026-07-13
 - [ ] 1.2 `specs/localization-bench/spec.md` delta (SHALL requirements + scenarios, may-149 format)
-- [ ] 1.3 Branch `33may/may-173-locbench` off main; merge to main at working states (Anton's standing rule)
+- [x] 1.3 Branch `33may/may-173-locbench` off main; merge to main at working states (Anton's standing rule)
 
 ## 2. Brain service seam — W4 goals in / W5 telemetry out (D5)
 
-- [ ] 2.1 TDD: `logic/oli/service/` protocol — encode/decode goal set/clear (`GoalCoordinate`), telemetry record (stamp, pose, path, goal status, est `LocalizationOut`, loop-rate, `(Observation, Intent)`); socket patterns per `comm/debug_pose.py`
-- [ ] 2.2 TDD: `GoalChannelServer` → `Nav.set_goal/clear_goal` against a fake Nav; latest-wins, malformed-message tolerance
-- [ ] 2.3 TDD: `TelemetryServer` fed from the Orchestrator recorder hook + Nav path/status + localization host output; client sees a coherent latest snapshot
-- [ ] 2.4 `brain_main --service` flag boots both; architecture guard: `service/` imports stay brain-pure (no isaacsim/limxsdk, no devapp)
+- [x] 2.1 TDD: `logic/oli/service/` protocol — encode/decode goal set/clear (`GoalCoordinate`), telemetry record (stamp, pose, path, goal status, est `LocalizationOut`, loop-rate, `(Observation, Intent)`); socket patterns per `comm/debug_pose.py`
+- [x] 2.2 TDD: `GoalChannelServer` → `Nav.set_goal/clear_goal` against a fake Nav; latest-wins, malformed-message tolerance
+- [x] 2.3 TDD: `TelemetryServer` fed from the Orchestrator recorder hook + Nav path/status + localization host output; client sees a coherent latest snapshot
+- [x] 2.4 `brain_main --service` flag boots both; architecture guard: `service/` imports stay brain-pure (no isaacsim/limxsdk, no devapp)
 - [ ] 2.5 Integration smoke vs live glide session: send goal over the wire → robot drives; telemetry streams (Anton at the controls)
 
 ## 3. Episode sets (D2, D3)
