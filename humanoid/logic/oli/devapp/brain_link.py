@@ -23,15 +23,9 @@ from ..reason.teleoperation.joystick import JoystickAdapter
 from ..runtime import Orchestrator
 from .state import AppState
 
-# Robot/policy planning knobs (footprint + clearance) — constructor args of Planner, live-tunable.
-_ROBOT_RADIUS_M = 0.30       # hard footprint: cells within this of a wall are impassable
-_INFLATION_RADIUS_M = 1.0    # soft clearance reach (> robot radius) — path prefers this much gap
-_CLEARANCE_WEIGHT = 3.0      # how hard to trade path length for clearance (0 = shortest path)
-_HEURISTIC_WEIGHT = 1.2      # weighted A*: ~30× fewer nodes on open routes, near-lossless clearance
-_HORIZON_M = 2.0             # local re-plan only re-solves this far ahead; the far tail is reused
+# Planner/controller knobs live in `reason/nav/factory.py` (`build_nav`) — shared by every
+# brain host so dev_app and `brain_main --service` drive the IDENTICAL tuned Nav.
 _REPLAN_DT = 0.25            # seconds between (local) re-plans while a goal holds
-_NAV_SPEED_MS = 1.0          # armed autonomy target forward speed [m/s] (after glide rescale)
-_NAV_YAW_RS = 1.2            # armed autonomy target yaw rate [rad/s] (after glide rescale)
 
 
 class BrainLink:
@@ -94,20 +88,12 @@ class BrainLink:
         self._last_plan_t = 0.0
         if self._nav is None and map_dir and self._localizer is not None:
             from ..reason.mapping import StaticMapping
-            from ..reason.nav import Nav, Planner, PurePursuit
-            # Pursuit emits real m/s; GlideAction rescales by glide_scale, so pre-divide the caps
-            # to land Oli at ~_NAV_SPEED_MS when armed (glide demo). Non-glide: no rescale.
-            s = glide_scale if mode == "glide" else 1.0
-            self._nav = Nav(
+            from ..reason.nav import build_nav
+            # The factory pre-divides the controller caps by speed_scale (GlideAction rescales
+            # downstream, so the product stays at the tuned speed). Non-glide: no rescale.
+            self._nav = build_nav(
                 StaticMapping(map_dir), self._localizer,
-                controller=PurePursuit(max_lin=_NAV_SPEED_MS / s, max_wz=_NAV_YAW_RS / s),
-                planner=Planner(
-                    robot_radius_m=_ROBOT_RADIUS_M,
-                    inflation_radius_m=_INFLATION_RADIUS_M,
-                    clearance_weight=_CLEARANCE_WEIGHT,
-                    heuristic_weight=_HEURISTIC_WEIGHT,
-                    horizon_m=_HORIZON_M,
-                ),
+                speed_scale=glide_scale if mode == "glide" else 1.0,
             )
         # Arm gate: wrap operator Teleop + Nav so disarmed = joystick drives, armed = Nav drives.
         # (Only when we built the reason ourselves — an injected reason is used as-is.)

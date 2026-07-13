@@ -11,6 +11,15 @@ the Orchestrator loop (read→reason→act→write, stamp-paced). Joystick sourc
     # live keyboard joystick (run the app in any env that has pygame, e.g. isaac):
     conda run -n brain python humanoid/logic/oli/brain_main.py --joystick socket
     conda run -n isaac python -m humanoid.logic.oli.reason.teleoperation.joystick.app
+
+--service boots the isolated goal-driven brain instead (locbench design.md D5): Nav as the
+reason (no joystick), the W4/W5 service seam attached — any client (the locbench evaluator,
+dev_app later) sends `GoalCoordinate`s over the goal socket and reads pose/path/goal/est
+telemetry back. Requires --mode glide, --debug-pose (the GT pose channel Nav drives on in
+Stage 1) and --map-dir (the baked occupancy map):
+
+    conda run -n brain python humanoid/logic/oli/brain_main.py --mode glide --service \\
+        --debug-pose /tmp/oli-debug-pose.sock --map-dir <scene's baked map dir>
 """
 
 from __future__ import annotations
@@ -46,12 +55,71 @@ def _spawn_app(python: str, host: str, port: int) -> subprocess.Popen:
     return subprocess.Popen(cmd, cwd=str(_REPO_ROOT))
 
 
+def _run_service(args) -> None:
+    """The isolated goal-driven brain: Nav reason + the W4/W5 service seam, no joystick."""
+    from humanoid.logic.oli.comm.debug_pose import DebugPoseClient
+    from humanoid.logic.oli.reason.localization import DebugPoseLocalizer
+    from humanoid.logic.oli.reason.mapping import StaticMapping
+    from humanoid.logic.oli.reason.nav import build_nav
+    from humanoid.logic.oli.service import ServiceHost
+
+    pose_client = DebugPoseClient(args.debug_pose)
+    nav = build_nav(
+        StaticMapping(args.map_dir),
+        DebugPoseLocalizer(pose_client),
+        speed_scale=args.glide_scale,
+    )
+    host = ServiceHost(nav, goal_socket=args.goal_socket,
+                       telemetry_socket=args.telemetry_socket)
+    comm = BrainComm(socket_path=args.socket)
+    # Nav is the reason; joystick=None, so the orchestrator hands Nav's optional second
+    # parameter (camera_frame) a None — the goal channel is the only steering input.
+    orch = Orchestrator(comm, nav, GlideAction(speed_scale=args.glide_scale),
+                        joystick=None, recorder=host.recorder)
+
+    print(f"[brain] service mode: goals on {args.goal_socket}, "
+          f"telemetry on {args.telemetry_socket}", flush=True)
+    print(f"[brain] connecting to {args.socket}...", flush=True)
+    comm.connect()
+    print("[brain] connected — running.", flush=True)
+    t0 = time.monotonic()
+    try:
+        while True:
+            if args.duration and (time.monotonic() - t0) > args.duration:
+                print("[brain] duration reached; stopping.", flush=True)
+                break
+            host.poll()  # W4: latest goal command → Nav (non-blocking, latest-wins)
+            if orch.step_once() is None:
+                time.sleep(0.0005)  # nothing to do this iteration; yield
+    except KeyboardInterrupt:
+        print("\n[brain] stopping.", flush=True)
+    except CommClosedError:
+        print("[brain] World closed the connection; stopping.", flush=True)
+    finally:
+        comm.close()
+        host.close()
+        pose_client.close()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--socket", default="/tmp/oli-world.sock")
     ap.add_argument("--mode", choices=["stand", "walk", "glide"], default="stand",
                     help="glide = kinematic locomotion (MAY-172): forward the joystick "
                          "velocity, World glides the base (no walk policy)")
+    ap.add_argument("--service", action="store_true",
+                    help="boot the goal-driven brain with the W4/W5 service seam "
+                         "(requires --mode glide, --debug-pose, --map-dir)")
+    ap.add_argument("--goal-socket", default="/tmp/oli-goal.sock",
+                    help="W4: UDS path this brain binds for GoalCoordinate commands")
+    ap.add_argument("--telemetry-socket", default="/tmp/oli-telemetry.sock",
+                    help="W5: UDS path this brain publishes TelemetrySnapshots to")
+    ap.add_argument("--debug-pose", default=None,
+                    help="UDS path of the World's GT pose channel (Nav's Stage-1 localizer)")
+    ap.add_argument("--map-dir", default=None,
+                    help="baked occupancy map dir (occupancy.npy + occupancy.json)")
+    ap.add_argument("--glide-scale", type=float, default=1.0,
+                    help="GlideAction velocity multiplier; Nav caps are pre-divided by it")
     ap.add_argument("--joystick", choices=["fixed", "socket"], default="fixed",
                     help="fixed = constant CLI cmd; socket = live app over UDP")
     ap.add_argument("--vx", type=float, default=0.0)
@@ -68,6 +136,14 @@ def main() -> None:
     ap.add_argument("--duration", type=float, default=0.0,
                     help="wall seconds to run (0 = until Ctrl-C)")
     args = ap.parse_args()
+
+    if args.service:
+        if args.mode != "glide":
+            ap.error("--service requires --mode glide (Stage 1 drives the glide path)")
+        if not args.debug_pose or not args.map_dir:
+            ap.error("--service requires --debug-pose and --map-dir")
+        _run_service(args)
+        return
 
     start_mode = Mode.STAND if (args.walk_after is not None or args.mode == "stand") else Mode.WALK
     teleop = Teleop(mode=start_mode)

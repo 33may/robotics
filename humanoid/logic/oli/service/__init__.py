@@ -9,6 +9,7 @@ only, no isaacsim/limxsdk, no devapp imports (guarded by the architecture tests)
 """
 
 from .goal_channel import DEFAULT_GOAL_SOCKET, GoalChannelClient, GoalChannelServer
+from .host import ServiceHost
 from .protocol import (
     GOAL_NBYTES,
     TelemetrySnapshot,
@@ -31,6 +32,7 @@ __all__ = [
     "GOAL_NBYTES",
     "GoalChannelClient",
     "GoalChannelServer",
+    "ServiceHost",
     "TelemetryClient",
     "TelemetryPublisher",
     "TelemetryServer",

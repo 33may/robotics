@@ -123,6 +123,21 @@ def test_reason_packages_never_touch_world_sdks():
     assert not leaks, f"INVARIANCE VIOLATION — world SDKs in sys.modules: {leaks}"
 
 
+# ── 3b. The service seam stays brain-pure (locbench design.md D5) ─────────────────────
+
+def test_service_seam_is_brain_pure():
+    # `oli/service/` is brain-side code: it may import reason contracts, but never a world
+    # SDK and never devapp (the seam exists precisely so clients DON'T live in the brain).
+    from humanoid.logic.oli import service as service_pkg
+
+    for where, stmt in _package_import_lines(service_pkg):
+        for bad in ("isaacsim", "limxsdk", "devapp"):
+            assert bad not in stmt, (
+                f"SERVICE SEAM VIOLATION at {where}: {stmt} — oli/service must stay "
+                "brain-pure (no world SDKs, no devapp)"
+            )
+
+
 # ── 4. Modules consume emitted contracts, not each other (design.md D8) ──────────────
 
 def test_planner_holds_no_mapping_module_ref():
