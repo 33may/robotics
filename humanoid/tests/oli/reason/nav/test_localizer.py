@@ -16,7 +16,12 @@ import numpy as np
 import pytest
 
 from humanoid.logic.oli import Observation
-from humanoid.logic.oli.reason.nav import GroundTruthLocalizer, Localizer, RobotPose
+from humanoid.logic.oli.reason.nav import (
+    DebugPoseLocalizer,
+    GroundTruthLocalizer,
+    Localizer,
+    RobotPose,
+)
 
 pytestmark = pytest.mark.brain
 
@@ -80,3 +85,32 @@ def test_gt_localizer_reads_debug_channel_not_the_pose_less_observation():
 def test_gt_localizer_satisfies_localizer_protocol():
     loc = GroundTruthLocalizer(pose_reader=lambda: None)
     assert isinstance(loc, Localizer)  # runtime_checkable Protocol — day-2 backend swaps here
+
+
+# ── DebugPoseLocalizer (debug-mode realization: reads the debug pose stream) ──
+
+
+class _FakeClient:
+    """Stands in for comm.DebugPoseClient — yields the newest (stamp_ns, x, y, yaw) or None."""
+
+    def __init__(self, sample):
+        self._sample = sample
+
+    def latest(self):
+        return self._sample
+
+
+def test_debug_pose_localizer_maps_sample_to_robotpose():
+    loc = DebugPoseLocalizer(_FakeClient((7, 1.0, 2.0, 0.3)))
+    p = loc.estimate(_obs())
+    assert isinstance(p, RobotPose)
+    assert (p.stamp_ns, p.x, p.y, p.yaw) == (7, 1.0, 2.0, 0.3)
+
+
+def test_debug_pose_localizer_none_before_first_sample():
+    loc = DebugPoseLocalizer(_FakeClient(None))
+    assert loc.estimate(_obs()) is None
+
+
+def test_debug_pose_localizer_satisfies_localizer_protocol():
+    assert isinstance(DebugPoseLocalizer(_FakeClient(None)), Localizer)

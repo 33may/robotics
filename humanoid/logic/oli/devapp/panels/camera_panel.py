@@ -11,7 +11,7 @@ from __future__ import annotations
 import numpy as np
 from imgui_bundle import imgui, immvision
 
-from ..imaging import colorize_depth
+from ..imaging import colorize_depth, fit_within
 from ..panel import Panel
 from ..sources.camera_source import CameraSource
 from ..state import AppState
@@ -21,9 +21,8 @@ class CameraPanel(Panel):
     title = "Cameras"
     dock_space = "MainDockSpace"
 
-    def __init__(self, source: CameraSource, display_width: int = 460) -> None:
+    def __init__(self, source: CameraSource) -> None:
         self._src = source
-        self._dw = int(display_width)
 
     def setup(self) -> None:
         # ImmVision requires an explicit colour-order choice once at startup
@@ -41,6 +40,13 @@ class CameraPanel(Panel):
         if not names:
             imgui.text_disabled("no camera streams")
             return
+        # Fit to the live panel: two images across (rgb | depth), streams stacked. Split the
+        # content region in half horizontally and share the height across streams (reserving
+        # ~2 text lines + separator per stream) so the whole grid stays visible when docked.
+        avail = imgui.get_content_region_avail()
+        line = imgui.get_frame_height_with_spacing()
+        box_w = (avail.x - imgui.get_style().item_spacing.x) / 2.0
+        box_h = avail.y / max(1, len(names)) - 2.0 * line
         for name in names:
             frame = self._src.read(name)
             imgui.text_colored(imgui.ImVec4(0.6, 0.8, 1.0, 1.0), name)
@@ -51,7 +57,7 @@ class CameraPanel(Panel):
                 continue
 
             h, w = frame.rgb.shape[:2]
-            disp = (int(self._dw), int(round(self._dw * h / w)))
+            disp = fit_within(w, h, box_w, box_h)
             # ImmVision's ImageBuffer binding requires a WRITEABLE array, but
             # `decode_camera_frame` returns a read-only np.frombuffer array — and
             # np.ascontiguousarray keeps it read-only when it's already contiguous. Force a

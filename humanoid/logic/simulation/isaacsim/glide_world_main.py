@@ -31,6 +31,7 @@ if str(_REPO_ROOT) not in sys.path:
 # Pure imports (no isaacsim): the walk crouch (drift-guarded against walk_param) + the model.
 from humanoid.logic.simulation.isaacsim.sim_world_main import HOME_POSE_PR  # noqa: E402
 from humanoid.logic.oli.glide import GlideModel  # noqa: E402
+from humanoid.logic.oli.comm.debug_pose import DebugPoseServer  # noqa: E402  (pure stdlib)
 
 
 def _yaw_from_quat_wxyz(q) -> float:
@@ -90,6 +91,10 @@ def main() -> None:
                     help="USD world referenced as the fixed ground-truth scene (MAY-171) — "
                          "visual reference for Oli's cameras / SLAM. The default ground plane "
                          "is still added for physics; pass 'none' (or omit) to skip.")
+    ap.add_argument("--debug-pose", default=None,
+                    help="AF_UNIX SOCK_DGRAM path to stream Oli's ground-truth base pose "
+                         "(stamp, x, y, yaw) for nav debug/eval. NOT the invariance spine — the "
+                         "real robot has no such signal; off by default.")
     ap.add_argument("--duration", type=float, default=0.0,
                     help="wall seconds to run (0 = until the window closes)")
     args = ap.parse_args()
@@ -125,6 +130,13 @@ def main() -> None:
     oli = Oli(world, pin_root=False, spawn_pose=(0.0, 0.0, args.spawn_height),
               cameras=args.cameras, camera_resolution=tuple(args.camera_res))
     simcomm = SimComm(oli, socket_path=args.socket)
+
+    # Debug/eval ground-truth pose channel (opt-in, NOT the spine): a separate SOCK_DGRAM stream of
+    # the base (x, y, yaw) so the nav brain's DebugPoseLocalizer can plan on perfect coords before a
+    # real localizer exists. Best-effort; production never launches it (the real robot has no GT pose).
+    dbg_pose = DebugPoseServer(args.debug_pose) if args.debug_pose else None
+    if dbg_pose is not None:
+        print(f"[glide-world] debug pose ON → {args.debug_pose} (ground-truth base x,y,yaw)", flush=True)
 
     # Camera frame channel (opt-in): a SEPARATE SOCK_STREAM server shipping RGBD on the render
     # sub-tick, never blocking the glide control loop (latest-wins per camera). Off by default.
@@ -237,6 +249,10 @@ def main() -> None:
                     pub.publish(tick, tick * 1_000_000)
                 tick += 1
             simcomm.publish(tick * 1_000_000)
+            if dbg_pose is not None:
+                _pdp = oli.base_world_position()
+                _ydp = _yaw_from_quat_wxyz(oli.base_world_quat_wxyz())
+                dbg_pose.publish(tick * 1_000_000, float(_pdp[0]), float(_pdp[1]), _ydp)
             if cmd is not None and n_cmds % 25 == 0:
                 p = oli.base_world_position()
                 print(f"[glide-world] t={tick / 1000.0:5.2f}s "
@@ -249,6 +265,8 @@ def main() -> None:
     finally:
         if pub is not None:
             pub.close()
+        if dbg_pose is not None:
+            dbg_pose.close()
         simcomm.close()
         app.close()
 

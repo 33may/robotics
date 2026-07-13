@@ -99,3 +99,24 @@ class OccupancyGrid:
                 if 0 <= r < self.nrows and 0 <= c < self.ncols:
                     out[r, c] = True
         return OccupancyGrid(out, self.resolution, self.origin)
+
+    def clearance_cost(self, inflation_radius_m: float, weight: float) -> np.ndarray:
+        """Soft per-cell penalty that decays with distance to the nearest obstacle.
+
+        Returns a float array (grid shape) added to A* step cost (`plan_path(..., cost=)`) so the
+        planner prefers open space but still hugs a wall when that's the only route. The penalty
+        ramps linearly from `weight` at the obstacle edge to 0 at `inflation_radius_m` (and stays 0
+        beyond) — the soft companion to the hard `inflate` (impassable) boundary. Distance is a
+        Euclidean distance transform on the RAW obstacles, so set `inflation_radius_m` larger than
+        the hard footprint radius for the gradient to bite across the passable band.
+
+        This is the robot/policy layer (footprint clearance), kept out of the map bake so one baked
+        occupancy artifact serves any footprint/tuning and the knobs stay live-tunable.
+        """
+        if inflation_radius_m <= 0.0 or weight == 0.0 or not self.grid.any():
+            return np.zeros(self.grid.shape, dtype=float)
+        from scipy import ndimage  # lazy: keep costmap import light, scipy only when planning
+        # EDT gives, for each FREE cell, the distance (in cells) to the nearest occupied cell.
+        dist_m = ndimage.distance_transform_edt(~self.grid) * self.resolution
+        ramp = np.clip(1.0 - dist_m / inflation_radius_m, 0.0, 1.0)
+        return (weight * ramp).astype(float)

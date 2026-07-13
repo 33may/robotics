@@ -28,6 +28,12 @@ class AppState:
     latest_intent: Optional[object] = None        # contracts.Intent (joystick-derived command)
     latest_joy: Optional[object] = None           # raw JoyPacket (axes/buttons); None if no packet
 
+    # Nav — written by BrainLink when a debug-pose stream is attached (glide/nav mode).
+    latest_pose: Optional[object] = None          # nav.RobotPose (map-frame x, y, yaw)
+    latest_path: Optional[object] = None          # list[(x, y)] planned waypoints, or None
+    nav_goal: Optional[object] = None             # nav.GoalCoordinate (UI-set), or None
+    nav_armed: bool = False                        # UI "Engage": armed → Nav drives, else teleop
+
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def tick(self) -> None:
@@ -54,3 +60,43 @@ class AppState:
         """Read the latest joystick input: (intent, joy). Either may be None."""
         with self._lock:
             return self.latest_intent, self.latest_joy
+
+    # Nav has two independent writers: the brain worker thread owns `pose` (written every
+    # tick), the UI thread owns `goal` (set on map click). `path` is owned by whoever plans
+    # — the MapPanel today (click preview), the Nav reason once execution is wired. Split
+    # setters so a per-tick pose write never clobbers a click-set goal/path (and vice-versa).
+
+    def set_pose(self, pose) -> None:
+        """Publish the latest localized pose (brain worker thread, every tick)."""
+        with self._lock:
+            self.latest_pose = pose
+
+    def set_goal(self, goal) -> None:
+        """Set/clear the nav goal — a `GoalCoordinate` (UI thread, on map click). `None` clears."""
+        with self._lock:
+            self.nav_goal = goal
+
+    def get_goal(self):
+        """Read the current nav goal (brain thread, to feed the Nav layer). `GoalCoordinate|None`."""
+        with self._lock:
+            return self.nav_goal
+
+    def set_armed(self, armed: bool) -> None:
+        """Engage/disengage autonomy (UI thread, on the map button)."""
+        with self._lock:
+            self.nav_armed = bool(armed)
+
+    def get_armed(self) -> bool:
+        """Read the arm flag (brain thread, to gate Teleop↔Nav)."""
+        with self._lock:
+            return self.nav_armed
+
+    def set_path(self, path) -> None:
+        """Publish the latest planned path (planner owner). `None` clears it."""
+        with self._lock:
+            self.latest_path = path
+
+    def nav_snapshot(self):
+        """Read the latest nav state: (pose, path, goal). Any may be None."""
+        with self._lock:
+            return self.latest_pose, self.latest_path, self.nav_goal

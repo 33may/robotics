@@ -23,6 +23,16 @@ from ..reason.teleoperation.joystick import JoystickAdapter
 from ..runtime import Orchestrator
 from .state import AppState
 
+# Nav costmap = the robot/policy layer (footprint + clearance), owned by the brain — live-tunable.
+_ROBOT_RADIUS_M = 0.30       # hard footprint: cells within this of a wall are impassable
+_INFLATION_RADIUS_M = 1.0    # soft clearance reach (> robot radius) — path prefers this much gap
+_CLEARANCE_WEIGHT = 3.0      # how hard to trade path length for clearance (0 = shortest path)
+_HEURISTIC_WEIGHT = 1.2      # weighted A*: ~30× fewer nodes on open routes, near-lossless clearance
+_HORIZON_M = 2.0             # local re-plan only re-solves this far ahead; the far tail is reused
+_REPLAN_DT = 0.25            # seconds between (local) re-plans while a goal holds
+_NAV_SPEED_MS = 1.0          # armed autonomy target forward speed [m/s] (after glide rescale)
+_NAV_YAW_RS = 1.2            # armed autonomy target yaw rate [rad/s] (after glide rescale)
+
 
 class BrainLink:
     """Own the brain Orchestrator on a background thread, attached to a World socket."""
@@ -42,10 +52,13 @@ class BrainLink:
         joy_port: int = 9001,
         walk_after: Optional[float] = None,
         duration: float = 0.0,
+        debug_pose: Optional[str] = None,
+        map_dir: Optional[str] = None,
         comm=None,
         action=None,
         reason=None,
         joystick_source=None,
+        nav=None,
     ) -> None:
         self._state = state
         self._walk_after = walk_after
@@ -63,6 +76,41 @@ class BrainLink:
             if joystick_source is not None
             else _make_joystick(joystick, vx, vy, wz, joy_host, joy_port)
         )
+        # Optional debug-pose stream → Localizer → the map panel (via AppState.set_nav). This is
+        # the DEBUG-mode coordinate source: Isaac's ground truth today, a real localizer later,
+        # behind the same seam.
+        self._pose_client = None
+        self._localizer = None
+        if debug_pose:
+            from ..comm.debug_pose import DebugPoseClient
+            from ..reason.nav import DebugPoseLocalizer
+            self._pose_client = DebugPoseClient(debug_pose)
+            self._localizer = DebugPoseLocalizer(self._pose_client)
+        # Nav layer (brain-side): consumes the UI-set GoalCoordinate, plans on its OWN costmap,
+        # publishes the path back to AppState for the map panel to render. Teleop still drives for
+        # now (plan-only preview) — arming Nav to drive is the next step. Needs a pose source.
+        self._nav = nav
+        self._last_goal = None
+        self._last_plan_t = 0.0
+        if self._nav is None and map_dir and self._localizer is not None:
+            from ..reason.nav import Nav, PurePursuit, load_occupancy
+            # Pursuit emits real m/s; GlideAction rescales by glide_scale, so pre-divide the caps
+            # to land Oli at ~_NAV_SPEED_MS when armed (glide demo). Non-glide: no rescale.
+            s = glide_scale if mode == "glide" else 1.0
+            self._nav = Nav(
+                load_occupancy(map_dir), self._localizer,
+                controller=PurePursuit(max_lin=_NAV_SPEED_MS / s, max_wz=_NAV_YAW_RS / s),
+                robot_radius_m=_ROBOT_RADIUS_M,
+                inflation_radius_m=_INFLATION_RADIUS_M,
+                clearance_weight=_CLEARANCE_WEIGHT,
+                heuristic_weight=_HEURISTIC_WEIGHT,
+                horizon_m=_HORIZON_M,
+            )
+        # Arm gate: wrap operator Teleop + Nav so disarmed = joystick drives, armed = Nav drives.
+        # (Only when we built the reason ourselves — an injected reason is used as-is.)
+        if self._nav is not None and reason is None:
+            from ..reason.nav import ArmedNav
+            self._reason = ArmedNav(self._reason, self._nav)
         self._orch = Orchestrator(
             self._comm, self._reason, self._action,
             joystick=self._joystick, recorder=self._record,
@@ -76,7 +124,48 @@ class BrainLink:
         self._state.set_brain(
             obs, policy_out, mode.name if mode is not None else "—",
             intent=intent, joy=joy)
+        pose = self._localizer.estimate(obs) if self._localizer is not None else None
+        if pose is not None:              # stream the debug/real pose onto the map dot
+            self._state.set_pose(pose)
+        if self._nav is not None:         # goal→nav→path shuttle + arm gate (pose may be None)
+            self._update_nav(pose)
         self._telemetry(intent, joy, policy_out)
+
+    def _update_nav(self, pose) -> None:
+        """Move the UI-set goal INTO the Nav layer and publish its planned path back OUT.
+
+        Nav owns the planning; this only shuttles goal(UI)→nav and path→AppState, and paces it: a
+        new goal replans immediately (full plan), then it re-plans every `_REPLAN_DT` s — each a
+        cheap LOCAL re-plan of the near horizon inside Nav — so A* never runs at control rate.
+        """
+        if self._nav is None:
+            return
+        armed = self._state.get_armed()
+        set_armed = getattr(self._reason, "set_armed", None)
+        if set_armed is not None:
+            set_armed(armed)                     # gate the reason: teleop (disarmed) ↔ Nav (armed)
+        goal = self._state.get_goal()
+        changed = goal != self._last_goal
+        if changed:
+            self._last_goal = goal
+            if goal is None:                     # goal cleared (right-click)
+                self._nav.clear_goal()
+                self._state.set_path(None)
+                return
+            self._nav.set_goal(goal)             # clears cached path → next plan is a full plan
+        if goal is None:
+            return
+        if armed:
+            # Nav drives → its to_policy_in already (re)planned this tick from its own localizer;
+            # just publish the path it produced (no BrainLink pose needed).
+            self._state.set_path(self._nav.path)
+            return
+        if pose is None:                         # disarmed preview needs a pose to plan from
+            return
+        now = time.monotonic()                   # pace the preview planning
+        if changed or (now - self._last_plan_t) >= _REPLAN_DT:
+            self._state.set_path(self._nav.plan(pose))
+            self._last_plan_t = now
 
     def _telemetry(self, intent, joy, policy_out) -> None:
         """Every ~50 steps, print joystick→intent→glide to stdout — captured in the launcher
@@ -120,6 +209,7 @@ class BrainLink:
         finally:
             self._comm.close()
             _maybe_close(self._joystick)
+            _maybe_close(self._pose_client)
 
     def stop(self) -> None:
         """Signal the brain loop to exit and join the thread."""

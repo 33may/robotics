@@ -99,6 +99,14 @@ def add_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--camera-every", type=int, default=32,
                     help="glide: publish a frame every N physics ticks (1 kHz) — 32 ≈ 30 Hz "
                          "(D435i-faithful); 16 ≈ 60 Hz; lower = more frequent but heavier")
+    # nav debug overlay (MAY-173/175): the glide World streams its ground-truth base pose on a
+    # side channel; the dev-app Nav Map draws it over the baked occupancy artifact.
+    ap.add_argument("--debug-pose", nargs="?", const="/tmp/oli-world-pose.sock", default=None,
+                    help="glide: stream Oli's ground-truth base pose and overlay it on the dev-app "
+                         "Nav Map. Bare flag → /tmp/oli-world-pose.sock; NOT the invariance spine.")
+    ap.add_argument("--map", default=None,
+                    help="baked occupancy artifact dir (occupancy.npy + occupancy.json) → the "
+                         "dev-app Nav Map panel (bake with nav/occupancy_io.py)")
 
 
 # ── pure command builders ────────────────────────────────────────────────────────
@@ -117,10 +125,14 @@ def _glide_world_argv(a: argparse.Namespace) -> list[str]:
           "--ground-friction", str(a.ground_friction),
           "--ground-restitution", str(a.ground_restitution)]
     if getattr(a, "scene", "none") and a.scene.lower() != "none":
-        py += ["--scene", a.scene]
+        # Resolve here (launcher CWD = invocation dir) so the World — spawned with cwd=repo
+        # root — still finds a path the user gave relative to humanoid/.
+        py += ["--scene", str(Path(a.scene).resolve())]
     py += _camera_world_flags(a)
     if getattr(a, "cameras", False):
         py += ["--camera-every", str(a.camera_every)]   # glide World honors the cadence knob
+    if getattr(a, "debug_pose", None):
+        py += ["--debug-pose", a.debug_pose]            # stream ground-truth base pose (nav overlay)
     if a.headless:
         py.append("--headless")
     if a.duration:
@@ -204,6 +216,14 @@ def brain_argv(a: argparse.Namespace) -> list[str]:
     # the dev app consumes the camera frame channel (headless brain_main has no display)
     if getattr(a, "cameras", False) and a.dev_app:
         py += ["--camera-socket", a.camera_socket]
+    # the dev app draws the Nav Map: the ground-truth pose stream + the baked occupancy artifact
+    if a.dev_app:
+        if getattr(a, "debug_pose", None):
+            py += ["--debug-pose", a.debug_pose]
+        if getattr(a, "map", None):
+            # Same reason as --scene: absolutize against the launcher CWD so the brain
+            # subprocess (cwd=repo root) resolves the artifact dir correctly.
+            py += ["--map", str(Path(a.map).resolve())]
     if a.walk_after is not None:
         py += ["--walk-after", str(a.walk_after)]
     if a.duration:

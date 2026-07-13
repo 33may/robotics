@@ -53,3 +53,28 @@ class GroundTruthLocalizer:
         self, observation: Observation, camera_frame: Optional[CameraFrame] = None
     ) -> Optional[RobotPose]:
         return self._pose_reader()
+
+
+class DebugPoseLocalizer:
+    """`Localizer` backed by the fenced debug ground-truth pose stream (world → brain).
+
+    The DEBUG-mode realization of the pose-source abstraction. Wraps a client exposing
+    ``latest() -> (stamp_ns, x, y, yaw) | None`` (the comm `DebugPoseClient`) and turns the newest
+    sample into a `RobotPose`. Today it carries Isaac's ground truth, so the planner can be verified
+    on perfect coordinates; once verified, a localization-module `Localizer` (cuVSLAM / RTAB-Map)
+    drops into this exact seam and nothing downstream changes. Ignores `observation`/`camera_frame`
+    — its coordinates come from the stream, not proprioception. Duck-types the client (no `comm`
+    import), so it stays unit-testable with a fake.
+    """
+
+    def __init__(self, client) -> None:
+        self._client = client
+
+    def estimate(
+        self, observation: Observation, camera_frame: Optional[CameraFrame] = None
+    ) -> Optional[RobotPose]:
+        sample = self._client.latest()
+        if sample is None:
+            return None
+        stamp_ns, x, y, yaw = sample
+        return RobotPose(stamp_ns=stamp_ns, x=x, y=y, yaw=yaw)

@@ -53,6 +53,9 @@ def build_registry(args: argparse.Namespace) -> PanelRegistry:
     reg.register(CameraPanel(camera_source))
     reg.register(TeleopPanel(host=args.joy_host, port=args.joy_port))
     reg.register(StatePanel())
+    if getattr(args, "map", None):
+        from humanoid.logic.oli.devapp.panels.map_panel import MapPanel
+        reg.register(MapPanel(args.map))
     return reg
 
 
@@ -72,6 +75,12 @@ def main() -> None:
     ap.add_argument("--joy-port", type=int, default=9001)
     ap.add_argument("--camera-socket", default=None,
                     help="World camera frame channel (SOCK_STREAM); omit → synthetic cameras")
+    ap.add_argument("--map", default=None,
+                    help="baked occupancy artifact dir (occupancy.npy + occupancy.json) → show the "
+                         "Nav Map panel")
+    ap.add_argument("--debug-pose", default=None,
+                    help="World debug-pose SOCK_DGRAM path → stream Oli's ground-truth pose onto "
+                         "the map (pairs with glide_world_main --debug-pose)")
     ap.add_argument("--walk-after", type=float, default=None)
     ap.add_argument("--duration", type=float, default=0.0)
     # self-validation
@@ -97,6 +106,7 @@ def main() -> None:
             vx=args.vx, vy=args.vy, wz=args.wz,
             joy_host=args.joy_host, joy_port=args.joy_port,
             walk_after=args.walk_after, duration=args.duration,
+            debug_pose=args.debug_pose, map_dir=args.map,
         )
         link.start()
 

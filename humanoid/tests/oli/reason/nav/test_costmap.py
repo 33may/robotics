@@ -86,3 +86,24 @@ def test_inflate_zero_radius_is_copy():
     arr[1, 1] = True
     g = OccupancyGrid(arr, 1.0)
     assert np.array_equal(g.inflate(0.0).grid, g.grid)
+
+
+# ── clearance cost (soft obstacle gradient) ──────────────────────────────────
+
+def test_clearance_cost_decays_with_distance_to_wall():
+    occ = np.zeros((5, 5), dtype=bool)
+    occ[:, 0] = True                       # a wall along col 0
+    g = OccupancyGrid(occ, resolution=1.0)
+    cost = g.clearance_cost(inflation_radius_m=3.0, weight=10.0)
+    assert cost.shape == (5, 5)
+    # nearer the wall = costlier; beyond the inflation radius = free (0)
+    assert cost[2, 1] > cost[2, 2] > 0.0
+    assert cost[2, 3] == 0.0 and cost[2, 4] == 0.0
+
+
+def test_clearance_cost_disabled_is_all_zero():
+    occ = np.zeros((5, 5), dtype=bool)
+    occ[:, 0] = True
+    g = OccupancyGrid(occ, resolution=1.0)
+    assert np.all(g.clearance_cost(inflation_radius_m=0.0, weight=10.0) == 0.0)
+    assert np.all(g.clearance_cost(inflation_radius_m=3.0, weight=0.0) == 0.0)

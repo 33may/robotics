@@ -3,9 +3,34 @@
 import numpy as np
 import pytest
 
-from humanoid.logic.oli.devapp.imaging import colorize_depth
+from humanoid.logic.oli.devapp.imaging import colorize_depth, fit_within
 
 pytestmark = pytest.mark.brain
+
+
+def test_fit_within_height_limited():
+    # 2:1 image in a box that's relatively wide → height is the binding constraint
+    assert fit_within(100, 50, box_w=400, box_h=100) == (200, 100)
+
+
+def test_fit_within_width_limited():
+    # same image in a narrow-tall box → width binds
+    assert fit_within(100, 50, box_w=100, box_h=100) == (100, 50)
+
+
+def test_fit_within_upscales_to_fill():
+    # small image, big box → scale UP so the panel space is used (still fully visible)
+    assert fit_within(50, 50, box_w=200, box_h=200) == (200, 200)
+
+
+def test_fit_within_preserves_aspect():
+    w, h = fit_within(659, 1100, box_w=800, box_h=600)  # the baked nav map shape
+    assert abs((w / h) - (659 / 1100)) < 1e-2
+    assert w <= 800 and h <= 600
+
+
+def test_fit_within_degenerate_box_is_clamped():
+    assert fit_within(100, 50, box_w=0, box_h=-5) == (1, 1)
 
 
 def test_colorize_depth_shape_and_dtype():

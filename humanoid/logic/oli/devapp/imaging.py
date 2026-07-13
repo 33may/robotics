@@ -8,6 +8,20 @@ from __future__ import annotations
 import numpy as np
 
 
+def fit_within(img_w: int, img_h: int, box_w: float, box_h: float) -> tuple[int, int]:
+    """Largest (w, h) that keeps `img_w:img_h` aspect and fits inside the `box_w × box_h`.
+
+    Scales UP or DOWN — the returned image fills as much of the box as possible while
+    staying fully visible (no crop, no scroll). Used to size panel images to the live
+    ImGui content region so two docked panels each show their whole image. A degenerate
+    (≤0) box clamps to 1×1 so ImmVision never gets a zero dimension.
+    """
+    if img_w <= 0 or img_h <= 0 or box_w <= 0 or box_h <= 0:
+        return (1, 1)
+    scale = min(box_w / img_w, box_h / img_h)
+    return (max(1, int(img_w * scale)), max(1, int(img_h * scale)))
+
+
 def colorize_depth(depth: np.ndarray, near: float = 0.2, far: float = 5.0) -> np.ndarray:
     """Map a float depth image (metres) to a uint8 (H, W, 3) RGB jet colourization.
 
