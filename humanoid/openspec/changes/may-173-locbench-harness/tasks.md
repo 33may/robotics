@@ -12,7 +12,7 @@
 - [x] 2.2 TDD: `GoalChannelServer` → `Nav.set_goal/clear_goal` against a fake Nav; latest-wins, malformed-message tolerance
 - [x] 2.3 TDD: `TelemetryServer` fed from the Orchestrator recorder hook + Nav path/status + localization host output; client sees a coherent latest snapshot
 - [x] 2.4 `brain_main --service` flag boots both; architecture guard: `service/` imports stay brain-pure (no isaacsim/limxsdk, no devapp)
-- [ ] 2.5 Integration smoke vs live glide session: send goal over the wire → robot drives; telemetry streams (Anton at the controls)
+- [x] 2.5 Integration smoke vs live glide session: send goal over the wire → robot drives; telemetry streams (Anton at the controls)
 
 ## 3. Episode sets (D2, D3)
 
