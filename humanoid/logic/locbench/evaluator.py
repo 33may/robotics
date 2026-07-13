@@ -36,9 +36,14 @@ from .pairs import GtSample
 
 @dataclass(frozen=True)
 class EvalConfig:
-    timeout_s: float = 90.0            # scored-leg budget (D2)
-    transit_timeout_s: float = 120.0   # getting to the spawn (unscored, but must succeed)
-    start_timeout_s: float = 30.0      # host lifecycle: start → running
+    # timeout_s / transit_timeout_s are SIM seconds, measured on the GT stamp stream: the
+    # sim runs far below real time under camera load (RTF ~0.03 observed 13-07), so a
+    # wall-clock episode budget would falsely time out every long episode. The wall
+    # backstop only catches a FROZEN sim (stamps stop advancing).
+    timeout_s: float = 90.0            # scored-leg budget, SIM seconds (D2)
+    transit_timeout_s: float = 120.0   # getting to the spawn, SIM seconds
+    start_timeout_s: float = 30.0      # host lifecycle start→running (WALL — sim-independent)
+    wall_backstop_s: float = 3600.0    # hard wall ceiling per phase (frozen-sim guard)
     arrival_tol_m: float = 0.3         # GT distance that counts as "arrived" (D2)
     poll_dt: float = 0.02              # client poll cadence [s]
 
@@ -131,16 +136,19 @@ class Evaluator:
     # ── internals ─────────────────────────────────────────────────────────────
 
     def _collect(self, ep: Episode, res: EpisodeResult) -> Tuple[str, Optional[str]]:
-        deadline = time.monotonic() + self._cfg.timeout_s
+        wall_deadline = time.monotonic() + self._cfg.wall_backstop_s
+        sim_t0: Optional[int] = None          # SIM-time budget starts at the first GT stamp
         last_gt_stamp = 0
         last_est_stamp = 0
-        while time.monotonic() < deadline:
+        while time.monotonic() < wall_deadline:
             if not self._alive():
                 return ("crashed", "stack died mid-episode")
             gt = self._gt()
             if gt is not None and gt[0] > last_gt_stamp:
                 last_gt_stamp = gt[0]
                 res.gts.append(gt)
+                if sim_t0 is None:
+                    sim_t0 = gt[0]
             snap = self._telemetry()
             if snap is not None:
                 if getattr(snap, "loc_state", None) == "crashed":
@@ -151,18 +159,27 @@ class Evaluator:
                     res.ests.append(est)
             if gt is not None and self._dist(gt, ep.goal) <= self._cfg.arrival_tol_m:
                 return ("arrived", None)
+            if sim_t0 is not None and (last_gt_stamp - sim_t0) / 1e9 > self._cfg.timeout_s:
+                return ("timeout", f"no GT arrival within {self._cfg.timeout_s} sim-s")
             if self._cfg.poll_dt:
                 time.sleep(self._cfg.poll_dt)
-        return ("timeout", f"no GT arrival within {self._cfg.timeout_s}s")
+        return ("timeout", f"wall backstop {self._cfg.wall_backstop_s}s hit — sim frozen?")
 
     def _wait_arrival(self, target, timeout_s: float) -> Optional[GtSample]:
-        deadline = time.monotonic() + timeout_s
-        while time.monotonic() < deadline:
+        """Wait for GT to reach `target` within `timeout_s` SIM seconds (wall backstop)."""
+        wall_deadline = time.monotonic() + self._cfg.wall_backstop_s
+        sim_t0: Optional[int] = None
+        while time.monotonic() < wall_deadline:
             if not self._alive():
                 return None
             gt = self._gt()
-            if gt is not None and self._dist(gt, target) <= self._cfg.arrival_tol_m:
-                return gt
+            if gt is not None:
+                if sim_t0 is None:
+                    sim_t0 = gt[0]
+                if self._dist(gt, target) <= self._cfg.arrival_tol_m:
+                    return gt
+                if (gt[0] - sim_t0) / 1e9 > timeout_s:
+                    return None
             if self._cfg.poll_dt:
                 time.sleep(self._cfg.poll_dt)
         return None

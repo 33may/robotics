@@ -94,8 +94,9 @@ class FakeStack:
 
 
 def _evaluator(stack, **cfg_over):
-    base = dict(timeout_s=2.0, transit_timeout_s=2.0, start_timeout_s=1.0,
-                arrival_tol_m=0.3, poll_dt=0.0)
+    # timeouts are SIM seconds (GT stamps); FakeStack advances 0.1 sim-s per poll
+    base = dict(timeout_s=5.0, transit_timeout_s=5.0, start_timeout_s=1.0,
+                wall_backstop_s=5.0, arrival_tol_m=0.3, poll_dt=0.0)
     base.update(cfg_over)
     cfg = EvalConfig(**base)
     return Evaluator(
@@ -135,7 +136,7 @@ def test_timeout_marks_and_moves_on():
             self.t_ns += int(0.1 * S)            # clock runs, robot never moves
 
     stuck = Stuck()
-    res = _evaluator(stuck, timeout_s=0.05, transit_timeout_s=0.05).run_episode(_EP)
+    res = _evaluator(stuck, timeout_s=0.5, transit_timeout_s=0.5).run_episode(_EP)
     assert res.outcome == "timeout"
     assert stuck.stops <= 1                       # teardown still attempted
 
