@@ -1,0 +1,3 @@
+# per-candidate map caches (locbench D9): rebuilt on demand, content-hash pinned in reports
+*/map/
+# fat upstream assets get per-candidate entries appended by /loc-new (models, datasets, bags)

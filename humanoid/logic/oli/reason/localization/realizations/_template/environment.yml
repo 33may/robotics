@@ -1,0 +1,14 @@
+# Recipe for the disposable `bench-<name>` env (locbench D8: the WHOLE brain boots inside it).
+# Keep: brain-compatible base (numpy + stdlib is what glide needs) + the candidate's stack.
+# Pin everything; after `locbench env create` the export lands in lock.yml (committed).
+name: bench-<name>
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pyyaml
+  - pytest            # in-folder test_contract.py runs in THIS env
+  # - pip:
+  #   - <candidate-dep>==<pin>          # prefer pip-pinned libs (build strategy pref #1)
+  #   - git+https://…@<sha>             # or a pinned git ref when unpackaged

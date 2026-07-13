@@ -1,0 +1,10 @@
+# <name> — ALL tunables live here (playbook rule: a tuning iteration's diff is this one file).
+# Hardcoded magic numbers in module.py are a defect. Group by concern; comment units + why.
+
+# --- example structure (delete when real) ---
+# odometry:
+#   feature_count: 400        # ORB features per frame
+# relocalization:
+#   min_inliers: 15           # fix accepted above this
+# noise:                      # reference-candidate-style injection knobs, if any
+#   bias_m: 0.0
