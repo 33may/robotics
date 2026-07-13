@@ -258,3 +258,48 @@ def test_ankle_parallel_opt_in_world_only():
     assert "--ankle-parallel" not in r.world_argv(_args())
     assert "--ankle-parallel" in r.world_argv(_args(ankle_parallel=True))
     assert "--ankle-parallel" not in r.brain_argv(_args(ankle_parallel=True))
+
+
+# ── --service: the goal-driven brain via the single entrypoint (locbench §2) ──────
+
+
+def _service_args(**over):
+    base = dict(mode="glide", service=True, dev_app=False,
+                debug_pose="/tmp/oli-world-pose.sock",
+                map="assets/envs/warehouse_nvidia/nav_maps/v1")
+    base.update(over)
+    return _args(**base)
+
+
+def test_service_brain_boots_brain_main_with_the_seam():
+    cmd = r.brain_argv(_service_args())
+    s = " ".join(cmd)
+    assert "brain_main.py" in s and "--service" in s
+    assert "--mode glide" in s
+    assert "--debug-pose /tmp/oli-world-pose.sock" in s
+    assert "--map-dir" in s and "nav_maps/v1" in s
+    assert "--glide-scale 5.0" in s          # caps pre-divided in build_nav; product = tuned speed
+    assert "--joystick" not in s             # the goal channel is the only steering input
+
+
+def test_service_map_dir_is_absolutized():
+    cmd = r.brain_argv(_service_args())
+    map_dir = cmd[cmd.index("--map-dir") + 1]
+    assert map_dir.startswith("/")           # brain subprocess runs cwd=repo root
+
+
+def test_service_conflicts_with_dev_app():
+    with pytest.raises(ValueError, match="dev-app"):
+        r.brain_argv(_service_args(dev_app=True))
+
+
+def test_service_requires_glide_mode():
+    with pytest.raises(ValueError, match="glide"):
+        r.brain_argv(_service_args(mode="walk"))
+
+
+def test_service_requires_debug_pose_and_map():
+    with pytest.raises(ValueError, match="--debug-pose"):
+        r.brain_argv(_service_args(debug_pose=None))
+    with pytest.raises(ValueError, match="--map"):
+        r.brain_argv(_service_args(map=None))
