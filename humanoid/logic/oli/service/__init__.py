@@ -8,6 +8,7 @@ dev_app migrates onto this seam later to become pure visuals. Pure brain-side co
 only, no isaacsim/limxsdk, no devapp imports (guarded by the architecture tests).
 """
 
+from .goal_channel import DEFAULT_GOAL_SOCKET, GoalChannelClient, GoalChannelServer
 from .protocol import (
     GOAL_NBYTES,
     TelemetrySnapshot,
@@ -17,9 +18,22 @@ from .protocol import (
     encode_goal_set,
     encode_telemetry,
 )
+from .telemetry import (
+    DEFAULT_TELEMETRY_SOCKET,
+    TelemetryClient,
+    TelemetryPublisher,
+    TelemetryServer,
+)
 
 __all__ = [
+    "DEFAULT_GOAL_SOCKET",
+    "DEFAULT_TELEMETRY_SOCKET",
     "GOAL_NBYTES",
+    "GoalChannelClient",
+    "GoalChannelServer",
+    "TelemetryClient",
+    "TelemetryPublisher",
+    "TelemetryServer",
     "TelemetrySnapshot",
     "decode_goal",
     "decode_telemetry",
