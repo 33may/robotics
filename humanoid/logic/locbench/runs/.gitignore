@@ -1,0 +1,3 @@
+# raw pose pairs are heavy per-run data — reports + plots are the committed record (D12)
+*_pairs.csv
+stack.log

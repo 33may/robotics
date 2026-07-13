@@ -31,6 +31,9 @@ _EPISODES_DIR = _HERE / "episodes"
 SCENES = {
     "warehouse": {
         "map_dir": "assets/envs/warehouse_nvidia/nav_maps/v1",
+        "scene_usd": "assets/envs/warehouse_nvidia/Isaac/Environments/Simple_Warehouse/"
+                     "full_warehouse.usd",
+        "camera_every": 16,           # ≈60 Hz frames — SLAM-friendly cadence
         "origin_xy": (0.0, 0.0),      # the glide World's boot spawn (USD origin)
         "n_episodes": 10,
         "min_separation_m": 8.0,
@@ -45,10 +48,59 @@ SCENES = {
 }
 
 
+_RUNS_ROOT = _HERE / "runs"
+
+
+def _scene_cfg(name: str) -> dict:
+    if name not in SCENES:
+        sys.exit(f"unknown scene {name!r} — known: {', '.join(SCENES)}")
+    return dict(SCENES[name])
+
+
+def _cmd_run(args) -> int:
+    from humanoid.logic.locbench.runner import run_bench
+
+    cfg = _scene_cfg(args.scene)
+    if cfg.get("scene_usd"):
+        cfg["scene_usd"] = str(_REPO_ROOT / "humanoid" / cfg["scene_usd"])
+    episodes_file = _EPISODES_DIR / f"{args.scene}.json"
+    if not episodes_file.exists():
+        sys.exit(f"no frozen episode set for {args.scene!r} — run "
+                 f"`locbench episodes {args.scene} --freeze` (Anton approves the render)")
+    return run_bench(
+        candidate=args.candidate, scene_cfg=cfg, episodes_file=episodes_file,
+        runs_root=_RUNS_ROOT, n_episodes=args.smoke or args.episodes,
+        headless=args.headless, timeout_s=args.timeout,
+        shadow_config=args.shadow_config)
+
+
+def _cmd_score(args) -> int:
+    from humanoid.logic.locbench.episodes import load_episode_set
+    from humanoid.logic.locbench.runner import score_run_dir
+    from humanoid.logic.oli.reason.mapping import StaticMapping
+
+    run_dir = Path(args.run_dir)
+    import json as _json
+    scene = _json.loads((run_dir / "report.json").read_text())["scene"]
+    es = load_episode_set(_EPISODES_DIR / f"{scene}.json")
+    grid = StaticMapping(str(_REPO_ROOT / "humanoid" / es.map_dir)).latest().grid
+    doc = score_run_dir(run_dir, es, grid=grid)
+    print(f"recomputed: {doc['run']['tier']} "
+          f"(failed episodes: {doc['run']['failed_episodes'] or 'none'})")
+    return 0 if doc["run"]["passed"] else 1
+
+
+def _cmd_board(args) -> int:
+    from humanoid.logic.locbench.runner import board
+
+    print(board(_RUNS_ROOT))
+    return 0
+
+
 def _cmd_episodes(args) -> int:
-    if args.scene not in SCENES:
-        sys.exit(f"unknown scene {args.scene!r} — known: {', '.join(SCENES)}")
-    cfg = dict(SCENES[args.scene])
+    cfg = _scene_cfg(args.scene)
+    cfg.pop("scene_usd", None)     # sampling needs only the baked map
+    cfg.pop("camera_every", None)
     map_dir = cfg.pop("map_dir")
 
     from humanoid.logic.locbench.render import render_episode_set
@@ -83,6 +135,25 @@ def main() -> int:
     p_ep.add_argument("--freeze", action="store_true",
                       help="write episodes/<scene>.json (do this after render approval)")
     p_ep.set_defaults(fn=_cmd_episodes)
+
+    p_run = sub.add_parser("run", help="evaluate a candidate on a scene's frozen episodes")
+    p_run.add_argument("candidate", help="realizations/<name>")
+    p_run.add_argument("--scene", default="warehouse")
+    p_run.add_argument("--episodes", type=int, default=None, help="cap episode count")
+    p_run.add_argument("--smoke", type=int, nargs="?", const=3, default=None,
+                       help="quick grind: first N episodes (default 3)")
+    p_run.add_argument("--timeout", type=float, default=90.0, help="scored-leg budget [s]")
+    p_run.add_argument("--headless", action="store_true")
+    p_run.add_argument("--shadow-config", default=None,
+                       help="JSON file of config overrides for the candidate")
+    p_run.set_defaults(fn=_cmd_run)
+
+    p_sc = sub.add_parser("score", help="recompute report + plots from a run's stored pairs")
+    p_sc.add_argument("run_dir")
+    p_sc.set_defaults(fn=_cmd_score)
+
+    p_bd = sub.add_parser("board", help="MD scoreboard — latest report per candidate")
+    p_bd.set_defaults(fn=_cmd_board)
 
     args = ap.parse_args()
     return args.fn(args)

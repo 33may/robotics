@@ -38,10 +38,10 @@
 
 ## 6. Evaluator (D1, D14)
 
-- [ ] 6.1 TDD against fakes: episode loop — transit goal → arrival watch (GT ≤ 0.3 m) → `start` → goal → pair logging → arrival/timeout (90 s, `--timeout`) → `stop` → next; crash detection (brain death ⇒ episode `crashed`, reboot, continue)
+- [x] 6.1 TDD against fakes: episode loop — transit goal → arrival watch (GT ≤ 0.3 m) → `start` → goal → pair logging → arrival/timeout (90 s, `--timeout`) → `stop` → next; crash detection (brain death ⇒ episode `crashed`, reboot, continue)
 - [ ] 6.2 `locbench run <name> --scene warehouse [--episodes N] [--smoke=3]` — Supervisor boots World + Brain(`--service --shadow <name>`) in `bench-<name>`, attaches evaluator (single-entrypoint rule); per-run dir + file log + exit code = verdict
-- [ ] 6.3 `locbench score <run-dir>` — recompute stats/plots offline from stored pairs; `locbench board` — MD scoreboard from committed reports (+ per-candidate report history)
-- [ ] 6.4 `runs/` gitignore: commit `report.json` + plots, ignore `pairs.csv`
+- [x] 6.3 `locbench score <run-dir>` — recompute stats/plots offline from stored pairs; `locbench board` — MD scoreboard from committed reports (+ per-candidate report history)
+- [x] 6.4 `runs/` gitignore: commit `report.json` + plots, ignore `pairs.csv`
 
 ## 7. Env tooling (D8)
 
