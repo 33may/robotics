@@ -23,7 +23,7 @@ from ..reason.teleoperation.joystick import JoystickAdapter
 from ..runtime import Orchestrator
 from .state import AppState
 
-# Nav costmap = the robot/policy layer (footprint + clearance), owned by the brain — live-tunable.
+# Robot/policy planning knobs (footprint + clearance) — constructor args of Planner, live-tunable.
 _ROBOT_RADIUS_M = 0.30       # hard footprint: cells within this of a wall are impassable
 _INFLATION_RADIUS_M = 1.0    # soft clearance reach (> robot radius) — path prefers this much gap
 _CLEARANCE_WEIGHT = 3.0      # how hard to trade path length for clearance (0 = shortest path)
@@ -86,9 +86,9 @@ class BrainLink:
             from ..reason.localization import DebugPoseLocalizer
             self._pose_client = DebugPoseClient(debug_pose)
             self._localizer = DebugPoseLocalizer(self._pose_client)
-        # Nav layer (brain-side): consumes the UI-set GoalCoordinate, plans on its OWN costmap,
-        # publishes the path back to AppState for the map panel to render. Teleop still drives for
-        # now (plan-only preview) — arming Nav to drive is the next step. Needs a pose source.
+        # Nav layer (brain-side): consumes the UI-set GoalCoordinate, plans via its Planner on the
+        # emitted Map (StaticMapping), publishes the path back to AppState for the map panel to
+        # render. ArmedNav below gates who drives: disarmed = joystick, armed = Nav.
         self._nav = nav
         self._last_goal = None
         self._last_plan_t = 0.0

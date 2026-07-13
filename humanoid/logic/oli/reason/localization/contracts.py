@@ -96,6 +96,12 @@ class LocalizationOut:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "stamp_ns", int(self.stamp_ns))
+        # Coerce status THROUGH the enum: a raw int decoded off a wire datagram (this enum is
+        # designed to cross one) must land as a real LocalizationStatus or raise — never be
+        # stored as a bare int that dodges the invariant below.
+        object.__setattr__(self, "status", LocalizationStatus(self.status))
+        if self.pose is not None and not isinstance(self.pose, RobotPose):
+            raise TypeError(f"pose must be a RobotPose, got {type(self.pose).__name__}")
         if (self.pose is None) != (self.status is LocalizationStatus.LOST):
             raise ValueError(
                 f"pose is None iff status is LOST (got pose={self.pose!r}, "

@@ -65,7 +65,20 @@ def test_blocked_goal_returns_none():
     assert Planner().plan(_pose(), GoalCoordinate(8.5, 8.5), _map(g)) is None
 
 
-def test_same_goal_replans_locally_from_moved_pose():
+def test_same_goal_replans_locally_from_moved_pose(monkeypatch):
+    # Pin the MECHANISM, not just the endpoints: the second call must run A* to the near
+    # HORIZON waypoint (a local re-plan), never to the final goal (which would mean a silent
+    # regression to always-full-planning — endpoint asserts alone cannot tell the difference).
+    from humanoid.logic.oli.reason.nav import planner as planner_mod
+
+    calls = []
+    real_plan_path = planner_mod.plan_path
+
+    def spy(grid, start, goal, **kw):
+        calls.append(goal)
+        return real_plan_path(grid, start, goal, **kw)
+
+    monkeypatch.setattr(planner_mod, "plan_path", spy)
     p = Planner(horizon_m=2.0)
     g = _grid()
     m = _map(g)
@@ -75,6 +88,23 @@ def test_same_goal_replans_locally_from_moved_pose():
     assert first is not None and moved is not None
     assert moved[0] == pytest.approx((2.5, 0.5))  # re-plan starts at the moved pose
     assert moved[-1] == pytest.approx((8.5, 0.5))
+    assert calls[0] == (goal.x, goal.y)           # first call: FULL plan to the goal
+    assert len(calls) == 2 and calls[1] != (goal.x, goal.y), (
+        "second same-goal plan must target the local HORIZON waypoint, not the goal — "
+        "the local re-plan machinery regressed to full planning"
+    )
+
+
+def test_clear_preserves_robot_layer():
+    # clear() forgets goal+path (next plan is FULL) but must NOT throw away the derived robot
+    # layer — it depends on the map, not the goal (planner.py clear() docstring).
+    g = _grid()
+    p = Planner(robot_radius_m=0.5)
+    m = _map(g)
+    p.plan(_pose(), GoalCoordinate(8.5, 8.5), m)
+    p.clear()
+    p.plan(_pose(), GoalCoordinate(0.5, 8.5), m)
+    assert g.inflate_calls == 1                   # layer survived the clear
 
 
 def test_goal_change_forces_full_replan():

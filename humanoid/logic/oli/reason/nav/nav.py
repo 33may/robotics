@@ -77,6 +77,7 @@ class Nav:
         no goal / no map yet / the goal is blocked. The "path out" seam — dev_app renders it."""
         world_map = self._mapping.latest()
         if world_map is None:
+            self._planner.clear()   # a mapless tick must not leave a stale path on `.path`
             return None
         return self._planner.plan(pose, self._goal, world_map)
 

@@ -151,8 +151,9 @@ class Planner:
         self._clearance_weight = clearance_weight
         self._weight = heuristic_weight
         self._horizon_m = horizon_m
-        # derived robot layer, cached keyed on Map.version (D9)
-        self._layer_version: Optional[int] = None
+        # derived robot layer, cached keyed on (grid identity, version) (D9) — identity guards
+        # against two mapping sources reusing the same version number for different grids
+        self._layer_key: Optional[Tuple[int, int]] = None
         self._plan_grid: Optional[OccupancyGrid] = None
         self._cost: Optional["np.ndarray"] = None
         # path cache + goal-change detection (D9)
@@ -200,17 +201,17 @@ class Planner:
         return self._path
 
     def _refresh_robot_layer(self, world_map: Map) -> None:
-        """(Re)derive the robot layer iff the world changed — keyed on `Map.version` (D9).
-
-        A bump also DROPS the cached path: the spliced tail was planned against the old world
-        and cannot be trusted."""
-        if world_map.version == self._layer_version:
+        """(Re)derive the robot layer iff the world changed — keyed on (grid identity, version)
+        (D9). A change also DROPS the cached path: the spliced tail was planned against the old
+        world and cannot be trusted."""
+        key = (id(world_map.grid), world_map.version)
+        if key == self._layer_key:
             return
         self._plan_grid = world_map.grid.inflate(self._robot_radius_m)
         self._cost = world_map.grid.clearance_cost(
             self._inflation_radius_m, self._clearance_weight
         )
-        self._layer_version = world_map.version
+        self._layer_key = key
         self._path = None
 
     def _full_plan(self, pose: RobotPose) -> Optional[List[Point]]:

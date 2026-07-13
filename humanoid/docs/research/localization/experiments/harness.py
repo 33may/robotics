@@ -5,7 +5,7 @@ WHAT THIS MEASURES
 The Oli nav stack is DONE and world-invariant: an offline-baked 2D `OccupancyGrid` costmap →
 8-connected A* (`plan_path`) → holonomic pure-pursuit (`PurePursuit.command`) → body-frame
 `(vx, vy, wz)`. What is NOT decided is which *localizer* to drop into the `Localizer` seam
-(`reason/nav/localizer.py`). This harness answers the prerequisite question empirically:
+(`reason/localization/localizer.py`). This harness answers the prerequisite question empirically:
 
     how much localization ERROR, and how low a localization RATE, does the EXISTING nav stack
     tolerate before it starts failing (colliding / missing goals)?

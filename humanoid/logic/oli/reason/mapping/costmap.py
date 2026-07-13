@@ -1,4 +1,4 @@
-"""nav/costmap.py — the 2D occupancy grid the planner searches (SE(2) footprint nav).
+"""mapping/costmap.py — the 2D occupancy grid the planner searches (SE(2) footprint nav).
 
 The map is baked once from the scene geometry (`--scene` USD) into a boolean occupancy grid;
 obstacles include everything from shelves to a box on the floor — anything within the robot's

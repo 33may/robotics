@@ -18,7 +18,7 @@
 
 ## 1. Problem & constraints
 
-**The seam.** `logic/oli/reason/nav/localizer.py` defines `Localizer.estimate(observation, camera_frame) -> Optional[RobotPose]` (SE(2): x, y, yaw in a fixed "map frame"). `GroundTruthLocalizer` / `DebugPoseLocalizer` already run the full downstream loop on perfect pose read from a fenced debug side-channel. The task is a **swap**, not a rebuild: the invariant nav stack (OccupancyGrid costmap → 8-connected A* → holonomic pure-pursuit → body-frame vx,vy,wz) is done. The seam docstring itself already names cuVSLAM / RTAB-Map as the intended day-2 backends.
+**The seam.** `logic/oli/reason/localization/localizer.py` defines `Localizer.estimate(observation, camera_frame) -> Optional[RobotPose]` (SE(2): x, y, yaw in a fixed "map frame"). `GroundTruthLocalizer` / `DebugPoseLocalizer` already run the full downstream loop on perfect pose read from a fenced debug side-channel. The task is a **swap**, not a rebuild: the invariant nav stack (OccupancyGrid costmap → 8-connected A* → holonomic pure-pursuit → body-frame vx,vy,wz) is done. The seam docstring itself already names cuVSLAM / RTAB-Map as the intended day-2 backends.
 
 **Invariance boundary (hard rule).** `brain` imports **neither** `isaacsim` **nor** `limxsdk`, directly or transitively (enforced by the `brain` pytest marker + env split). Therefore any heavy/CUDA/ROS localizer runs as a **separate process** emitting SE(2) over a bus; the Localizer becomes a thin pose-reader — exactly the shape `DebugPoseLocalizer` already models. **"Can this run out-of-process and just emit an SE(2) pose?"** is a primary evaluation axis.
 
