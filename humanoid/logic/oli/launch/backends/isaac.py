@@ -113,6 +113,11 @@ def add_args(ap: argparse.ArgumentParser) -> None:
                     help="glide: boot brain_main --service (goal-driven Nav + the W4/W5 seam) "
                          "instead of the teleop brain; requires --debug-pose and --map, "
                          "conflicts with --dev-app")
+    ap.add_argument("--shadow", default=None, metavar="NAME",
+                    help="service: run this localization realization in shadow (measured "
+                         "only) — requires --cameras (the host consumes the frame channel)")
+    ap.add_argument("--shadow-config", default=None, metavar="JSON_FILE",
+                    help="config overrides for the shadow realization")
 
 
 # ── pure command builders ────────────────────────────────────────────────────────
@@ -256,6 +261,9 @@ def _service_brain_argv(a: argparse.Namespace) -> list[str]:
         raise ValueError("--service requires --debug-pose (Nav's Stage-1 GT localizer)")
     if not getattr(a, "map", None):
         raise ValueError("--service requires --map (baked occupancy artifact dir)")
+    if getattr(a, "shadow", None) and not getattr(a, "cameras", False):
+        raise ValueError("--shadow requires --cameras (the shadow host consumes the "
+                         "World's frame channel)")
     py = ["conda", "run", "--no-capture-output", "-n", a.brain_env, "python", "-u",
           str(_BRAIN_ENTRY), "--socket", a.socket,
           "--mode", "glide", "--service",
@@ -263,6 +271,10 @@ def _service_brain_argv(a: argparse.Namespace) -> list[str]:
           # Absolutize against the launcher CWD (brain subprocess runs cwd=repo root).
           "--map-dir", str(Path(a.map).resolve()),
           "--glide-scale", str(a.glide_scale)]
+    if getattr(a, "shadow", None):
+        py += ["--shadow", a.shadow, "--camera-socket", a.camera_socket]
+        if getattr(a, "shadow_config", None):
+            py += ["--shadow-config", str(Path(a.shadow_config).resolve())]
     if a.duration:
         py += ["--duration", str(a.duration)]
     return py

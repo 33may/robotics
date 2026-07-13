@@ -35,7 +35,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from humanoid.logic.oli.action.policy_runner import PolicyRunner  # noqa: E402
+# NOTE: PolicyRunner (onnxruntime + scipy) is imported LAZILY in main() — the service brain
+# runs in disposable bench-<candidate> envs that carry only numpy/stdlib (locbench D8).
 from humanoid.logic.oli.comm.client import BrainComm, CommClosedError  # noqa: E402
 from humanoid.logic.oli.contracts import Mode  # noqa: E402
 from humanoid.logic.oli.glide import GlideAction  # noqa: E402
@@ -56,7 +57,13 @@ def _spawn_app(python: str, host: str, port: int) -> subprocess.Popen:
 
 
 def _run_service(args) -> None:
-    """The isolated goal-driven brain: Nav reason + the W4/W5 service seam, no joystick."""
+    """The isolated goal-driven brain: Nav reason + the W4/W5 service seam, no joystick.
+
+    `--shadow <name>` additionally attaches the in-brain localization host (locbench D6):
+    the named realization is lazy-loaded, fed from the World's camera frame channel, stepped
+    on a side thread, and measured only — Nav keeps driving on GT. Its lifecycle is
+    commanded over the loc-ctrl socket; its est/state ride out on telemetry.
+    """
     from humanoid.logic.oli.comm.debug_pose import DebugPoseClient
     from humanoid.logic.oli.reason.localization import DebugPoseLocalizer
     from humanoid.logic.oli.reason.mapping import StaticMapping
@@ -69,8 +76,28 @@ def _run_service(args) -> None:
         DebugPoseLocalizer(pose_client),
         speed_scale=args.glide_scale,
     )
+
+    loc_host = None
+    frame_reader = None
+    if args.shadow:
+        import json
+
+        from humanoid.logic.oli.comm.camera_stream import CameraStreamReader
+        from humanoid.logic.oli.reason.localization import LocalizationHost, load_realization
+
+        overrides = json.loads(Path(args.shadow_config).read_text()) if args.shadow_config else {}
+        load_realization(args.shadow, overrides)   # fail FAST on unknown name / broken import
+        frame_reader = CameraStreamReader(args.camera_socket)
+        print(f"[brain] shadow candidate: {args.shadow} — connecting frames "
+              f"at {args.camera_socket}...", flush=True)
+        frame_reader.connect()
+        loc_host = LocalizationHost(
+            lambda: load_realization(args.shadow, overrides), frame_reader)
+        loc_host.start()
+
     host = ServiceHost(nav, goal_socket=args.goal_socket,
-                       telemetry_socket=args.telemetry_socket)
+                       telemetry_socket=args.telemetry_socket,
+                       loc_host=loc_host, loc_ctrl_socket=args.loc_ctrl_socket)
     comm = BrainComm(socket_path=args.socket)
     # Nav is the reason; joystick=None, so the orchestrator hands Nav's optional second
     # parameter (camera_frame) a None — the goal channel is the only steering input.
@@ -97,7 +124,9 @@ def _run_service(args) -> None:
         print("[brain] World closed the connection; stopping.", flush=True)
     finally:
         comm.close()
-        host.close()
+        host.close()             # closes the loc host too, when attached
+        if frame_reader is not None:
+            frame_reader.close()
         pose_client.close()
 
 
@@ -120,6 +149,15 @@ def main() -> None:
                     help="baked occupancy map dir (occupancy.npy + occupancy.json)")
     ap.add_argument("--glide-scale", type=float, default=1.0,
                     help="GlideAction velocity multiplier; Nav caps are pre-divided by it")
+    ap.add_argument("--shadow", default=None, metavar="NAME",
+                    help="service: run this localization realization in shadow (measured "
+                         "only, Nav stays on GT) — locbench Stage 1")
+    ap.add_argument("--shadow-config", default=None, metavar="JSON_FILE",
+                    help="config overrides deep-merged over the realization's config.yaml")
+    ap.add_argument("--camera-socket", default="/tmp/oli-world-frames.sock",
+                    help="the World's camera frame channel (the shadow host consumes it)")
+    ap.add_argument("--loc-ctrl-socket", default="/tmp/oli-loc-ctrl.sock",
+                    help="UDS path for localization lifecycle commands (start/stop)")
     ap.add_argument("--joystick", choices=["fixed", "socket"], default="fixed",
                     help="fixed = constant CLI cmd; socket = live app over UDP")
     ap.add_argument("--vx", type=float, default=0.0)
@@ -137,6 +175,8 @@ def main() -> None:
                     help="wall seconds to run (0 = until Ctrl-C)")
     args = ap.parse_args()
 
+    if args.shadow and not args.service:
+        ap.error("--shadow requires --service (the shadow host lives in the service brain)")
     if args.service:
         if args.mode != "glide":
             ap.error("--service requires --mode glide (Stage 1 drives the glide path)")
@@ -150,7 +190,11 @@ def main() -> None:
     comm = BrainComm(socket_path=args.socket)
     # Glide swaps ONLY the Action: forward the velocity Intent instead of running the walk
     # ONNX. Same Teleop, same Comm, same Orchestrator loop; the World integrates the glide.
-    action = GlideAction() if args.mode == "glide" else PolicyRunner()
+    if args.mode == "glide":
+        action = GlideAction()
+    else:
+        from humanoid.logic.oli.action.policy_runner import PolicyRunner
+        action = PolicyRunner()
 
     app_proc = None
     if args.joystick == "socket":

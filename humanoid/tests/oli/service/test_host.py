@@ -101,3 +101,93 @@ def test_close_releases_the_socket_paths(tmp_path):
     host2 = ServiceHost(nav, goal_socket=goal_sock,
                         telemetry_socket=str(tmp_path / "t.sock"))
     host2.close()
+
+
+# ── full shadow loop: ServiceHost + LocalizationHost (§5.3) ──────────────────
+
+
+def test_shadow_loop_lifecycle_over_the_wire(tmp_path):
+    import time
+
+    from humanoid.logic.oli.contracts import CameraFrame, CameraIntrinsics
+    from humanoid.logic.oli.reason.localization import (
+        LocalizationOut,
+        LocalizationStatus,
+        RobotPose,
+    )
+    from humanoid.logic.oli.reason.localization.host import LocalizationHost
+    from humanoid.logic.oli.service.loc_ctrl import LocCtrlClient
+
+    class Frames:  # latest-wins mailbox shaped like CameraStreamReader
+        def __init__(self):
+            self.f = None
+
+        def push(self, fr):
+            self.f = fr
+
+        def read(self, name):
+            return self.f
+
+        def stream_names(self):
+            return ["head"] if self.f is not None else []
+
+    class Echo:   # module echoing the warm-start pose (template-style)
+        def start(self, setup):
+            self.hint = setup.initial_pose
+
+        def step(self, loc_in):
+            return LocalizationOut(stamp_ns=loc_in.stamp_ns,
+                                   pose=RobotPose(loc_in.stamp_ns, self.hint.x, self.hint.y,
+                                                  self.hint.yaw),
+                                   status=LocalizationStatus.TRACKING)
+
+        def stop(self):
+            pass
+
+    def _wait(cond, timeout=2.0):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if cond():
+                return True
+            time.sleep(0.005)
+        return False
+
+    frames = Frames()
+    loc_host = LocalizationHost(lambda: Echo(), frames)
+    loc_host.start()
+    nav = FakeNav()
+    tel_client = TelemetryClient(str(tmp_path / "t.sock"))
+    host = ServiceHost(nav, goal_socket=str(tmp_path / "g.sock"),
+                       telemetry_socket=str(tmp_path / "t.sock"),
+                       loc_host=loc_host, loc_ctrl_socket=str(tmp_path / "c.sock"))
+    ctrl = LocCtrlClient(str(tmp_path / "c.sock"))
+
+    def tick(stamp):
+        host.poll()
+        host.recorder(_obs(stamp), _policy_in(stamp), None, None)
+
+    # idle before start
+    tick(1)
+    assert tel_client.latest().loc_state == "idle"
+
+    # start over the wire → running
+    ctrl.send_start(map_dir="/tmp/m", initial_pose=(1.0, 2.0, 0.5))
+    assert _wait(lambda: (tick(2), tel_client.latest().loc_state == "running")[1])
+
+    # a frame arrives → shadow est appears on telemetry
+    frames.push(CameraFrame(
+        stamp_ns=50_000_000, name="head",
+        rgb=np.zeros((3, 4, 3), dtype=np.uint8), depth=np.ones((3, 4), dtype=np.float32),
+        intrinsics=CameraIntrinsics(width=4, height=3, fx=2.0, fy=2.0, cx=2.0, cy=1.5)))
+    assert _wait(lambda: (tick(3), tel_client.latest().est is not None)[1])
+    est = tel_client.latest().est
+    assert est.pose == RobotPose(50_000_000, 1.0, 2.0, 0.5)   # the warm-start echo
+
+    # stop over the wire → idle, est cleared
+    ctrl.send_stop()
+    assert _wait(lambda: (tick(4), tel_client.latest().loc_state == "idle")[1])
+    assert tel_client.latest().est is None
+
+    ctrl.close()
+    host.close()
+    tel_client.close()

@@ -90,6 +90,8 @@ class TelemetrySnapshot:
     est: Optional[LocalizationOut] = None                # candidate's latest verdict
     intent: Optional[Tuple[float, float, float]] = None  # (v_x, v_y, w_z) commanded twist
     loop_hz: Optional[float] = None                      # measured brain-loop rate
+    loc_state: Optional[str] = None                      # host: idle|starting|running|crashed
+    loc_error: Optional[str] = None                      # host: why crashed (None otherwise)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "stamp_ns", int(self.stamp_ns))
@@ -105,6 +107,8 @@ def encode_telemetry(snap: TelemetrySnapshot) -> bytes:
         "est": _encode_est(snap.est),
         "intent": list(snap.intent) if snap.intent is not None else None,
         "loop_hz": snap.loop_hz,
+        "loc_state": snap.loc_state,
+        "loc_error": snap.loc_error,
     }
     return json.dumps(doc).encode()
 
@@ -131,6 +135,8 @@ def decode_telemetry(buf: bytes) -> TelemetrySnapshot:
             est=_decode_est(doc.get("est")),
             intent=_triple(intent),
             loop_hz=None if doc.get("loop_hz") is None else float(doc["loop_hz"]),
+            loc_state=doc.get("loc_state"),
+            loc_error=doc.get("loc_error"),
         )
     except ValueError:
         raise

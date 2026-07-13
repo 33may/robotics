@@ -303,3 +303,16 @@ def test_service_requires_debug_pose_and_map():
         r.brain_argv(_service_args(debug_pose=None))
     with pytest.raises(ValueError, match="--map"):
         r.brain_argv(_service_args(map=None))
+
+
+def test_service_shadow_routes_candidate_and_frames():
+    cmd = r.brain_argv(_service_args(shadow="reference", cameras=True,
+                                     camera_socket="/tmp/oli-world-frames.sock"))
+    s = " ".join(cmd)
+    assert "--shadow reference" in s
+    assert "--camera-socket /tmp/oli-world-frames.sock" in s
+
+
+def test_shadow_without_cameras_rejected():
+    with pytest.raises(ValueError, match="cameras"):
+        r.brain_argv(_service_args(shadow="reference", cameras=False))

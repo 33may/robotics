@@ -107,16 +107,19 @@ class TelemetryPublisher:
         server,
         nav: NavObservable,
         est_source: Optional[Callable[[], Optional[LocalizationOut]]] = None,
+        loc_status: Optional[Callable[[], Tuple[str, Optional[str]]]] = None,
     ) -> None:
         self._server = server
         self._nav = nav
         self._est_source = est_source
+        self._loc_status = loc_status   # () -> (host state, last error) when a host runs
         self._tick_walltimes: deque = deque(maxlen=_RATE_WINDOW)
 
     def __call__(self, obs, policy_in, action_out, joy) -> None:
         self._tick_walltimes.append(time.monotonic())
         pose = self._nav.last_pose
         intent = policy_in.intent
+        loc_state, loc_error = self._loc_status() if self._loc_status is not None else (None, None)
         self._server.publish(TelemetrySnapshot(
             stamp_ns=obs.stamp_ns,
             pose=(pose.x, pose.y, pose.yaw) if pose is not None else None,
@@ -125,6 +128,8 @@ class TelemetryPublisher:
             est=self._est_source() if self._est_source is not None else None,
             intent=(intent.v_x, intent.v_y, intent.w_z),
             loop_hz=self._loop_hz(),
+            loc_state=loc_state,
+            loc_error=loc_error,
         ))
 
     def _loop_hz(self) -> Optional[float]:

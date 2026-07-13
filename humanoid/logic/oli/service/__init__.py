@@ -10,6 +10,7 @@ only, no isaacsim/limxsdk, no devapp imports (guarded by the architecture tests)
 
 from .goal_channel import DEFAULT_GOAL_SOCKET, GoalChannelClient, GoalChannelServer
 from .host import ServiceHost
+from .loc_ctrl import DEFAULT_LOC_CTRL_SOCKET, LocCtrlClient, LocCtrlServer
 from .protocol import (
     GOAL_NBYTES,
     TelemetrySnapshot,
@@ -31,6 +32,9 @@ __all__ = [
     "DEFAULT_TELEMETRY_SOCKET",
     "GOAL_NBYTES",
     "GoalChannelClient",
+    "LocCtrlClient",
+    "LocCtrlServer",
+    "DEFAULT_LOC_CTRL_SOCKET",
     "GoalChannelServer",
     "ServiceHost",
     "TelemetryClient",

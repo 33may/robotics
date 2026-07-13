@@ -30,11 +30,11 @@
 
 ## 5. Localization host in the brain (D6, D7)
 
-- [ ] 5.1 TDD: realization registry in `reason/localization/` — resolve `--shadow`/`--localizer <name>` → lazy-import `realizations/<name>/` (never imported unless selected); architecture guard: nothing brain-marked imports `realizations`
-- [ ] 5.2 TDD: host loop against a fake module — frame client → `LocalizationIn` assembly (nearest obs, latest intent, frame-paced) → `step()` on side thread → latest `LocalizationOut` readable; slow module ⇒ dropped frames counted (rate/coverage), never a blocked control loop (fake with GIL-friendly sleep)
-- [ ] 5.3 TDD: per-episode lifecycle over the wire — evaluator can command `start(Setup)/stop()` between episodes (warm start = spawn pose); `verify_module_contract` semantics on violations → episode marked `crashed`
-- [ ] 5.4 Thin in-process `Localizer` adapter over the host's latest pose (Stage 2 seam, dormant in Stage 1); brain-loop rate/jitter metric exported on telemetry
-- [ ] 5.5 `brain_main --localizer gt --shadow <name>` wiring; brain boots headless in an arbitrary conda env (no torch needed in glide — verify import surface)
+- [x] 5.1 TDD: realization registry in `reason/localization/` — resolve `--shadow`/`--localizer <name>` → lazy-import `realizations/<name>/` (never imported unless selected); architecture guard: nothing brain-marked imports `realizations`
+- [x] 5.2 TDD: host loop against a fake module — frame client → `LocalizationIn` assembly (nearest obs, latest intent, frame-paced) → `step()` on side thread → latest `LocalizationOut` readable; slow module ⇒ dropped frames counted (rate/coverage), never a blocked control loop (fake with GIL-friendly sleep)
+- [x] 5.3 TDD: per-episode lifecycle over the wire — evaluator can command `start(Setup)/stop()` between episodes (warm start = spawn pose); `verify_module_contract` semantics on violations → episode marked `crashed`
+- [x] 5.4 Thin in-process `Localizer` adapter over the host's latest pose (Stage 2 seam, dormant in Stage 1); brain-loop rate/jitter metric exported on telemetry
+- [x] 5.5 `brain_main --localizer gt --shadow <name>` wiring; brain boots headless in an arbitrary conda env (no torch needed in glide — verify import surface)
 
 ## 6. Evaluator (D1, D14)
 
