@@ -8,7 +8,7 @@ wall, and the None cases (goal blocked / enclosed). Pure: runs in `brain`.
 import numpy as np
 import pytest
 
-from humanoid.logic.oli.reason.nav import OccupancyGrid
+from humanoid.logic.oli.reason.mapping import OccupancyGrid
 from humanoid.logic.oli.reason.nav.planner import plan_path
 
 pytestmark = pytest.mark.brain

@@ -9,12 +9,8 @@ import pytest
 
 from humanoid.logic.oli import Mode, Observation
 from humanoid.logic.oli.reason.localization import GroundTruthLocalizer, RobotPose
-from humanoid.logic.oli.reason.nav import (
-    ArmedNav,
-    GoalCoordinate,
-    Nav,
-    OccupancyGrid,
-)
+from humanoid.logic.oli.reason.mapping import OccupancyGrid
+from humanoid.logic.oli.reason.nav import ArmedNav, GoalCoordinate, Nav
 from humanoid.logic.oli.reason.teleoperation.joystick.source import FixedJoystick
 from humanoid.logic.oli.reason.teleoperation.joystick.teleop import Teleop
 

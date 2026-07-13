@@ -1,4 +1,4 @@
-"""nav/occupancy_io.py — load/save the baked 2D occupancy artifact.
+"""mapping/occupancy_io.py — load/save the baked 2D occupancy artifact.
 
 The map is baked ONCE offline from the scene USD (Isaac `omap` generator, world-side) into a
 plain artifact the brain loads at boot — so the brain never imports isaac, it just reads files.
@@ -12,7 +12,7 @@ The artifact is a directory holding:
 load path never imports anything heavier). `occupancy_from_image`/`convert_ros_map` are the
 build-time bridge: they turn Isaac's Occupancy-Map GUI export (a ROS `map_server` PNG + YAML) into
 that artifact, importing PIL + PyYAML *lazily* so those stay off the brain's load path. Run it as a
-script:  `python -m humanoid.logic.oli.reason.nav.occupancy_io <png> <yaml> <out_dir> [--preview p]`.
+script:  `python -m humanoid.logic.oli.reason.mapping.occupancy_io <png> <yaml> <out_dir> [--preview p]`.
 """
 
 from __future__ import annotations

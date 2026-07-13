@@ -20,8 +20,8 @@ from ..imaging import fit_within
 from ..map_render import base_rgb, compose, pixel_to_world
 from ..panel import Panel
 from ..state import AppState
+from ...reason.mapping import load_occupancy
 from ...reason.nav import GoalCoordinate
-from ...reason.nav.occupancy_io import load_occupancy
 
 
 class MapPanel(Panel):

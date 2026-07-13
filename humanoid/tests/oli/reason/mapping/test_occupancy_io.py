@@ -1,4 +1,4 @@
-"""TDD for the baked occupancy artifact loader/saver (nav/occupancy_io.py).
+"""TDD for the baked occupancy artifact loader/saver (mapping/occupancy_io.py).
 
 The brain loads a plain npy+json artifact (baked offline from the scene USD) — never importing
 isaac. Round-trips a grid through save→load, preserving occupancy, resolution, and origin. Pure:
@@ -10,8 +10,8 @@ import json
 import numpy as np
 import pytest
 
-from humanoid.logic.oli.reason.nav import OccupancyGrid
-from humanoid.logic.oli.reason.nav.occupancy_io import (
+from humanoid.logic.oli.reason.mapping import OccupancyGrid
+from humanoid.logic.oli.reason.mapping.occupancy_io import (
     load_occupancy,
     occupancy_from_image,
     save_occupancy,

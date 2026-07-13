@@ -1,4 +1,4 @@
-"""TDD for the 2D occupancy grid (nav/costmap.py).
+"""TDD for the 2D occupancy grid (mapping/costmap.py).
 
 The grid is the map the planner searches: world↔cell transforms, occupancy queries (with
 out-of-bounds blocked), and circle-footprint `inflate` (a box on the floor = occupied cells,
@@ -8,7 +8,7 @@ dilated by the robot radius so the planner treats the robot as a point). Pure: r
 import numpy as np
 import pytest
 
-from humanoid.logic.oli.reason.nav import OccupancyGrid
+from humanoid.logic.oli.reason.mapping import OccupancyGrid
 
 pytestmark = pytest.mark.brain
 

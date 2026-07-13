@@ -16,7 +16,7 @@ import heapq
 import math
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
-from .costmap import OccupancyGrid
+from ..mapping import OccupancyGrid
 
 if TYPE_CHECKING:
     import numpy as np

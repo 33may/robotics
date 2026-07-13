@@ -14,7 +14,7 @@ from humanoid.logic.oli.devapp.map_render import (
     world_to_pixel,
 )
 from humanoid.logic.oli.reason.localization import RobotPose
-from humanoid.logic.oli.reason.nav import OccupancyGrid
+from humanoid.logic.oli.reason.mapping import OccupancyGrid
 
 pytestmark = pytest.mark.brain
 

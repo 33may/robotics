@@ -10,7 +10,8 @@ import pytest
 
 from humanoid.logic.oli import Mode, Observation, PolicyIn
 from humanoid.logic.oli.reason.localization import GroundTruthLocalizer, RobotPose
-from humanoid.logic.oli.reason.nav import GoalCoordinate, OccupancyGrid
+from humanoid.logic.oli.reason.mapping import OccupancyGrid
+from humanoid.logic.oli.reason.nav import GoalCoordinate
 from humanoid.logic.oli.reason.nav.nav import Nav
 
 pytestmark = pytest.mark.brain

@@ -93,7 +93,8 @@ class BrainLink:
         self._last_goal = None
         self._last_plan_t = 0.0
         if self._nav is None and map_dir and self._localizer is not None:
-            from ..reason.nav import Nav, PurePursuit, load_occupancy
+            from ..reason.mapping import load_occupancy
+            from ..reason.nav import Nav, PurePursuit
             # Pursuit emits real m/s; GlideAction rescales by glide_scale, so pre-divide the caps
             # to land Oli at ~_NAV_SPEED_MS when armed (glide demo). Non-glide: no rescale.
             s = glide_scale if mode == "glide" else 1.0

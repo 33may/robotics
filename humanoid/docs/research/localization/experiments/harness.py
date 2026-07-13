@@ -59,8 +59,8 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from logic.oli.reason.localization import RobotPose  # noqa: E402
+from logic.oli.reason.mapping import OccupancyGrid  # noqa: E402
 from logic.oli.reason.nav.controller import PurePursuit  # noqa: E402
-from logic.oli.reason.nav.costmap import OccupancyGrid  # noqa: E402
 from logic.oli.reason.nav.planner import plan_path  # noqa: E402
 
 Point = Tuple[float, float]
