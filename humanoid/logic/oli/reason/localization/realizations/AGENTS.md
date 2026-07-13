@@ -89,7 +89,7 @@ Vendor hygiene (all mandatory):
 
 | file | role |
 |---|---|
-| `module.py` | the `LocalizationModule` adapter — thin; algorithm lives in vendor/lib |
+| `module.py` | the `LocalizationModule` adapter + `build(config) -> Module` registry entrypoint (`config` = parsed `config.yaml` + overrides — every knob routes through it) |
 | `config.yaml` | ALL tunables; the unit of a tuning iteration |
 | `environment.yml` (+ `build.sh`) | recipe for the disposable `bench-<name>` env |
 | `lock.yml` | post-build `conda env export` — committed, "what exactly was built" |

@@ -266,3 +266,46 @@ def test_contract_breaking_output_crashes_the_episode(rig):
         assert "LocalizationOut" in host.last_error
     finally:
         host.close()
+
+
+# ── HostLocalizer: the Stage-2 seam (dormant in Stage 1) ─────────────────────
+
+
+def test_host_localizer_unwraps_the_latest_pose(rig):
+    from humanoid.logic.oli.reason.localization.host import HostLocalizer
+
+    frames, build, made = rig
+    host = build()
+    loc = HostLocalizer(host)
+    assert loc.estimate(_obs(1)) is None          # nothing yet → Nav holds
+
+    host.request_start(_SETUP)
+    assert _wait(lambda: host.state == "running")
+    host.on_tick(_obs(1), None)
+    frames.push(_frame(10 * MS))
+    assert _wait(lambda: host.latest() is not None)
+    pose = loc.estimate(_obs(2))
+    assert pose == RobotPose(10 * MS, 1.0, 2.0, 0.1)
+
+
+def test_host_localizer_returns_none_on_lost(rig):
+    from humanoid.logic.oli.reason.localization.host import HostLocalizer
+
+    class LostModule(FakeModule):
+        def step(self, loc_in):
+            super().step(loc_in)
+            return LocalizationOut(stamp_ns=loc_in.stamp_ns, pose=None,
+                                   status=LocalizationStatus.LOST)
+
+    frames, _, _ = rig
+    host = LocalizationHost(lambda: LostModule(), frames)
+    host.start()
+    try:
+        host.request_start(_SETUP)
+        assert _wait(lambda: host.state == "running")
+        host.on_tick(_obs(1), None)
+        frames.push(_frame(10 * MS))
+        assert _wait(lambda: host.steps >= 1)
+        assert HostLocalizer(host).estimate(_obs(2)) is None   # LOST → hold, never a stale pose
+    finally:
+        host.close()

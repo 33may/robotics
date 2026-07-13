@@ -207,3 +207,22 @@ class LocalizationHost:
                 self._latest_out = latest  # type: ignore[assignment]
             if error is not _KEEP:
                 self._last_error = error  # type: ignore[assignment]
+
+
+class HostLocalizer:
+    """The ~10-line `Localizer` over the host's latest verdict — the Stage-2 seam.
+
+    Stage 1 (shadow): constructed but dormant — Nav drives on GT. Stage 2 (`--localizer
+    <name>`): injected into Nav, which then drives on the candidate's pose. LOST (or no
+    verdict yet) → None → Nav's zero-velocity hold; never a stale pose. Same `Localizer`
+    protocol as `GroundTruthLocalizer` — Nav cannot tell the difference (that is the point).
+    """
+
+    def __init__(self, host: LocalizationHost) -> None:
+        self._host = host
+
+    def estimate(self, observation, camera_frame=None):
+        out = self._host.latest()
+        if out is None or out.pose is None:
+            return None
+        return out.pose

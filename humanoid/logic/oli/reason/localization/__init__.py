@@ -13,10 +13,16 @@ from .contracts import (
     LocalizationStatus,
     RobotPose,
 )
+from .host import HostLocalizer, LocalizationHost
 from .localizer import DebugPoseLocalizer, GroundTruthLocalizer, Localizer
 from .module import LocalizationModule
+from .registry import list_realizations, load_realization
 
 __all__ = [
+    "HostLocalizer",
+    "LocalizationHost",
+    "list_realizations",
+    "load_realization",
     "DebugPoseLocalizer",
     "GroundTruthLocalizer",
     "LocalizationIn",

@@ -23,7 +23,12 @@ from humanoid.logic.oli.reason.localization import (
 )
 from humanoid.logic.oli.reason.localization.testing import verify_module_contract
 
-from .module import TemplateModule  # /loc-new rewrites this import to the candidate's class
+# /loc-new rewrites `_template` and the class name below. ABSOLUTE import on purpose: a
+# relative `.module` makes standalone pytest runs import the package under a second namespace
+# (`logic.…` vs `humanoid.logic.…`) and isinstance checks then fail on identity.
+from humanoid.logic.oli.reason.localization.realizations._template.module import (
+    TemplateModule,
+)
 
 
 def _obs(stamp_ns=1):
