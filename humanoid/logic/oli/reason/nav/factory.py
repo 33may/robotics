@@ -30,6 +30,19 @@ _NAV_SPEED_MS = 1.0          # armed autonomy target forward speed [m/s] (after 
 _NAV_YAW_RS = 1.2            # armed autonomy target yaw rate [rad/s] (after glide rescale)
 
 
+def build_planner() -> Planner:
+    """The deployment Planner, knobs pinned. Anything that previews or validates routes
+    (locbench episode sampling/rendering) MUST use this — never a bare `plan_path` with
+    different knobs — so what is shown/frozen is what Nav actually drives."""
+    return Planner(
+        robot_radius_m=_ROBOT_RADIUS_M,
+        inflation_radius_m=_INFLATION_RADIUS_M,
+        clearance_weight=_CLEARANCE_WEIGHT,
+        heuristic_weight=_HEURISTIC_WEIGHT,
+        horizon_m=_HORIZON_M,
+    )
+
+
 def build_nav(
     mapping: MappingModule,
     localizer: Localizer,
@@ -44,11 +57,5 @@ def build_nav(
             max_lin=_NAV_SPEED_MS / speed_scale,
             max_wz=_NAV_YAW_RS / speed_scale,
         ),
-        planner=Planner(
-            robot_radius_m=_ROBOT_RADIUS_M,
-            inflation_radius_m=_INFLATION_RADIUS_M,
-            clearance_weight=_CLEARANCE_WEIGHT,
-            heuristic_weight=_HEURISTIC_WEIGHT,
-            horizon_m=_HORIZON_M,
-        ),
+        planner=build_planner(),
     )

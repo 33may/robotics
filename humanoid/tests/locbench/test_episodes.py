@@ -154,3 +154,30 @@ def test_load_rejects_unknown_version(tmp_path):
     p.write_text(json.dumps(doc))
     with pytest.raises(ValueError, match="version"):
         load_episode_set(p)
+
+
+# ── zone-biased sampling (Anton, 13-07-2026: ~70% between the rails) ─────────
+
+
+def test_zone_episodes_stay_inside_their_rect():
+    # Left half of the room is the "zone": those episodes' spawn AND goal live in it,
+    # so their routes stay in the interesting area.
+    rect = (0.0, 0.0, 15.0, 30.0)
+    es = _sample(n_episodes=6, min_separation_m=6.0, min_route_m=7.0,
+                 zones=[{"rect": rect, "n": 4}])
+    assert len(es.episodes) == 6
+    in_zone = [ep for ep in es.episodes
+               if _in_rect(ep.spawn, rect) and _in_rect(ep.goal, rect)]
+    assert len(in_zone) >= 4          # the 4 zone draws (map-wide ones may land there too)
+    assert all(_in_rect(es.episodes[i].spawn, rect) for i in range(4))
+    assert all(_in_rect(es.episodes[i].goal, rect) for i in range(4))
+
+
+def test_zone_bigger_than_episode_count_rejected():
+    with pytest.raises(ValueError, match="zone"):
+        _sample(n_episodes=3, zones=[{"rect": (0, 0, 30, 30), "n": 5}])
+
+
+def _in_rect(p, rect):
+    x0, y0, x1, y1 = rect
+    return x0 <= p[0] <= x1 and y0 <= p[1] <= y1

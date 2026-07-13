@@ -17,3 +17,4 @@ numpy>=2,<3
 onnxruntime>=1.20,<2
 scipy>=1.13,<2
 pygame>=2.6,<3        # operator joystick pad: logic/oli/reason/teleoperation/joystick/app.py
+matplotlib>=3.9,<4    # locbench renders/plots: logic/locbench/ (episode approval, eval reports)

@@ -77,21 +77,42 @@ def sample_episode_set(
     robot_radius_m: float = 0.30,
     origin_xy: Point = (0.0, 0.0),
     n_coverage: int = 8,
+    zones: Optional[List[dict]] = None,
 ) -> EpisodeSet:
-    """Sample a frozen episode set from the occupancy free space. Deterministic per seed."""
+    """Sample a frozen episode set from the occupancy free space. Deterministic per seed.
+
+    `zones` biases where episodes live (Anton, 13-07-2026: ~70% between the warehouse rails):
+    each `{"rect": (x0, y0, x1, y1), "n": k}` draws k episodes whose spawn AND goal both lie
+    inside the rect — the planned route then stays in that area. The remaining
+    `n_episodes − Σk` episodes sample map-wide. Zone episodes come first (stable ids).
+    """
     rng = random.Random(seed)
     candidates = _free_points(grid, clearance_m)
     reach = grid.inflate(robot_radius_m)
 
+    zones = zones or []
+    n_zoned = sum(int(z["n"]) for z in zones)
+    if n_zoned > n_episodes:
+        raise ValueError(f"zone episode counts ({n_zoned}) exceed n_episodes ({n_episodes})")
+    pools: List[Tuple[List[Point], str]] = []
+    for z in zones:
+        pool = [p for p in candidates if _in_rect(p, z["rect"])]
+        if not pool:
+            raise ValueError(f"zone {z['rect']} contains no free space at "
+                             f"clearance {clearance_m} m")
+        pools.extend([(pool, f"zone {z['rect']}")] * int(z["n"]))
+    pools.extend([(candidates, "map-wide")] * (n_episodes - n_zoned))
+
     episodes: List[Episode] = []
-    for ep_id in range(n_episodes):
-        ep = _draw_episode(rng, candidates, reach, ep_id, origin_xy,
+    for ep_id, (pool, label) in enumerate(pools):
+        ep = _draw_episode(rng, pool, reach, ep_id, origin_xy,
                            min_separation_m, min_route_m)
         if ep is None:
             raise ValueError(
-                f"could not sample episode {ep_id} after {_MAX_DRAWS_PER_EPISODE} draws — "
-                f"constraints too tight for this map (min_separation={min_separation_m} m, "
-                f"min_route={min_route_m} m, clearance={clearance_m} m)"
+                f"could not sample episode {ep_id} ({label}) after "
+                f"{_MAX_DRAWS_PER_EPISODE} draws — constraints too tight "
+                f"(min_separation={min_separation_m} m, min_route={min_route_m} m, "
+                f"clearance={clearance_m} m)"
             )
         episodes.append(ep)
 
@@ -112,6 +133,11 @@ def sample_episode_set(
 
 
 # ── sampling internals ───────────────────────────────────────────────────────
+
+
+def _in_rect(p: Point, rect) -> bool:
+    x0, y0, x1, y1 = rect
+    return x0 <= p[0] <= x1 and y0 <= p[1] <= y1
 
 
 def _free_points(grid: OccupancyGrid, clearance_m: float) -> List[Point]:

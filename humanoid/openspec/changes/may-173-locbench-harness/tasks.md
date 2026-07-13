@@ -16,9 +16,9 @@
 
 ## 3. Episode sets (D2, D3)
 
-- [ ] 3.1 TDD: `episodes.py` — seeded sampling from occupancy free space (min pair separation, min route length, `plan_path` reachability incl. transit from origin), freeze/load `episodes/<scene>.json` (versioned)
-- [ ] 3.2 TDD: eval episode list + mapping-pass coverage goal list in one file per scene
-- [ ] 3.3 `locbench episodes warehouse` → render spawns/goals/routes on the baked map PNG — show inline + Anton approves → freeze v1 (committed)
+- [x] 3.1 TDD: `episodes.py` — seeded sampling from occupancy free space (min pair separation, min route length, `plan_path` reachability incl. transit from origin), freeze/load `episodes/<scene>.json` (versioned)
+- [x] 3.2 TDD: eval episode list + mapping-pass coverage goal list in one file per scene
+- [x] 3.3 `locbench episodes warehouse` → render spawns/goals/routes on the baked map PNG — show inline + Anton approves → freeze v1 (committed)
 
 ## 4. Scoring core — pure, sim-free (D10, D11)
 
