@@ -83,7 +83,7 @@ class BrainLink:
         self._localizer = None
         if debug_pose:
             from ..comm.debug_pose import DebugPoseClient
-            from ..reason.nav import DebugPoseLocalizer
+            from ..reason.localization import DebugPoseLocalizer
             self._pose_client = DebugPoseClient(debug_pose)
             self._localizer = DebugPoseLocalizer(self._pose_client)
         # Nav layer (brain-side): consumes the UI-set GoalCoordinate, plans on its OWN costmap,

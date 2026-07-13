@@ -1,12 +1,14 @@
-"""nav/localizer.py — the pose-source seam and its day-1 ground-truth backend.
+"""localization/localizer.py — the thin in-brain pose seam and its GT/debug realizations.
 
 `Observation` deliberately carries no world pose (`contracts.py`: "the real robot has no
 ground-truth pose"), so the planner cannot plan without a pose estimate. `Localizer` is the
 seam that produces one; backends are swappable behind it and the planner never knows which is
 live:
 
-  - `GroundTruthLocalizer` — reads a fenced debug/eval side channel (day-1, here).
-  - `CuVslamLocalizer`     — RGBD visual localization against the map (day-2, same seam).
+  - `GroundTruthLocalizer` / `DebugPoseLocalizer` — read a fenced debug/eval side channel.
+  - the live SLAM client (later) — the third ~10-line realization: reads the newest
+    `LocalizationOut` datagram from the out-of-process `LocalizationModule` node, checks
+    `status`, unwraps `RobotPose` (design.md D11/D13).
 
 Pure: no isaacsim/limxsdk (the `brain` invariant holds).
 """
@@ -16,7 +18,7 @@ from __future__ import annotations
 from typing import Callable, Optional, Protocol, runtime_checkable
 
 from ...contracts import CameraFrame, Observation
-from .types import RobotPose
+from .contracts import RobotPose
 
 
 @runtime_checkable

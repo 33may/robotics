@@ -9,7 +9,7 @@ import math
 
 import pytest
 
-from humanoid.logic.oli.reason.nav import RobotPose
+from humanoid.logic.oli.reason.localization import RobotPose
 from humanoid.logic.oli.reason.nav.controller import PurePursuit
 
 pytestmark = pytest.mark.brain

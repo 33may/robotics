@@ -9,18 +9,13 @@ base-velocity `Intent` toward a goal — reusing the existing glide path (`Glide
 from .arm import ArmedNav
 from .controller import PurePursuit
 from .costmap import OccupancyGrid
-from .localizer import DebugPoseLocalizer, GroundTruthLocalizer, Localizer
 from .nav import Nav
 from .occupancy_io import convert_ros_map, load_occupancy, occupancy_from_image, save_occupancy
 from .planner import plan_path
-from .types import GoalCoordinate, RobotPose
+from .types import GoalCoordinate
 
 __all__ = [
-    "RobotPose",
     "GoalCoordinate",
-    "Localizer",
-    "GroundTruthLocalizer",
-    "DebugPoseLocalizer",
     "OccupancyGrid",
     "plan_path",
     "PurePursuit",

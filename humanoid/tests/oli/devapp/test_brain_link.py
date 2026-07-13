@@ -69,9 +69,8 @@ def test_update_nav_moves_goal_into_nav_and_publishes_path():
     """The goal→plan→path glue: UI sets a GoalCoordinate, the brain feeds it to the Nav layer,
     Nav plans on its OWN costmap, and the path is published back to AppState — no planning in
     the panel, no logic in BrainLink beyond shuttling the two contracts."""
-    from humanoid.logic.oli.reason.nav import (
-        GoalCoordinate, GroundTruthLocalizer, Nav, OccupancyGrid, RobotPose,
-    )
+    from humanoid.logic.oli.reason.localization import GroundTruthLocalizer, RobotPose
+    from humanoid.logic.oli.reason.nav import GoalCoordinate, Nav, OccupancyGrid
 
     state = AppState()
     pose = RobotPose(stamp_ns=0, x=0.5, y=0.5)
@@ -100,9 +99,8 @@ def test_armed_navteleop_drives_the_world_from_the_plan(tmp_path):
     """Engage (armed) → the World receives a Nav-driven GlideCmd with the stick centered — the
     velocity comes from the planned path, not the joystick. Exercises the full arm-gate stack."""
     from humanoid.logic.oli.glide import GlideCmd
-    from humanoid.logic.oli.reason.nav import (
-        ArmedNav, GoalCoordinate, GroundTruthLocalizer, Nav, OccupancyGrid, RobotPose,
-    )
+    from humanoid.logic.oli.reason.localization import GroundTruthLocalizer, RobotPose
+    from humanoid.logic.oli.reason.nav import ArmedNav, GoalCoordinate, Nav, OccupancyGrid
 
     sock = str(tmp_path / "oli.sock")
     body = _FakeBody()

@@ -1,4 +1,4 @@
-"""TDD for the nav Localizer seam + GroundTruthLocalizer (debug/eval backend).
+"""TDD for the localization `Localizer` seam + GroundTruthLocalizer (debug/eval backend).
 
 Localization is *required*, not optional: `Observation` carries no world pose by design
 (contracts.py — "the real robot has no ground-truth pose"), so the planner has no pose to
@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from humanoid.logic.oli import Observation
-from humanoid.logic.oli.reason.nav import (
+from humanoid.logic.oli.reason.localization import (
     DebugPoseLocalizer,
     GroundTruthLocalizer,
     Localizer,

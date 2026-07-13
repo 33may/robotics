@@ -19,9 +19,9 @@ import math
 from typing import List, Optional, Tuple
 
 from ...contracts import CameraFrame, Intent, Mode, Observation, PolicyIn
+from ..localization import Localizer
 from .controller import PurePursuit
 from .costmap import OccupancyGrid
-from .localizer import Localizer
 from .planner import plan_path
 from .types import GoalCoordinate
 
