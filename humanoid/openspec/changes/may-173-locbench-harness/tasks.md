@@ -22,9 +22,9 @@
 
 ## 4. Scoring core — pure, sim-free (D10, D11)
 
-- [ ] 4.1 TDD: `pairs.py` — (est `LocalizationOut`, GT) pair log write/read; nearest-stamp association (Δt ≤ 100 ms), 2 s warmup exclusion
-- [ ] 4.2 TDD: `stats.py` — per-tick pos/yaw error (raw map-frame, NO alignment), coverage, pose rate, brain-loop rate → per-episode mean/median/p95/max
-- [ ] 4.3 TDD: two-tier verdict — PASS/DEPLOY thresholds, all-episodes-pass, timeout/crashed episodes fail both; verify a constant 0.2 m bias fails max-pos (the E1 failure mode stays visible)
+- [x] 4.1 TDD: `pairs.py` — (est `LocalizationOut`, GT) pair log write/read; nearest-stamp association (Δt ≤ 100 ms), 2 s warmup exclusion
+- [x] 4.2 TDD: `stats.py` — per-tick pos/yaw error (raw map-frame, NO alignment), coverage, pose rate, brain-loop rate → per-episode mean/median/p95/max
+- [x] 4.3 TDD: two-tier verdict — PASS/DEPLOY thresholds, all-episodes-pass, timeout/crashed episodes fail both; verify a constant 0.2 m bias fails max-pos (the E1 failure mode stays visible)
 - [ ] 4.4 TDD: `report.py` — `report.json` with numbers, per-episode + run verdicts, provenance (adapter git hash, `lock.yml` hash, map_dir hash, episode-set version, seed, timings)
 - [ ] 4.5 `plots.py`: episode overlay (GT vs est on map PNG, LOST stretches marked), error timeline w/ gate lines, run contact sheet (ultrawide grid), distribution vs tiers — show inline + cite paths
 
