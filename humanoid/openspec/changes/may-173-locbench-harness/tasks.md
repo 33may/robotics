@@ -1,62 +1,73 @@
-## 1. OpenSpec scaffolding
+# Tasks — locbench (build order; TDD throughout, `brain`-marked where pure)
 
-- [x] 1.1 Author `proposal.md` / `design.md` / `tasks.md` / `specs/localization-bench/spec.md`
-- [ ] 1.2 Structure check against existing changes (no `openspec` CLI on this machine — manual review; Anton approves the proposal)
-- [ ] 1.3 Work continues on branch `33may/nav-localization-research` (natural MAY-173 continuation; Anton-confirmed)
+## 1. OpenSpec + branch
 
-## 2. Package scaffold + shared types (D3, D4)
+- [x] 1.1 `proposal.md` / `design.md` rewritten on the settled architecture (in-brain hosting, 3 processes, shadow mode) — Anton-approved 2026-07-13
+- [ ] 1.2 `specs/localization-bench/spec.md` delta (SHALL requirements + scenarios, may-149 format)
+- [ ] 1.3 Branch `33may/may-173-locbench` off main; merge to main at working states (Anton's standing rule)
 
-- [ ] 2.1 `logic/locbench/` package skeleton + `__main__.py` CLI dispatcher (`record|export|run|score|board|env`); `tests/locbench/` with `brain` marker on pure modules
-- [ ] 2.2 TDD: bag model — `bag.py` (read/write `gt.jsonl`, `intrinsics.json`, `meta.json`; rgb/depth png IO with uint16-mm depth, 0=invalid round-trip)
-- [ ] 2.3 TDD: trajectory model — `trajectory.py` (TUM trajectory file read/write: `stamp tx ty tz qx qy qz qw`; SE(3)→SE(2) projection)
+## 2. Brain service seam — W4 goals in / W5 telemetry out (D5)
 
-## 3. Scorer (D6, D7, D8) — pure, TDD-first
+- [ ] 2.1 TDD: `logic/oli/service/` protocol — encode/decode goal set/clear (`GoalCoordinate`), telemetry record (stamp, pose, path, goal status, est `LocalizationOut`, loop-rate, `(Observation, Intent)`); socket patterns per `comm/debug_pose.py`
+- [ ] 2.2 TDD: `GoalChannelServer` → `Nav.set_goal/clear_goal` against a fake Nav; latest-wins, malformed-message tolerance
+- [ ] 2.3 TDD: `TelemetryServer` fed from the Orchestrator recorder hook + Nav path/status + localization host output; client sees a coherent latest snapshot
+- [ ] 2.4 `brain_main --service` flag boots both; architecture guard: `service/` imports stay brain-pure (no isaacsim/limxsdk, no devapp)
+- [ ] 2.5 Integration smoke vs live glide session: send goal over the wire → robot drives; telemetry streams (Anton at the controls)
 
-- [ ] 3.1 TDD: stamp association (nearest-neighbor on shared clock, Δt ≤ 100 ms; unmatched → no-fix)
-- [ ] 3.2 TDD: constant camera→base transform from `camera_mounts.py` home pose (D8); applied before anchoring
-- [ ] 3.3 TDD: one-time SE(2) anchor fit on the first ~2 s of matched pairs (D6); verify a constant-bias trajectory is NOT absorbed (bias survives the anchor when injected after t=2 s; whole-run bias pins the anchor — test both)
-- [ ] 3.4 TDD: per-stamp position/yaw errors → mean/max/p95 + fix coverage (2 s warmup exclusion)
-- [ ] 3.5 TDD: gate evaluation (mean<0.10 m, max<0.15 m, yaw<10°, coverage≥95%) → `report.json` with numbers, verdicts, provenance (bag id, candidate, anchor, versions)
-- [ ] 3.6 Overlay plot: GT vs est on the baked occupancy PNG (`assets/envs/warehouse_nvidia/nav_maps/v1/`); show inline + cite path
+## 3. Episode sets (D2, D3)
 
-## 4. Reference candidate + harness self-validation (D4, D9)
+- [ ] 3.1 TDD: `episodes.py` — seeded sampling from occupancy free space (min pair separation, min route length, `plan_path` reachability incl. transit from origin), freeze/load `episodes/<scene>.json` (versioned)
+- [ ] 3.2 TDD: eval episode list + mapping-pass coverage goal list in one file per scene
+- [ ] 3.3 `locbench episodes warehouse` → render spawns/goals/routes on the baked map PNG — show inline + Anton approves → freeze v1 (committed)
 
-- [ ] 4.1 `candidates/reference/`: `run.py` implementing `map`/`localize` by replaying `gt.jsonl` → TUM trajectory (runs in plain `brain` env — proves the contract needs no special env)
-- [ ] 4.2 Injectable corruption via candidate config: constant bias, Gaussian noise, dropout, stamp delay
-- [ ] 4.3 TDD acceptance triplet on a synthetic bag: clean reference **passes**; 0.2 m bias **fails** (max-pos gate); 20% dropout **fails** (coverage gate)
-- [ ] 4.4 `locbench run reference --bag <synthetic>` end-to-end: subprocess, log file, exit code, `report.json` — the full loop with zero SLAM code
+## 4. Scoring core — pure, sim-free (D10, D11)
 
-## 5. Recorder (D1, D2, D3)
+- [ ] 4.1 TDD: `pairs.py` — (est `LocalizationOut`, GT) pair log write/read; nearest-stamp association (Δt ≤ 100 ms), 2 s warmup exclusion
+- [ ] 4.2 TDD: `stats.py` — per-tick pos/yaw error (raw map-frame, NO alignment), coverage, pose rate, brain-loop rate → per-episode mean/median/p95/max
+- [ ] 4.3 TDD: two-tier verdict — PASS/DEPLOY thresholds, all-episodes-pass, timeout/crashed episodes fail both; verify a constant 0.2 m bias fails max-pos (the E1 failure mode stays visible)
+- [ ] 4.4 TDD: `report.py` — `report.json` with numbers, per-episode + run verdicts, provenance (adapter git hash, `lock.yml` hash, map_dir hash, episode-set version, seed, timings)
+- [ ] 4.5 `plots.py`: episode overlay (GT vs est on map PNG, LOST stretches marked), error timeline w/ gate lines, run contact sheet (ultrawide grid), distribution vs tiers — show inline + cite paths
 
-- [ ] 5.1 TDD against fakes: frame-channel + debug-pose clients → bag writer (dedup by stamp, per-stream dirs, achieved-fps/drop stats into `meta.json`)
-- [ ] 5.2 `locbench record --bag <dir> --fps N --duration S` CLI; graceful stop; both cameras recorded when present
-- [ ] 5.3 Integration smoke vs a live glide session (`launcher --sim isaac --mode glide` + `--cameras --debug-pose`): frames + GT land, stamps interleave on one clock
+## 5. Localization host in the brain (D6, D7)
 
-## 6. TUM RGB-D exporter (D3)
+- [ ] 5.1 TDD: realization registry in `reason/localization/` — resolve `--shadow`/`--localizer <name>` → lazy-import `realizations/<name>/` (never imported unless selected); architecture guard: nothing brain-marked imports `realizations`
+- [ ] 5.2 TDD: host loop against a fake module — frame client → `LocalizationIn` assembly (nearest obs, latest intent, frame-paced) → `step()` on side thread → latest `LocalizationOut` readable; slow module ⇒ dropped frames counted (rate/coverage), never a blocked control loop (fake with GIL-friendly sleep)
+- [ ] 5.3 TDD: per-episode lifecycle over the wire — evaluator can command `start(Setup)/stop()` between episodes (warm start = spawn pose); `verify_module_contract` semantics on violations → episode marked `crashed`
+- [ ] 5.4 Thin in-process `Localizer` adapter over the host's latest pose (Stage 2 seam, dormant in Stage 1); brain-loop rate/jitter metric exported on telemetry
+- [ ] 5.5 `brain_main --localizer gt --shadow <name>` wiring; brain boots headless in an arbitrary conda env (no torch needed in glide — verify import surface)
 
-- [ ] 6.1 TDD: bag → TUM layout (`rgb/`, `depth/`, `rgb.txt`, `depth.txt`, `groundtruth.txt`; mm → factor-5000 depth; GT SE(2) → SE(3) with recorded constants)
-- [ ] 6.2 Round-trip check: export a synthetic bag, re-read with `trajectory.py`, scores clean via the reference candidate
+## 6. Evaluator (D1, D14)
 
-## 7. Scripted-goal driver (D2) — ⚠ blocked on the Nav execution gate
+- [ ] 6.1 TDD against fakes: episode loop — transit goal → arrival watch (GT ≤ 0.3 m) → `start` → goal → pair logging → arrival/timeout (90 s, `--timeout`) → `stop` → next; crash detection (brain death ⇒ episode `crashed`, reboot, continue)
+- [ ] 6.2 `locbench run <name> --scene warehouse [--episodes N] [--smoke=3]` — Supervisor boots World + Brain(`--service --shadow <name>`) in `bench-<name>`, attaches evaluator (single-entrypoint rule); per-run dir + file log + exit code = verdict
+- [ ] 6.3 `locbench score <run-dir>` — recompute stats/plots offline from stored pairs; `locbench board` — MD scoreboard from committed reports (+ per-candidate report history)
+- [ ] 6.4 `runs/` gitignore: commit `report.json` + plots, ignore `pairs.csv`
 
-- [ ] 7.1 Goal-list script format (`drives/<scene>_<pass>.json`: ordered GoalCoordinates + dwell) + driver that feeds `Nav.set_goal` and advances on arrival
-- [ ] 7.2 Map-pass sweep + eval-pass drive lists for the warehouse (aisle coverage / representative route) — Anton reviews the routes
-- [ ] 7.3 Dry-run in sim: both drives complete without manual input
+## 7. Env tooling (D8)
 
-## 8. Candidate envs + runner (D4, D5, D10)
+- [ ] 7.1 TDD: `envs.py` — `locbench env create|remove <name>` from the realization recipe; post-build `conda env export` → `lock.yml` (committed); `remove` leaves no trace; hard guard refuses `brain|isaac|limx|hum`
+- [ ] 7.2 `bench-reference` path: reference candidate must run in a plain brain-compatible env (proves the contract needs nothing special)
 
-- [ ] 8.1 `locbench env create|remove <candidate>` → `bench-<name>` from the candidate's env spec; `remove` verified to leave no trace; guard refuses to touch `brain|isaac|limx|hum`
-- [ ] 8.2 TDD: runner — `locbench run <candidate> --bag <scene>`: map pass → localize pass → score; subprocess via `conda run`, log capture, timeout, nonzero-exit surfacing
-- [ ] 8.3 `locbench board`: aggregate `report.json`s → MD pipe-table scoreboard (per candidate: gates, mean/max/p95, coverage, runtime)
+## 8. Reference candidate + harness self-validation (D13) — the gate for everything above
 
-## 9. Freeze warehouse bags v1 (needs §5 + §7)
+- [ ] 8.1 `realizations/reference/`: `LocalizationModule` replaying GT via `Setup.calibration["debug_pose_socket"]`; injectable constant bias / Gaussian noise / dropout / delay via config; `README.md` + `JOURNAL.md` seeded (the exemplar realization)
+- [ ] 8.2 Acceptance triplet vs live sim: clean → **PASS**; 0.2 m bias → **fails max-pos**; 20% dropout → **fails coverage** — full path (in-brain shadow host → telemetry → evaluator → report)
+- [ ] 8.3 Freeze the clean-reference run as the standing baseline row on the board
 
-- [ ] 9.1 Record `map` + `eval` bags in the warehouse scene (Anton launches; recorder attached); verify meta (fps, drops) sane
-- [ ] 9.2 Score the clean reference against the frozen eval bag — the standing harness baseline
-- [ ] 9.3 Freeze: bags read-only under `assets/bags/warehouse/`, gitignore entry, provenance in `meta.json`
+## 9. Mapping pass (D9)
 
-## 10. Docs, memory, daily note
+- [ ] 9.1 TDD: `locbench map <name> <scene>` — coverage drive from the scene's mapping goal list, module in mapping mode (`build_map`) in-brain; `map_dir` cached under the realization (gitignored, content-hash into provenance); refuse `run` without a `map_dir` when the realization declares one
+- [ ] 9.2 Reference candidate declares no map (GT replay) — verify the no-map path
 
-- [ ] 10.1 `logic/locbench/AGENTS.md` (+ one-line `CLAUDE.md` shim): contract, CLI surface, invariants, how the agent loop drives it
-- [ ] 10.2 Agent memory: update `architecture-locbench-harness` with build outcome + any gotchas
-- [ ] 10.3 Daily note block (draft → approve → append)
+## 10. Stage 2 — closed loop (D6), gated on Stage-1 PASS
+
+- [ ] 10.1 TDD: `--closed-loop` — brain boots `--localizer <name>` (Nav on the module's pose via the 5.4 adapter); evaluator refuses unless the candidate's latest full run is PASS
+- [ ] 10.2 Success gate: GT-verified arrival per episode, no timeout; report gains `closed_loop` verdict block
+- [ ] 10.3 Reference candidate closed-loop: clean passes; 0.2 m bias visibly degrades/fails — empirical check that Stage-1 gates predict closed-loop success (the E1/E2 claim)
+
+## 11. Docs, guard, memory, daily note
+
+- [ ] 11.1 `realizations/AGENTS.md` — the loop protocol for implementing agents: candidate checklist, iterate rules (smoke → full → closed-loop), JOURNAL/README/memory split, budget caps; one-line `CLAUDE.md` shim
+- [ ] 11.2 `logic/locbench/AGENTS.md` — architecture (3 processes, wires), CLI surface, invariants (raw scoring, no alignment; all-episodes-pass); shim
+- [ ] 11.3 Architecture guard extensions in `tests/oli/reason/test_architecture.py`: no brain-marked import of `realizations/`; `service/` purity; locbench never imported by `logic/oli/`
+- [ ] 11.4 Memory: update `architecture-locbench-harness` (build outcome + gotchas); daily note block (draft → approve → append)
