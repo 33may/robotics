@@ -190,13 +190,28 @@ def run_bench(
 
         goals = GoalChannelClient()
         ctrl = LocCtrlClient()
+        # Bench GT feed: republish every new GT sample to a socket the candidate MAY read
+        # (`Setup.calibration["gt_feed_socket"]`). The reference candidate consumes it (D13);
+        # real SLAM candidates ignore the key. Fire-and-forget — no reader, no cost.
+        from humanoid.logic.oli.comm.debug_pose import DebugPoseServer
+        gt_feed = DebugPoseServer("/tmp/oli-gt-feed.sock")
+        last_fed = [0]
+
+        def gt_latest():
+            sample = _gt_from_telemetry(telemetry.latest())
+            if sample is not None and sample[0] > last_fed[0]:
+                last_fed[0] = sample[0]
+                gt_feed.publish(*sample)
+            return sample
+
         ev = Evaluator(
             send_goal=goals.send_goal, clear_goal=goals.clear_goal,
             send_start=ctrl.send_start, send_stop=ctrl.send_stop,
-            gt_latest=lambda: _gt_from_telemetry(telemetry.latest()),
+            gt_latest=gt_latest,
             telemetry_latest=telemetry.latest,
             stack_alive=lambda: proc.poll() is None,
             map_dir=str(_REPO_ROOT / "humanoid" / es.map_dir),
+            calibration={"gt_feed_socket": "/tmp/oli-gt-feed.sock"},
             config=EvalConfig(timeout_s=timeout_s),
             log=log,
         )
@@ -204,6 +219,7 @@ def run_bench(
         results = ev.run(episodes)
         goals.close()
         ctrl.close()
+        gt_feed.close()
     finally:
         proc.terminate()
         try:

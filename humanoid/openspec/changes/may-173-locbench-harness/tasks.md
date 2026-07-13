@@ -50,7 +50,7 @@
 
 ## 8. Reference candidate + harness self-validation (D13) — the gate for everything above
 
-- [ ] 8.1 `realizations/reference/`: `LocalizationModule` replaying GT via `Setup.calibration["debug_pose_socket"]`; injectable constant bias / Gaussian noise / dropout / delay via config; `README.md` + `JOURNAL.md` seeded (the exemplar realization)
+- [x] 8.1 `realizations/reference/`: `LocalizationModule` replaying GT via `Setup.calibration["debug_pose_socket"]`; injectable constant bias / Gaussian noise / dropout / delay via config; `README.md` + `JOURNAL.md` seeded (the exemplar realization)
 - [ ] 8.2 Acceptance triplet vs live sim: clean → **PASS**; 0.2 m bias → **fails max-pos**; 20% dropout → **fails coverage** — full path (in-brain shadow host → telemetry → evaluator → report)
 - [ ] 8.3 Freeze the clean-reference run as the standing baseline row on the board
 
