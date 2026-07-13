@@ -93,19 +93,21 @@ class BrainLink:
         self._last_goal = None
         self._last_plan_t = 0.0
         if self._nav is None and map_dir and self._localizer is not None:
-            from ..reason.mapping import load_occupancy
-            from ..reason.nav import Nav, PurePursuit
+            from ..reason.mapping import StaticMapping
+            from ..reason.nav import Nav, Planner, PurePursuit
             # Pursuit emits real m/s; GlideAction rescales by glide_scale, so pre-divide the caps
             # to land Oli at ~_NAV_SPEED_MS when armed (glide demo). Non-glide: no rescale.
             s = glide_scale if mode == "glide" else 1.0
             self._nav = Nav(
-                load_occupancy(map_dir), self._localizer,
+                StaticMapping(map_dir), self._localizer,
                 controller=PurePursuit(max_lin=_NAV_SPEED_MS / s, max_wz=_NAV_YAW_RS / s),
-                robot_radius_m=_ROBOT_RADIUS_M,
-                inflation_radius_m=_INFLATION_RADIUS_M,
-                clearance_weight=_CLEARANCE_WEIGHT,
-                heuristic_weight=_HEURISTIC_WEIGHT,
-                horizon_m=_HORIZON_M,
+                planner=Planner(
+                    robot_radius_m=_ROBOT_RADIUS_M,
+                    inflation_radius_m=_INFLATION_RADIUS_M,
+                    clearance_weight=_CLEARANCE_WEIGHT,
+                    heuristic_weight=_HEURISTIC_WEIGHT,
+                    horizon_m=_HORIZON_M,
+                ),
             )
         # Arm gate: wrap operator Teleop + Nav so disarmed = joystick drives, armed = Nav drives.
         # (Only when we built the reason ourselves — an injected reason is used as-is.)

@@ -1,0 +1,108 @@
+"""TDD for the stateful `Planner` module (nav/planner.py — design.md D8, D9).
+
+The planner consumes the EMITTED `Map` value (`plan(pose, goal, world_map)`) — it never holds a
+mapping-module ref. It owns its derivations privately: the robot layer (inflate + clearance)
+cached keyed on `map.version`, and the path cache with goal-change detection (new goal → full A*,
+same goal → local horizon re-plan + tail splice). A version bump rebuilds the layer AND drops the
+cached path. Pure: runs in `brain`.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from humanoid.logic.oli.reason.localization import RobotPose
+from humanoid.logic.oli.reason.mapping import Map, OccupancyGrid
+from humanoid.logic.oli.reason.nav import GoalCoordinate
+from humanoid.logic.oli.reason.nav.planner import Planner
+
+pytestmark = pytest.mark.brain
+
+
+class _CountingGrid(OccupancyGrid):
+    """OccupancyGrid that counts robot-layer derivations (inflate calls)."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.inflate_calls = 0
+
+    def inflate(self, radius_m):
+        self.inflate_calls += 1
+        return super().inflate(radius_m)
+
+
+def _grid(n=10, res=1.0):
+    return _CountingGrid(np.zeros((n, n), dtype=bool), res)
+
+
+def _map(grid, version=1):
+    return Map(grid=grid, version=version, stamp_ns=version)
+
+
+def _pose(x=0.5, y=0.5):
+    return RobotPose(stamp_ns=0, x=x, y=y)
+
+
+def test_full_plan_reaches_goal():
+    p = Planner()
+    path = p.plan(_pose(), GoalCoordinate(8.5, 8.5), _map(_grid()))
+    assert path is not None
+    assert path[-1] == pytest.approx((8.5, 8.5))
+    assert p.path is path
+
+
+def test_no_goal_clears_path_and_returns_none():
+    p = Planner()
+    p.plan(_pose(), GoalCoordinate(8.5, 8.5), _map(_grid()))
+    assert p.plan(_pose(), None, _map(_grid())) is None
+    assert p.path is None
+
+
+def test_blocked_goal_returns_none():
+    g = _grid()
+    g.grid[8, 8] = True
+    assert Planner().plan(_pose(), GoalCoordinate(8.5, 8.5), _map(g)) is None
+
+
+def test_same_goal_replans_locally_from_moved_pose():
+    p = Planner(horizon_m=2.0)
+    g = _grid()
+    m = _map(g)
+    goal = GoalCoordinate(8.5, 0.5)
+    first = p.plan(_pose(0.5, 0.5), goal, m)
+    moved = p.plan(_pose(2.5, 0.5), goal, m)     # same goal → local re-plan + tail splice
+    assert first is not None and moved is not None
+    assert moved[0] == pytest.approx((2.5, 0.5))  # re-plan starts at the moved pose
+    assert moved[-1] == pytest.approx((8.5, 0.5))
+
+
+def test_goal_change_forces_full_replan():
+    p = Planner()
+    m = _map(_grid())
+    p.plan(_pose(), GoalCoordinate(8.5, 8.5), m)
+    changed = p.plan(_pose(), GoalCoordinate(0.5, 8.5), m)
+    assert changed is not None and changed[-1] == pytest.approx((0.5, 8.5))
+
+
+def test_robot_layer_derived_once_per_version():
+    g = _grid()
+    p = Planner(robot_radius_m=0.5)
+    m = _map(g, version=1)
+    goal = GoalCoordinate(8.5, 8.5)
+    for x in (0.5, 1.5, 2.5):
+        p.plan(_pose(x, 0.5), goal, m)
+    assert g.inflate_calls == 1                   # cached on version — derived exactly once
+
+
+def test_version_bump_rebuilds_layer_and_drops_path():
+    g = _grid()
+    p = Planner()
+    goal = GoalCoordinate(8.5, 8.5)
+    assert p.plan(_pose(0.5, 0.5), goal, _map(g, version=1)) is not None
+    # The world changed: a wall now fully seals the map (same grid object, bumped version).
+    # If the planner failed to rebuild the layer OR kept the stale cached path, it would still
+    # return a path — None proves BOTH invalidations happened.
+    g.grid[4, :] = True
+    assert p.plan(_pose(0.5, 0.5), goal, _map(g, version=2)) is None
+    assert g.inflate_calls == 2                   # robot layer re-derived on the bump

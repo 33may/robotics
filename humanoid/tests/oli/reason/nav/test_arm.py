@@ -9,7 +9,7 @@ import pytest
 
 from humanoid.logic.oli import Mode, Observation
 from humanoid.logic.oli.reason.localization import GroundTruthLocalizer, RobotPose
-from humanoid.logic.oli.reason.mapping import OccupancyGrid
+from humanoid.logic.oli.reason.mapping import OccupancyGrid, StaticMapping
 from humanoid.logic.oli.reason.nav import ArmedNav, GoalCoordinate, Nav
 from humanoid.logic.oli.reason.teleoperation.joystick.source import FixedJoystick
 from humanoid.logic.oli.reason.teleoperation.joystick.teleop import Teleop
@@ -28,7 +28,7 @@ def _obs(stamp_ns=1):
 
 def _nav_at(x, y, yaw=0.0):
     loc = GroundTruthLocalizer(pose_reader=lambda: RobotPose(stamp_ns=0, x=x, y=y, yaw=yaw))
-    return Nav(OccupancyGrid(np.zeros((10, 10), dtype=bool), 1.0), loc)
+    return Nav(StaticMapping.from_grid(OccupancyGrid(np.zeros((10, 10), dtype=bool), 1.0)), loc)
 
 
 def test_disarmed_operator_drives_via_joystick():

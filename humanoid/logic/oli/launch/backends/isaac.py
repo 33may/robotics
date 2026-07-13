@@ -106,7 +106,7 @@ def add_args(ap: argparse.ArgumentParser) -> None:
                          "Nav Map. Bare flag → /tmp/oli-world-pose.sock; NOT the invariance spine.")
     ap.add_argument("--map", default=None,
                     help="baked occupancy artifact dir (occupancy.npy + occupancy.json) → the "
-                         "dev-app Nav Map panel (bake with nav/occupancy_io.py)")
+                         "dev-app Nav Map panel (bake with reason/mapping/occupancy_io.py)")
 
 
 # ── pure command builders ────────────────────────────────────────────────────────

@@ -9,11 +9,12 @@ base-velocity `Intent` toward a goal — reusing the existing glide path (`Glide
 from .arm import ArmedNav
 from .controller import PurePursuit
 from .nav import Nav
-from .planner import plan_path
+from .planner import Planner, plan_path
 from .types import GoalCoordinate
 
 __all__ = [
     "GoalCoordinate",
+    "Planner",
     "plan_path",
     "PurePursuit",
     "Nav",

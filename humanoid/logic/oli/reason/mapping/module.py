@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Optional, Protocol, runtime_checkable
 
 from .contracts import Map
+from .costmap import OccupancyGrid
 from .occupancy_io import load_occupancy
 
 
@@ -35,6 +36,13 @@ class StaticMapping:
 
     def __init__(self, map_dir: str | Path, *, version: int = 1) -> None:
         self._map = Map(grid=load_occupancy(str(map_dir)), version=version, stamp_ns=0)
+
+    @classmethod
+    def from_grid(cls, grid: OccupancyGrid, *, version: int = 1) -> "StaticMapping":
+        """Wrap an in-memory grid (tests / research harnesses) — no disk artifacts needed."""
+        obj = cls.__new__(cls)
+        obj._map = Map(grid=grid, version=version, stamp_ns=0)
+        return obj
 
     def latest(self) -> Optional[Map]:
         return self._map

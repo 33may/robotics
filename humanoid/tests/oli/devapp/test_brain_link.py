@@ -70,12 +70,12 @@ def test_update_nav_moves_goal_into_nav_and_publishes_path():
     Nav plans on its OWN costmap, and the path is published back to AppState — no planning in
     the panel, no logic in BrainLink beyond shuttling the two contracts."""
     from humanoid.logic.oli.reason.localization import GroundTruthLocalizer, RobotPose
-    from humanoid.logic.oli.reason.mapping import OccupancyGrid
+    from humanoid.logic.oli.reason.mapping import OccupancyGrid, StaticMapping
     from humanoid.logic.oli.reason.nav import GoalCoordinate, Nav
 
     state = AppState()
     pose = RobotPose(stamp_ns=0, x=0.5, y=0.5)
-    nav = Nav(OccupancyGrid(np.zeros((10, 10), dtype=bool), 1.0),
+    nav = Nav(StaticMapping.from_grid(OccupancyGrid(np.zeros((10, 10), dtype=bool), 1.0)),
               GroundTruthLocalizer(pose_reader=lambda: pose))
     link = BrainLink(
         state, comm=_NullComm(), action=_ZeroAction(),
@@ -101,7 +101,7 @@ def test_armed_navteleop_drives_the_world_from_the_plan(tmp_path):
     velocity comes from the planned path, not the joystick. Exercises the full arm-gate stack."""
     from humanoid.logic.oli.glide import GlideCmd
     from humanoid.logic.oli.reason.localization import GroundTruthLocalizer, RobotPose
-    from humanoid.logic.oli.reason.mapping import OccupancyGrid
+    from humanoid.logic.oli.reason.mapping import OccupancyGrid, StaticMapping
     from humanoid.logic.oli.reason.nav import ArmedNav, GoalCoordinate, Nav
 
     sock = str(tmp_path / "oli.sock")
@@ -112,7 +112,7 @@ def test_armed_navteleop_drives_the_world_from_the_plan(tmp_path):
 
     state = AppState()
     pose = RobotPose(stamp_ns=0, x=0.5, y=0.5, yaw=0.0)
-    nav = Nav(OccupancyGrid(np.zeros((10, 10), dtype=bool), 1.0),
+    nav = Nav(StaticMapping.from_grid(OccupancyGrid(np.zeros((10, 10), dtype=bool), 1.0)),
               GroundTruthLocalizer(pose_reader=lambda: pose))
     link = BrainLink(
         state, socket=sock, mode="glide",
