@@ -1,0 +1,14 @@
+.clangd
+.vscode/
+.nvcode*
+*.pyc
+.idea/
+.env
+.venv/
+.cache/
+__pycache__/
+*.egg-info
+build/
+dataset/
+/datasets/
+ext_src

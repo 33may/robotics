@@ -1,0 +1,18 @@
+# Recipe for the disposable `bench-cuvslam` env (locbench D8: the WHOLE brain boots inside it).
+#
+# cuVSLAM has no py3.11 wheel — vendor/pycuvslam is compiled from source by build.sh using the
+# SYSTEM toolchain (Fedora: gcc-14 + patched CUDA 12.9 at /usr/local/cuda-12.9 — conda compilers
+# and conda CUDA are deliberately NOT used; mixing them with nvcc is a known tar pit).
+# The env carries only: the brain-compatible base + the build front-end (cmake/make; the
+# scikit-build-core + nanobind build deps are fetched by pip's isolated build).
+name: bench-cuvslam
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pyyaml
+  - pytest            # in-folder test_contract.py runs in THIS env
+  - cmake>=3.23       # top-level cuVSLAM build + the bindings' scikit-build backend
+  - make              # bindings' pyproject pins the "Unix Makefiles" generator
+  - pip

@@ -1,3 +1,9 @@
 # per-candidate map caches (locbench D9): rebuilt on demand, content-hash pinned in reports
 */map/
 # fat upstream assets get per-candidate entries appended by /loc-new (models, datasets, bags)
+# cuvslam: fat upstream assets (see cuvslam/vendor/UPSTREAM.md) + compile output
+cuvslam/vendor/pycuvslam/examples/assets/
+cuvslam/vendor/pycuvslam/examples/pycuvslam.gif
+cuvslam/vendor/pycuvslam/doc/images/
+cuvslam/vendor/pycuvslam/test_data/
+cuvslam/vendor/pycuvslam/build/

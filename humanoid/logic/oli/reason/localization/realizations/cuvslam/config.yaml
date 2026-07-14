@@ -1,0 +1,11 @@
+# cuvslam — ALL tunables live here (playbook rule: a tuning iteration's diff is this one file).
+# Hardcoded magic numbers in module.py are a defect. Group by concern; comment units + why.
+#
+# Stub scaffold: no tunables yet. The phase-3 adapter routes EVERY knob through here —
+# expected groups (filled as the adapter lands, verified against the actual PyCuVSLAM API):
+#
+# input:                       # LocalizationIn -> cuVSLAM input mapping
+#   cameras: [head]            # which RGBD frames feed the tracker
+#   use_imu: false             # feed loc_in.observation acc/gyro as VIO input
+# tracker:                     # cuVSLAM tracker settings (odometry mode, multicam, ...)
+# output:                      # cuVSLAM frame -> map frame handling (fixed at start())
