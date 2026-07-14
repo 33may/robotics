@@ -31,6 +31,9 @@ if(NOT TARGET libjpeg_external)
         PREFIX ${CMAKE_BINARY_DIR}/third_party/libjpeg-turbo-${LIBJPEG_VERSION}
         CMAKE_ARGS
             -DCMAKE_INSTALL_PREFIX=${LIBJPEG_INSTALL_DIR}
+            # OUR PATCH (vendor/UPSTREAM.md): pin libdir — Fedora installs to lib64/ by
+            # default, but the imported target below hardcodes lib/libjpeg.a
+            -DCMAKE_INSTALL_LIBDIR=lib
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON

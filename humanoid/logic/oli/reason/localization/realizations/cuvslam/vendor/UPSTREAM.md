@@ -17,4 +17,8 @@
 
 ## Our patches
 
-*(none yet — every divergence from upstream gets a line here)*
+- `cmake/ext/libjpeg.cmake`: add `-DCMAKE_INSTALL_LIBDIR=lib` to the libjpeg-turbo
+  ExternalProject — Fedora installs static libs to `lib64/`, upstream's imported target
+  hardcodes `lib/libjpeg.a` ("No rule to make target … libjpeg.a" at build). Upstreamable.
+- `python/cuvslam2.cpp`: add `#include <algorithm>` — `std::copy_n` is not transitively
+  included by GCC 14's libstdc++ ("'copy_n' is not a member of 'std'"). Upstreamable.

@@ -14,6 +14,7 @@
  * of the software or derivative works thereof, you agree to be bound by this License.
  */
 
+#include <algorithm>  // OUR PATCH (vendor/UPSTREAM.md): std::copy_n needs it on GCC 14+
 #include <chrono>
 
 #include "nanobind/nanobind.h"
