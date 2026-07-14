@@ -98,10 +98,13 @@ class Nav:
     def to_policy_in(
         self, observation: Observation, camera_frame: Optional[CameraFrame] = None
     ) -> PolicyIn:
-        if self._goal is None:
-            return self._hold(observation)
+        # Localize EVERY tick, goal or not: `last_pose` is "where the robot is", not "where
+        # Nav is driving" — telemetry publishes it as the bench GT, and gating it on a goal
+        # starved goalless consumers (locbench teleport confirmation, 14-07-2026).
         pose = self._localizer.estimate(observation, camera_frame)
         self._last_pose = pose
+        if self._goal is None:
+            return self._hold(observation)
         if pose is None:
             return self._hold(observation)  # no localization yet → stay put
         path = self.plan(pose)
