@@ -68,7 +68,10 @@ class LocalizationHost:
         self._steps = 0
 
         self._module: Optional[LocalizationModule] = None   # host-thread-only
-        self._last_frame_stamp: Optional[int] = None        # host-thread-only
+        # PER-STREAM watermarks (host-thread-only). One shared stamp starved whichever
+        # stream the World writes last: chest@t consumed → head@t (equal stamp) is never
+        # `>` the watermark again (cuvslam run 20260714-130101 — est frozen at warm start).
+        self._last_stamps: Dict[str, int] = {}
 
         self._stop_evt = threading.Event()
         self._thread: Optional[threading.Thread] = None
@@ -144,7 +147,7 @@ class LocalizationHost:
         if op == "start":
             self._teardown_module()            # restart-while-running = fresh episode
             self._set(state="starting", latest=None, error=None)
-            self._last_frame_stamp = None
+            self._last_stamps = {}
             try:
                 self._module = self._factory() # FRESH instance per episode (D4)
                 self._module.start(setup)
@@ -157,21 +160,27 @@ class LocalizationHost:
             self._set(state="idle", latest=None)
 
     def _maybe_step(self) -> bool:
-        """Assemble the newest unprocessed frame bundle and step the module once."""
+        """Assemble the newest unprocessed frame bundle and step the module once.
+
+        "Unprocessed" is judged PER STREAM: each stream's frame enters the bundle iff it
+        is newer than what the module last saw FROM THAT STREAM. Streams publish
+        back-to-back with equal stamps, so a shared watermark permanently starves the
+        late-written one (see test_equal_stamp_multi_stream_frames_all_reach_the_module).
+        """
         bundle: Dict[str, CameraFrame] = {}
-        newest = self._last_frame_stamp or -1
         for name in self._frames.stream_names():
             f = self._frames.read(name)
-            if f is not None and f.stamp_ns > (self._last_frame_stamp or -1):
+            if f is not None and f.stamp_ns > self._last_stamps.get(name, -1):
                 bundle[name] = f
-                newest = max(newest, f.stamp_ns)
         if not bundle:
             return False
         with self._lock:
             obs, intent = self._obs, self._intent
         if obs is None:
             return False                        # LocalizationIn requires an Observation
-        self._last_frame_stamp = newest
+        for name, f in bundle.items():
+            self._last_stamps[name] = f.stamp_ns
+        newest = max(f.stamp_ns for f in bundle.values())
         assert self._module is not None  # state=="running" ⇒ module exists (host thread only)
         try:
             out = self._module.step(LocalizationIn(

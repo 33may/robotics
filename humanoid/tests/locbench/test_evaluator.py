@@ -44,10 +44,18 @@ class FakeStack:
         self.die_after_polls = die_after_polls
         self.polls = 0
         self.alive = True
+        self.goals: List = []                     # every send_goal, in order
+        self.teleports: List = []                 # every teleport command, in order
 
     # ── the evaluator's client surfaces ──────────────────────────────────────
     def send_goal(self, x, y, yaw=None):
         self.goal = (x, y)
+        self.goals.append((x, y))
+
+    def teleport(self, x, y, yaw):
+        """The World's bench teleport: base pose snaps on the next tick."""
+        self.teleports.append((x, y, yaw))
+        self.x, self.y, self.yaw = x, y, yaw
 
     def clear_goal(self):
         self.goal = None
@@ -93,7 +101,7 @@ class FakeStack:
                 self.y += dy / d * step
 
 
-def _evaluator(stack, **cfg_over):
+def _evaluator(stack, teleport=None, **cfg_over):
     # timeouts are SIM seconds (GT stamps); FakeStack advances 0.1 sim-s per poll
     base = dict(timeout_s=5.0, transit_timeout_s=5.0, start_timeout_s=1.0,
                 wall_backstop_s=5.0, arrival_tol_m=0.3, poll_dt=0.0)
@@ -103,7 +111,7 @@ def _evaluator(stack, **cfg_over):
         send_goal=stack.send_goal, clear_goal=stack.clear_goal,
         send_start=stack.send_start, send_stop=stack.send_stop,
         gt_latest=stack.gt_latest, telemetry_latest=stack.telemetry_latest,
-        stack_alive=stack.stack_alive,
+        stack_alive=stack.stack_alive, teleport=teleport,
         map_dir="/maps/x", calibration={"k": 1}, config=cfg)
 
 
@@ -161,6 +169,32 @@ def test_run_continues_past_a_crashed_episode():
     results = _evaluator(stack).run(eps)
     assert [r.outcome for r in results] == ["crashed", "crashed"]
     assert len(stack.started_with) == 2           # episode 1 was still attempted
+
+
+def test_teleport_replaces_the_transit_walk():
+    """With a teleport wire the unscored leg is one snap: no spawn goal is ever sent,
+    the base lands exactly on the spawn facing the goal, and the scored leg is untouched."""
+    stack = FakeStack()
+    res = _evaluator(stack, teleport=stack.teleport).run_episode(_EP)
+
+    assert res.outcome == "arrived"
+    assert stack.teleports == [(1.0, 0.0, 0.0)]   # spawn (1,0), facing goal (3,0) → yaw 0
+    assert stack.goals == [(3.0, 0.0)]            # ONLY the scored goal — no transit goal
+    _, pose, _ = stack.started_with[0]
+    assert abs(pose[0] - 1.0) < 0.05 and abs(pose[1]) < 0.05   # warm start ≈ exact spawn
+    assert res.episode_start_ns > 0               # scored leg still marked
+
+
+def test_teleport_unconfirmed_falls_back_to_walk_transit():
+    """A World booted without the teleport wire never moves the base — the evaluator must
+    time out the confirmation and walk the transit leg like before (no lost episode)."""
+    stack = FakeStack()
+    res = _evaluator(stack, teleport=lambda x, y, yaw: None,   # command vanishes
+                     teleport_timeout_s=0.5).run_episode(_EP)
+
+    assert res.outcome == "arrived"
+    assert stack.goals[0] == (1.0, 0.0)           # fell back: spawn sent as a transit goal
+    assert stack.goals[-1] == (3.0, 0.0)
 
 
 def test_est_bias_flows_through_untouched():

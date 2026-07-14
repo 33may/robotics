@@ -42,6 +42,16 @@ def test_no_goal_holds_zero_velocity():
     assert pin.intent.mode == Mode.WALK
 
 
+def test_no_goal_still_localizes_and_reports_last_pose():
+    """`last_pose` is "where the robot is", not "where Nav is driving" — it must update on
+    goalless ticks too. Telemetry publishes it as the bench GT; gating it on a goal starved
+    the evaluator's teleport confirmation (run 20260714-143731: infinite GT wait)."""
+    nav = Nav(_empty_map(), _loc_at(0.5, 0.5))
+    pin = nav.to_policy_in(_obs())
+    assert (pin.intent.v_x, pin.intent.v_y, pin.intent.w_z) == (0.0, 0.0, 0.0)  # still holds
+    assert nav.last_pose == RobotPose(stamp_ns=0, x=0.5, y=0.5, yaw=0.0)        # but localized
+
+
 def test_policy_in_wraps_the_given_observation():
     nav = Nav(_empty_map(), _loc_at(0.5, 0.5))
     obs = _obs(stamp_ns=42)

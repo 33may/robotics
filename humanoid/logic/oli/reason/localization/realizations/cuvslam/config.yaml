@@ -1,0 +1,17 @@
+# cuvslam — ALL tunables live here (playbook rule: a tuning iteration's diff is this one file).
+# Hardcoded magic numbers in module.py are a defect. Group by concern; comment units + why.
+
+input:
+  camera: head                       # which CameraFrame feeds VO (head = forward-looking, pitch 0)
+
+# cuVSLAM's own config schema — applied via the vendored utils._apply_odometry_section,
+# so any upstream Odometry.Config key can be tuned from here without touching module.py.
+odometry:
+  odometry_mode: rgbd                # our frames are RGBD (mono color + aligned depth)
+  use_gpu: true
+  async_sba: true                    # upstream default in the RGBD example
+  rgbd_settings:
+    depth_camera_id: 0               # single-camera rig: color cam 0 owns the depth
+    depth_scale_factor: 1000.0       # uint16 depth units per meter (mm) — cuVSLAM requires
+                                     # uint16 depth; module.py converts float32-m with THIS knob
+    enable_depth_stereo_tracking: false
