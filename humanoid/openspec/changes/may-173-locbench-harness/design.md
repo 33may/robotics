@@ -79,7 +79,7 @@ Module output is map-frame by contract → the evaluator compares raw per tick (
 | tier | mean pos | max pos | yaw | coverage | meaning |
 |---|---|---|---|---|---|
 | **PASS** | <0.10 m | <0.15 m | <10° | ≥95% | the measured E1/E2 nav budget — "works in sim" |
-| **DEPLOY** | <0.07 m | <0.12 m | <7° | ≥98% | ~30% sim→real margin — "take it to phase 2" *(numbers proposed, Anton to confirm)* |
+| **DEPLOY** | <0.07 m | <0.12 m | <7° | ≥98% | ~30% sim→real margin — "take it to phase 2" *(provisional — locked after the first real candidate experiment)* |
 
 A candidate's tier = the highest tier **all** episodes clear (timeout/crashed episodes fail both). One lost aisle = failed demo, so no averaging across episodes.
 
@@ -110,5 +110,5 @@ Additive. Follow-ups this change enables: (1) agent-driven adapters (RTAB-Map fi
 ## Open Questions
 
 - Plot-commit policy under heavy iteration: commit all (as decided) vs reports always + plots only on `--keep` runs. Default: commit all; revisit at first repo-bloat sign.
-- DEPLOY tier numbers (D11) — proposed, awaiting Anton's confirm.
+- DEPLOY tier numbers (D11) — **deferred (Anton, 2026-07-13)**: defined together after the first real candidate experiment ("now I have no idea" — same capture-not-encode stance as locdev-flow). Until then the DEPLOY row is provisional and verdicts gate on PASS only.
 - Transit legs (D3): if per-eval sim time hurts, revisit World-side teleport as a debug channel.
