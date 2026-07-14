@@ -11,6 +11,15 @@ This skill is phases 2–3 *setup* of the playbook — read
 `logic/oli/reason/localization/AGENTS.md` (the contract) before running it. All rules there
 bind here; this file only sequences the mechanical steps.
 
+## Session marker — do this FIRST
+
+Open the session with one line so it is collectable later for rule extraction
+([[locdev-session-keyword]]):
+
+```
+#locdev candidate=<name>  — loc-new scaffold
+```
+
 ## Inputs (ask if missing — one question at a time)
 
 1. **name** — snake_case, valid Python identifier (it becomes a package: `realizations/<name>/`).

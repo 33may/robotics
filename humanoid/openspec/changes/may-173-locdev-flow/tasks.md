@@ -24,10 +24,10 @@
 
 ## 4. Pair-mode loop — `/loc-iterate` (v1; D1, D2, D4)
 
-- [ ] 4.1 Skill flow: orient (README + JOURNAL tail + last report/plots) → phase detect (bring-up vs tune) → propose the one change → edit → `locbench run --smoke` → read report + look at plots → failure-mode summary → **stop for the phase-7 discussion** → journal entry (decision+who+reasoning) → commit
-- [ ] 4.2 Workflow-tool fan-outs inside the skill for mechanical stretches only (parallel log/plot analysis, research lookups) — no decisions in subagents
-- [ ] 4.3 Full-certify path: on smoke-PASS, run full 10 before claiming the tier; board row only from full runs
-- [ ] 4.4 Resume-safety: killed session → re-running `/loc-iterate` re-orients purely from disk state (journal + run dir); verify by killing one mid-iteration
+- [x] 4.1 Skill flow (`.claude/skills/loc-iterate/SKILL.md`, pair-mode v1): orient (README + JOURNAL tail + last report/plots) → phase detect (bring-up vs tune) → propose the one change → edit → `locbench run --smoke` → read report + look at plots → failure-mode summary → **stop for the phase-7 discussion** → journal entry (decision+who+reasoning) → commit. `#locdev` marker stamped (also in `/loc-new`)
+- [ ] 4.2 Workflow-tool fan-outs inside the skill for mechanical stretches only — DEFERRED to the autonomy phase (first days are pair-mode-only; Anton 2026-07-14)
+- [x] 4.3 Full-certify path: on smoke-PASS, run full before claiming the tier; board row only from full runs (in the skill)
+- [x] 4.4 Resume-safety: skill orients purely from disk (README + JOURNAL tail + latest run dir) — re-run reconstructs state with no prior-turn memory (live kill-test pending during Anton's use)
 
 ## 5. Flow self-test on the reference candidate (the gate for v1)
 
