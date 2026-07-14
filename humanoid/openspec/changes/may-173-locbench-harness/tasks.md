@@ -39,14 +39,14 @@
 ## 6. Evaluator (D1, D14)
 
 - [x] 6.1 TDD against fakes: episode loop — transit goal → arrival watch (GT ≤ 0.3 m) → `start` → goal → pair logging → arrival/timeout (90 s, `--timeout`) → `stop` → next; crash detection (brain death ⇒ episode `crashed`, reboot, continue)
-- [ ] 6.2 `locbench run <name> --scene warehouse [--episodes N] [--smoke=3]` — Supervisor boots World + Brain(`--service --shadow <name>`) in `bench-<name>`, attaches evaluator (single-entrypoint rule); per-run dir + file log + exit code = verdict
+- [x] 6.2 `locbench run <name> --scene warehouse [--episodes N] [--smoke=3]` — Supervisor boots World + Brain(`--service --shadow <name>`) in `bench-<name>` (launcher `--brain-env`; hard-error if the env is missing, Anton 14-07), attaches evaluator (single-entrypoint rule); per-run dir + file log + exit code = verdict
 - [x] 6.3 `locbench score <run-dir>` — recompute stats/plots offline from stored pairs; `locbench board` — MD scoreboard from committed reports (+ per-candidate report history)
 - [x] 6.4 `runs/` gitignore: commit `report.json` + plots, ignore `pairs.csv`
 
 ## 7. Env tooling (D8)
 
 - [x] 7.1 TDD: `envs.py` — `locbench env create|remove <name>` from the realization recipe; post-build `conda env export` → `lock.yml` (committed); `remove` leaves no trace; hard guard refuses `brain|isaac|limx|hum` (conda injected as a runner → guard/naming/force logic unit-tested, no conda in CI)
-- [ ] 7.2 `bench-reference` path: reference candidate must run in a plain brain-compatible env (proves the contract needs nothing special)
+- [x] 7.2 `bench-reference` path: reference candidate ships a minimal brain-compatible `environment.yml` (python+numpy+pyyaml+pytest, no `build.sh`) — proves the contract needs nothing special; live `env create reference` + verify is folded into §8.2
 
 ## 8. Reference candidate + harness self-validation (D13) — the gate for everything above
 

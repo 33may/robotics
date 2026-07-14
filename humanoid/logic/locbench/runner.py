@@ -152,8 +152,17 @@ def run_bench(
     shadow_config: Optional[str] = None,
     log=print,
 ) -> int:
+    from humanoid.logic.locbench.envs import bench_env_name, env_exists
     from humanoid.logic.oli.reason.mapping import StaticMapping
     from humanoid.logic.oli.service import GoalChannelClient, LocCtrlClient, TelemetryClient
+
+    # D8: the WHOLE brain boots inside the candidate's disposable env (Anton, 14-07-2026:
+    # hard-error if it is missing — no silent fallback to `brain`, so a run is always
+    # reproducible from its lock.yml). `locbench env create <candidate>` builds it.
+    brain_env = bench_env_name(candidate)
+    if not env_exists(candidate):
+        log(f"[locbench] env {brain_env!r} not found — run `locbench env create {candidate}` first")
+        return 3
 
     es = load_episode_set(episodes_file)
     episodes = list(es.episodes)[: n_episodes or len(es.episodes)]
@@ -162,7 +171,7 @@ def run_bench(
     run_dir.mkdir(parents=True, exist_ok=True)
 
     argv = [sys.executable, str(_LAUNCHER), "--sim", "isaac", "--mode", "glide",
-            "--service", "--shadow", candidate, "--cameras",
+            "--service", "--shadow", candidate, "--brain-env", brain_env, "--cameras",
             "--debug-pose", "--map", str(_REPO_ROOT / "humanoid" / es.map_dir),
             "--log", str(run_dir / "stack.log")]
     if scene_cfg.get("scene_usd"):
