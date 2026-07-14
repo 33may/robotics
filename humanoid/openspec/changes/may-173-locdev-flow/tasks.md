@@ -51,3 +51,9 @@
 
 - [ ] 8.1 Update memory: refresh stale `architecture-locbench-harness` leaf (still describes the old recorder/bag design) + new leaf for the locdev flow (capture-not-encode, graduated autonomy, this change)
 - [ ] 8.2 Daily note block (draft → approve → append)
+
+## 9. Carried from locbench §11 (harness archived 2026-07-14; §11.1 was already absorbed as this change's playbook)
+
+- [ ] 9.1 `logic/locbench/AGENTS.md` — architecture (3 processes, W1–W5 wires), CLI surface (episodes/run/score/board/env), invariants (raw scoring/no alignment, all-episodes-pass, sim-time timeouts); one-line `CLAUDE.md` shim (locbench §11.2)
+- [x] 9.2 Architecture-guard extension in `tests/oli/reason/test_architecture.py`: `logic/oli/` never imports `logic.locbench` (the oracle drives the brain, not the reverse). Joins the existing realizations-import + service-purity guards (locbench §11.3)
+- [ ] 9.3 Memory: `architecture-locbench-harness` build-outcome refresh + gotchas (merge with 8.1) (locbench §11.4)

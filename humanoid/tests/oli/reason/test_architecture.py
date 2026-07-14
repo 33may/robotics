@@ -195,3 +195,27 @@ def test_no_brain_code_imports_realizations():
         "REALIZATION IMPORT VIOLATION (locbench D7 — lazy registry only):\n"
         + "\n".join(violations)
     )
+
+
+def test_oli_never_imports_locbench():
+    # Dependency direction is ONE-WAY: locbench (the eval oracle) imports the brain to drive it;
+    # the brain must NEVER import locbench. locbench carries test/plotting/subprocess machinery
+    # (matplotlib, the launcher spawn, conda tooling) — a single `logic.locbench` import under
+    # logic/oli/ would drag the harness into every brain/robot boot and invert the oracle
+    # relationship. (Module-path judged only, so the word in a comment/docstring is fine —
+    # locbench §11.3, carried into may-173-locdev-flow.)
+    root = Path(loc_pkg.__file__).parents[2]     # logic/oli/
+    violations = []
+    for py in sorted(root.rglob("*.py")):
+        for n, line in enumerate(py.read_text().splitlines(), 1):
+            m = _IMPORT_LINE.match(line)
+            if not m:
+                continue
+            module_path = m.group(2).split(" import ")[0]
+            if "locbench" in module_path.replace(".", " ").split():
+                violations.append(f"{py.relative_to(root)}:{n}: {m.group(2)}")
+    assert not violations, (
+        "LOCBENCH IMPORT VIOLATION — logic/oli/ must never import logic.locbench "
+        "(the oracle drives the brain, not the reverse; locbench §11.3):\n"
+        + "\n".join(violations)
+    )
