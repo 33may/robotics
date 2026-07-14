@@ -150,6 +150,7 @@ def run_bench(
     headless: bool = False,
     timeout_s: float = 90.0,
     shadow_config: Optional[str] = None,
+    live_view: bool = False,
     log=print,
 ) -> int:
     from humanoid.logic.locbench.envs import bench_env_name, env_exists
@@ -182,6 +183,16 @@ def run_bench(
         argv.append("--headless")
     if shadow_config:
         argv += ["--shadow-config", shadow_config]
+
+    world_map = StaticMapping(str(_REPO_ROOT / "humanoid" / es.map_dir)).latest()
+    if world_map is None:
+        log(f"[locbench] no map artifacts at {es.map_dir!r}")
+        return 2
+    grid = world_map.grid
+    viewer = None
+    if live_view:
+        from .live_view import try_open
+        viewer = try_open(grid, f"locbench — {candidate} — {run_id}", log=log)
 
     telemetry = TelemetryClient()          # bind BEFORE the brain starts publishing
     log(f"[locbench] booting stack: {' '.join(argv)}")
@@ -223,6 +234,7 @@ def run_bench(
             calibration={"gt_feed_socket": "/tmp/oli-gt-feed.sock"},
             config=EvalConfig(timeout_s=timeout_s),
             log=log,
+            viewer=viewer,
         )
         started = _dt.datetime.now().isoformat(timespec="seconds")
         results = ev.run(episodes)
@@ -236,8 +248,9 @@ def run_bench(
         except subprocess.TimeoutExpired:
             proc.kill()
         telemetry.close()
+        if viewer is not None:
+            viewer.close()
 
-    grid = StaticMapping(str(_REPO_ROOT / "humanoid" / es.map_dir)).latest().grid
     doc = write_run_artifacts(
         run_dir, candidate=candidate, episode_set=es, results=results, grid=grid,
         provenance={"started_at": started, "wall_s": round(time.monotonic() - t0, 1),

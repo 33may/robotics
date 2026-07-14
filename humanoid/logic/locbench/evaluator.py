@@ -75,6 +75,7 @@ class Evaluator:
         calibration: Optional[dict] = None,
         config: EvalConfig = EvalConfig(),
         log: Callable[[str], None] = print,
+        viewer=None,
     ) -> None:
         self._send_goal = send_goal
         self._clear_goal = clear_goal
@@ -87,6 +88,9 @@ class Evaluator:
         self._calibration = dict(calibration or {})
         self._cfg = config
         self._log = log
+        # Optional live observability (`--live-view`): duck-typed `LiveView` hooks, every
+        # one exception-proof on its side — the window can never change a run's outcome.
+        self._viewer = viewer
 
     def run(self, episodes) -> List[EpisodeResult]:
         results = []
@@ -100,6 +104,8 @@ class Evaluator:
 
     def run_episode(self, ep: Episode) -> EpisodeResult:
         res = EpisodeResult(episode=ep, outcome="crashed")
+        if self._viewer is not None:
+            self._viewer.on_episode(ep)
         try:
             # 1) transit to the spawn (unscored)
             self._send_goal(*ep.spawn)
@@ -147,6 +153,8 @@ class Evaluator:
             if gt is not None and gt[0] > last_gt_stamp:
                 last_gt_stamp = gt[0]
                 res.gts.append(gt)
+                if self._viewer is not None:
+                    self._viewer.on_gt(gt)
                 if sim_t0 is None:
                     sim_t0 = gt[0]
             snap = self._telemetry()
@@ -157,6 +165,8 @@ class Evaluator:
                 if est is not None and est.stamp_ns > last_est_stamp:
                     last_est_stamp = est.stamp_ns
                     res.ests.append(est)
+                    if self._viewer is not None:
+                        self._viewer.on_est(est)
             if gt is not None and self._dist(gt, ep.goal) <= self._cfg.arrival_tol_m:
                 return ("arrived", None)
             if sim_t0 is not None and (last_gt_stamp - sim_t0) / 1e9 > self._cfg.timeout_s:
@@ -174,6 +184,8 @@ class Evaluator:
                 return None
             gt = self._gt()
             if gt is not None:
+                if self._viewer is not None:
+                    self._viewer.on_transit_gt(gt)
                 if sim_t0 is None:
                     sim_t0 = gt[0]
                 if self._dist(gt, target) <= self._cfg.arrival_tol_m:
