@@ -61,3 +61,11 @@ result:     hypothesis CONFIRMED deterministically — new test test_equal_stamp
 decision:   improve (anton — approved "fix it end 2 end")
 reasoning:  aggregate-watermark vs per-stream-watermark: a shared newest-stamp filter asserts "all streams tick atomically", which is false — streams publish back-to-back with equal stamps, so the late-written stream starves permanently.
 next:       rerun `locbench run cuvslam --smoke 3 --live-view` — est should now track; read the REAL drift-vs-distance numbers.
+
+## it-6 — 2026-07-14 — runs 20260714-141927 (walk) + 20260714-144518 (teleport)
+hypothesis: with the host starvation fixed the est tracks and the REAL drift curve appears.
+change:     harness pair (Anton-commissioned, not candidate code): locbench teleport transit (World --teleport wire, evaluator snap+confirm+fallback, ~2x faster: 466->244 s wall) + nav.py localize-every-tick (last_pose was goal-gated -> teleport confirm starved on GT=None, run 143731 hung).
+result:     drift MEASURED, and it is not a curve — it is a step function. In the racks VO is near-perfect (~0 err for 7–9 s of aisle driving; ep2 walk-run: 0.44 m mean over ~14 m ≈ 3%). Facing the blank warehouse walls / open floor the tracker LOSES itself and silently re-anchors 15–30 m off (discrete jumps in error_timeline; ep1 teleport-run jumped at t=0.2 s because the face-the-goal spawn heading stares at open space). Coverage stays 1.00 — cuVSLAM returns confident garbage after a loss, no LOST signal.
+decision:   pivot (anton — moving to research the map-anchored candidate, RTAB-Map L2–L5)
+reasoning:  the 0.15 m max-pos gate is architecturally out of reach for ANY unanchored L1: wall-loss is total, not gradual, so multicam/IMU polish raises the ceiling without touching the gate. cuvslam's job is done: harness proven with a real tracker, L1 envelope sized (map fixes needed every few meters; recovery must handle TOTAL loss), scene hazard named (feature-poor walls — every future candidate must survive them). Binding capabilities verified for a future combo frontend: Multicamera mode, Inertial mode + register_imu_measurement, Slam module (slam_pose).
+next:       Anton researches the next move with the new information (RTAB-Map de-risks: ROS-free python path; prior-map building needs a bench build_map surface). cuvslam freezes as the measured L1 baseline on the board.

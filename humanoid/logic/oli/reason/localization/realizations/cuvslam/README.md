@@ -34,7 +34,10 @@ RTAB-Map(L2–L5) combo must supply. Do not tune for the gate.
 
 | field | value |
 |---|---|
-| phase | bring-up PASS (run 20260714-130101: 3/3 arrived, coverage 1.00, no crash) — drift NOT yet measured: est frozen at warm start by a suspected host frame-starvation bug (JOURNAL it-4), awaiting Anton's call |
+| phase | drift MEASURED (runs 20260714-141927/144518, JOURNAL it-6): in-aisle VO near-perfect (~0 err for 7–9 s; best 0.44 m mean over ~14 m), but feature-poor walls cause TOTAL tracking loss with silent 15–30 m re-anchor jumps (coverage stays 1.00 — confident garbage, no LOST signal). L1 ceiling confirmed: the 0.15 m gate is out of reach for any unanchored VO. FROZEN as the measured L1 baseline — pivot to a map-anchored candidate (Anton researching, 14-07-2026) |
 | best full run | — (smoke only) |
-| tier | FAIL (expected pre-tuning; numbers not yet meaningful) |
+| tier | FAIL (as hypothesized — unanchored L1) |
 | map | none (pure VO — no map artifacts; `map_dir` unused) |
+
+Binding capabilities verified for a future combo frontend (vendor @ 0558842): `Multicamera`
+odometry mode, `Inertial` mode + `register_imu_measurement`, `Slam` module (`slam_pose`).

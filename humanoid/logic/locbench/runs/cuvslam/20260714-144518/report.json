@@ -1,0 +1,104 @@
+{
+  "candidate": "cuvslam",
+  "scene": "warehouse",
+  "run": {
+    "tier": "FAIL",
+    "passed": false,
+    "deployable": false,
+    "failed_episodes": [
+      0,
+      1,
+      2
+    ]
+  },
+  "episodes": [
+    {
+      "stats": {
+        "episode_id": 0,
+        "outcome": "arrived",
+        "n_ticks": 101,
+        "n_answered": 101,
+        "coverage": 1.0,
+        "pos_mean": 16.605952849661183,
+        "pos_median": 2.999049297534839,
+        "pos_p95": 35.247683835864706,
+        "pos_max": 35.65917328660674,
+        "yaw_mean_deg": 60.26894863220921,
+        "yaw_median_deg": 41.30137739119492,
+        "yaw_p95_deg": 162.63751486682153,
+        "yaw_max_deg": 177.599392548381,
+        "pose_rate_hz": 7.426470235477958
+      },
+      "verdict": {
+        "tier": "FAIL",
+        "failures": [
+          "mean pos 16.606 m \u2265 0.1 m",
+          "max pos 35.659 m \u2265 0.15 m",
+          "mean yaw 60.3\u00b0 \u2265 10.0\u00b0"
+        ]
+      }
+    },
+    {
+      "stats": {
+        "episode_id": 1,
+        "outcome": "arrived",
+        "n_ticks": 191,
+        "n_answered": 191,
+        "coverage": 1.0,
+        "pos_mean": 15.13813211540626,
+        "pos_median": 13.868042950455237,
+        "pos_p95": 26.186798372960403,
+        "pos_max": 27.103399366491075,
+        "yaw_mean_deg": 114.93557160152997,
+        "yaw_median_deg": 116.80522484176052,
+        "yaw_p95_deg": 125.68497525764528,
+        "yaw_max_deg": 133.78204057213858,
+        "pose_rate_hz": 7.391640515884562
+      },
+      "verdict": {
+        "tier": "FAIL",
+        "failures": [
+          "mean pos 15.138 m \u2265 0.1 m",
+          "max pos 27.103 m \u2265 0.15 m",
+          "mean yaw 114.9\u00b0 \u2265 10.0\u00b0"
+        ]
+      }
+    },
+    {
+      "stats": {
+        "episode_id": 2,
+        "outcome": "arrived",
+        "n_ticks": 114,
+        "n_answered": 114,
+        "coverage": 1.0,
+        "pos_mean": 6.365014650253279,
+        "pos_median": 0.15719870476657666,
+        "pos_p95": 17.209710880635363,
+        "pos_max": 17.80435162398168,
+        "yaw_mean_deg": 41.07574408153798,
+        "yaw_median_deg": 0.29019952374099706,
+        "yaw_p95_deg": 111.83359389280812,
+        "yaw_max_deg": 124.01150357698084,
+        "pose_rate_hz": 7.418011100003377
+      },
+      "verdict": {
+        "tier": "FAIL",
+        "failures": [
+          "mean pos 6.365 m \u2265 0.1 m",
+          "max pos 17.804 m \u2265 0.15 m",
+          "mean yaw 41.1\u00b0 \u2265 10.0\u00b0"
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "episode_set_version": 1,
+    "episode_set_seed": 33,
+    "episode_errors": {},
+    "started_at": "2026-07-14T14:45:42",
+    "wall_s": 244.1,
+    "adapter_git": "0654ae6",
+    "timeout_s": 90.0,
+    "transit": "teleport"
+  }
+}
