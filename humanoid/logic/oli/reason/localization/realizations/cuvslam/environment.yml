@@ -11,6 +11,7 @@ channels:
 dependencies:
   - python=3.11
   - numpy
+  - scipy             # brain service mode: nav planner's costmap lazily imports scipy.ndimage
   - pyyaml
   - pytest            # in-folder test_contract.py runs in THIS env
   - cmake>=3.23       # top-level cuVSLAM build + the bindings' scikit-build backend

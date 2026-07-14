@@ -37,3 +37,11 @@ result:     contract test green in bench-cuvslam (3 passed); end-to-end syntheti
 decision:   improve (anton — pair mode)
 reasoning:  adapter conforms and the math round-trips; remaining risk is live bench integration (frame cadence, sim-time stamps, Isaac boot), which only `locbench run` exercises.
 next:       STEP 3 — `locbench run cuvslam --smoke 3`; expect bring-up PASS (coverage > 0, no crash) and drift visible in overlay/timeline.
+
+## it-3 — 2026-07-14 — run 20260714-125728 (crashed)
+hypothesis: the stack runs end-to-end with the candidate shadowed.
+change:     add scipy to environment.yml (ONE change).
+result:     run 20260714-125728 crashed BEFORE any localization step: brain died at first nav plan — costmap.clearance_cost lazily imports scipy.ndimage, absent from the "numpy+stdlib" bench env recipe. Candidate never stepped; not a cuVSLAM failure.
+decision:   improve (anton — pair mode)
+reasoning:  systemic finding to REPORT (not fix): the reference recipe's "glide needs numpy+stdlib" claim misses service-mode nav planning (scipy) — bench-reference would crash identically (consistent with no reference run ever finishing). ALSO for Anton: when the brain died mid-run, the evaluator itself crashed on episode 1 (FileNotFoundError on the goal socket) instead of marking remaining episodes crashed — locbench robustness gap, oracle-integrity says hands off.
+next:       rerun smoke with scipy in the env; expect the scored leg to actually step the tracker.

@@ -54,6 +54,7 @@ dependencies:
   - pyyaml=6.0.3=py311h3778330_1
   - readline=8.3=h853b02a_0
   - rhash=1.4.6=hb9d3cd8_1
+  - scipy=1.17.1=py311hbe70eeb_1
   - setuptools=83.0.0=pyh332efcf_0
   - tk=8.6.13=noxft_h366c992_103
   - tomli=2.4.1=pyhcf101f3_0
