@@ -49,6 +49,8 @@ SCENES = {
 
 
 _RUNS_ROOT = _HERE / "runs"
+_REALIZATIONS_DIR = (_REPO_ROOT / "humanoid" / "logic" / "oli" / "reason" /
+                     "localization" / "realizations")
 
 
 def _scene_cfg(name: str) -> dict:
@@ -94,6 +96,25 @@ def _cmd_board(args) -> int:
     from humanoid.logic.locbench.runner import board
 
     print(board(_RUNS_ROOT))
+    return 0
+
+
+def _cmd_env(args) -> int:
+    from humanoid.logic.locbench.envs import EnvError, env_create, env_remove
+
+    rdir = _REALIZATIONS_DIR / args.candidate
+    try:
+        if args.action == "create":
+            if not rdir.is_dir():
+                sys.exit(f"no realization {args.candidate!r} at {rdir} — "
+                         f"scaffold it first (loc-new)")
+            lock = env_create(args.candidate, rdir, force=args.force)
+            print(f"created bench-{args.candidate}; solve frozen → {lock}")
+        else:  # remove
+            env_remove(args.candidate)
+            print(f"removed bench-{args.candidate} (lock.yml kept as the committed record)")
+    except EnvError as e:
+        sys.exit(str(e))
     return 0
 
 
@@ -154,6 +175,12 @@ def main() -> int:
 
     p_bd = sub.add_parser("board", help="MD scoreboard — latest report per candidate")
     p_bd.set_defaults(fn=_cmd_board)
+
+    p_env = sub.add_parser("env", help="create/remove a candidate's disposable bench-<name> env")
+    p_env.add_argument("action", choices=["create", "remove"])
+    p_env.add_argument("candidate", help="realizations/<name>")
+    p_env.add_argument("--force", action="store_true", help="recreate if it already exists")
+    p_env.set_defaults(fn=_cmd_env)
 
     args = ap.parse_args()
     return args.fn(args)

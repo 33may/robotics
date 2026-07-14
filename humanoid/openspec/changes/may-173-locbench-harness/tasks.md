@@ -45,7 +45,7 @@
 
 ## 7. Env tooling (D8)
 
-- [ ] 7.1 TDD: `envs.py` — `locbench env create|remove <name>` from the realization recipe; post-build `conda env export` → `lock.yml` (committed); `remove` leaves no trace; hard guard refuses `brain|isaac|limx|hum`
+- [x] 7.1 TDD: `envs.py` — `locbench env create|remove <name>` from the realization recipe; post-build `conda env export` → `lock.yml` (committed); `remove` leaves no trace; hard guard refuses `brain|isaac|limx|hum` (conda injected as a runner → guard/naming/force logic unit-tested, no conda in CI)
 - [ ] 7.2 `bench-reference` path: reference candidate must run in a plain brain-compatible env (proves the contract needs nothing special)
 
 ## 8. Reference candidate + harness self-validation (D13) — the gate for everything above
