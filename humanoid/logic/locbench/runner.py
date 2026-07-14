@@ -23,7 +23,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from .episodes import EpisodeSet, load_episode_set
 from .evaluator import EvalConfig, Evaluator, EpisodeResult
@@ -151,6 +151,7 @@ def run_bench(
     timeout_s: float = 90.0,
     shadow_config: Optional[str] = None,
     live_view: bool = False,
+    teleport: bool = True,
     log=print,
 ) -> int:
     from humanoid.logic.locbench.envs import bench_env_name, env_exists
@@ -183,6 +184,12 @@ def run_bench(
         argv.append("--headless")
     if shadow_config:
         argv += ["--shadow-config", shadow_config]
+    # Teleport transit (Anton, 14-07-2026): snap the base to each spawn instead of walking
+    # there — transit was ~half a run's wall time and the module is stopped between episodes.
+    # `--walk-transit` restores D3's walked leg; the evaluator also falls back automatically.
+    _TELEPORT_SOCK = "/tmp/oli-teleport.sock"
+    if teleport:
+        argv += ["--teleport", _TELEPORT_SOCK]
 
     world_map = StaticMapping(str(_REPO_ROOT / "humanoid" / es.map_dir)).latest()
     if world_map is None:
@@ -224,12 +231,27 @@ def run_bench(
                 gt_feed.publish(*sample)
             return sample
 
+        # Teleport sender: reuses the debug-pose datagram with the stamp field as a
+        # monotonic sequence number (the World dedupes on it; latest-wins on the wire).
+        tp_send: Optional[Callable[[float, float, float], None]] = None
+        tp_server = None
+        if teleport:
+            tp_srv = tp_server = DebugPoseServer(_TELEPORT_SOCK)
+            tp_seq = [0]
+
+            def _tp_send(x: float, y: float, yaw: float) -> None:
+                tp_seq[0] += 1
+                tp_srv.publish(tp_seq[0], x, y, yaw)
+
+            tp_send = _tp_send
+
         ev = Evaluator(
             send_goal=goals.send_goal, clear_goal=goals.clear_goal,
             send_start=ctrl.send_start, send_stop=ctrl.send_stop,
             gt_latest=gt_latest,
             telemetry_latest=telemetry.latest,
             stack_alive=lambda: proc.poll() is None,
+            teleport=tp_send,
             map_dir=str(_REPO_ROOT / "humanoid" / es.map_dir),
             calibration={"gt_feed_socket": "/tmp/oli-gt-feed.sock"},
             config=EvalConfig(timeout_s=timeout_s),
@@ -241,6 +263,8 @@ def run_bench(
         goals.close()
         ctrl.close()
         gt_feed.close()
+        if tp_server is not None:
+            tp_server.close()
     finally:
         proc.terminate()
         try:
@@ -254,7 +278,8 @@ def run_bench(
     doc = write_run_artifacts(
         run_dir, candidate=candidate, episode_set=es, results=results, grid=grid,
         provenance={"started_at": started, "wall_s": round(time.monotonic() - t0, 1),
-                    "adapter_git": _git_head(), "timeout_s": timeout_s})
+                    "adapter_git": _git_head(), "timeout_s": timeout_s,
+                    "transit": "teleport" if teleport else "walk"})
     log(f"[locbench] run {run_id}: {doc['run']['tier']} "
         f"(failed episodes: {doc['run']['failed_episodes'] or 'none'})")
     log(f"[locbench] artifacts → {run_dir}")

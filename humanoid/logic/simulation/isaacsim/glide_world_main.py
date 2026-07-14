@@ -31,7 +31,10 @@ if str(_REPO_ROOT) not in sys.path:
 # Pure imports (no isaacsim): the walk crouch (drift-guarded against walk_param) + the model.
 from humanoid.logic.simulation.isaacsim.sim_world_main import HOME_POSE_PR  # noqa: E402
 from humanoid.logic.oli.glide import GlideModel  # noqa: E402
-from humanoid.logic.oli.comm.debug_pose import DebugPoseServer  # noqa: E402  (pure stdlib)
+from humanoid.logic.oli.comm.debug_pose import (  # noqa: E402  (pure stdlib)
+    DebugPoseClient,
+    DebugPoseServer,
+)
 
 
 def _yaw_from_quat_wxyz(q) -> float:
@@ -95,6 +98,10 @@ def main() -> None:
                     help="AF_UNIX SOCK_DGRAM path to stream Oli's ground-truth base pose "
                          "(stamp, x, y, yaw) for nav debug/eval. NOT the invariance spine — the "
                          "real robot has no such signal; off by default.")
+    ap.add_argument("--teleport", default=None,
+                    help="AF_UNIX SOCK_DGRAM path to ACCEPT bench teleport commands "
+                         "(seq, x, y, yaw → base pose snap). Locbench transit speedup; NOT "
+                         "the invariance spine — the real robot cannot teleport; off by default.")
     ap.add_argument("--duration", type=float, default=0.0,
                     help="wall seconds to run (0 = until the window closes)")
     args = ap.parse_args()
@@ -137,6 +144,14 @@ def main() -> None:
     dbg_pose = DebugPoseServer(args.debug_pose) if args.debug_pose else None
     if dbg_pose is not None:
         print(f"[glide-world] debug pose ON → {args.debug_pose} (ground-truth base x,y,yaw)", flush=True)
+
+    # Bench teleport channel (opt-in, NOT the spine): the evaluator snaps the base to the next
+    # episode's spawn instead of walking there — the datagram reuses the debug-pose frame with
+    # the stamp field as a sequence number (latest-wins + dedupe). The receiving end BINDS,
+    # hence the "client" class on the World side.
+    teleport_rx = DebugPoseClient(args.teleport) if args.teleport else None
+    if teleport_rx is not None:
+        print(f"[glide-world] teleport ON ← {args.teleport} (bench base-pose snap)", flush=True)
 
     # Camera frame channel (opt-in): a SEPARATE SOCK_STREAM server shipping RGBD on the render
     # sub-tick, never blocking the glide control loop (latest-wins per camera). Off by default.
@@ -230,9 +245,31 @@ def main() -> None:
     def _timed_out() -> bool:
         return bool(args.duration) and (time.monotonic() - loop_start) > args.duration
 
+    last_teleport_seq = 0
+
+    def _maybe_teleport() -> bool:
+        """Apply the newest unseen bench teleport: snap the base to (x, y) at the glide
+        height with the pinned-upright orientation at the commanded yaw, zero the root
+        velocity, and RESEED the glide model so its accel-limited state matches the world
+        (a stale model velocity would drag the base off the spawn on the next substep)."""
+        nonlocal last_teleport_seq, model
+        tp = teleport_rx.latest() if teleport_rx is not None else None
+        if tp is None or tp[0] <= last_teleport_seq:
+            return False
+        last_teleport_seq, tx, ty, tyaw = tp[0], tp[1], tp[2], tp[3]
+        _ctz, _stz = math.cos(tyaw / 2.0), math.sin(tyaw / 2.0)
+        oli.set_base_pose(position=(tx, ty, glide_z),
+                          quat_wxyz=(_cp * _ctz, -_sp * _stz, _sp * _ctz, _cp * _stz))
+        oli.set_base_velocity(linear=(0.0, 0.0, 0.0), angular=(0.0, 0.0, 0.0))
+        model = GlideModel(lin_accel=args.lin_accel, yaw_accel=args.yaw_accel,
+                           x=tx, y=ty, yaw=tyaw)
+        print(f"[glide-world] TELEPORT → ({tx:+.2f},{ty:+.2f}) yaw={tyaw:+.2f}", flush=True)
+        return True
+
     try:
         simcomm.publish(_sim_ns())
         while app.is_running() and not _timed_out():
+            _maybe_teleport()
             cmd = simcomm.receive_glide_blocking(timeout=watchdog_s)
             if cmd is None:  # brain silent → decay the glide to rest, keep holding station
                 model.step(0.0, 0.0, 0.0, cmd_dt)
@@ -274,6 +311,8 @@ def main() -> None:
             pub.close()
         if dbg_pose is not None:
             dbg_pose.close()
+        if teleport_rx is not None:
+            teleport_rx.close()
         simcomm.close()
         app.close()
 

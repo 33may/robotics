@@ -107,6 +107,11 @@ def add_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--map", default=None,
                     help="baked occupancy artifact dir (occupancy.npy + occupancy.json) → the "
                          "dev-app Nav Map panel (bake with reason/mapping/occupancy_io.py)")
+    # bench teleport (MAY-173 locbench): the glide World accepts base-pose snap commands so
+    # the evaluator skips the walked transit between episodes. NOT the invariance spine.
+    ap.add_argument("--teleport", nargs="?", const="/tmp/oli-teleport.sock", default=None,
+                    help="glide: accept bench teleport commands (seq, x, y, yaw) on this UDS "
+                         "path. Bare flag → /tmp/oli-teleport.sock; off by default.")
     # service brain (MAY-173 locbench): the isolated goal-driven brain — Nav reason, no
     # joystick; any client steers it over the W4 goal socket and reads W5 telemetry back.
     ap.add_argument("--service", action="store_true",
@@ -144,6 +149,8 @@ def _glide_world_argv(a: argparse.Namespace) -> list[str]:
         py += ["--camera-every", str(a.camera_every)]   # glide World honors the cadence knob
     if getattr(a, "debug_pose", None):
         py += ["--debug-pose", a.debug_pose]            # stream ground-truth base pose (nav overlay)
+    if getattr(a, "teleport", None):
+        py += ["--teleport", a.teleport]                # bench base-pose snap (locbench transit)
     if a.headless:
         py.append("--headless")
     if a.duration:

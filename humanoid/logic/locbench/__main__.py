@@ -73,7 +73,8 @@ def _cmd_run(args) -> int:
         candidate=args.candidate, scene_cfg=cfg, episodes_file=episodes_file,
         runs_root=_RUNS_ROOT, n_episodes=args.smoke or args.episodes,
         headless=args.headless, timeout_s=args.timeout,
-        shadow_config=args.shadow_config, live_view=args.live_view)
+        shadow_config=args.shadow_config, live_view=args.live_view,
+        teleport=not args.walk_transit)
 
 
 def _cmd_score(args) -> int:
@@ -167,6 +168,9 @@ def main() -> int:
     p_run.add_argument("--headless", action="store_true")
     p_run.add_argument("--live-view", action="store_true",
                        help="open a live window: GT vs candidate estimate on the map")
+    p_run.add_argument("--walk-transit", action="store_true",
+                       help="walk the unscored transit legs (D3 original) instead of the "
+                            "default bench teleport to each spawn")
     p_run.add_argument("--shadow-config", default=None,
                        help="JSON file of config overrides for the candidate")
     p_run.set_defaults(fn=_cmd_run)
