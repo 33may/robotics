@@ -56,4 +56,4 @@
 
 - [x] 9.1 `logic/locbench/AGENTS.md` — architecture (3 processes, W1–W5 wires), CLI surface (episodes/run/score/board/env), invariants (raw scoring/no alignment, all-episodes-pass, sim-time timeouts); one-line `CLAUDE.md` shim (locbench §11.2)
 - [x] 9.2 Architecture-guard extension in `tests/oli/reason/test_architecture.py`: `logic/oli/` never imports `logic.locbench` (the oracle drives the brain, not the reverse). Joins the existing realizations-import + service-purity guards (locbench §11.3)
-- [ ] 9.3 Memory: `architecture-locbench-harness` build-outcome refresh + gotchas (merge with 8.1) (locbench §11.4)
+- [x] 9.3 Memory: `architecture-locbench-harness` refreshed to as-built (episode-sets pivot, ship+archive, env contract); `locbench-run-env-contract` + `architecture-locdev-flow` leaves cover the rest (merges 8.1) (locbench §11.4)
