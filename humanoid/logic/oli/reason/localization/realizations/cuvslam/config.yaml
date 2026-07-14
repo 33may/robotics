@@ -1,11 +1,17 @@
 # cuvslam — ALL tunables live here (playbook rule: a tuning iteration's diff is this one file).
 # Hardcoded magic numbers in module.py are a defect. Group by concern; comment units + why.
-#
-# Stub scaffold: no tunables yet. The phase-3 adapter routes EVERY knob through here —
-# expected groups (filled as the adapter lands, verified against the actual PyCuVSLAM API):
-#
-# input:                       # LocalizationIn -> cuVSLAM input mapping
-#   cameras: [head]            # which RGBD frames feed the tracker
-#   use_imu: false             # feed loc_in.observation acc/gyro as VIO input
-# tracker:                     # cuVSLAM tracker settings (odometry mode, multicam, ...)
-# output:                      # cuVSLAM frame -> map frame handling (fixed at start())
+
+input:
+  camera: head                       # which CameraFrame feeds VO (head = forward-looking, pitch 0)
+
+# cuVSLAM's own config schema — applied via the vendored utils._apply_odometry_section,
+# so any upstream Odometry.Config key can be tuned from here without touching module.py.
+odometry:
+  odometry_mode: rgbd                # our frames are RGBD (mono color + aligned depth)
+  use_gpu: true
+  async_sba: true                    # upstream default in the RGBD example
+  rgbd_settings:
+    depth_camera_id: 0               # single-camera rig: color cam 0 owns the depth
+    depth_scale_factor: 1000.0       # uint16 depth units per meter (mm) — cuVSLAM requires
+                                     # uint16 depth; module.py converts float32-m with THIS knob
+    enable_depth_stereo_tracking: false

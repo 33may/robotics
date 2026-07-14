@@ -29,3 +29,11 @@ result:     PASS — bench-cuvslam created, lock.yml frozen, import OK, GPU trac
 decision:   improve (anton — pair mode; de-risk cleared, proceed to the adapter)
 reasoning:  both failure modes were Ubuntu→Fedora portability (lib64, stricter libstdc++ includes), not cuVSLAM-vs-py3.11 — the fallback OOP node is NOT needed.
 next:       phase-3 adapter — CuvslamModule around Tracker (RGBD mode, head cam, known-start map-frame transform), every knob in config.yaml.
+
+## it-2 — 2026-07-14 — run none
+hypothesis: one RGBD camera (head) + known-start anchor is enough to emit map-frame SE(2) through the contract.
+change:     real adapter in module.py — lazy rig/tracker from first frame's intrinsics (Setup has none), depth float32-m -> uint16 via odometry.rgbd_settings.depth_scale_factor, mounts from oli.camera_mounts (D10), T_map_vo anchored at first tracked frame, healthy VO -> DRIFTING (scorer counts any non-None pose; honest for pure VO), tracker exception -> dead -> LOST; config.yaml carries cuVSLAM's own odometry schema (vendored _apply_odometry_section).
+result:     contract test green in bench-cuvslam (3 passed); end-to-end synthetic check: static 720p frames + warm start (2.0, -1.0, 0.7) reproduce exactly (DRIFTING, fix=anchor stamp) — transform chain verified.
+decision:   improve (anton — pair mode)
+reasoning:  adapter conforms and the math round-trips; remaining risk is live bench integration (frame cadence, sim-time stamps, Isaac boot), which only `locbench run` exercises.
+next:       STEP 3 — `locbench run cuvslam --smoke 3`; expect bring-up PASS (coverage > 0, no crash) and drift visible in overlay/timeline.
