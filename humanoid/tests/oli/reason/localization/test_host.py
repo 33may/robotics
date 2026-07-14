@@ -195,6 +195,31 @@ def test_slow_module_skips_frames_and_never_blocks_the_control_side(rig):
     assert stamps == sorted(stamps)                  # and what ran stayed monotonic
 
 
+def test_equal_stamp_multi_stream_frames_all_reach_the_module(rig):
+    """A shared stamp watermark must not starve the stream written LAST.
+
+    The real race (cuvslam run 20260714-130101): the World publishes chest@t, the host
+    polls in the gap and steps a chest-only bundle, then head@t lands with the SAME
+    stamp — `head.stamp_ns > last_frame_stamp` is False forever after, and the module
+    never sees another head frame. Watermarks must be per-stream.
+    """
+    frames, build, made = rig
+    host = build()
+    host.request_start(_SETUP)
+    assert _wait(lambda: host.state == "running")
+    host.on_tick(_obs(1), None)
+
+    for tick in range(1, 4):
+        t = tick * 10 * MS
+        frames.push(_frame(t, name="chest"))          # chest written first...
+        steps_before = host.steps
+        assert _wait(lambda: host.steps > steps_before)   # ...host consumed chest-only bundle
+        frames.push(_frame(t, name="head"))           # ...head lands late, EQUAL stamp
+        assert _wait(lambda: any(
+            "head" in li.frames and li.frames["head"].stamp_ns == t
+            for li in made[0].loc_ins)), f"head@{t} starved by the shared watermark"
+
+
 def test_crashing_module_marks_crashed_and_host_survives(rig):
     frames, build, made = rig
     host = build(raise_at=2)

@@ -53,3 +53,11 @@ result:     BRING-UP PASS: all 3 episodes arrived, coverage 1.00, report + plots
 decision:   improve (anton — pair mode)
 reasoning:  frozen-est signature = the module steps (stamps advance) but takes the carry branch every tick ⇒ the head frame never re-enters the bundle. Suspected HARNESS bug in reason/localization/host.py::_maybe_step: ONE `_last_frame_stamp` across ALL streams — once a poll catches chest@t before head@t lands, head's equal stamp is ≤ the processed max forever (world publishes chest first): permanent starvation ratchet. Fix would be per-stream last-stamps — host.py is brain-side harness infra, NOT the candidate; per the playbook this is journaled + PAUSED for Anton, not self-fixed.
 next:       Anton's call on the host fix; then rerun — expect the red track to actually move and the REAL drift curve to appear. `--live-view` (built 2026-07-14 on Anton's ask) shows GT vs est in real time to watch it.
+
+## it-5 — 2026-07-14 — run none (fix only; rerun follows)
+hypothesis: it-4's frozen est is host frame starvation — ONE shared `_last_frame_stamp` across streams drops head@t forever once chest@t is consumed first.
+change:     host.py::_maybe_step → PER-STREAM watermarks (`_last_stamps: Dict[str, int]`); Anton approved editing the brain-side harness this session (pair mode).
+result:     hypothesis CONFIRMED deterministically — new test test_equal_stamp_multi_stream_frames_all_reach_the_module reproduces the starvation (red) and the per-stream fix turns it green; full brain suite green.
+decision:   improve (anton — approved "fix it end 2 end")
+reasoning:  aggregate-watermark vs per-stream-watermark: a shared newest-stamp filter asserts "all streams tick atomically", which is false — streams publish back-to-back with equal stamps, so the late-written stream starves permanently.
+next:       rerun `locbench run cuvslam --smoke 3 --live-view` — est should now track; read the REAL drift-vs-distance numbers.
