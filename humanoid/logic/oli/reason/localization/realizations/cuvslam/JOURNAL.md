@@ -45,3 +45,11 @@ result:     run 20260714-125728 crashed BEFORE any localization step: brain died
 decision:   improve (anton — pair mode)
 reasoning:  systemic finding to REPORT (not fix): the reference recipe's "glide needs numpy+stdlib" claim misses service-mode nav planning (scipy) — bench-reference would crash identically (consistent with no reference run ever finishing). ALSO for Anton: when the brain died mid-run, the evaluator itself crashed on episode 1 (FileNotFoundError on the goal socket) instead of marking remaining episodes crashed — locbench robustness gap, oracle-integrity says hands off.
 next:       rerun smoke with scipy in the env; expect the scored leg to actually step the tracker.
+
+## it-4 — 2026-07-14 — run 20260714-130101
+hypothesis: with scipy in the env the run completes end-to-end and the drift curve becomes readable.
+change:     none in the candidate (same code as it-3) — this is the rerun.
+result:     BRING-UP PASS: all 3 episodes arrived, coverage 1.00, report + plots written, tier FAIL as hypothesized. BUT the failure mode is NOT drift: the estimate is FROZEN at the warm-start pose (byte-identical x/y/yaw across every tick, stamps advancing) — pos_mean 5.3–8.1 m is just the robot's distance from spawn. Drift-vs-distance NOT yet measured.
+decision:   improve (anton — pair mode)
+reasoning:  frozen-est signature = the module steps (stamps advance) but takes the carry branch every tick ⇒ the head frame never re-enters the bundle. Suspected HARNESS bug in reason/localization/host.py::_maybe_step: ONE `_last_frame_stamp` across ALL streams — once a poll catches chest@t before head@t lands, head's equal stamp is ≤ the processed max forever (world publishes chest first): permanent starvation ratchet. Fix would be per-stream last-stamps — host.py is brain-side harness infra, NOT the candidate; per the playbook this is journaled + PAUSED for Anton, not self-fixed.
+next:       Anton's call on the host fix; then rerun — expect the red track to actually move and the REAL drift curve to appear. `--live-view` (built 2026-07-14 on Anton's ask) shows GT vs est in real time to watch it.

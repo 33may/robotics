@@ -34,7 +34,7 @@ RTAB-Map(L2–L5) combo must supply. Do not tune for the gate.
 
 | field | value |
 |---|---|
-| phase | scaffolded — not yet run |
-| best full run | — |
-| tier | — |
+| phase | bring-up PASS (run 20260714-130101: 3/3 arrived, coverage 1.00, no crash) — drift NOT yet measured: est frozen at warm start by a suspected host frame-starvation bug (JOURNAL it-4), awaiting Anton's call |
+| best full run | — (smoke only) |
+| tier | FAIL (expected pre-tuning; numbers not yet meaningful) |
 | map | none (pure VO — no map artifacts; `map_dir` unused) |
