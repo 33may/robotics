@@ -52,6 +52,7 @@ class Nav:
         self._controller = controller or PurePursuit()
         self._mode = mode
         self._goal: Optional[GoalCoordinate] = None
+        self._last_pose: Optional[RobotPose] = None
 
     # ── goal IN ──────────────────────────────────────────────────────────────
     def set_goal(self, goal: GoalCoordinate) -> None:
@@ -72,6 +73,18 @@ class Nav:
         """The most recently planned path (world waypoints), or None — for observers to render."""
         return self._planner.path
 
+    @property
+    def goal(self) -> Optional[GoalCoordinate]:
+        """The active goal, or None — read-only, for observers (telemetry, dev_app)."""
+        return self._goal
+
+    @property
+    def last_pose(self) -> Optional[RobotPose]:
+        """The pose Nav drove on last tick (whatever the `Localizer` seam produced), or None
+        before the first localized tick — read-only, for observers. This is the DRIVING pose
+        (GT in locbench Stage-1 shadow mode), distinct from a candidate's estimate."""
+        return self._last_pose
+
     def plan(self, pose: RobotPose) -> Optional[List[Point]]:
         """Plan from `pose` to the current goal on the newest map snapshot; None when there is
         no goal / no map yet / the goal is blocked. The "path out" seam — dev_app renders it."""
@@ -88,6 +101,7 @@ class Nav:
         if self._goal is None:
             return self._hold(observation)
         pose = self._localizer.estimate(observation, camera_frame)
+        self._last_pose = pose
         if pose is None:
             return self._hold(observation)  # no localization yet → stay put
         path = self.plan(pose)

@@ -1,0 +1,9 @@
+# reference — ALL tunables live here (playbook rule). The bench's acceptance triplet
+# overrides `inject` via --shadow-config, never by editing this file.
+inject:
+  bias_x_m: 0.0        # constant map-frame x offset [m] — the E1 failure mode
+  bias_y_m: 0.0
+  bias_yaw_rad: 0.0
+  noise_sigma_m: 0.0   # Gaussian position noise [m], seeded
+  dropout: 0.0         # P(answer LOST) per step, seeded
+  seed: 0

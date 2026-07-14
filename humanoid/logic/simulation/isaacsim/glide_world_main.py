@@ -216,15 +216,22 @@ def main() -> None:
     print("[glide-world] brain connected. gliding.", flush=True)
 
     watchdog_s = args.watchdog_ms / 1000.0
-    tick = 0
+    tick = 0                    # counts world.step() calls — the render/camera CADENCE gate
     n_cmds = 0
     loop_start = time.monotonic()
+
+    def _sim_ns() -> int:
+        """The D8 stamp clock = TRUE simulated seconds. NOT tick·physics_dt: world.step()
+        advances rendering_dt (~16.7 ms) on render ticks and physics_dt (1 ms) otherwise, so
+        `tick` is not a uniform-dt clock — stamping tick·1e6 ran the clock ~8× slow under
+        --render-every 2 (MAY-173, 2026-07-13). world.current_time is Isaac's real sim time."""
+        return int(world.current_time * 1e9)
 
     def _timed_out() -> bool:
         return bool(args.duration) and (time.monotonic() - loop_start) > args.duration
 
     try:
-        simcomm.publish(tick * 1_000_000)
+        simcomm.publish(_sim_ns())
         while app.is_running() and not _timed_out():
             cmd = simcomm.receive_glide_blocking(timeout=watchdog_s)
             if cmd is None:  # brain silent → decay the glide to rest, keep holding station
@@ -246,16 +253,16 @@ def main() -> None:
                     position=(float(_pp[0]), float(_pp[1]), float(_pp[2])),
                     quat_wxyz=(_cp * _czz, -_sp * _szz, _sp * _czz, _cp * _szz))
                 if render and pub is not None:  # camera pixels only refresh on render steps
-                    pub.publish(tick, tick * 1_000_000)
+                    pub.publish(tick, _sim_ns())   # `tick` = cadence gate; stamp = real sim time
                 tick += 1
-            simcomm.publish(tick * 1_000_000)
+            simcomm.publish(_sim_ns())
             if dbg_pose is not None:
                 _pdp = oli.base_world_position()
                 _ydp = _yaw_from_quat_wxyz(oli.base_world_quat_wxyz())
-                dbg_pose.publish(tick * 1_000_000, float(_pdp[0]), float(_pdp[1]), _ydp)
+                dbg_pose.publish(_sim_ns(), float(_pdp[0]), float(_pdp[1]), _ydp)
             if cmd is not None and n_cmds % 25 == 0:
                 p = oli.base_world_position()
-                print(f"[glide-world] t={tick / 1000.0:5.2f}s "
+                print(f"[glide-world] t={world.current_time:5.2f}s "
                       f"base=({p[0]:+.2f},{p[1]:+.2f},{p[2]:+.2f}) "
                       f"vx={model.vx:+.2f} vy={model.vy:+.2f} wz={model.wz:+.2f}", flush=True)
     except KeyboardInterrupt:

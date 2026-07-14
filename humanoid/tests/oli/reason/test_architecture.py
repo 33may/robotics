@@ -123,6 +123,21 @@ def test_reason_packages_never_touch_world_sdks():
     assert not leaks, f"INVARIANCE VIOLATION — world SDKs in sys.modules: {leaks}"
 
 
+# ── 3b. The service seam stays brain-pure (locbench design.md D5) ─────────────────────
+
+def test_service_seam_is_brain_pure():
+    # `oli/service/` is brain-side code: it may import reason contracts, but never a world
+    # SDK and never devapp (the seam exists precisely so clients DON'T live in the brain).
+    from humanoid.logic.oli import service as service_pkg
+
+    for where, stmt in _package_import_lines(service_pkg):
+        for bad in ("isaacsim", "limxsdk", "devapp"):
+            assert bad not in stmt, (
+                f"SERVICE SEAM VIOLATION at {where}: {stmt} — oli/service must stay "
+                "brain-pure (no world SDKs, no devapp)"
+            )
+
+
 # ── 4. Modules consume emitted contracts, not each other (design.md D8) ──────────────
 
 def test_planner_holds_no_mapping_module_ref():
@@ -137,4 +152,70 @@ def test_planner_holds_no_mapping_module_ref():
     }, (
         "Planner.__init__ grew a parameter — if it is a module ref (mapping/localizer), "
         "that violates design.md D8: Planner consumes the emitted Map value only."
+    )
+
+
+# ── locbench D6/D7: host seam realizations + the no-realization-import rule ──────────
+
+def test_host_localizer_satisfies_the_localizer_seam():
+    from humanoid.logic.oli.reason.localization import HostLocalizer, LocalizationHost
+
+    class _NoFrames:
+        def read(self, name):
+            return None
+
+        def stream_names(self):
+            return []
+
+    host = LocalizationHost(lambda: None, _NoFrames())
+    _static_host_localizer: Localizer = HostLocalizer(host)   # declaration-site canary
+    assert isinstance(_static_host_localizer, Localizer)
+
+
+def test_no_brain_code_imports_realizations():
+    # Candidates carry heavy, env-specific deps: ONLY the registry may reach them, and only
+    # lazily (importlib by name). A static `realizations` import anywhere under logic/oli/
+    # would drag a candidate's stack into every brain boot. (Scoped to logic/oli/ sources —
+    # tests and locbench import pure realizations deliberately.)
+    root = Path(loc_pkg.__file__).parents[2]     # logic/oli/
+    violations = []
+    for py in sorted(root.rglob("*.py")):
+        if "realizations" in py.parts:
+            continue                              # realizations may import themselves
+        for n, line in enumerate(py.read_text().splitlines(), 1):
+            m = _IMPORT_LINE.match(line)
+            if not m:
+                continue
+            # judge the MODULE PATH only ("from X import Y" → X) — imported names like
+            # `list_realizations` are fine, importing the realizations package is not
+            module_path = m.group(2).split(" import ")[0]
+            if "realizations" in module_path.replace(".", " ").split():
+                violations.append(f"{py.relative_to(root)}:{n}: {m.group(2)}")
+    assert not violations, (
+        "REALIZATION IMPORT VIOLATION (locbench D7 — lazy registry only):\n"
+        + "\n".join(violations)
+    )
+
+
+def test_oli_never_imports_locbench():
+    # Dependency direction is ONE-WAY: locbench (the eval oracle) imports the brain to drive it;
+    # the brain must NEVER import locbench. locbench carries test/plotting/subprocess machinery
+    # (matplotlib, the launcher spawn, conda tooling) — a single `logic.locbench` import under
+    # logic/oli/ would drag the harness into every brain/robot boot and invert the oracle
+    # relationship. (Module-path judged only, so the word in a comment/docstring is fine —
+    # locbench §11.3, carried into may-173-locdev-flow.)
+    root = Path(loc_pkg.__file__).parents[2]     # logic/oli/
+    violations = []
+    for py in sorted(root.rglob("*.py")):
+        for n, line in enumerate(py.read_text().splitlines(), 1):
+            m = _IMPORT_LINE.match(line)
+            if not m:
+                continue
+            module_path = m.group(2).split(" import ")[0]
+            if "locbench" in module_path.replace(".", " ").split():
+                violations.append(f"{py.relative_to(root)}:{n}: {m.group(2)}")
+    assert not violations, (
+        "LOCBENCH IMPORT VIOLATION — logic/oli/ must never import logic.locbench "
+        "(the oracle drives the brain, not the reverse; locbench §11.3):\n"
+        + "\n".join(violations)
     )

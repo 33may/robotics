@@ -1,0 +1,16 @@
+# bench-reference — the harness's measuring stick, NOT a real localizer (design.md D13).
+#
+# Deliberately minimal: the reference module only replays the GT feed, so its env is just the
+# brain-compatible base (numpy + stdlib is what glide needs) + pyyaml (registry reads
+# config.yaml) + pytest (the in-folder test_contract). Nothing else. This IS §7.2's proof —
+# a conforming candidate needs no special stack; the contract asks for nothing exotic.
+#
+# `locbench env create reference` solves this and freezes the exact result to lock.yml.
+name: bench-reference
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pyyaml
+  - pytest

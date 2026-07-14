@@ -107,6 +107,17 @@ def add_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--map", default=None,
                     help="baked occupancy artifact dir (occupancy.npy + occupancy.json) → the "
                          "dev-app Nav Map panel (bake with reason/mapping/occupancy_io.py)")
+    # service brain (MAY-173 locbench): the isolated goal-driven brain — Nav reason, no
+    # joystick; any client steers it over the W4 goal socket and reads W5 telemetry back.
+    ap.add_argument("--service", action="store_true",
+                    help="glide: boot brain_main --service (goal-driven Nav + the W4/W5 seam) "
+                         "instead of the teleop brain; requires --debug-pose and --map, "
+                         "conflicts with --dev-app")
+    ap.add_argument("--shadow", default=None, metavar="NAME",
+                    help="service: run this localization realization in shadow (measured "
+                         "only) — requires --cameras (the host consumes the frame channel)")
+    ap.add_argument("--shadow-config", default=None, metavar="JSON_FILE",
+                    help="config overrides for the shadow realization")
 
 
 # ── pure command builders ────────────────────────────────────────────────────────
@@ -186,7 +197,10 @@ def brain_argv(a: argparse.Namespace) -> list[str]:
 
     `--dev-app` routes the brain to the windowed dev app (same Orchestrator + a UI); it
     attaches to the same World socket and launches the joystick from its Teleop panel.
+    `--service` routes to the isolated goal-driven brain instead (locbench design.md D5).
     """
+    if getattr(a, "service", False):
+        return _service_brain_argv(a)
     entry = ["-m", _DEVAPP_MODULE] if a.dev_app else [str(_BRAIN_ENTRY)]
     py = ["conda", "run", "--no-capture-output", "-n", a.brain_env, "python", "-u",
           *entry, "--socket", a.socket]
@@ -226,6 +240,41 @@ def brain_argv(a: argparse.Namespace) -> list[str]:
             py += ["--map", str(Path(a.map).resolve())]
     if a.walk_after is not None:
         py += ["--walk-after", str(a.walk_after)]
+    if a.duration:
+        py += ["--duration", str(a.duration)]
+    return py
+
+
+def _service_brain_argv(a: argparse.Namespace) -> list[str]:
+    """conda-run argv for `brain_main --service` — the goal-driven brain (locbench §2).
+
+    Fails FAST on a half-configured stack: the service brain drives Nav on the GT debug-pose
+    channel over the baked map, and there is exactly one brain per World socket (so no
+    --dev-app alongside). The goal channel is the only steering input — no joystick flags.
+    """
+    if a.dev_app:
+        raise ValueError("--service conflicts with --dev-app: one brain per World socket "
+                         "(dev_app migrates onto the service seam later)")
+    if a.mode != "glide":
+        raise ValueError("--service requires --mode glide (Stage 1 drives the glide path)")
+    if not getattr(a, "debug_pose", None):
+        raise ValueError("--service requires --debug-pose (Nav's Stage-1 GT localizer)")
+    if not getattr(a, "map", None):
+        raise ValueError("--service requires --map (baked occupancy artifact dir)")
+    if getattr(a, "shadow", None) and not getattr(a, "cameras", False):
+        raise ValueError("--shadow requires --cameras (the shadow host consumes the "
+                         "World's frame channel)")
+    py = ["conda", "run", "--no-capture-output", "-n", a.brain_env, "python", "-u",
+          str(_BRAIN_ENTRY), "--socket", a.socket,
+          "--mode", "glide", "--service",
+          "--debug-pose", a.debug_pose,
+          # Absolutize against the launcher CWD (brain subprocess runs cwd=repo root).
+          "--map-dir", str(Path(a.map).resolve()),
+          "--glide-scale", str(a.glide_scale)]
+    if getattr(a, "shadow", None):
+        py += ["--shadow", a.shadow, "--camera-socket", a.camera_socket]
+        if getattr(a, "shadow_config", None):
+            py += ["--shadow-config", str(Path(a.shadow_config).resolve())]
     if a.duration:
         py += ["--duration", str(a.duration)]
     return py

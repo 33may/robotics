@@ -138,3 +138,30 @@ def test_set_goal_forces_full_replan():
     assert nav.path is None
     p2 = nav.plan(RobotPose(stamp_ns=0, x=0.5, y=0.5))
     assert p2[-1] == (0.5, 18.5)
+
+
+# ── the observable surface (telemetry / dev_app read these) ──────────────────
+
+
+def test_goal_property_reflects_set_and_clear():
+    nav = Nav(_empty_map(), _loc_at(0.5, 0.5))
+    assert nav.goal is None
+    nav.set_goal(GoalCoordinate(8.5, 0.5))
+    assert nav.goal == GoalCoordinate(8.5, 0.5)
+    nav.clear_goal()
+    assert nav.goal is None
+
+
+def test_last_pose_is_the_driving_pose():
+    nav = Nav(_empty_map(), _loc_at(0.5, 0.5, yaw=0.25))
+    assert nav.last_pose is None  # nothing localized before the first tick
+    nav.set_goal(GoalCoordinate(8.5, 0.5))
+    nav.to_policy_in(_obs())
+    assert nav.last_pose == RobotPose(stamp_ns=0, x=0.5, y=0.5, yaw=0.25)
+
+
+def test_last_pose_tracks_localizer_dropout():
+    nav = Nav(_empty_map(), GroundTruthLocalizer(pose_reader=lambda: None))
+    nav.set_goal(GoalCoordinate(8.5, 0.5))
+    nav.to_policy_in(_obs())
+    assert nav.last_pose is None  # a lost tick must not leave a stale pose behind
