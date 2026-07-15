@@ -89,10 +89,13 @@ def main() -> None:
     ap.add_argument("--duration", type=float, default=0.0,
                     help="wall-clock cap in seconds (0 = drive the whole route)")
     ap.add_argument("--spawn-height", type=float, default=1.1)
-    ap.add_argument("--settle-steps", type=int, default=200)
+    ap.add_argument("--settle-seconds", type=float, default=0.2,
+                    help="settle in SIM-TIME (not steps): the base pitch is pinned off "
+                         "the settle transient, so 0.2 s matches glide's upright capture "
+                         "regardless of physics rate. Longer reclines the torso → head tilts up.")
     ap.add_argument("--arrive-radius", type=float, default=0.6)
-    ap.add_argument("--decimation", type=int, default=10,
-                    help="physics ticks per follower command (10 ms at 1 kHz physics)")
+    ap.add_argument("--decimation", type=int, default=2,
+                    help="physics ticks per follower command (10 ms at 200 Hz physics)")
     args = ap.parse_args()
 
     # Coverage spec → cell-grid targets → dense deployment-planner path (fails
@@ -118,12 +121,13 @@ def main() -> None:
     from humanoid.logic.simulation.isaacsim.oli import NUM_JOINTS, Oli  # noqa: E402
     from humanoid.logic.simulation.isaacsim.sim_comm import SimComm  # noqa: E402
 
-    # 1 kHz physics — MUST match glide_world_main exactly. The settled base pitch is a
-    # capture off the settle TRANSIENT (glide pins it at 200 steps × 1/1000 = 0.2 s, torso
-    # still upright → level head). At 1/200 the same 200 steps run 1.0 s, the crouch relaxes
-    # ~13° further back, and the head ends up staring at the ceiling (2026-07-15 bug). Keep
-    # the drive's base behaviour byte-identical to the demo runtime it must localize against.
-    physics_dt = 1.0 / 1000.0
+    # 200 Hz physics for speed (~5× realtime vs ~7× at 1 kHz). Head-level correctness
+    # is NOT tied to the physics RATE — it's tied to the settle DURATION in sim-time: the
+    # base pitch is pinned off the settle transient, and glide captures it at 0.2 s (torso
+    # still upright → level head). We settle the same 0.2 sim-s here (see --settle-seconds),
+    # so the recorded head matches the demo runtime regardless of physics_dt. Running the
+    # settle LONGER (the old 200 steps × 1/200 = 1.0 s) reclined the torso ~13° → head up.
+    physics_dt = 1.0 / 200.0
     world = World(stage_units_in_meters=1.0, physics_dt=physics_dt, rendering_dt=1.0 / 60.0)
     world.scene.add_default_ground_plane()
     if args.scene.exists():
@@ -143,7 +147,8 @@ def main() -> None:
 
     kp = np.full(NUM_JOINTS, 150.0, dtype=np.float32)
     kd = np.full(NUM_JOINTS, 5.0, dtype=np.float32)
-    for _ in range(args.settle_steps):
+    settle_steps = max(1, int(round(args.settle_seconds / physics_dt)))  # sim-time, not rate
+    for _ in range(settle_steps):
         oli.apply_isaac(home_isaac, zeros, zeros, kp, kd)
         world.step(render=False)
     stand_z = float(oli.base_world_position()[2])
