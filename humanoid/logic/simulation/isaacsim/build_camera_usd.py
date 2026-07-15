@@ -1,8 +1,9 @@
-"""build_camera_usd.py — bake Oli's two D435i cameras into the robot USD sensor layer.
+"""build_camera_usd.py — bake Oli's D435i cameras into the robot USD sensor layer.
 
-Authors one `UsdGeom.Camera` prim per camera (chest, head) as a child of its parent
-link, into `HU_D04_01_sensor.usd` — the (otherwise empty) Sensor-variant payload of
-the robot asset. Idempotent: re-running overwrites the same two prims, never dups.
+Authors one `UsdGeom.Camera` prim per camera (chest, head RGBD + the head stereo
+pair, MAY-173 T1) as a child of its parent link, into `HU_D04_01_sensor.usd` — the
+(otherwise empty) Sensor-variant payload of the robot asset. Idempotent:
+re-running overwrites the same prims, never dups.
 Mounts + optics come from the shared `logic.oli.camera_mounts` table, so the USD
 placement and the brain's FK derivation agree by construction (design.md D1/D3/D10).
 
@@ -31,6 +32,7 @@ from humanoid.logic.oli.camera_mounts import (  # noqa: E402
     CAMERAS,
     DEFAULT_HEIGHT,
     DEFAULT_WIDTH,
+    STEREO_CAMERAS,
     CameraMount,
     to_parent_local,
 )
@@ -84,7 +86,7 @@ def bake_cameras(sensor_layer_path) -> list[str]:
     sensor_layer_path = str(sensor_layer_path)
     stage = Usd.Stage.Open(sensor_layer_path)
     paths = []
-    for mount in CAMERAS:
+    for mount in CAMERAS + STEREO_CAMERAS:
         path = camera_prim_path(mount)
         cam = UsdGeom.Camera.Define(stage, path)
         xf = UsdGeom.Xformable(cam)

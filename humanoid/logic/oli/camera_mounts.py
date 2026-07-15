@@ -32,6 +32,8 @@ from .contracts import CameraIntrinsics  # the intrinsics type lives with the co
 D435I_RGB_HFOV_DEG: float = 69.0
 DEFAULT_WIDTH: int = 1280
 DEFAULT_HEIGHT: int = 720
+# Physical separation of the D435i's left/right stereo imagers (Intel spec).
+D435I_STEREO_BASELINE_M: float = 0.050
 
 # ── Kinematic chain (base_link → link), from the HU_D04_01 URDF ────────────────
 # child_link -> (parent_link, translation in the parent frame). All joint rpy=0,
@@ -107,3 +109,45 @@ HEAD_CAM = CameraMount(
     pitch_down_deg=0.0,
 )
 CAMERAS: Tuple[CameraMount, ...] = (CHEST_CAM, HEAD_CAM)
+
+
+# ── Stereo rig (MAY-173 locdev T1: cuVGL + map-bake input) ───────────────────
+
+
+def camera_right_axis(pitch_down_deg: float) -> np.ndarray:
+    """The camera's image-sense right axis in the base frame: view × world-up,
+    for a mount pitched about +Y with no roll (same math as the USD bake)."""
+    th = np.radians(pitch_down_deg)
+    view = np.array([np.cos(th), 0.0, -np.sin(th)])
+    right = np.cross(view, [0.0, 0.0, 1.0])
+    return right / np.linalg.norm(right)
+
+
+def stereo_pair(
+    mount: CameraMount, baseline_m: float = D435I_STEREO_BASELINE_M
+) -> Tuple[CameraMount, CameraMount]:
+    """Derive a (left, right) stereo pair from a mono mount: same parent/pitch/FOV,
+    offset ±baseline/2 along the camera's local right axis. Image-sense naming —
+    `<name>_left` is the camera's left (matches RealSense: infra1 = left imager)."""
+    right_axis = camera_right_axis(mount.pitch_down_deg)
+    half = baseline_m / 2.0
+    left = CameraMount(
+        name=f"{mount.name}_left",
+        parent_link=mount.parent_link,
+        pos_base=mount.pos_base - half * right_axis,
+        pitch_down_deg=mount.pitch_down_deg,
+        hfov_deg=mount.hfov_deg,
+    )
+    right = CameraMount(
+        name=f"{mount.name}_right",
+        parent_link=mount.parent_link,
+        pos_base=mount.pos_base + half * right_axis,
+        pitch_down_deg=mount.pitch_down_deg,
+        hfov_deg=mount.hfov_deg,
+    )
+    return left, right
+
+
+# The opt-in stereo rig: head pair only (cuVGL wants ≥1 stereo camera; the head's
+# 0° pitch sees the scene the coverage drive and reloc queries care about).
+STEREO_CAMERAS: Tuple[CameraMount, ...] = stereo_pair(HEAD_CAM)

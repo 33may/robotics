@@ -61,7 +61,11 @@ def main() -> None:
     from isaacsim.core.api.objects import FixedCuboid
     from pxr import Usd, UsdGeom
 
-    from humanoid.logic.oli.camera_mounts import CAMERAS
+    from humanoid.logic.oli.camera_mounts import (
+        CAMERAS,
+        D435I_STEREO_BASELINE_M,
+        STEREO_CAMERAS,
+    )
     from humanoid.logic.simulation.isaacsim.oli import Oli
 
     world = World(stage_units_in_meters=1.0, physics_dt=1.0 / 200.0, rendering_dt=1.0 / 60.0)
@@ -71,7 +75,8 @@ def main() -> None:
     spawn = np.array([0.0, 0.0, 1.05])
     oli = Oli(
         world, spawn_pose=tuple(spawn), pin_root=True,
-        cameras=True, camera_resolution=(args.res[0], args.res[1]),
+        cameras=True, stereo_cameras=True,
+        camera_resolution=(args.res[0], args.res[1]),
     )
     oli.set_joint_state(np.zeros(oli.num_dof))  # nominal joints → mount table applies directly
 
@@ -119,6 +124,33 @@ def main() -> None:
         # head chain rests a few mm/deg off zero → ~2 cm at the head. That's consistency,
         # not sub-mm calibration; the real signal is "camera renders where the mount says".
         ok = ok and pose_err < 0.03 and abs(hfov - 69.0) < 1.0 and bool(finite.any())
+
+    # ── Head stereo pair (MAY-173 locdev T1): RGB-only, FK + baseline check ──
+    stereo_pos = {}
+    for m in STEREO_CAMERAS:
+        rgb = oli.read_camera_rgb(m.name)
+        _save_png(args.out / f"{m.name}_rgb.png", rgb)
+
+        cam_path = f"/World/Oli/{m.parent_link}/{m.name}_camera"
+        mm = UsdGeom.Xformable(stage.GetPrimAtPath(cam_path)).ComputeLocalToWorldTransform(
+            Usd.TimeCode.Default()
+        )
+        world_pos = np.array(mm.ExtractTranslation())
+        stereo_pos[m.name] = world_pos
+        expected = base_pos + m.pos_base
+        pose_err = float(np.linalg.norm(world_pos - expected))
+        view = (np.array(mm.ExtractRotationMatrix()).T) @ np.array([0.0, 0.0, -1.0])
+        print(
+            f"[smoke] {m.name:10s} pose_err={pose_err:.4f}m "
+            f"view=({view[0]:.2f},{view[1]:.2f},{view[2]:.2f}) rgb={rgb.shape}",
+            flush=True,
+        )
+        ok = ok and pose_err < 0.03
+
+    baseline = float(np.linalg.norm(stereo_pos["head_left"] - stereo_pos["head_right"]))
+    print(f"[smoke] stereo baseline={baseline * 1000:.1f}mm "
+          f"(expect {D435I_STEREO_BASELINE_M * 1000:.0f}mm)", flush=True)
+    ok = ok and abs(baseline - D435I_STEREO_BASELINE_M) < 1e-3
 
     print(f"[smoke] VERDICT: {'PASS' if ok else 'FAIL'} — frames saved to {args.out}", flush=True)
     app.close()

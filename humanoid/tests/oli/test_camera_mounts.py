@@ -13,10 +13,14 @@ import numpy as np
 
 from humanoid.logic.oli.camera_mounts import (
     CAMERAS,
+    D435I_STEREO_BASELINE_M,
+    HEAD_CAM,
+    STEREO_CAMERAS,
     CameraIntrinsics,
     CameraMount,
     link_origin_base,
     rgb_intrinsics,
+    stereo_pair,
     to_parent_local,
 )
 
@@ -91,3 +95,60 @@ def test_module_is_brain_pure():
 
     assert "isaacsim" not in sys.modules
     assert "limxsdk" not in sys.modules
+
+
+# ── Stereo pair (MAY-173 locdev T1: cuVGL/map-bake input) ────────────────────
+
+
+def _stereo(name: str) -> CameraMount:
+    return next(c for c in STEREO_CAMERAS if c.name == name)
+
+
+def test_stereo_baseline_is_d435i_faithful():
+    # The D435i's physical left/right imager separation: 50 mm.
+    assert D435I_STEREO_BASELINE_M == 0.050
+
+
+def test_head_stereo_pair_derived_from_head_mount():
+    assert {c.name for c in STEREO_CAMERAS} == {"head_left", "head_right"}
+    for cam in STEREO_CAMERAS:
+        assert cam.parent_link == HEAD_CAM.parent_link
+        assert cam.pitch_down_deg == HEAD_CAM.pitch_down_deg
+        assert cam.hfov_deg == HEAD_CAM.hfov_deg
+
+
+def test_head_stereo_offsets_straddle_head_mount():
+    # Head cam has 0 pitch: camera-right = base -Y (image-sense left = robot +Y,
+    # matching RealSense: infra1 IS the left imager).
+    left, right = _stereo("head_left"), _stereo("head_right")
+    half = D435I_STEREO_BASELINE_M / 2
+    np.testing.assert_allclose(
+        left.pos_base, HEAD_CAM.pos_base + [0.0, half, 0.0], atol=1e-9
+    )
+    np.testing.assert_allclose(
+        right.pos_base, HEAD_CAM.pos_base + [0.0, -half, 0.0], atol=1e-9
+    )
+
+
+def test_stereo_pair_preserves_baseline_for_pitched_mounts():
+    # stereo_pair() must offset along the camera's LOCAL right axis: for any
+    # pitch-about-Y mount (no roll) the pair separation stays exactly the baseline
+    # and is orthogonal to the optical axis.
+    pitched = CameraMount(
+        name="probe",
+        parent_link="waist_pitch_link",
+        pos_base=np.array([0.1, 0.0, 0.4]),
+        pitch_down_deg=35.0,
+    )
+    left, right = stereo_pair(pitched)
+    sep = left.pos_base - right.pos_base
+    np.testing.assert_allclose(np.linalg.norm(sep), D435I_STEREO_BASELINE_M, atol=1e-9)
+    th = np.radians(pitched.pitch_down_deg)
+    view = np.array([np.cos(th), 0.0, -np.sin(th)])
+    np.testing.assert_allclose(np.dot(sep, view), 0.0, atol=1e-9)
+
+
+def test_stereo_cameras_do_not_leak_into_rgbd_table():
+    # CAMERAS is the RGBD streaming table (cuvslam candidate, glide dev-app) —
+    # the stereo pair is a separate, opt-in rig.
+    assert {c.name for c in CAMERAS} == {"chest", "head"}

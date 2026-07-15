@@ -95,6 +95,7 @@ class Oli:
         imu_offset_pitch: float = 0.0,
         imu_offset_roll: float = 0.0,
         cameras: bool = False,
+        stereo_cameras: bool = False,
         camera_resolution: Tuple[int, int] = (1280, 720),
     ) -> None:
         # Deferred isaac imports so this module is importable for static analysis.
@@ -193,6 +194,17 @@ class Oli:
                 self._cameras = {}
                 print(f"[oli] camera attach skipped ({e})", flush=True)
 
+        # ── Head stereo pair (MAY-173 locdev T1) — separate, opt-in rig ─────
+        # RGB-only (no depth annotator): cuVGL/map-bake input, never part of the
+        # RGBD table the CameraPublisher iterates with read_camera_rgbd.
+        self._stereo_cameras = {}  # name -> (Camera sensor, CameraMount)
+        if stereo_cameras:
+            try:
+                self._attach_stereo_cameras(camera_resolution)
+            except Exception as e:  # pragma: no cover - defensive
+                self._stereo_cameras = {}
+                print(f"[oli] stereo camera attach skipped ({e})", flush=True)
+
     def _attach_imu(self, offset_pitch: float, offset_roll: float):
         from isaacsim.sensors.physics import IMUSensor
         from isaacsim.core.utils.numpy.rotations import euler_angles_to_quats
@@ -224,9 +236,34 @@ class Oli:
             cam.add_distance_to_image_plane_to_frame()  # planar Z depth, meters
             self._cameras[mount.name] = (cam, mount)
 
+    def _attach_stereo_cameras(self, resolution: Tuple[int, int]) -> None:
+        """Wrap the baked head stereo prims (build_camera_usd.py) with RGB-only
+        render sensors — no depth annotator, the pair exists for cuVGL/map-bake."""
+        from isaacsim.sensors.camera import Camera
+
+        from humanoid.logic.oli.camera_mounts import STEREO_CAMERAS
+
+        self._camera_resolution = (int(resolution[0]), int(resolution[1]))
+        for mount in STEREO_CAMERAS:
+            path = f"{self._prim_path}/{mount.parent_link}/{mount.name}_camera"
+            cam = Camera(prim_path=path, resolution=self._camera_resolution)
+            cam.initialize()
+            self._stereo_cameras[mount.name] = (cam, mount)
+
     @property
     def camera_names(self) -> List[str]:
         return list(self._cameras.keys())
+
+    @property
+    def stereo_camera_names(self) -> List[str]:
+        return list(self._stereo_cameras.keys())
+
+    def read_camera_rgb(self, name: str) -> np.ndarray:
+        """(H,W,3) uint8 RGB for a stereo camera. The host must have rendered
+        (`world.step(render=True)`) this tick for the frame to be current."""
+        cam, _mount = self._stereo_cameras[name]
+        rgba = cam.get_rgba()
+        return np.ascontiguousarray(rgba[:, :, :3], dtype=np.uint8)
 
     def read_camera_rgbd(self, name: str) -> Tuple[np.ndarray, np.ndarray]:
         """(rgb (H,W,3) uint8, depth (H,W) float32 m) for a camera. The host must have

@@ -15,7 +15,12 @@ import pytest
 pytest.importorskip("pxr")
 from pxr import Usd, UsdGeom  # noqa: E402
 
-from humanoid.logic.oli.camera_mounts import CAMERAS  # noqa: E402
+from humanoid.logic.oli.camera_mounts import (  # noqa: E402
+    CAMERAS,
+    D435I_STEREO_BASELINE_M,
+    HEAD_CAM,
+    STEREO_CAMERAS,
+)
 from humanoid.logic.simulation.isaacsim.build_camera_usd import (  # noqa: E402
     bake_cameras,
     camera_prim_path,
@@ -85,9 +90,25 @@ def test_camera_has_d435i_fov(baked_stage):
     np.testing.assert_allclose(hfov_deg, 69.0, atol=0.5)
 
 
+def test_head_stereo_pair_baked_at_baseline(baked_stage):
+    # MAY-173 locdev T1: the head stereo pair (D435i-faithful 50 mm) straddles the
+    # head mount, both looking horizontal forward like the head cam.
+    stage, _ = baked_stage
+    half = D435I_STEREO_BASELINE_M / 2
+    left, right = STEREO_CAMERAS
+    pos_l, view_l = _world_pose(stage, camera_prim_path(left))
+    pos_r, view_r = _world_pose(stage, camera_prim_path(right))
+    np.testing.assert_allclose(pos_l, HEAD_CAM.pos_base + [0.0, half, 0.0], atol=1e-4)
+    np.testing.assert_allclose(pos_r, HEAD_CAM.pos_base + [0.0, -half, 0.0], atol=1e-4)
+    np.testing.assert_allclose(view_l, [1.0, 0.0, 0.0], atol=1e-3)
+    np.testing.assert_allclose(view_r, [1.0, 0.0, 0.0], atol=1e-3)
+    baseline = np.linalg.norm(pos_l - pos_r)
+    np.testing.assert_allclose(baseline, D435I_STEREO_BASELINE_M, atol=1e-6)
+
+
 def test_bake_is_idempotent(baked_stage):
     stage, sensor = baked_stage
     bake_cameras(sensor)  # second run
     stage2 = Usd.Stage.Open(str(sensor.parent.parent / "HU_D04_01.usd"))
     cams = [p for p in stage2.Traverse() if p.GetTypeName() == "Camera"]
-    assert len(cams) == 2, f"expected 2 cameras after re-bake, got {len(cams)}"
+    assert len(cams) == 4, f"expected 4 cameras after re-bake, got {len(cams)}"
