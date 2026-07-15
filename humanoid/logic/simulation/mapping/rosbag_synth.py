@@ -91,11 +91,17 @@ def quat_from_matrix(R: np.ndarray) -> np.ndarray:
                      0.25 * s, (R[1, 0] - R[0, 1]) / s])
 
 
+# Tolerances sized from the v1 drive: steady-state mount noise ≤0.2 mm / 0.09°,
+# settle transient 51 mm / 1.3° — these sit ~10× above noise, ~10× below transient.
+_TOL_TRANS_M = 5e-3
+_TOL_ROT_DEG = 0.3
+
+
 def recover_static_mount(
     pairs: Sequence[Tuple[np.ndarray, np.ndarray]],
     *,
-    tol_trans_m: float = 1e-3,
-    tol_rot_deg: float = 0.1,
+    tol_trans_m: float = _TOL_TRANS_M,
+    tol_rot_deg: float = _TOL_ROT_DEG,
 ) -> np.ndarray:
     """Recover the fixed base_link→optical mount from rendered world poses.
 
@@ -106,8 +112,11 @@ def recover_static_mount(
     if not pairs:
         raise ValueError("recover_static_mount: no pose pairs")
     mounts = [np.linalg.inv(T_mb) @ usd_cam_to_optical(T_wc) for T_mb, T_wc in pairs]
-    ref = mounts[0]
-    for i, m in enumerate(mounts[1:], start=1):
+    # reference = median-nearest mount (same rule as _drop_transient_samples;
+    # a first-sample reference would double the effective tolerance band)
+    t = np.stack([m[:3, 3] for m in mounts])
+    ref = mounts[int(np.argmin(np.linalg.norm(t - np.median(t, axis=0), axis=1)))]
+    for i, m in enumerate(mounts):
         dt = np.linalg.norm(m[:3, 3] - ref[:3, 3])
         cos_ang = (np.trace(ref[:3, :3].T @ m[:3, :3]) - 1.0) / 2.0
         ang_deg = math.degrees(math.acos(min(1.0, max(-1.0, cos_ang))))
@@ -276,6 +285,39 @@ def _load_samples(dump_dir: Path, spec: BagSpec) -> Tuple[dict, List[dict]]:
     return rig, samples
 
 
+def _drop_transient_samples(
+    samples: List[dict],
+    sides: Sequence[str] = ("left", "right"),
+    *,
+    tol_trans_m: float = _TOL_TRANS_M,
+    tol_rot_deg: float = _TOL_ROT_DEG,
+) -> Tuple[List[dict], int]:
+    """Drop samples whose instantaneous mount deviates from the robust reference.
+
+    Real drives leak a few pre-settle frames at the start (v1: samples 0–1,
+    ~5 cm high): those contradict the static tf and must not enter the bag.
+    Reference = the sample whose mount translation is nearest the elementwise
+    median (immune to leading transients). A sample is dropped if EITHER stereo
+    side deviates.
+    """
+    keep = np.ones(len(samples), dtype=bool)
+    for side in sides:
+        M = np.stack([
+            np.linalg.inv(s["base"]) @ usd_cam_to_optical(np.array(s[side]["T_world_cam"]))
+            for s in samples
+        ])
+        t = M[:, :3, 3]
+        ref = M[int(np.argmin(np.linalg.norm(t - np.median(t, axis=0), axis=1)))]
+        dt = np.linalg.norm(t - ref[:3, 3], axis=1)
+        cos_ang = np.clip(
+            (np.einsum("nij,ij->n", M[:, :3, :3], ref[:3, :3]) - 1.0) / 2.0, -1.0, 1.0
+        )
+        ang = np.degrees(np.arccos(cos_ang))
+        keep &= (dt <= tol_trans_m) & (ang <= tol_rot_deg)
+    kept = [s for s, k in zip(samples, keep) if k]
+    return kept, int(len(samples) - len(kept))
+
+
 # ─── synthesis ────────────────────────────────────────────────────────────────
 
 def synthesize(
@@ -287,6 +329,11 @@ def synthesize(
     rig, samples = _load_samples(dump_dir, spec)
     if not samples:
         raise ValueError(f"no complete stereo samples found in {dump_dir}")
+    samples, n_transient = _drop_transient_samples(samples)
+    if n_transient:
+        print(f"[rosbag_synth] dropped {n_transient} pre-settle transient sample(s)")
+    if not samples:
+        raise ValueError("all samples classified as transient — dump unusable")
     left_cam, right_cam = rig["stereo_pair"]
     baseline = float(rig["baseline_m"])
     frames = {
@@ -354,7 +401,12 @@ def synthesize(
             put("od", _odom_msg(s["base"], t, spec.map_frame, spec.base_frame),
                 _MSG_ODOM, t)
 
-    return {"stamps": len(samples), "messages": n_msgs, "out": str(out_path)}
+    return {
+        "stamps": len(samples),
+        "dropped_transient": n_transient,
+        "messages": n_msgs,
+        "out": str(out_path),
+    }
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────

@@ -142,6 +142,21 @@ def test_recover_static_mount_returns_constant_base_to_optical():
     assert np.allclose(T_base_opt, usd_cam_to_optical(mount), atol=1e-9)
 
 
+def test_recover_static_mount_uses_median_reference_not_first_sample():
+    """Samples ±4 mm around the median are all fine (tol 5 mm) — but only if the
+    reference is the median-nearest mount, not sample 0 (else 0↔2 span 8 mm)."""
+    mount = _mount_usd(0.025)
+    pairs = []
+    for i, dx in enumerate((+0.004, 0.0, -0.004)):
+        m = mount.copy()
+        m[0, 3] += dx
+        T_mb = base_pose_matrix(x=0.1 * i, y=0.0, yaw=0.0)
+        pairs.append((T_mb, T_mb @ m))
+    T = recover_static_mount(pairs)  # must not raise
+    expect = usd_cam_to_optical(mount)  # the dx=0 middle sample
+    assert np.allclose(T, expect, atol=1e-12)
+
+
 def test_recover_static_mount_rejects_inconsistent_mounts():
     mount = _mount_usd(0.025)
     wobble = mount.copy()
@@ -273,6 +288,37 @@ def test_synthesize_every_n_subsamples(tiny_dump, tmp_path):
     msgs = _read_bag(tmp_path / "bag")
     assert len(msgs["/left/image_raw"]) == 2
     assert stats["stamps"] == 2
+
+
+def test_synthesize_drops_settle_transient_samples(tmp_path):
+    """Real drives leak 1–2 pre-settle frames (v1: samples 0–1, ~5 cm high).
+
+    Those frames contradict the static mount tf — they must be dropped loudly,
+    not written, and not crash the synth.
+    """
+    rec = DriveRecorder(tmp_path / "drive", RIG)
+    rng = np.random.default_rng(7)
+    mounts = {"head_left": _mount_usd(0.025), "head_right": _mount_usd(-0.025)}
+    for i in range(N_STAMPS):
+        stamp = STAMP0 + i * DT
+        T_mb = base_pose_matrix(x=0.1 * i, y=0.0, yaw=0.0)
+        rec.add_base_pose(stamp, x=0.1 * i, y=0.0, yaw=0.0)
+        for cam, mnt in mounts.items():
+            T_bc = mnt.copy()
+            if i == 0:  # mid-settle: head still 5 cm above its resting pose
+                T_bc[2, 3] += 0.05
+            rgb = rng.integers(0, 255, size=(8, 12, 3), dtype=np.uint8)
+            rec.add_frame(cam, stamp, rgb, T_mb @ T_bc)
+    rec.close()
+
+    stats = synthesize(tmp_path / "drive", tmp_path / "bag", BagSpec())
+    assert stats["dropped_transient"] == 1
+    assert stats["stamps"] == N_STAMPS - 1
+    msgs = _read_bag(tmp_path / "bag")
+    assert len(msgs["/left/image_raw"]) == N_STAMPS - 1
+    # the bag starts at the first SETTLED stamp
+    _, img0 = msgs["/left/image_raw"][0]
+    assert img0.header.stamp.nanosec == (STAMP0 + DT) % 1_000_000_000
 
 
 def test_cli_main_writes_bag(tiny_dump, tmp_path):
