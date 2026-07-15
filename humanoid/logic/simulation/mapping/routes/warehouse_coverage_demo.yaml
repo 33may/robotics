@@ -1,0 +1,14 @@
+# warehouse-coverage-demo — SMALL fast variant of warehouse_coverage.yaml.
+#
+# Same generator/frontier-walk, coarse sampling: whole-map coverage in a few
+# minutes so the T3 bake pipeline (rosbag synth + create_map_offline) can be
+# built and iterated against a REAL, complete (if sparse) dataset while the full
+# overnight drive records. Not the demo-day map — a pipeline fixture.
+name: warehouse-coverage-demo
+cells: [4, 4]
+seed: 33
+laps: 1
+margin_m: 1.0
+clearance_m: 0.5
+speed: 0.8
+points_per_cell: 2
