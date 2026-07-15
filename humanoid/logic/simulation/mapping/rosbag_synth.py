@@ -146,6 +146,11 @@ class BagSpec:
     storage: str = "mcap"  # mcap | sqlite3
     every_n: int = 1
     max_stamps: int | None = None
+    #: drop everything before dump_start + skip_seconds — the cold-start frames
+    #: are UNCONSTRAINED in cuVSLAM's pose graph (no loop closure repairs them),
+    #: so they must never reach the bake. Mid-drive losses are NOT trimmable
+    #: here; those are the loop-closure/optimizer's job (and the T6 detector's).
+    skip_seconds: float = 0.0
 
 
 # ─── message assembly (rosbags typestore) ─────────────────────────────────────
@@ -265,6 +270,9 @@ def _load_samples(dump_dir: Path, spec: BagSpec) -> Tuple[dict, List[dict]]:
         set(rows[left_cam]) & set(rows[right_cam]) & set(rows["base"])
     )
     dropped = len(set(rows[left_cam]) | set(rows[right_cam])) - len(stamps)
+    if spec.skip_seconds > 0 and stamps:
+        cutoff = stamps[0] + int(spec.skip_seconds * 1e9)
+        stamps = [s for s in stamps if s >= cutoff]
     stamps = stamps[:: max(1, spec.every_n)]
     if spec.max_stamps is not None:
         stamps = stamps[: spec.max_stamps]
@@ -420,12 +428,21 @@ def main(argv: Iterable[str] | None = None) -> int:
     ap.add_argument("--storage", choices=("mcap", "sqlite3"), default="mcap")
     ap.add_argument("--every-n", type=int, default=1, help="keep every Nth stamp")
     ap.add_argument("--max-stamps", type=int, default=None, help="cap stamp count")
+    ap.add_argument(
+        "--skip-seconds", type=float, default=0.0,
+        help="drop everything before dump_start + SKIP (cold-start pre-lock frames)",
+    )
     args = ap.parse_args(list(argv) if argv is not None else None)
 
     stats = synthesize(
         args.dump,
         args.out,
-        BagSpec(storage=args.storage, every_n=args.every_n, max_stamps=args.max_stamps),
+        BagSpec(
+            storage=args.storage,
+            every_n=args.every_n,
+            max_stamps=args.max_stamps,
+            skip_seconds=args.skip_seconds,
+        ),
     )
     print(json.dumps(stats))
     return 0

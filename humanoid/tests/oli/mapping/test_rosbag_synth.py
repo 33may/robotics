@@ -321,6 +321,20 @@ def test_synthesize_drops_settle_transient_samples(tmp_path):
     assert img0.header.stamp.nanosec == (STAMP0 + DT) % 1_000_000_000
 
 
+def test_skip_seconds_trims_unconstrained_head(tiny_dump, tmp_path):
+    """--skip-seconds drops everything before dump_start + skip: the pre-lock
+    cold-start frames are unconstrained in the pose graph (no loop closure can
+    ever repair them) so they must not enter the bake at all."""
+    # tiny dump stamps: STAMP0 + i*DT (DT=0.2s); skip 0.3s → drops stamps 0,1
+    stats = synthesize(tiny_dump, tmp_path / "bag", BagSpec(skip_seconds=0.3))
+    assert stats["stamps"] == N_STAMPS - 2
+    msgs = _read_bag(tmp_path / "bag")
+    assert len(msgs["/left/image_raw"]) == N_STAMPS - 2
+    _, img0 = msgs["/left/image_raw"][0]
+    first_kept = STAMP0 + 2 * DT
+    assert img0.header.stamp.nanosec == first_kept % 1_000_000_000
+
+
 def test_cli_main_writes_bag(tiny_dump, tmp_path):
     out = tmp_path / "cli_bag"
     rc = main(["--dump", str(tiny_dump), "--out", str(out), "--storage", "sqlite3"])

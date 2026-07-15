@@ -1,0 +1,11 @@
+# Camera topic config for rosbag_to_mapping_data / create_map_offline.py —
+# matches the bag written by logic/simulation/mapping/rosbag_synth.py (BagSpec defaults).
+# Schema copied from the deb's shipped examples (data_converter_zed.yaml).
+stereo_cameras:
+  - name: head
+    left: /left/image_raw
+    left_camera_info: /left/camera_info
+    right: /right/image_raw
+    right_camera_info: /right/camera_info
+    is_camera_rectified: true   # sim pair: coplanar, aligned, zero distortion — skip rectification
+    swap_rb_channels: false     # bag images are rgb8
