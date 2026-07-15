@@ -1,0 +1,26 @@
+# warehouse-coverage-v1 — cell-grid coverage spec for the map bake (MAY-173 T2).
+#
+# NOT hand-authored waypoints: cell_coverage.build_coverage_route samples random
+# free points per cell (zone-weighted), orders cells by a frontier random walk
+# (random unvisited Moore-neighbour; nearest-jump when the local ring is spent →
+# diagonal-rich, connected, novel passes), then plan_route stitches consecutive
+# targets with the DEPLOYMENT planner. Deterministic per `seed`.
+#
+# Grid: 5×5 over the warehouse extent (row 0 = south = open floor; rows 2–4 into
+# the racks; row 4 = far wall / deepest aisles where VO loses itself → dense).
+# Zone weighting (Anton, 15-07, FINAL): bottom 10 floor cells = 2 points (sparse,
+# few features anyway); the 15 rack + far-wall cells (rows 2–4) = 10 points each
+# for complete viewpoint coverage where reloc must work. Two laps (lap 2 reverses
+# per-cell headings → both directions covered for BoW retrieval).
+name: warehouse-coverage-v1
+cells: [5, 5]
+seed: 33
+laps: 2
+margin_m: 1.0
+clearance_m: 0.5
+speed: 0.8
+points_per_cell:
+  default: 10             # rack + far-wall rows (2, 3, 4) — dense coverage
+  zones:
+    - rows: [0, 1]        # open floor — sparse
+      points: 2

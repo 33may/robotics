@@ -1,0 +1,41 @@
+# Isaac ROS map-bake container (MAY-173 locdev T3) — podman build, x86_64 Ada.
+#
+# Runs NVIDIA's PREBUILT debs (never build from source — schedule rule):
+#   - ros-jazzy-isaac-mapping-ros              create_map_offline.py, rosbag_to_mapping_data
+#   - ros-jazzy-isaac-ros-visual-global-localization   cuVGL runtime node (T5)
+#
+# Build:  podman build -t oli-isaac-mapping -f Containerfile .
+# Run  :  podman run --rm -it --device nvidia.com/gpu=all --security-opt label=disable \
+#             -v <data>:/data oli-isaac-mapping bash
+# (GPU flags per memory: tooling/podman-nvidia-gpu-cdi-fedora)
+
+FROM docker.io/ros:jazzy-ros-base
+
+# ── apt repos: CUDA (ubuntu2404), Isaac ROS release-4.5, Jetson-x86_64 (VPI libs) ──
+# The VPI repo is the documented bare-metal gotcha: isaac-ros debs need libnvvpi
+# from repo.download.nvidia.com/jetson/x86_64, not from the CUDA repo.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl gnupg wget ca-certificates software-properties-common && \
+    add-apt-repository universe && \
+    mkdir -p /etc/apt/keyrings && \
+    wget -qO /tmp/cuda-keyring.deb \
+        https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb && \
+    dpkg -i /tmp/cuda-keyring.deb && rm /tmp/cuda-keyring.deb && \
+    curl -fsSL https://isaac.download.nvidia.com/isaac-ros/repos.key | \
+        gpg --dearmor -o /usr/share/keyrings/nvidia-isaac-ros.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/nvidia-isaac-ros.gpg] https://isaac.download.nvidia.com/isaac-ros/release-4.5 noble main" \
+        > /etc/apt/sources.list.d/nvidia-isaac-ros.list && \
+    curl -fsSL https://repo.download.nvidia.com/jetson/jetson-ota-public.asc | \
+        gpg --dearmor -o /etc/apt/keyrings/nvidia-jetson.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/nvidia-jetson.gpg] https://repo.download.nvidia.com/jetson/x86_64/noble r38.4 main" \
+        > /etc/apt/sources.list.d/nvidia-jetson.list && \
+    apt-get update
+
+# Separate layers: a wrong package name fails alone, cheap to iterate.
+RUN apt-get update && apt-get install -y ros-jazzy-isaac-mapping-ros && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y ros-jazzy-isaac-ros-visual-global-localization && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /data

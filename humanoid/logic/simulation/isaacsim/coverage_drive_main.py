@@ -44,11 +44,12 @@ from humanoid.logic.oli.camera_mounts import (  # noqa: E402
     rgb_intrinsics,
 )
 from humanoid.logic.oli.reason.mapping.occupancy_io import load_occupancy  # noqa: E402
+from humanoid.logic.simulation.mapping.cell_coverage import build_coverage_route  # noqa: E402
 from humanoid.logic.simulation.mapping.recorder import DriveRecorder  # noqa: E402
-from humanoid.logic.simulation.mapping.routes import load_route, plan_route  # noqa: E402
+from humanoid.logic.simulation.mapping.routes import plan_route  # noqa: E402
 from humanoid.logic.simulation.mapping.waypoint_follower import WaypointFollower  # noqa: E402
 
-_DEF_ROUTE = _HUMANOID / "logic/simulation/mapping/routes/warehouse_aisles.yaml"
+_DEF_ROUTE = _HUMANOID / "logic/simulation/mapping/routes/warehouse_coverage.yaml"
 _DEF_MAP = _HUMANOID / "assets/envs/warehouse_nvidia/nav_maps/v1"
 _DEF_SCENE = (_HUMANOID / "assets/envs/warehouse_nvidia/Isaac/Environments/"
               "Simple_Warehouse/full_warehouse.usd")
@@ -94,13 +95,16 @@ def main() -> None:
                     help="physics ticks per follower command (10 ms at 200 Hz physics)")
     args = ap.parse_args()
 
-    # Route → dense deployment-planner path (fails fast, before Isaac boots).
-    route = load_route(args.route)
+    # Coverage spec → cell-grid targets → dense deployment-planner path (fails
+    # fast, before Isaac boots). build_coverage_route is deterministic per spec seed.
     grid = load_occupancy(str(args.map_dir))
+    cov, route = build_coverage_route(args.route, grid)
     path = plan_route(route, grid, spacing_m=1.0)
     total_m = sum(math.dist(a, b) for a, b in zip(path[:-1], path[1:]))
-    print(f"[coverage] route '{route.name}': {len(route.waypoints)} targets → "
-          f"{len(path)} pts, {total_m:.0f} m, ~{total_m / route.speed / 60:.1f} min", flush=True)
+    n_cells = sum(1 for pts in cov.cells.values() if pts)
+    print(f"[coverage] spec '{route.name}': {len(route.waypoints)} targets over "
+          f"{n_cells} cells → {len(path)} pts, {total_m:.0f} m, "
+          f"~{total_m / route.speed / 60:.1f} sim-min", flush=True)
 
     from isaacsim import SimulationApp
     app = SimulationApp({"headless": args.headless})
