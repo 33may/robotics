@@ -12,10 +12,19 @@ Design (parallel to make_id_smoke_15.py):
 
 Spatial bounds (from protocols/table_mapping.json, user-confirmed 2026-05-04):
     table.bbox  = (160,  80, 540, 480)  ← full wooden board
-    id_zone.bbox = (270, 191, 424, 313)  ← the green square
+    id_zone.bbox = (270, 191, 424, 313)  ← the green square (20 × 16 cm physical)
 
-    LEFT  OOD band: x ∈ [160, 270], y ∈ [191, 313]   (110 × 122 px)
-    RIGHT OOD band: x ∈ [424, 540], y ∈ [191, 313]   (116 × 122 px)
+Pixel-to-cm scale, derived from id_zone: 154 px / 20 cm = 7.70 px/cm horizontal,
+                                          122 px / 16 cm = 7.625 px/cm vertical
+                                          → use 7.66 px/cm → 3 cm ≈ 23 px
+
+A TABLE_MARGIN_PX inset of 23 px keeps ducks ≥3 cm from the wooden board edge
+so the operator never has to place the duck where it would fall off. Only the
+table-touching side of each band is inset; the workspace-facing side is
+unchanged (it's already 110+ px clear of any table edge).
+
+    LEFT  OOD band: x ∈ [183, 270], y ∈ [191, 313]   (87 × 122 px)
+    RIGHT OOD band: x ∈ [424, 517], y ∈ [191, 313]   (93 × 122 px)
 
 Run:
   python vbti/logic/inference/protocols/generators/make_ood_smoke_15.py
@@ -41,8 +50,17 @@ CUP_POSITIONS     = [ALL_CUP_POSITIONS[i] for i in SMOKE_CUP_INDICES]
 # Workspace stays as reference (drawn green in the live overlay), but ducks
 # spawn in the two flanking bands instead of inside it.
 WORKSPACE_BBOX    = (270, 191, 424, 313)               # x0, y0, x1, y1
-LEFT_BAND_BBOX    = (160, 191, 270, 313)               # left of workspace
-RIGHT_BAND_BBOX   = (424, 191, 540, 313)               # right of workspace
+
+# 3 cm safety margin from the wooden board edge — ID zone calibration:
+# 154 px / 20 cm ≈ 7.7 px/cm horizontally → 3 cm ≈ 23 px. Only the
+# table-touching side of each band is inset (workspace-facing side already
+# has plenty of clearance).
+PX_PER_CM         = 7.66
+TABLE_MARGIN_CM   = 3.0
+TABLE_MARGIN_PX   = round(TABLE_MARGIN_CM * PX_PER_CM)  # = 23 px
+
+LEFT_BAND_BBOX    = (160 + TABLE_MARGIN_PX, 191, 270,                       313)
+RIGHT_BAND_BBOX   = (424,                   191, 540 - TABLE_MARGIN_PX,     313)
 
 N_PER_CUP         = 5
 N_LEFT_PER_CUP    = 3
@@ -142,7 +160,9 @@ def main():
             "15-trial OOD smoke — siblings of id_smoke_15. Ducks spawn in two "
             "side bands flanking the workspace (3 LEFT + 2 RIGHT per cup); cups "
             "and prompt unchanged. Tests horizontal-displacement OOD with y "
-            "matched to the ID zone so failure modes isolate the x-axis. Seed=13."
+            f"matched to the ID zone so failure modes isolate the x-axis. "
+            f"{TABLE_MARGIN_CM:.0f} cm safety margin from wooden board edge "
+            f"(≈{TABLE_MARGIN_PX} px @ {PX_PER_CM:.2f} px/cm). Seed=13."
         ),
         "task": "pick up the duck and place it in the cup",
         "total_trials": len(trials),
@@ -154,6 +174,9 @@ def main():
         "workspace_bbox": list(WORKSPACE_BBOX),
         "ood_bands": {"LEFT": list(LEFT_BAND_BBOX),
                       "RIGHT": list(RIGHT_BAND_BBOX)},
+        "table_margin_cm": TABLE_MARGIN_CM,
+        "table_margin_px": TABLE_MARGIN_PX,
+        "px_per_cm": PX_PER_CM,
         "_generated_by": "vbti/logic/inference/protocols/generators/make_ood_smoke_15.py",
     }
 

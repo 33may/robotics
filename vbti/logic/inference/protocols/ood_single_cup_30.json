@@ -1,0 +1,539 @@
+{
+  "name": "ood_single_cup_30",
+  "version": "v1",
+  "description": "30 single-cup OOD trials \u2014 sibling of id_single_cup_30. 6 cup positions \u00d7 5 trials. Ducks spawn in the LEFT/RIGHT side bands flanking the green ID zone (15 LEFT / 15 RIGHT), with fully random duck_dir_deg. Block zones at the table extremes cap the sideways reach at 10.6 cm (\u224881 px @ 7.66 px/cm) so the duck never spawns too far. Vertical extent matches the ID zone \u2192 clean horizontal-displacement OOD. Seed=13.",
+  "task": "pick up the duck and place it in the cup",
+  "total_trials": 30,
+  "id_count": 0,
+  "ood_count": 30,
+  "trials": [
+    {
+      "trial_id": 0,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        208,
+        290
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 234.7,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 1,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        236,
+        250
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 239.8,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 2,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        456,
+        304
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 312.9,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 3,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        441,
+        241
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 230.7,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 4,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        263,
+        223
+      ],
+      "cup_px": [
+        221,
+        117
+      ],
+      "duck_dir_deg": 67.5,
+      "cup_group": 0
+    },
+    {
+      "trial_id": 5,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        457,
+        247
+      ],
+      "cup_px": [
+        271,
+        173
+      ],
+      "duck_dir_deg": 10.8,
+      "cup_group": 1
+    },
+    {
+      "trial_id": 6,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        486,
+        206
+      ],
+      "cup_px": [
+        271,
+        173
+      ],
+      "duck_dir_deg": 45.5,
+      "cup_group": 1
+    },
+    {
+      "trial_id": 7,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        428,
+        274
+      ],
+      "cup_px": [
+        271,
+        173
+      ],
+      "duck_dir_deg": 246.3,
+      "cup_group": 1
+    },
+    {
+      "trial_id": 8,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        200,
+        228
+      ],
+      "cup_px": [
+        271,
+        173
+      ],
+      "duck_dir_deg": 359.3,
+      "cup_group": 1
+    },
+    {
+      "trial_id": 9,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        227,
+        296
+      ],
+      "cup_px": [
+        271,
+        173
+      ],
+      "duck_dir_deg": 357.5,
+      "cup_group": 1
+    },
+    {
+      "trial_id": 10,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        452,
+        212
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 268.1,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 11,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        225,
+        238
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 341.8,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 12,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        481,
+        293
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 285.8,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 13,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        204,
+        261
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 92.4,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 14,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        259,
+        302
+      ],
+      "cup_px": [
+        321,
+        117
+      ],
+      "duck_dir_deg": 306.0,
+      "cup_group": 2
+    },
+    {
+      "trial_id": 15,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        246,
+        202
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 319.9,
+      "cup_group": 3
+    },
+    {
+      "trial_id": 16,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        232,
+        283
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 229.9,
+      "cup_group": 3
+    },
+    {
+      "trial_id": 17,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        492,
+        297
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 235.9,
+      "cup_group": 3
+    },
+    {
+      "trial_id": 18,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        449,
+        311
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 124.6,
+      "cup_group": 3
+    },
+    {
+      "trial_id": 19,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        463,
+        229
+      ],
+      "cup_px": [
+        371,
+        173
+      ],
+      "duck_dir_deg": 214.1,
+      "cup_group": 3
+    },
+    {
+      "trial_id": 20,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        244,
+        290
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 158.5,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 21,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        216,
+        209
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 262.4,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 22,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        435,
+        199
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 193.0,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 23,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        471,
+        262
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 105.6,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 24,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        230,
+        263
+      ],
+      "cup_px": [
+        421,
+        117
+      ],
+      "duck_dir_deg": 64.6,
+      "cup_group": 4
+    },
+    {
+      "trial_id": 25,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        239,
+        253
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 94.2,
+      "cup_group": 5
+    },
+    {
+      "trial_id": 26,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        498,
+        285
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 100.8,
+      "cup_group": 5
+    },
+    {
+      "trial_id": 27,
+      "zone": "OOD",
+      "subzone": "LEFT",
+      "duck_px": [
+        211,
+        294
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 320.1,
+      "cup_group": 5
+    },
+    {
+      "trial_id": 28,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        469,
+        218
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 207.8,
+      "cup_group": 5
+    },
+    {
+      "trial_id": 29,
+      "zone": "OOD",
+      "subzone": "RIGHT",
+      "duck_px": [
+        440,
+        245
+      ],
+      "cup_px": [
+        472,
+        173
+      ],
+      "duck_dir_deg": 198.0,
+      "cup_group": 5
+    }
+  ],
+  "cup_positions": [
+    [
+      221,
+      117
+    ],
+    [
+      271,
+      173
+    ],
+    [
+      321,
+      117
+    ],
+    [
+      371,
+      173
+    ],
+    [
+      421,
+      117
+    ],
+    [
+      472,
+      173
+    ]
+  ],
+  "cup_groups": [
+    5,
+    5,
+    5,
+    5,
+    5,
+    5
+  ],
+  "workspace_bbox": [
+    270,
+    191,
+    424,
+    313
+  ],
+  "ood_bands": {
+    "LEFT": [
+      189,
+      191,
+      270,
+      313
+    ],
+    "RIGHT": [
+      424,
+      191,
+      505,
+      313
+    ]
+  },
+  "duck_block_bands": {
+    "LEFT": [
+      160,
+      191,
+      189,
+      313
+    ],
+    "RIGHT": [
+      505,
+      191,
+      540,
+      313
+    ]
+  },
+  "band_reach_cm": 10.6,
+  "band_reach_px": 81,
+  "px_per_cm": 7.66,
+  "constraints": {
+    "min_duck_to_cup": 35.0,
+    "duck_block_for": [
+      "duck"
+    ]
+  },
+  "_generated_by": "vbti/logic/inference/protocols/generators/make_ood_single_cup_30.py"
+}
