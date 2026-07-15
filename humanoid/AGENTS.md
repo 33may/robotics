@@ -20,7 +20,7 @@ Two containers talk only through a Communication Protocol, and the **Robot never
 | **Comm is the world edge, not a hub** | Internal modules talk over the bus directly; only `Observation`/`PolicyOut` cross the Comm edge. |
 | **Tests in-repo, real TDD** | Committed red→green→refactor suite under `tests/`; no throwaway `/tmp` smoke scripts. |
 | **Docs = structure, not status** | `architecture.md` = stable structure; blockers/status/roadmap → daily notes / Linear / memory. |
-| **Check memory + oli-corpus first** | Before architectural questions, query humanoid memory + the `oli-corpus` MCP + repo state. |
+| **Check memory + corpora first** | Before architectural/stack questions, query humanoid memory + repo state + the `oli-corpus` MCP (Oli/LimX facts) **and the `nvidia-corpus` MCP** (Isaac Sim/Lab, GR00T, PhysX, OpenUSD, cuVSLAM, Isaac ROS/cuVGL, Omniverse video transcripts). Prefer these over web search / training-data recall for stack facts; cite the `nvidia-corpus://…` / `oli-corpus://…` URI or say no source was found. |
 | **MD tables, not ASCII** | In `.md`, always Markdown pipe tables (box-drawing only in terminal/chat). |
 
 ## Commands
@@ -58,6 +58,7 @@ logic/oli/         comm/ reason/ action/ devapp/ launch/  (+ launcher.py, brain_
 logic/simulation/  isaacsim/ mujoco/ real/ walkmatch/
 docs/architecture/ architecture.md (+ adr/)
 docs/oli-corpus/   queryable Oli/LimX docs (via oli-corpus MCP)
+docs/nvidia-corpus/ queryable NVIDIA Isaac/GR00T/PhysX/USD/cuVSLAM docs + Omniverse videos (via nvidia-corpus MCP; own git repo, gitignored here)
 openspec/          changes/ (+ specs/) — spec-anchored change flow
 vendor/            LimX submodules (mujoco-sim, rl-deploy)
 requirements/      per-env pins   ·   tests/  brain + isaac marked suites

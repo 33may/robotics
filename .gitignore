@@ -60,3 +60,8 @@ humanoid/vendor/humanoid-mujoco-sim/MUJOCO_LOG.TXT
 # Tracked in repo: README + manifest.yaml + .gitignore inside the dir.
 # Untracked: the 2.5 GB install/ payload.
 humanoid/vendor/oli-main-software-*/install/
+
+# ---- nvidia-corpus: its OWN separate git repo, parked next to oli-corpus --
+# Adjacent on disk for convenience, but NOT part of this monorepo — it has its
+# own .git and is maintained/committed independently. Keep it fully ignored here.
+humanoid/docs/nvidia-corpus/
