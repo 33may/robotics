@@ -91,8 +91,8 @@ def main() -> None:
     ap.add_argument("--spawn-height", type=float, default=1.1)
     ap.add_argument("--settle-steps", type=int, default=200)
     ap.add_argument("--arrive-radius", type=float, default=0.6)
-    ap.add_argument("--decimation", type=int, default=2,
-                    help="physics ticks per follower command (10 ms at 200 Hz physics)")
+    ap.add_argument("--decimation", type=int, default=10,
+                    help="physics ticks per follower command (10 ms at 1 kHz physics)")
     args = ap.parse_args()
 
     # Coverage spec → cell-grid targets → dense deployment-planner path (fails
@@ -118,9 +118,12 @@ def main() -> None:
     from humanoid.logic.simulation.isaacsim.oli import NUM_JOINTS, Oli  # noqa: E402
     from humanoid.logic.simulation.isaacsim.sim_comm import SimComm  # noqa: E402
 
-    # 200 Hz physics (camera_smoke precedent): the drive is offline tooling — no brain
-    # pacing to honor, and 5× fewer per-step USD writes than the glide World's 1 kHz.
-    physics_dt = 1.0 / 200.0
+    # 1 kHz physics — MUST match glide_world_main exactly. The settled base pitch is a
+    # capture off the settle TRANSIENT (glide pins it at 200 steps × 1/1000 = 0.2 s, torso
+    # still upright → level head). At 1/200 the same 200 steps run 1.0 s, the crouch relaxes
+    # ~13° further back, and the head ends up staring at the ceiling (2026-07-15 bug). Keep
+    # the drive's base behaviour byte-identical to the demo runtime it must localize against.
+    physics_dt = 1.0 / 1000.0
     world = World(stage_units_in_meters=1.0, physics_dt=physics_dt, rendering_dt=1.0 / 60.0)
     world.scene.add_default_ground_plane()
     if args.scene.exists():
