@@ -137,6 +137,22 @@ def generate_cell_coverage(
     return CellCoverage(cells=sampled, cell_orders=orders, targets=targets)
 
 
+def load_route_or_coverage(path, grid: OccupancyGrid):
+    """Dispatch a route YAML: `waypoints:` → plain Route (experiment micro-cells,
+    hand-authored paths), otherwise a cell-coverage spec → generated Route.
+
+    Returns (CellCoverage | None, Route) so the drive can treat both uniformly.
+    """
+    import yaml  # lazy: keeps the brain import path yaml-free
+
+    from humanoid.logic.simulation.mapping.routes import load_route
+
+    raw = yaml.safe_load(__import__("pathlib").Path(path).read_text())
+    if "waypoints" in raw:
+        return None, load_route(path)
+    return build_coverage_route(path, grid)
+
+
 def build_coverage_route(path, grid: OccupancyGrid):
     """Load a committed coverage spec YAML and produce (CellCoverage, Route).
 

@@ -208,6 +208,31 @@ def test_build_coverage_route_is_deterministic(tmp_path):
     assert a.targets == b.targets
 
 
+def test_load_route_or_coverage_plain_waypoints(tmp_path):
+    """A YAML with an explicit `waypoints:` list is a plain route — no coverage
+    generation, targets are exactly the listed points (experiment micro-cells)."""
+    from humanoid.logic.simulation.mapping.cell_coverage import load_route_or_coverage
+
+    spec = _write_spec(tmp_path,
+        "name: cell_ep0\nclearance_m: 0.5\nspeed: 0.8\n"
+        "waypoints:\n  - [-6.75, 19.0]\n  - [-12.05, 27.0]\n")
+    cov, route = load_route_or_coverage(spec, _open_grid())
+    assert cov is None
+    assert route.name == "cell_ep0"
+    assert route.waypoints == [(-6.75, 19.0), (-12.05, 27.0)]
+
+
+def test_load_route_or_coverage_dispatches_to_coverage(tmp_path):
+    from humanoid.logic.simulation.mapping.cell_coverage import load_route_or_coverage
+
+    spec = _write_spec(tmp_path,
+        "name: t\ncells: [3, 3]\nseed: 1\nlaps: 1\nmargin_m: 0.5\n"
+        "clearance_m: 0.5\nspeed: 0.7\npoints_per_cell: 3\n")
+    cov, route = load_route_or_coverage(spec, _open_grid())
+    assert cov is not None
+    assert route.waypoints == cov.targets
+
+
 def test_module_is_pure():
     import humanoid.logic.simulation.mapping.cell_coverage  # noqa: F401
 

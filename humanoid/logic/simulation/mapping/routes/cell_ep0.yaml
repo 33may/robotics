@@ -1,0 +1,10 @@
+# Experiment micro-cell — locbench warehouse episode 0 (FAIL on v1 map).
+# Spawn→goal from the frozen set logic/locbench/episodes/warehouse.json;
+# plan_route expands with the same deployment planner locbench nav drives,
+# so the recorded path replays the scored episode leg exactly.
+name: cell_ep0
+clearance_m: 0.5
+speed: 0.8
+waypoints:
+  - [-6.75, 19.0]
+  - [-12.05, 27.0]

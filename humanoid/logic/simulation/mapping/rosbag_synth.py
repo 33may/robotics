@@ -146,6 +146,12 @@ class BagSpec:
     storage: str = "mcap"  # mcap | sqlite3
     every_n: int = 1
     max_stamps: int | None = None
+    #: IMU stream (imu.jsonl, written by DriveRecorder.add_imu). Topic/frame match
+    #: isaac_mapping_ros vslam.launch.py defaults ('visual_slam/imu' remap +
+    #: imu_frame param). NEVER subsampled by every_n — VIO wants the full rate.
+    imu_topic: str = "/front_stereo_imu/imu"
+    imu_frame: str = "front_stereo_camera_imu"
+    include_imu: bool = True
     #: drop everything before dump_start + skip_seconds — the cold-start frames
     #: are UNCONSTRAINED in cuVSLAM's pose graph (no loop closure repairs them),
     #: so they must never reach the bake. Mid-drive losses are NOT trimmable
@@ -162,6 +168,7 @@ _MSG_IMAGE = "sensor_msgs/msg/Image"
 _MSG_CAMINFO = "sensor_msgs/msg/CameraInfo"
 _MSG_TF = "tf2_msgs/msg/TFMessage"
 _MSG_ODOM = "nav_msgs/msg/Odometry"
+_MSG_IMU = "sensor_msgs/msg/Imu"
 
 
 def _stamp(stamp_ns: int):
@@ -253,6 +260,26 @@ def _odom_msg(T: np.ndarray, stamp_ns: int, map_frame: str, base_frame: str):
     )
 
 
+def _imu_msg(row: dict, frame_id: str):
+    """sensor_msgs/Imu from one imu.jsonl row. Orientation is deliberately
+    unpopulated (covariance[0] = -1, the ROS 'no estimate' convention) —
+    cuVSLAM consumes only angular_velocity + linear_acceleration."""
+    no_cov = np.zeros(9, dtype=np.float64)
+    ori_cov = no_cov.copy()
+    ori_cov[0] = -1.0
+    return _T[_MSG_IMU](
+        header=_header(row["stamp_ns"], frame_id),
+        orientation=_T["geometry_msgs/msg/Quaternion"](x=0.0, y=0.0, z=0.0, w=1.0),
+        orientation_covariance=ori_cov,
+        angular_velocity=_T["geometry_msgs/msg/Vector3"](
+            x=row["gyro"][0], y=row["gyro"][1], z=row["gyro"][2]),
+        angular_velocity_covariance=no_cov,
+        linear_acceleration=_T["geometry_msgs/msg/Vector3"](
+            x=row["acc"][0], y=row["acc"][1], z=row["acc"][2]),
+        linear_acceleration_covariance=no_cov,
+    )
+
+
 # ─── dump loading ─────────────────────────────────────────────────────────────
 
 def _load_samples(dump_dir: Path, spec: BagSpec) -> Tuple[dict, List[dict]]:
@@ -291,6 +318,18 @@ def _load_samples(dump_dir: Path, spec: BagSpec) -> Tuple[dict, List[dict]]:
     if dropped:
         print(f"[rosbag_synth] WARNING: {dropped} stamps lacked a full L/R/base triple")
     return rig, samples
+
+
+def _load_imu(dump_dir: Path, spec: BagSpec, min_stamp_ns: int) -> List[dict]:
+    """imu.jsonl rows at/after the first kept camera stamp (ascending). Empty
+    list when the dump has no IMU stream or include_imu is off."""
+    path = dump_dir / "imu.jsonl"
+    if not spec.include_imu or not path.exists():
+        return []
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line]
+    rows = [r for r in rows if r["stamp_ns"] >= min_stamp_ns]
+    rows.sort(key=lambda r: r["stamp_ns"])
+    return rows
 
 
 def _drop_transient_samples(
@@ -369,6 +408,9 @@ def synthesize(
             "tfs": writer.add_connection(spec.tf_static_topic, _MSG_TF, typestore=_TS),
             "od": writer.add_connection(spec.odom_topic, _MSG_ODOM, typestore=_TS),
         }
+        imu_rows = _load_imu(dump_dir, spec, samples[0]["stamp"])
+        if imu_rows:
+            conn["imu"] = writer.add_connection(spec.imu_topic, _MSG_IMU, typestore=_TS)
 
         def put(key: str, msg: Any, msgtype: str, t_ns: int) -> None:
             nonlocal n_msgs
@@ -376,18 +418,28 @@ def synthesize(
             n_msgs += 1
 
         t0 = samples[0]["stamp"]
-        put(
-            "tfs",
-            _T[_MSG_TF](transforms=[
-                _transform_stamped(mounts[cam], t0, spec.base_frame, frames[cam])
-                for cam in (left_cam, right_cam)
-            ]),
-            _MSG_TF,
-            t0,
-        )
+        static_tfs = [
+            _transform_stamped(mounts[cam], t0, spec.base_frame, frames[cam])
+            for cam in (left_cam, right_cam)
+        ]
+        if imu_rows:
+            # synthesized IMU is base-frame → identity mount
+            static_tfs.append(
+                _transform_stamped(np.eye(4), t0, spec.base_frame, spec.imu_frame))
+        put("tfs", _T[_MSG_TF](transforms=static_tfs), _MSG_TF, t0)
+
+        imu_i = 0  # streaming merge: flush IMU up to each camera stamp (both sorted)
+
+        def _flush_imu(up_to_ns: int) -> None:
+            nonlocal imu_i
+            while imu_i < len(imu_rows) and imu_rows[imu_i]["stamp_ns"] <= up_to_ns:
+                put("imu", _imu_msg(imu_rows[imu_i], spec.imu_frame), _MSG_IMU,
+                    imu_rows[imu_i]["stamp_ns"])
+                imu_i += 1
 
         for s in samples:
             t = s["stamp"]
+            _flush_imu(t)
             for side, cam, img_key, info_key, tx in (
                 ("left", left_cam, "li", "lc", 0.0),
                 ("right", right_cam, "ri", "rc", baseline),
@@ -408,10 +460,12 @@ def synthesize(
                 _MSG_TF, t)
             put("od", _odom_msg(s["base"], t, spec.map_frame, spec.base_frame),
                 _MSG_ODOM, t)
+        _flush_imu(2**63 - 1)  # trailing IMU after the last frame
 
     return {
         "stamps": len(samples),
         "dropped_transient": n_transient,
+        "imu_rows": len(imu_rows),
         "messages": n_msgs,
         "out": str(out_path),
     }
@@ -432,6 +486,10 @@ def main(argv: Iterable[str] | None = None) -> int:
         "--skip-seconds", type=float, default=0.0,
         help="drop everything before dump_start + SKIP (cold-start pre-lock frames)",
     )
+    ap.add_argument(
+        "--no-imu", action="store_true",
+        help="exclude the IMU stream even if the dump has imu.jsonl (ablation bags)",
+    )
     args = ap.parse_args(list(argv) if argv is not None else None)
 
     stats = synthesize(
@@ -442,6 +500,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             every_n=args.every_n,
             max_stamps=args.max_stamps,
             skip_seconds=args.skip_seconds,
+            include_imu=not args.no_imu,
         ),
     )
     print(json.dumps(stats))

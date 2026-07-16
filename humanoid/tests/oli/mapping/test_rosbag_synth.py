@@ -186,9 +186,9 @@ STAMP0 = 349_999_992
 DT = 200_000_000
 
 
-def _write_tiny_dump(root) -> "Path":
+def _write_tiny_dump(root, codec: str = "png") -> "Path":
     """Real-writer fixture: use DriveRecorder so the dump layout is authoritative."""
-    rec = DriveRecorder(root / "drive", RIG)
+    rec = DriveRecorder(root / "drive", RIG, codec=codec)
     rng = np.random.default_rng(33)
     mounts = {"head_left": _mount_usd(0.025), "head_right": _mount_usd(-0.025)}
     for i in range(N_STAMPS):
@@ -252,6 +252,24 @@ def test_synthesize_image_content_and_encoding(tiny_dump, tmp_path):
     )
     assert np.array_equal(
         np.frombuffer(img0.data, dtype=np.uint8).reshape(8, 12, 3), png
+    )
+
+
+def test_synthesize_accepts_jpeg_dump(tmp_path):
+    """A codec=jpeg dump (teleop recording, MAY-173 slam-demo-loop 1.3) synthesizes
+    identically: the row's `file` field carries the extension and PIL auto-detects —
+    the bag image must be byte-equal to the DECODED .jpg on disk."""
+    dump = _write_tiny_dump(tmp_path, codec="jpeg")
+    stats = synthesize(dump, tmp_path / "bag", BagSpec())
+    assert stats["stamps"] == N_STAMPS
+    msgs = _read_bag(tmp_path / "bag")
+    _, img0 = msgs["/left/image_raw"][0]
+    assert img0.encoding == "rgb8"
+    jpg = np.asarray(
+        PILImage.open(dump / "frames/head_left" / f"{STAMP0:019d}.jpg")
+    )
+    assert np.array_equal(
+        np.frombuffer(img0.data, dtype=np.uint8).reshape(8, 12, 3), jpg
     )
 
 
@@ -333,6 +351,61 @@ def test_skip_seconds_trims_unconstrained_head(tiny_dump, tmp_path):
     _, img0 = msgs["/left/image_raw"][0]
     first_kept = STAMP0 + 2 * DT
     assert img0.header.stamp.nanosec == first_kept % 1_000_000_000
+
+
+def _write_imu_dump(root) -> "Path":
+    """tiny_dump + an IMU stream at 4× the frame rate (DriveRecorder.add_imu)."""
+    rec = DriveRecorder(root / "drive_imu", RIG)
+    rng = np.random.default_rng(33)
+    mounts = {"head_left": _mount_usd(0.025), "head_right": _mount_usd(-0.025)}
+    for i in range(N_STAMPS):
+        stamp = STAMP0 + i * DT
+        T_mb = base_pose_matrix(x=0.1 * i, y=0.0, yaw=0.0)
+        rec.add_base_pose(stamp, x=0.1 * i, y=0.0, yaw=0.0)
+        for cam, mnt in mounts.items():
+            rgb = rng.integers(0, 255, size=(8, 12, 3), dtype=np.uint8)
+            rec.add_frame(cam, stamp, rgb, T_mb @ mnt)
+        for k in range(4):
+            rec.add_imu(stamp + k * (DT // 4),
+                        acc=(0.1, 0.0, 9.81), gyro=(0.0, 0.0, 0.5))
+    rec.close()
+    return root / "drive_imu"
+
+
+@pytest.fixture()
+def imu_dump(tmp_path):
+    return _write_imu_dump(tmp_path)
+
+
+def test_synthesize_imu_topic_full_rate_and_frame(imu_dump, tmp_path):
+    """imu.jsonl → sensor_msgs/Imu on the vslam-launch topic, full rate,
+    ascending stamps, imu frame in tf_static."""
+    synthesize(imu_dump, tmp_path / "bag", BagSpec())
+    msgs = _read_bag(tmp_path / "bag")
+    imu = msgs["/front_stereo_imu/imu"]
+    assert len(imu) == N_STAMPS * 4
+    times = [t for t, _ in imu]
+    assert times == sorted(times)
+    _, m0 = imu[0]
+    assert m0.header.frame_id == "front_stereo_camera_imu"
+    assert abs(m0.linear_acceleration.z - 9.81) < 1e-9
+    assert abs(m0.angular_velocity.z - 0.5) < 1e-9
+    static_children = [tr.child_frame_id
+                       for _, msg in msgs["/tf_static"] for tr in msg.transforms]
+    assert "front_stereo_camera_imu" in static_children
+
+
+def test_synthesize_every_n_never_subsamples_imu(imu_dump, tmp_path):
+    synthesize(imu_dump, tmp_path / "bag", BagSpec(every_n=2))
+    msgs = _read_bag(tmp_path / "bag")
+    assert len(msgs["/left/image_raw"]) == N_STAMPS // 2
+    assert len(msgs["/front_stereo_imu/imu"]) == N_STAMPS * 4  # untouched
+
+
+def test_synthesize_include_imu_false_drops_topic(imu_dump, tmp_path):
+    synthesize(imu_dump, tmp_path / "bag", BagSpec(include_imu=False))
+    msgs = _read_bag(tmp_path / "bag")
+    assert "/front_stereo_imu/imu" not in msgs
 
 
 def test_cli_main_writes_bag(tiny_dump, tmp_path):

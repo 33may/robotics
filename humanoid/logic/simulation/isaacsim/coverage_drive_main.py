@@ -44,7 +44,7 @@ from humanoid.logic.oli.camera_mounts import (  # noqa: E402
     rgb_intrinsics,
 )
 from humanoid.logic.oli.reason.mapping.occupancy_io import load_occupancy  # noqa: E402
-from humanoid.logic.simulation.mapping.cell_coverage import build_coverage_route  # noqa: E402
+from humanoid.logic.simulation.mapping.cell_coverage import load_route_or_coverage  # noqa: E402
 from humanoid.logic.simulation.mapping.recorder import DriveRecorder  # noqa: E402
 from humanoid.logic.simulation.mapping.routes import plan_route  # noqa: E402
 from humanoid.logic.simulation.mapping.waypoint_follower import WaypointFollower  # noqa: E402
@@ -98,15 +98,17 @@ def main() -> None:
                     help="physics ticks per follower command (10 ms at 200 Hz physics)")
     args = ap.parse_args()
 
-    # Coverage spec → cell-grid targets → dense deployment-planner path (fails
-    # fast, before Isaac boots). build_coverage_route is deterministic per spec seed.
+    # Route YAML → targets → dense deployment-planner path (fails fast, before
+    # Isaac boots). `waypoints:` YAMLs are plain routes (experiment micro-cells);
+    # otherwise a coverage spec, deterministic per seed.
     grid = load_occupancy(str(args.map_dir))
-    cov, route = build_coverage_route(args.route, grid)
+    cov, route = load_route_or_coverage(args.route, grid)
     path = plan_route(route, grid, spacing_m=1.0)
     total_m = sum(math.dist(a, b) for a, b in zip(path[:-1], path[1:]))
-    n_cells = sum(1 for pts in cov.cells.values() if pts)
-    print(f"[coverage] spec '{route.name}': {len(route.waypoints)} targets over "
-          f"{n_cells} cells → {len(path)} pts, {total_m:.0f} m, "
+    src = (f"{sum(1 for pts in cov.cells.values() if pts)} cells" if cov is not None
+           else "plain route")
+    print(f"[coverage] spec '{route.name}': {len(route.waypoints)} targets ({src}) "
+          f"→ {len(path)} pts, {total_m:.0f} m, "
           f"~{total_m / route.speed / 60:.1f} sim-min", flush=True)
 
     from isaacsim import SimulationApp
@@ -192,6 +194,35 @@ def main() -> None:
     t_start = time.monotonic()
     captures = 0
 
+    # IMU synthesis from base kinematics at physics rate (cuVSLAM inertial mode).
+    # oli.read_imu()'s accelerometer is gravity-only (walk-policy proxy) — VIO needs
+    # the full specific force f = R_wb⁻¹(a_world + g↑). Under the glide's upright pin
+    # the base state IS the motion, so finite-differencing it emulates exactly what a
+    # real IMU would measure on this trajectory (sensor emulation, not GT injection:
+    # the estimator only ever sees acc/gyro). Gyro: roll/pitch pinned → (0, 0, dyaw/dt).
+    _imu_prev: dict = {"p": None, "v": None, "yaw": None}
+
+    def _record_imu(stamp_ns: int) -> None:
+        p = np.asarray(oli.base_world_position(), dtype=np.float64)
+        yaw_now = _yaw_from_quat_wxyz(oli.base_world_quat_wxyz())
+        pp, pv, pyaw = _imu_prev["p"], _imu_prev["v"], _imu_prev["yaw"]
+        v = (p - pp) / physics_dt if pp is not None else None
+        if v is not None and pv is not None:
+            a_world = (v - pv) / physics_dt
+            q = np.asarray(oli.base_world_quat_wxyz(), dtype=np.float64)
+            w, x, y, z = q
+            # world → body rotation (conjugate quat action), specific force incl. gravity
+            f_world = a_world + np.array([0.0, 0.0, 9.81])
+            R = np.array([
+                [1 - 2*(y*y + z*z), 2*(x*y + w*z),     2*(x*z - w*y)],
+                [2*(x*y - w*z),     1 - 2*(x*x + z*z), 2*(y*z + w*x)],
+                [2*(x*z + w*y),     2*(y*z - w*x),     1 - 2*(x*x + y*y)],
+            ])  # R_world→body for wxyz quat
+            acc = R @ f_world
+            dyaw = math.atan2(math.sin(yaw_now - pyaw), math.cos(yaw_now - pyaw))
+            rec.add_imu(stamp_ns, acc=tuple(acc), gyro=(0.0, 0.0, dyaw / physics_dt))
+        _imu_prev["p"], _imu_prev["v"], _imu_prev["yaw"] = p, v, yaw_now
+
     print(f"[coverage] driving ({'headless' if args.headless else 'gui'}), "
           f"recording to {args.out} @ {args.fps:.0f} Hz", flush=True)
     try:
@@ -217,6 +248,7 @@ def main() -> None:
                 oli.apply_isaac(home_isaac, zeros, zeros, hold_kp, hold_kd)
                 render = capture and i == args.decimation - 1
                 world.step(render=render)
+                _record_imu(_sim_ns())
                 # upright pin (roll 0, settled pitch, current yaw) — glide fidelity rule
                 pp = oli.base_world_position()
                 yy = _yaw_from_quat_wxyz(oli.base_world_quat_wxyz())

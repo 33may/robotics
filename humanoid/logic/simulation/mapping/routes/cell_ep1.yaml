@@ -1,0 +1,8 @@
+# Experiment micro-cell — locbench warehouse episode 1 (FAIL on v1 map).
+# Spawn→goal from the frozen set logic/locbench/episodes/warehouse.json.
+name: cell_ep1
+clearance_m: 0.5
+speed: 0.8
+waypoints:
+  - [-16.85, 14.85]
+  - [-24.3, 27.65]
