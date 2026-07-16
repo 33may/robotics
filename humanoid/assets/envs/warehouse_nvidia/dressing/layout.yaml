@@ -1,0 +1,884 @@
+resolution: 0.05
+origin:
+- -26.925000762939455
+- -23.425000762939455
+plates:
+- number: 0
+  pos:
+  - 5.455
+  - -22.8
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_000.png
+- number: 1
+  pos:
+  - 5.455
+  - -19.65
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_001.png
+- number: 2
+  pos:
+  - 5.455
+  - -17.9
+  - 2.5
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_002.png
+- number: 3
+  pos:
+  - 5.455
+  - -16.15
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_003.png
+- number: 4
+  pos:
+  - 5.455
+  - -13.65
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_004.png
+- number: 5
+  pos:
+  - 5.455
+  - -11.9
+  - 2.5
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_005.png
+- number: 6
+  pos:
+  - 5.455
+  - -10.15
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_006.png
+- number: 7
+  pos:
+  - 5.455
+  - -7.65
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_007.png
+- number: 8
+  pos:
+  - 5.455
+  - -5.9
+  - 2.5
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_008.png
+- number: 9
+  pos:
+  - 5.455
+  - -4.15
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_009.png
+- number: 10
+  pos:
+  - 5.455
+  - -1.65
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_010.png
+- number: 11
+  pos:
+  - 5.455
+  - 0.1
+  - 2.5
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_011.png
+- number: 12
+  pos:
+  - 5.455
+  - 1.85
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_012.png
+- number: 13
+  pos:
+  - 5.455
+  - 4.35
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_013.png
+- number: 14
+  pos:
+  - 5.455
+  - 6.1
+  - 2.5
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_014.png
+- number: 15
+  pos:
+  - 5.455
+  - 7.85
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_015.png
+- number: 16
+  pos:
+  - 5.455
+  - 10.35
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_016.png
+- number: 17
+  pos:
+  - 5.455
+  - 12.1
+  - 2.5
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_017.png
+- number: 18
+  pos:
+  - 5.455
+  - 13.85
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_018.png
+- number: 19
+  pos:
+  - 5.455
+  - 16.35
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_019.png
+- number: 20
+  pos:
+  - 5.455
+  - 18.1
+  - 2.5
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_020.png
+- number: 21
+  pos:
+  - 5.455
+  - 19.85
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_021.png
+- number: 22
+  pos:
+  - 5.455
+  - 22.35
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_022.png
+- number: 23
+  pos:
+  - 5.455
+  - 24.1
+  - 2.5
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_023.png
+- number: 24
+  pos:
+  - 5.455
+  - 25.85
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_024.png
+- number: 25
+  pos:
+  - 5.455
+  - 28.35
+  - 1.2
+  normal:
+  - -1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_025.png
+- number: 26
+  pos:
+  - -24.55
+  - 30.505
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.7
+  texture: plate_026.png
+- number: 27
+  pos:
+  - -25.7
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.5
+  texture: plate_027.png
+- number: 28
+  pos:
+  - -23.0
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.8
+  texture: plate_028.png
+- number: 29
+  pos:
+  - -21.25
+  - 30.555
+  - 2.5
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.6
+  texture: plate_029.png
+- number: 30
+  pos:
+  - -19.5
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.7
+  texture: plate_030.png
+- number: 31
+  pos:
+  - -17.75
+  - 30.555
+  - 2.5
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.5
+  texture: plate_031.png
+- number: 32
+  pos:
+  - -16.0
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.8
+  texture: plate_032.png
+- number: 33
+  pos:
+  - -14.25
+  - 30.555
+  - 2.5
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.6
+  texture: plate_033.png
+- number: 34
+  pos:
+  - -12.5
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.7
+  texture: plate_034.png
+- number: 35
+  pos:
+  - -10.75
+  - 30.555
+  - 2.5
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.5
+  texture: plate_035.png
+- number: 36
+  pos:
+  - -9.0
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.8
+  texture: plate_036.png
+- number: 37
+  pos:
+  - -7.25
+  - 30.555
+  - 2.5
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.6
+  texture: plate_037.png
+- number: 38
+  pos:
+  - -5.5
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.7
+  texture: plate_038.png
+- number: 39
+  pos:
+  - -3.75
+  - 30.555
+  - 2.5
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.5
+  texture: plate_039.png
+- number: 40
+  pos:
+  - -2.0
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.8
+  texture: plate_040.png
+- number: 41
+  pos:
+  - 2.35
+  - 30.555
+  - 1.2
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.6
+  texture: plate_041.png
+- number: 42
+  pos:
+  - 4.1
+  - 30.555
+  - 2.5
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 0.7
+  texture: plate_042.png
+- number: 43
+  pos:
+  - -25.7
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.5
+  texture: plate_043.png
+- number: 44
+  pos:
+  - -23.95
+  - -23.305
+  - 2.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.8
+  texture: plate_044.png
+- number: 45
+  pos:
+  - -22.2
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.6
+  texture: plate_045.png
+- number: 46
+  pos:
+  - -20.45
+  - -23.305
+  - 2.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.7
+  texture: plate_046.png
+- number: 47
+  pos:
+  - -18.7
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.5
+  texture: plate_047.png
+- number: 48
+  pos:
+  - -16.95
+  - -23.305
+  - 2.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.8
+  texture: plate_048.png
+- number: 49
+  pos:
+  - -15.2
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.6
+  texture: plate_049.png
+- number: 50
+  pos:
+  - -13.45
+  - -23.305
+  - 2.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.7
+  texture: plate_050.png
+- number: 51
+  pos:
+  - -11.7
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.5
+  texture: plate_051.png
+- number: 52
+  pos:
+  - -9.95
+  - -23.305
+  - 2.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.8
+  texture: plate_052.png
+- number: 53
+  pos:
+  - -8.2
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.6
+  texture: plate_053.png
+- number: 54
+  pos:
+  - -6.45
+  - -23.305
+  - 2.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.7
+  texture: plate_054.png
+- number: 55
+  pos:
+  - -4.7
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.5
+  texture: plate_055.png
+- number: 56
+  pos:
+  - -2.95
+  - -23.305
+  - 2.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.8
+  texture: plate_056.png
+- number: 57
+  pos:
+  - -1.2
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.6
+  texture: plate_057.png
+- number: 58
+  pos:
+  - 0.55
+  - -23.305
+  - 2.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.7
+  texture: plate_058.png
+- number: 59
+  pos:
+  - 3.85
+  - -23.305
+  - 1.2
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 0.5
+  texture: plate_059.png
+- number: 60
+  pos:
+  - -26.205
+  - -22.8
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_060.png
+- number: 61
+  pos:
+  - -26.205
+  - -19.65
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_061.png
+- number: 62
+  pos:
+  - -26.205
+  - -17.9
+  - 2.5
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_062.png
+- number: 63
+  pos:
+  - -26.205
+  - -16.15
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_063.png
+- number: 64
+  pos:
+  - -26.205
+  - -13.65
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_064.png
+- number: 65
+  pos:
+  - -26.205
+  - -11.9
+  - 2.5
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_065.png
+- number: 66
+  pos:
+  - -26.205
+  - -10.15
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_066.png
+- number: 67
+  pos:
+  - -26.205
+  - -7.65
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_067.png
+- number: 68
+  pos:
+  - -26.205
+  - -5.9
+  - 2.5
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_068.png
+- number: 69
+  pos:
+  - -26.205
+  - -4.15
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_069.png
+- number: 70
+  pos:
+  - -26.205
+  - -1.65
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_070.png
+- number: 71
+  pos:
+  - -26.205
+  - 0.1
+  - 2.5
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_071.png
+- number: 72
+  pos:
+  - -26.205
+  - 2.0
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_072.png
+- number: 73
+  pos:
+  - -26.205
+  - 4.35
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_073.png
+- number: 74
+  pos:
+  - -26.205
+  - 6.1
+  - 2.5
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_074.png
+- number: 75
+  pos:
+  - -26.205
+  - 7.85
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_075.png
+- number: 76
+  pos:
+  - -26.205
+  - 10.35
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_076.png
+- number: 77
+  pos:
+  - -26.205
+  - 12.1
+  - 2.5
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_077.png
+- number: 78
+  pos:
+  - -26.205
+  - 13.85
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_078.png
+- number: 79
+  pos:
+  - -26.205
+  - 16.35
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_079.png
+- number: 80
+  pos:
+  - -26.205
+  - 18.1
+  - 2.5
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_080.png
+- number: 81
+  pos:
+  - -26.205
+  - 19.85
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_081.png
+- number: 82
+  pos:
+  - -26.205
+  - 22.35
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.7
+  texture: plate_082.png
+- number: 83
+  pos:
+  - -26.205
+  - 24.1
+  - 2.5
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.5
+  texture: plate_083.png
+- number: 84
+  pos:
+  - -26.205
+  - 25.85
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.8
+  texture: plate_084.png
+- number: 85
+  pos:
+  - -26.205
+  - 28.35
+  - 1.2
+  normal:
+  - 1.0
+  - 0.0
+  size_m: 0.6
+  texture: plate_085.png
+posters:
+- pos:
+  - -11.775
+  - -23.305
+  - 3.5
+  normal:
+  - 0.0
+  - 1.0
+  size_m: 2.0
+  texture: poster_vbti.png
+- pos:
+  - -12.175
+  - 30.555
+  - 3.5
+  normal:
+  - 0.0
+  - -1.0
+  size_m: 2.0
+  texture: poster_vbti.png

@@ -1,0 +1,3978 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World" (
+    prepend references = @../Isaac/Environments/Simple_Warehouse/full_warehouse.usd@
+)
+{
+    def Scope "Dressing"
+    {
+        def Scope "Looks"
+        {
+            def Material "plate_000_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_000_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_000_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_000.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_000_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_001_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_001_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_001_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_001.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_001_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_002_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_002_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_002_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_002.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_002_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_003_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_003_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_003_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_003.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_003_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_004_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_004_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_004_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_004.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_004_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_005_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_005_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_005_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_005.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_005_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_006_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_006_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_006_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_006.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_006_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_007_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_007_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_007_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_007.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_007_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_008_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_008_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_008_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_008.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_008_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_009_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_009_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_009_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_009.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_009_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_010_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_010_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_010_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_010.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_010_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_011_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_011_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_011_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_011.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_011_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_012_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_012_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_012_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_012.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_012_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_013_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_013_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_013_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_013.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_013_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_014_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_014_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_014_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_014.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_014_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_015_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_015_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_015_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_015.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_015_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_016_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_016_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_016_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_016.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_016_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_017_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_017_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_017_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_017.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_017_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_018_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_018_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_018_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_018.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_018_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_019_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_019_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_019_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_019.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_019_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_020_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_020_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_020_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_020.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_020_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_021_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_021_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_021_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_021.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_021_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_022_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_022_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_022_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_022.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_022_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_023_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_023_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_023_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_023.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_023_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_024_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_024_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_024_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_024.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_024_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_025_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_025_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_025_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_025.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_025_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_026_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_026_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_026_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_026.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_026_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_027_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_027_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_027_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_027.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_027_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_028_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_028_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_028_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_028.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_028_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_029_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_029_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_029_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_029.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_029_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_030_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_030_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_030_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_030.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_030_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_031_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_031_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_031_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_031.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_031_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_032_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_032_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_032_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_032.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_032_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_033_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_033_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_033_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_033.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_033_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_034_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_034_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_034_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_034.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_034_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_035_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_035_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_035_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_035.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_035_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_036_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_036_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_036_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_036.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_036_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_037_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_037_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_037_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_037.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_037_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_038_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_038_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_038_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_038.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_038_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_039_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_039_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_039_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_039.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_039_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_040_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_040_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_040_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_040.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_040_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_041_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_041_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_041_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_041.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_041_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_042_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_042_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_042_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_042.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_042_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_043_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_043_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_043_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_043.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_043_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_044_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_044_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_044_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_044.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_044_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_045_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_045_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_045_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_045.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_045_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_046_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_046_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_046_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_046.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_046_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_047_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_047_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_047_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_047.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_047_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_048_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_048_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_048_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_048.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_048_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_049_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_049_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_049_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_049.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_049_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_050_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_050_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_050_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_050.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_050_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_051_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_051_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_051_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_051.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_051_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_052_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_052_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_052_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_052.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_052_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_053_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_053_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_053_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_053.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_053_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_054_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_054_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_054_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_054.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_054_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_055_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_055_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_055_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_055.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_055_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_056_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_056_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_056_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_056.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_056_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_057_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_057_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_057_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_057.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_057_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_058_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_058_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_058_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_058.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_058_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_059_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_059_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_059_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_059.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_059_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_060_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_060_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_060_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_060.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_060_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_061_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_061_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_061_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_061.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_061_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_062_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_062_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_062_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_062.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_062_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_063_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_063_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_063_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_063.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_063_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_064_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_064_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_064_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_064.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_064_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_065_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_065_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_065_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_065.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_065_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_066_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_066_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_066_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_066.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_066_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_067_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_067_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_067_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_067.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_067_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_068_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_068_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_068_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_068.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_068_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_069_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_069_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_069_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_069.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_069_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_070_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_070_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_070_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_070.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_070_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_071_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_071_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_071_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_071.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_071_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_072_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_072_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_072_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_072.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_072_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_073_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_073_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_073_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_073.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_073_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_074_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_074_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_074_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_074.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_074_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_075_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_075_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_075_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_075.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_075_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_076_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_076_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_076_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_076.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_076_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_077_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_077_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_077_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_077.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_077_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_078_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_078_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_078_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_078.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_078_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_079_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_079_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_079_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_079.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_079_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_080_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_080_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_080_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_080.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_080_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_081_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_081_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_081_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_081.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_081_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_082_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_082_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_082_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_082.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_082_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_083_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_083_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_083_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_083.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_083_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_084_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_084_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_084_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_084.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_084_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "plate_085_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/plate_085_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/plate_085_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/plate_085.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/plate_085_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "poster_00_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/poster_00_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/poster_00_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/poster_vbti.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/poster_00_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+
+            def Material "poster_01_mat"
+            {
+                token outputs:surface.connect = </World/Dressing/Looks/poster_01_mat/pbr.outputs:surface>
+
+                def Shader "pbr"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor.connect = </World/Dressing/Looks/poster_01_mat/texture.outputs:rgb>
+                    float inputs:metallic = 0
+                    float inputs:roughness = 0.8
+                    token outputs:surface
+                }
+
+                def Shader "st_reader"
+                {
+                    uniform token info:id = "UsdPrimvarReader_float2"
+                    token inputs:varname = "st"
+                    float2 outputs:result
+                }
+
+                def Shader "texture"
+                {
+                    uniform token info:id = "UsdUVTexture"
+                    asset inputs:file = @./textures/poster_vbti.png@
+                    token inputs:sourceColorSpace = "sRGB"
+                    float2 inputs:st.connect = </World/Dressing/Looks/poster_01_mat/st_reader.outputs:result>
+                    float3 outputs:rgb
+                }
+            }
+        }
+
+        def Mesh "plate_000" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -23.2, 0.8), (5.455, -22.4, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_000_mat>
+            point3f[] points = [(5.455, -22.4, 0.8), (5.455, -23.2, 0.8), (5.455, -23.2, 1.6), (5.455, -22.4, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_001" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -19.95, 0.9), (5.455, -19.35, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_001_mat>
+            point3f[] points = [(5.455, -19.35, 0.9), (5.455, -19.95, 0.9), (5.455, -19.95, 1.5), (5.455, -19.35, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_002" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -18.25, 2.15), (5.455, -17.55, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_002_mat>
+            point3f[] points = [(5.455, -17.55, 2.15), (5.455, -18.25, 2.15), (5.455, -18.25, 2.85), (5.455, -17.55, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_003" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -16.4, 0.95), (5.455, -15.9, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_003_mat>
+            point3f[] points = [(5.455, -15.9, 0.95), (5.455, -16.4, 0.95), (5.455, -16.4, 1.45), (5.455, -15.9, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_004" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -14.05, 0.8), (5.455, -13.25, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_004_mat>
+            point3f[] points = [(5.455, -13.25, 0.8), (5.455, -14.05, 0.8), (5.455, -14.05, 1.6), (5.455, -13.25, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_005" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -12.2, 2.2), (5.455, -11.6, 2.8)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_005_mat>
+            point3f[] points = [(5.455, -11.6, 2.2), (5.455, -12.2, 2.2), (5.455, -12.2, 2.8), (5.455, -11.6, 2.8)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_006" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -10.5, 0.85), (5.455, -9.8, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_006_mat>
+            point3f[] points = [(5.455, -9.8, 0.85), (5.455, -10.5, 0.85), (5.455, -10.5, 1.55), (5.455, -9.8, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_007" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -7.9, 0.95), (5.455, -7.4, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_007_mat>
+            point3f[] points = [(5.455, -7.4, 0.95), (5.455, -7.9, 0.95), (5.455, -7.9, 1.45), (5.455, -7.4, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_008" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -6.3, 2.1), (5.455, -5.5, 2.9)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_008_mat>
+            point3f[] points = [(5.455, -5.5, 2.1), (5.455, -6.3, 2.1), (5.455, -6.3, 2.9), (5.455, -5.5, 2.9)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_009" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -4.45, 0.9), (5.455, -3.85, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_009_mat>
+            point3f[] points = [(5.455, -3.85, 0.9), (5.455, -4.45, 0.9), (5.455, -4.45, 1.5), (5.455, -3.85, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_010" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -2, 0.85), (5.455, -1.3, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_010_mat>
+            point3f[] points = [(5.455, -1.3, 0.85), (5.455, -2, 0.85), (5.455, -2, 1.55), (5.455, -1.3, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_011" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, -0.15, 2.25), (5.455, 0.35, 2.75)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_011_mat>
+            point3f[] points = [(5.455, 0.35, 2.25), (5.455, -0.15, 2.25), (5.455, -0.15, 2.75), (5.455, 0.35, 2.75)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_012" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 1.45, 0.8), (5.455, 2.25, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_012_mat>
+            point3f[] points = [(5.455, 2.25, 0.8), (5.455, 1.45, 0.8), (5.455, 1.45, 1.6), (5.455, 2.25, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_013" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 4.05, 0.9), (5.455, 4.65, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_013_mat>
+            point3f[] points = [(5.455, 4.65, 0.9), (5.455, 4.05, 0.9), (5.455, 4.05, 1.5), (5.455, 4.65, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_014" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 5.75, 2.15), (5.455, 6.45, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_014_mat>
+            point3f[] points = [(5.455, 6.45, 2.15), (5.455, 5.75, 2.15), (5.455, 5.75, 2.85), (5.455, 6.45, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_015" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 7.6, 0.95), (5.455, 8.1, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_015_mat>
+            point3f[] points = [(5.455, 8.1, 0.95), (5.455, 7.6, 0.95), (5.455, 7.6, 1.45), (5.455, 8.1, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_016" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 9.95, 0.8), (5.455, 10.75, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_016_mat>
+            point3f[] points = [(5.455, 10.75, 0.8), (5.455, 9.95, 0.8), (5.455, 9.95, 1.6), (5.455, 10.75, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_017" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 11.8, 2.2), (5.455, 12.4, 2.8)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_017_mat>
+            point3f[] points = [(5.455, 12.4, 2.2), (5.455, 11.8, 2.2), (5.455, 11.8, 2.8), (5.455, 12.4, 2.8)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_018" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 13.5, 0.85), (5.455, 14.2, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_018_mat>
+            point3f[] points = [(5.455, 14.2, 0.85), (5.455, 13.5, 0.85), (5.455, 13.5, 1.55), (5.455, 14.2, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_019" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 16.1, 0.95), (5.455, 16.6, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_019_mat>
+            point3f[] points = [(5.455, 16.6, 0.95), (5.455, 16.1, 0.95), (5.455, 16.1, 1.45), (5.455, 16.6, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_020" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 17.7, 2.1), (5.455, 18.5, 2.9)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_020_mat>
+            point3f[] points = [(5.455, 18.5, 2.1), (5.455, 17.7, 2.1), (5.455, 17.7, 2.9), (5.455, 18.5, 2.9)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_021" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 19.55, 0.9), (5.455, 20.15, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_021_mat>
+            point3f[] points = [(5.455, 20.15, 0.9), (5.455, 19.55, 0.9), (5.455, 19.55, 1.5), (5.455, 20.15, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_022" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 22, 0.85), (5.455, 22.7, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_022_mat>
+            point3f[] points = [(5.455, 22.7, 0.85), (5.455, 22, 0.85), (5.455, 22, 1.55), (5.455, 22.7, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_023" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 23.85, 2.25), (5.455, 24.35, 2.75)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_023_mat>
+            point3f[] points = [(5.455, 24.35, 2.25), (5.455, 23.85, 2.25), (5.455, 23.85, 2.75), (5.455, 24.35, 2.75)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_024" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 25.45, 0.8), (5.455, 26.25, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_024_mat>
+            point3f[] points = [(5.455, 26.25, 0.8), (5.455, 25.45, 0.8), (5.455, 25.45, 1.6), (5.455, 26.25, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_025" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(5.455, 28.05, 0.9), (5.455, 28.65, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_025_mat>
+            point3f[] points = [(5.455, 28.65, 0.9), (5.455, 28.05, 0.9), (5.455, 28.05, 1.5), (5.455, 28.65, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_026" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-24.9, 30.505, 0.85), (-24.2, 30.505, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_026_mat>
+            point3f[] points = [(-24.9, 30.505, 0.85), (-24.2, 30.505, 0.85), (-24.2, 30.505, 1.55), (-24.9, 30.505, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_027" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-25.95, 30.555, 0.95), (-25.45, 30.555, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_027_mat>
+            point3f[] points = [(-25.95, 30.555, 0.95), (-25.45, 30.555, 0.95), (-25.45, 30.555, 1.45), (-25.95, 30.555, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_028" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-23.4, 30.555, 0.8), (-22.6, 30.555, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_028_mat>
+            point3f[] points = [(-23.4, 30.555, 0.8), (-22.6, 30.555, 0.8), (-22.6, 30.555, 1.6), (-23.4, 30.555, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_029" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-21.55, 30.555, 2.2), (-20.95, 30.555, 2.8)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_029_mat>
+            point3f[] points = [(-21.55, 30.555, 2.2), (-20.95, 30.555, 2.2), (-20.95, 30.555, 2.8), (-21.55, 30.555, 2.8)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_030" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-19.85, 30.555, 0.85), (-19.15, 30.555, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_030_mat>
+            point3f[] points = [(-19.85, 30.555, 0.85), (-19.15, 30.555, 0.85), (-19.15, 30.555, 1.55), (-19.85, 30.555, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_031" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-18, 30.555, 2.25), (-17.5, 30.555, 2.75)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_031_mat>
+            point3f[] points = [(-18, 30.555, 2.25), (-17.5, 30.555, 2.25), (-17.5, 30.555, 2.75), (-18, 30.555, 2.75)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_032" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-16.4, 30.555, 0.8), (-15.6, 30.555, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_032_mat>
+            point3f[] points = [(-16.4, 30.555, 0.8), (-15.6, 30.555, 0.8), (-15.6, 30.555, 1.6), (-16.4, 30.555, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_033" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-14.55, 30.555, 2.2), (-13.95, 30.555, 2.8)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_033_mat>
+            point3f[] points = [(-14.55, 30.555, 2.2), (-13.95, 30.555, 2.2), (-13.95, 30.555, 2.8), (-14.55, 30.555, 2.8)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_034" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-12.85, 30.555, 0.85), (-12.15, 30.555, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_034_mat>
+            point3f[] points = [(-12.85, 30.555, 0.85), (-12.15, 30.555, 0.85), (-12.15, 30.555, 1.55), (-12.85, 30.555, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_035" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-11, 30.555, 2.25), (-10.5, 30.555, 2.75)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_035_mat>
+            point3f[] points = [(-11, 30.555, 2.25), (-10.5, 30.555, 2.25), (-10.5, 30.555, 2.75), (-11, 30.555, 2.75)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_036" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-9.4, 30.555, 0.8), (-8.6, 30.555, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_036_mat>
+            point3f[] points = [(-9.4, 30.555, 0.8), (-8.6, 30.555, 0.8), (-8.6, 30.555, 1.6), (-9.4, 30.555, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_037" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-7.55, 30.555, 2.2), (-6.95, 30.555, 2.8)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_037_mat>
+            point3f[] points = [(-7.55, 30.555, 2.2), (-6.95, 30.555, 2.2), (-6.95, 30.555, 2.8), (-7.55, 30.555, 2.8)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_038" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-5.85, 30.555, 0.85), (-5.15, 30.555, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_038_mat>
+            point3f[] points = [(-5.85, 30.555, 0.85), (-5.15, 30.555, 0.85), (-5.15, 30.555, 1.55), (-5.85, 30.555, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_039" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-4, 30.555, 2.25), (-3.5, 30.555, 2.75)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_039_mat>
+            point3f[] points = [(-4, 30.555, 2.25), (-3.5, 30.555, 2.25), (-3.5, 30.555, 2.75), (-4, 30.555, 2.75)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_040" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-2.4, 30.555, 0.8), (-1.6, 30.555, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_040_mat>
+            point3f[] points = [(-2.4, 30.555, 0.8), (-1.6, 30.555, 0.8), (-1.6, 30.555, 1.6), (-2.4, 30.555, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_041" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(2.05, 30.555, 0.9), (2.65, 30.555, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_041_mat>
+            point3f[] points = [(2.05, 30.555, 0.9), (2.65, 30.555, 0.9), (2.65, 30.555, 1.5), (2.05, 30.555, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_042" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(3.75, 30.555, 2.15), (4.45, 30.555, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_042_mat>
+            point3f[] points = [(3.75, 30.555, 2.15), (4.45, 30.555, 2.15), (4.45, 30.555, 2.85), (3.75, 30.555, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_043" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-25.95, -23.305, 0.95), (-25.45, -23.305, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_043_mat>
+            point3f[] points = [(-25.45, -23.305, 0.95), (-25.95, -23.305, 0.95), (-25.95, -23.305, 1.45), (-25.45, -23.305, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_044" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-24.35, -23.305, 2.1), (-23.55, -23.305, 2.9)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_044_mat>
+            point3f[] points = [(-23.55, -23.305, 2.1), (-24.35, -23.305, 2.1), (-24.35, -23.305, 2.9), (-23.55, -23.305, 2.9)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_045" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-22.5, -23.305, 0.9), (-21.9, -23.305, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_045_mat>
+            point3f[] points = [(-21.9, -23.305, 0.9), (-22.5, -23.305, 0.9), (-22.5, -23.305, 1.5), (-21.9, -23.305, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_046" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-20.8, -23.305, 2.15), (-20.1, -23.305, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_046_mat>
+            point3f[] points = [(-20.1, -23.305, 2.15), (-20.8, -23.305, 2.15), (-20.8, -23.305, 2.85), (-20.1, -23.305, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_047" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-18.95, -23.305, 0.95), (-18.45, -23.305, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_047_mat>
+            point3f[] points = [(-18.45, -23.305, 0.95), (-18.95, -23.305, 0.95), (-18.95, -23.305, 1.45), (-18.45, -23.305, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_048" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-17.35, -23.305, 2.1), (-16.55, -23.305, 2.9)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_048_mat>
+            point3f[] points = [(-16.55, -23.305, 2.1), (-17.35, -23.305, 2.1), (-17.35, -23.305, 2.9), (-16.55, -23.305, 2.9)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_049" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-15.5, -23.305, 0.9), (-14.9, -23.305, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_049_mat>
+            point3f[] points = [(-14.9, -23.305, 0.9), (-15.5, -23.305, 0.9), (-15.5, -23.305, 1.5), (-14.9, -23.305, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_050" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-13.8, -23.305, 2.15), (-13.1, -23.305, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_050_mat>
+            point3f[] points = [(-13.1, -23.305, 2.15), (-13.8, -23.305, 2.15), (-13.8, -23.305, 2.85), (-13.1, -23.305, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_051" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-11.95, -23.305, 0.95), (-11.45, -23.305, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_051_mat>
+            point3f[] points = [(-11.45, -23.305, 0.95), (-11.95, -23.305, 0.95), (-11.95, -23.305, 1.45), (-11.45, -23.305, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_052" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-10.35, -23.305, 2.1), (-9.55, -23.305, 2.9)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_052_mat>
+            point3f[] points = [(-9.55, -23.305, 2.1), (-10.35, -23.305, 2.1), (-10.35, -23.305, 2.9), (-9.55, -23.305, 2.9)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_053" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-8.5, -23.305, 0.9), (-7.9, -23.305, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_053_mat>
+            point3f[] points = [(-7.9, -23.305, 0.9), (-8.5, -23.305, 0.9), (-8.5, -23.305, 1.5), (-7.9, -23.305, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_054" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-6.8, -23.305, 2.15), (-6.1, -23.305, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_054_mat>
+            point3f[] points = [(-6.1, -23.305, 2.15), (-6.8, -23.305, 2.15), (-6.8, -23.305, 2.85), (-6.1, -23.305, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_055" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-4.95, -23.305, 0.95), (-4.45, -23.305, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_055_mat>
+            point3f[] points = [(-4.45, -23.305, 0.95), (-4.95, -23.305, 0.95), (-4.95, -23.305, 1.45), (-4.45, -23.305, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_056" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-3.35, -23.305, 2.1), (-2.55, -23.305, 2.9)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_056_mat>
+            point3f[] points = [(-2.55, -23.305, 2.1), (-3.35, -23.305, 2.1), (-3.35, -23.305, 2.9), (-2.55, -23.305, 2.9)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_057" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-1.5, -23.305, 0.9), (-0.9, -23.305, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_057_mat>
+            point3f[] points = [(-0.9, -23.305, 0.9), (-1.5, -23.305, 0.9), (-1.5, -23.305, 1.5), (-0.9, -23.305, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_058" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(0.2, -23.305, 2.15), (0.9, -23.305, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_058_mat>
+            point3f[] points = [(0.9, -23.305, 2.15), (0.2, -23.305, 2.15), (0.2, -23.305, 2.85), (0.9, -23.305, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_059" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(3.6, -23.305, 0.95), (4.1, -23.305, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_059_mat>
+            point3f[] points = [(4.1, -23.305, 0.95), (3.6, -23.305, 0.95), (3.6, -23.305, 1.45), (4.1, -23.305, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_060" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -23.2, 0.8), (-26.205, -22.4, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_060_mat>
+            point3f[] points = [(-26.205, -23.2, 0.8), (-26.205, -22.4, 0.8), (-26.205, -22.4, 1.6), (-26.205, -23.2, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_061" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -19.95, 0.9), (-26.205, -19.35, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_061_mat>
+            point3f[] points = [(-26.205, -19.95, 0.9), (-26.205, -19.35, 0.9), (-26.205, -19.35, 1.5), (-26.205, -19.95, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_062" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -18.25, 2.15), (-26.205, -17.55, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_062_mat>
+            point3f[] points = [(-26.205, -18.25, 2.15), (-26.205, -17.55, 2.15), (-26.205, -17.55, 2.85), (-26.205, -18.25, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_063" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -16.4, 0.95), (-26.205, -15.9, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_063_mat>
+            point3f[] points = [(-26.205, -16.4, 0.95), (-26.205, -15.9, 0.95), (-26.205, -15.9, 1.45), (-26.205, -16.4, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_064" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -14.05, 0.8), (-26.205, -13.25, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_064_mat>
+            point3f[] points = [(-26.205, -14.05, 0.8), (-26.205, -13.25, 0.8), (-26.205, -13.25, 1.6), (-26.205, -14.05, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_065" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -12.2, 2.2), (-26.205, -11.6, 2.8)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_065_mat>
+            point3f[] points = [(-26.205, -12.2, 2.2), (-26.205, -11.6, 2.2), (-26.205, -11.6, 2.8), (-26.205, -12.2, 2.8)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_066" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -10.5, 0.85), (-26.205, -9.8, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_066_mat>
+            point3f[] points = [(-26.205, -10.5, 0.85), (-26.205, -9.8, 0.85), (-26.205, -9.8, 1.55), (-26.205, -10.5, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_067" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -7.9, 0.95), (-26.205, -7.4, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_067_mat>
+            point3f[] points = [(-26.205, -7.9, 0.95), (-26.205, -7.4, 0.95), (-26.205, -7.4, 1.45), (-26.205, -7.9, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_068" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -6.3, 2.1), (-26.205, -5.5, 2.9)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_068_mat>
+            point3f[] points = [(-26.205, -6.3, 2.1), (-26.205, -5.5, 2.1), (-26.205, -5.5, 2.9), (-26.205, -6.3, 2.9)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_069" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -4.45, 0.9), (-26.205, -3.85, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_069_mat>
+            point3f[] points = [(-26.205, -4.45, 0.9), (-26.205, -3.85, 0.9), (-26.205, -3.85, 1.5), (-26.205, -4.45, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_070" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -2, 0.85), (-26.205, -1.3, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_070_mat>
+            point3f[] points = [(-26.205, -2, 0.85), (-26.205, -1.3, 0.85), (-26.205, -1.3, 1.55), (-26.205, -2, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_071" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, -0.15, 2.25), (-26.205, 0.35, 2.75)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_071_mat>
+            point3f[] points = [(-26.205, -0.15, 2.25), (-26.205, 0.35, 2.25), (-26.205, 0.35, 2.75), (-26.205, -0.15, 2.75)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_072" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 1.6, 0.8), (-26.205, 2.4, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_072_mat>
+            point3f[] points = [(-26.205, 1.6, 0.8), (-26.205, 2.4, 0.8), (-26.205, 2.4, 1.6), (-26.205, 1.6, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_073" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 4.05, 0.9), (-26.205, 4.65, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_073_mat>
+            point3f[] points = [(-26.205, 4.05, 0.9), (-26.205, 4.65, 0.9), (-26.205, 4.65, 1.5), (-26.205, 4.05, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_074" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 5.75, 2.15), (-26.205, 6.45, 2.85)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_074_mat>
+            point3f[] points = [(-26.205, 5.75, 2.15), (-26.205, 6.45, 2.15), (-26.205, 6.45, 2.85), (-26.205, 5.75, 2.85)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_075" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 7.6, 0.95), (-26.205, 8.1, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_075_mat>
+            point3f[] points = [(-26.205, 7.6, 0.95), (-26.205, 8.1, 0.95), (-26.205, 8.1, 1.45), (-26.205, 7.6, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_076" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 9.95, 0.8), (-26.205, 10.75, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_076_mat>
+            point3f[] points = [(-26.205, 9.95, 0.8), (-26.205, 10.75, 0.8), (-26.205, 10.75, 1.6), (-26.205, 9.95, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_077" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 11.8, 2.2), (-26.205, 12.4, 2.8)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_077_mat>
+            point3f[] points = [(-26.205, 11.8, 2.2), (-26.205, 12.4, 2.2), (-26.205, 12.4, 2.8), (-26.205, 11.8, 2.8)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_078" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 13.5, 0.85), (-26.205, 14.2, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_078_mat>
+            point3f[] points = [(-26.205, 13.5, 0.85), (-26.205, 14.2, 0.85), (-26.205, 14.2, 1.55), (-26.205, 13.5, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_079" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 16.1, 0.95), (-26.205, 16.6, 1.45)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_079_mat>
+            point3f[] points = [(-26.205, 16.1, 0.95), (-26.205, 16.6, 0.95), (-26.205, 16.6, 1.45), (-26.205, 16.1, 1.45)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_080" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 17.7, 2.1), (-26.205, 18.5, 2.9)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_080_mat>
+            point3f[] points = [(-26.205, 17.7, 2.1), (-26.205, 18.5, 2.1), (-26.205, 18.5, 2.9), (-26.205, 17.7, 2.9)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_081" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 19.55, 0.9), (-26.205, 20.15, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_081_mat>
+            point3f[] points = [(-26.205, 19.55, 0.9), (-26.205, 20.15, 0.9), (-26.205, 20.15, 1.5), (-26.205, 19.55, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_082" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 22, 0.85), (-26.205, 22.7, 1.55)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_082_mat>
+            point3f[] points = [(-26.205, 22, 0.85), (-26.205, 22.7, 0.85), (-26.205, 22.7, 1.55), (-26.205, 22, 1.55)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_083" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 23.85, 2.25), (-26.205, 24.35, 2.75)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_083_mat>
+            point3f[] points = [(-26.205, 23.85, 2.25), (-26.205, 24.35, 2.25), (-26.205, 24.35, 2.75), (-26.205, 23.85, 2.75)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_084" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 25.45, 0.8), (-26.205, 26.25, 1.6)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_084_mat>
+            point3f[] points = [(-26.205, 25.45, 0.8), (-26.205, 26.25, 0.8), (-26.205, 26.25, 1.6), (-26.205, 25.45, 1.6)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "plate_085" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-26.205, 28.05, 0.9), (-26.205, 28.65, 1.5)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/plate_085_mat>
+            point3f[] points = [(-26.205, 28.05, 0.9), (-26.205, 28.65, 0.9), (-26.205, 28.65, 1.5), (-26.205, 28.05, 1.5)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "poster_00" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-12.775, -23.305, 2.75), (-10.775, -23.305, 4.25)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/poster_00_mat>
+            point3f[] points = [(-10.775, -23.305, 2.75), (-12.775, -23.305, 2.75), (-12.775, -23.305, 4.25), (-10.775, -23.305, 4.25)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+
+        def Mesh "poster_01" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            float3[] extent = [(-13.175, 30.555, 2.75), (-11.175, 30.555, 4.25)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            rel material:binding = </World/Dressing/Looks/poster_01_mat>
+            point3f[] points = [(-13.175, 30.555, 2.75), (-11.175, 30.555, 2.75), (-11.175, 30.555, 4.25), (-13.175, 30.555, 4.25)]
+            texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+                interpolation = "varying"
+            )
+        }
+    }
+}
+
