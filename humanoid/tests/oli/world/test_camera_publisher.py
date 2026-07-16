@@ -147,3 +147,59 @@ def test_close_is_idempotent(tmp_path):
     pub = CameraPublisher(oli, socket_path=str(tmp_path / "frames.sock"))
     pub.close()
     pub.close()  # must not raise
+
+
+# ── stereo pair streams (MAY-173 slam-demo-loop 1.1) ─────────────────────────────
+class StereoFakeOli(FakeOli):
+    """Camera-enabled Oli WITH the head stereo pair: RGB-only streams in a separate
+    table (`stereo_camera_names` + `read_camera_rgb`), like the real body surface."""
+
+    _STEREO_VAL = {"head_left": 30, "head_right": 40}
+
+    @property
+    def stereo_camera_names(self):
+        return list(self._STEREO_VAL.keys())
+
+    def read_camera_rgb(self, name: str):
+        return np.full((self._h, self._w, 3), self._STEREO_VAL[name], dtype=np.uint8)
+
+
+def test_publisher_ships_stereo_rgb_only(tmp_path):
+    """Stereo streams ride the same channel as RGB-only frames (depth None), keyed by
+    name, alongside the RGBD streams — the recorder + localizer consumer surface."""
+    oli = StereoFakeOli()
+    sock = str(tmp_path / "frames.sock")
+    pub = CameraPublisher(oli, socket_path=sock)
+    reader = CameraStreamReader(socket_path=sock)
+    reader.connect(timeout=5.0)
+    try:
+        for tick in range(3):
+            pub.publish(tick, stamp_ns=100 + tick)
+        left = _poll(lambda: reader.read("head_left"))
+        right = _poll(lambda: reader.read("head_right"))
+        head = _poll(lambda: reader.read("head"))
+        assert left is not None and left.depth is None
+        assert right is not None and right.depth is None
+        assert head is not None and head.depth is not None  # RGBD stream untouched
+        np.testing.assert_array_equal(left.rgb, np.full((4, 8, 3), 30, dtype=np.uint8))
+        np.testing.assert_array_equal(right.rgb, np.full((4, 8, 3), 40, dtype=np.uint8))
+    finally:
+        reader.close()
+        pub.close()
+
+
+def test_publisher_without_stereo_table_unchanged(tmp_path):
+    """A body with NO stereo surface (FakeOli) must publish exactly as before —
+    the stereo iteration is duck-typed and optional."""
+    oli = FakeOli()
+    sock = str(tmp_path / "frames.sock")
+    pub = CameraPublisher(oli, socket_path=sock)
+    reader = CameraStreamReader(socket_path=sock)
+    reader.connect(timeout=5.0)
+    try:
+        pub.publish(0, stamp_ns=1)
+        assert _poll(lambda: reader.read("chest")) is not None
+        assert reader.read("head_left") is None
+    finally:
+        reader.close()
+        pub.close()

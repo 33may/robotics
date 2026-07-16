@@ -178,8 +178,8 @@ def run_bench(
             "--log", str(run_dir / "stack.log")]
     if scene_cfg.get("scene_usd"):
         argv += ["--scene", str(scene_cfg["scene_usd"])]
-    if scene_cfg.get("camera_every"):
-        argv += ["--camera-every", str(scene_cfg["camera_every"])]
+    if scene_cfg.get("camera_hz"):
+        argv += ["--camera-hz", str(scene_cfg["camera_hz"])]
     if headless:
         argv.append("--headless")
     if shadow_config:

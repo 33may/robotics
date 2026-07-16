@@ -77,23 +77,31 @@ def decode_glide_cmd(buf: bytes) -> GlideCmd:
 
 
 def encode_camera_frame(frame: CameraFrame, seq: int = 0) -> bytes:
-    """CameraFrame → a camera-frame wire buffer (depth → uint16 mm)."""
-    depth_mm = np.clip(frame.depth * _DEPTH_SCALE_MM, 0.0, 65535.0).astype(np.uint16)
+    """CameraFrame → a camera-frame wire buffer (depth → uint16 mm). RGB-only frames
+    (depth None — the stereo pair) ship an EMPTY depth payload (depth_len=0)."""
+    if frame.depth is None:
+        depth_bytes = b""
+    else:
+        depth_bytes = np.clip(
+            frame.depth * _DEPTH_SCALE_MM, 0.0, 65535.0).astype(np.uint16).tobytes()
     i = frame.intrinsics
     return fp.pack_camera_frame(
         seq, frame.stamp_ns, frame.name, i.width, i.height,
         i.fx, i.fy, i.cx, i.cy,
-        frame.rgb.tobytes(), depth_mm.tobytes(),
+        frame.rgb.tobytes(), depth_bytes,
     )
 
 
 def decode_camera_frame(buf: bytes) -> CameraFrame:
-    """A camera-frame wire buffer → CameraFrame (uint16 mm depth → float32 m)."""
+    """A camera-frame wire buffer → CameraFrame (uint16 mm depth → float32 m; an
+    empty depth payload → depth None)."""
     (_seq, stamp_ns, name, w, h, fx, fy, cx, cy,
      rgb_bytes, depth_bytes) = fp.unpack_camera_frame(buf)
     rgb = np.frombuffer(rgb_bytes, dtype=np.uint8).reshape(h, w, 3)
-    depth = np.frombuffer(depth_bytes, dtype=np.uint16).reshape(h, w).astype(np.float32)
-    depth /= _DEPTH_SCALE_MM
+    depth = None
+    if depth_bytes:
+        depth = np.frombuffer(depth_bytes, dtype=np.uint16).reshape(h, w).astype(np.float32)
+        depth /= _DEPTH_SCALE_MM
     return CameraFrame(
         stamp_ns=stamp_ns, name=name, rgb=rgb, depth=depth,
         intrinsics=CameraIntrinsics(width=w, height=h, fx=fx, fy=fy, cx=cx, cy=cy),

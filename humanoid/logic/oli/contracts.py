@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 import numpy as np
 
@@ -185,26 +185,31 @@ class CameraFrame:
     derivation identical in sim and real — so shipping the pose would both break the
     invariance (the real robot has no ground-truth pose) and bloat the payload (D5).
     RGB is uint8 (H, W, 3); depth is float32 (H, W) planar distance-to-image-plane in
-    meters; both must match the declared intrinsics resolution.
+    meters; both must match the declared intrinsics resolution. Depth is OPTIONAL
+    (None): RGB-only streams — the head stereo pair (MAY-173) — travel the same
+    channel with an empty depth payload on the wire.
     """
 
     stamp_ns: int              # SIM-time nanoseconds — same clock as Observation (D8)
-    name: str                  # camera name, e.g. "chest" / "head"
+    name: str                  # camera name, e.g. "chest" / "head" / "head_left"
     rgb: np.ndarray            # (H, W, 3) uint8
-    depth: np.ndarray          # (H, W) float32, meters (planar Z)
+    depth: Optional[np.ndarray]  # (H, W) float32, meters (planar Z) — None = RGB-only
     intrinsics: CameraIntrinsics
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "stamp_ns", int(self.stamp_ns))
         object.__setattr__(self, "name", str(self.name))
         rgb = np.asarray(self.rgb, dtype=np.uint8)
-        depth = np.asarray(self.depth, dtype=np.float32)
         if rgb.ndim != 3 or rgb.shape[2] != 3:
             raise ValueError(f"rgb must be (H, W, 3), got {rgb.shape}")
-        if depth.ndim != 2:
-            raise ValueError(f"depth must be (H, W), got {depth.shape}")
-        if rgb.shape[:2] != depth.shape:
-            raise ValueError(f"rgb {rgb.shape[:2]} and depth {depth.shape} resolutions disagree")
+        depth = None
+        if self.depth is not None:
+            depth = np.asarray(self.depth, dtype=np.float32)
+            if depth.ndim != 2:
+                raise ValueError(f"depth must be (H, W), got {depth.shape}")
+            if rgb.shape[:2] != depth.shape:
+                raise ValueError(
+                    f"rgb {rgb.shape[:2]} and depth {depth.shape} resolutions disagree")
         i = self.intrinsics
         if (i.height, i.width) != rgb.shape[:2]:
             raise ValueError(

@@ -62,77 +62,116 @@ def recv_frame(conn: _sock.socket) -> Optional[bytes]:
     return header + body
 
 
+class _ClientSlot:
+    """One connected consumer: its own latest-wins mailbox + sender thread, so a slow
+    client only ever loses ITS frames — it never stalls the World or its siblings."""
+
+    def __init__(self, conn: _sock.socket) -> None:
+        self.conn = conn
+        self.pending: Dict[str, bytes] = {}  # per-camera-name latest-wins mailbox
+        self.cond = threading.Condition()
+        self.alive = True
+
+
 class FrameChannelServer:
-    """World-side frame publisher. `serve()` is non-blocking (spawns an accept+send
-    thread); `publish(frame_bytes)` never blocks the caller."""
+    """World-side frame publisher, MULTI-CLIENT. `serve()` is non-blocking (spawns an
+    accept thread; each accepted consumer gets its own mailbox + sender thread);
+    `publish(frame_bytes)` fans out to every connected client and never blocks the
+    caller. Consumers are plural by design — dev app, recorder, localizer (MAY-173:
+    the old single-accept server silently starved every consumer after the first)."""
 
     def __init__(self, socket_path: str) -> None:
         self._path = socket_path
         self._srv: Optional[_sock.socket] = None
-        self._conn: Optional[_sock.socket] = None
-        self._pending: Dict[str, bytes] = {}  # per-camera-name latest-wins mailbox
-        self._cond = threading.Condition()
+        self._slots: list = []
+        self._slots_lock = threading.Lock()
+        self._last: Dict[str, bytes] = {}  # newest frame per stream — seeds new clients
         self._running = False
-        self._thread: Optional[threading.Thread] = None
+        self._accept_thread: Optional[threading.Thread] = None
 
     def serve(self) -> None:
         if os.path.exists(self._path):
             os.unlink(self._path)
         srv = _sock.socket(_sock.AF_UNIX, _sock.SOCK_STREAM)
         srv.bind(self._path)
-        srv.listen(1)
+        srv.listen(8)
         srv.settimeout(1.0)
         self._srv = srv
         self._running = True
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
+        self._accept_thread = threading.Thread(target=self._accept_loop, daemon=True)
+        self._accept_thread.start()
 
-    def _run(self) -> None:
-        conn = None
-        while self._running and conn is None:  # accept one client (close breaks out)
+    def _accept_loop(self) -> None:
+        while self._running:
             try:
                 conn, _ = self._srv.accept()
             except _sock.timeout:
                 continue
             except OSError:
                 return
-        if conn is None:
-            return
-        self._conn = conn
-        while self._running:  # flush every pending stream whenever one appears
-            with self._cond:
-                while self._running and not self._pending:
-                    self._cond.wait(timeout=1.0)
-                batch = list(self._pending.values())  # newest per name
-                self._pending.clear()
-            if not self._running:
-                continue
+            slot = _ClientSlot(conn)
+            with self._slots_lock:
+                # Seed with the newest frame per stream: a client that connects between
+                # publishes (or slightly before its accept) starts from the latest state
+                # instead of silently losing the connect→accept window.
+                slot.pending.update(self._last)
+                self._slots.append(slot)
+            threading.Thread(target=self._sender, args=(slot,), daemon=True).start()
+
+    def _sender(self, slot: _ClientSlot) -> None:
+        while self._running and slot.alive:
+            with slot.cond:
+                while self._running and slot.alive and not slot.pending:
+                    slot.cond.wait(timeout=1.0)
+                batch = list(slot.pending.values())  # newest per name
+                slot.pending.clear()
+            if not (self._running and slot.alive):
+                break
             try:
                 for frame in batch:
-                    conn.sendall(frame)
+                    slot.conn.sendall(frame)
             except OSError:
                 break  # client gone
+        slot.alive = False
+        try:
+            slot.conn.close()
+        except OSError:
+            pass
+        with self._slots_lock:
+            if slot in self._slots:
+                self._slots.remove(slot)
 
     def publish(self, frame_bytes: bytes) -> None:
-        """Latest-wins mailbox drop, keyed by camera name so two cameras never clobber
-        each other; O(1), never blocks. No-op if nobody reads it."""
+        """Latest-wins mailbox drop into EVERY connected client's slot, keyed by camera
+        name so two cameras never clobber each other; never blocks. No-op with no clients."""
         name = fp.frame_name(frame_bytes)
-        with self._cond:
-            self._pending[name] = frame_bytes
-            self._cond.notify()
+        with self._slots_lock:
+            self._last[name] = frame_bytes
+            slots = list(self._slots)
+        for slot in slots:
+            with slot.cond:
+                slot.pending[name] = frame_bytes
+                slot.cond.notify()
 
     def close(self) -> None:
         self._running = False
-        with self._cond:
-            self._cond.notify_all()
-        for s in (self._conn, self._srv):
-            if s is not None:
-                try:
-                    s.close()
-                except OSError:
-                    pass
-        if self._thread is not None:
-            self._thread.join(timeout=2.0)
+        with self._slots_lock:
+            slots = list(self._slots)
+        for slot in slots:
+            slot.alive = False
+            with slot.cond:
+                slot.cond.notify_all()
+            try:
+                slot.conn.close()
+            except OSError:
+                pass
+        if self._srv is not None:
+            try:
+                self._srv.close()
+            except OSError:
+                pass
+        if self._accept_thread is not None:
+            self._accept_thread.join(timeout=2.0)
         if os.path.exists(self._path):
             try:
                 os.unlink(self._path)

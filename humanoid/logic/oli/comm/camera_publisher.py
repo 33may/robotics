@@ -50,22 +50,35 @@ class CameraPublisher:
             return
         stamp = int(stamp_ns) if stamp_ns is not None else int(tick)
         for name in self._body.camera_names:
-            try:
+            self._ship(name, stamp, rgbd=True)
+        # Head stereo pair (MAY-173): RGB-only streams from the body's separate stereo
+        # table — same channel, empty depth payload. Duck-typed + optional, so bodies
+        # without a stereo surface publish exactly as before.
+        for name in getattr(self._body, "stereo_camera_names", None) or []:
+            self._ship(name, stamp, rgbd=False)
+
+    def _ship(self, name: str, stamp: int, *, rgbd: bool) -> None:
+        """Read one camera, wrap, encode, publish. A camera that is not ready must
+        NEVER crash the World's loop — skip it (warn once) until it renders."""
+        try:
+            if rgbd:
                 rgb, depth = self._body.read_camera_rgbd(name)
-                intrinsics = self._body.camera_intrinsics(name)
-                frame = CameraFrame(
-                    stamp_ns=stamp, name=name, rgb=rgb, depth=depth, intrinsics=intrinsics
-                )
-                encoded = encode_camera_frame(frame, seq=self._seq)
-            except Exception as exc:  # not-ready camera / transient render hiccup
-                if name not in self._warned:
-                    self._warned.add(name)
-                    print(f"[camera-publisher] {name} not ready "
-                          f"({type(exc).__name__}: {exc}); skipping until it renders",
-                          flush=True)
-                continue
-            self._server.publish(encoded)
-            self._seq += 1
+            else:
+                rgb, depth = self._body.read_camera_rgb(name), None
+            intrinsics = self._body.camera_intrinsics(name)
+            frame = CameraFrame(
+                stamp_ns=stamp, name=name, rgb=rgb, depth=depth, intrinsics=intrinsics
+            )
+            encoded = encode_camera_frame(frame, seq=self._seq)
+        except Exception as exc:  # not-ready camera / transient render hiccup
+            if name not in self._warned:
+                self._warned.add(name)
+                print(f"[camera-publisher] {name} not ready "
+                      f"({type(exc).__name__}: {exc}); skipping until it renders",
+                      flush=True)
+            return
+        self._server.publish(encoded)
+        self._seq += 1
 
     def close(self) -> None:
         self._server.close()

@@ -88,20 +88,22 @@ def test_glide_scale_flag_threads_to_dev_app_brain():
     assert brain_def.argv[brain_def.argv.index("--glide-scale") + 1] == "5.0"
 
 
-def test_camera_every_flag_threads_to_glide_world():
-    """`--camera-every` sets the glide World camera cadence; default 32 (~30 Hz @ 1 kHz)."""
+def test_camera_hz_flag_threads_to_glide_world():
+    """`--camera-hz` sets the glide World camera cadence in SIM-TIME Hz; default 30
+    (the proven mapping recipe). Replaced the tick-gated `--camera-every`, which
+    actually delivered ~5 Hz sim (MAY-173 acceptance finding, 2026-07-16)."""
     args, backend = launcher.build_args(
         ["--sim", "isaac", "--mode", "glide", "--dev-app", "--cameras",
-         "--camera-every", "16"])
-    assert args.camera_every == 16
+         "--camera-hz", "15"])
+    assert args.camera_hz == 15
     world, _ = backend.stages(args)
-    assert world.argv[world.argv.index("--camera-every") + 1] == "16"
+    assert world.argv[world.argv.index("--camera-hz") + 1] == "15.0"
     # default cadence present when cameras are on
     args_def, backend_def = launcher.build_args(
         ["--sim", "isaac", "--mode", "glide", "--dev-app", "--cameras"])
-    assert args_def.camera_every == 32
+    assert args_def.camera_hz == 30.0
     world_def, _ = backend_def.stages(args_def)
-    assert world_def.argv[world_def.argv.index("--camera-every") + 1] == "32"
+    assert world_def.argv[world_def.argv.index("--camera-hz") + 1] == "30.0"
 
 
 def test_mujoco_walk_plan_has_core_bus_plus_pad_extras():

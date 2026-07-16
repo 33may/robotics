@@ -33,7 +33,9 @@ SCENES = {
         "map_dir": "assets/envs/warehouse_nvidia/nav_maps/v1",
         "scene_usd": "assets/envs/warehouse_nvidia/Isaac/Environments/Simple_Warehouse/"
                      "full_warehouse.usd",
-        "camera_every": 16,           # ≈60 Hz frames — SLAM-friendly cadence
+        "camera_hz": 30,              # SIM-TIME Hz — the proven mapping recipe rate.
+                                      # (The old camera_every=16 tick gate actually
+                                      # delivered ~7 Hz sim to the tracker — MAY-173.)
         "origin_xy": (0.0, 0.0),      # the glide World's boot spawn (USD origin)
         "n_episodes": 10,
         "min_separation_m": 8.0,
@@ -122,7 +124,7 @@ def _cmd_env(args) -> int:
 def _cmd_episodes(args) -> int:
     cfg = _scene_cfg(args.scene)
     cfg.pop("scene_usd", None)     # sampling needs only the baked map
-    cfg.pop("camera_every", None)
+    cfg.pop("camera_hz", None)
     map_dir = cfg.pop("map_dir")
 
     from humanoid.logic.locbench.render import render_episode_set

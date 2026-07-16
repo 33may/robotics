@@ -76,3 +76,40 @@ def test_module_is_brain_pure():
 
     assert "isaacsim" not in sys.modules
     assert "limxsdk" not in sys.modules
+
+
+# ── RGB-only frames (stereo pair, MAY-173 slam-demo-loop 1.1) ────────────────────
+# The head stereo cameras have no depth annotator; their frames travel the same
+# channel with an EMPTY depth payload (depth_len=0 is explicit in the header).
+
+
+def test_wire_roundtrip_empty_depth():
+    buf = fp.pack_camera_frame(7, 123, "head_left", 2, 2, 5.0, 6.0, 1.0, 1.0,
+                               b"\x01\x02\x03" * 4, b"")
+    *_, rb, db = fp.unpack_camera_frame(buf)
+    assert rb == b"\x01\x02\x03" * 4
+    assert db == b""
+
+
+def test_contract_accepts_none_depth():
+    f = _frame()
+    g = CameraFrame(stamp_ns=1, name="head_left", rgb=f.rgb, depth=None,
+                    intrinsics=f.intrinsics)
+    assert g.depth is None
+
+
+def test_contract_still_rejects_bad_depth_shape():
+    f = _frame()
+    with pytest.raises(ValueError):
+        CameraFrame(stamp_ns=1, name="head_left", rgb=f.rgb,
+                    depth=np.zeros((2, 2, 2), dtype=np.float32), intrinsics=f.intrinsics)
+
+
+def test_codec_roundtrip_rgb_only():
+    f = _frame()
+    rgb_only = CameraFrame(stamp_ns=7, name="head_right", rgb=f.rgb, depth=None,
+                           intrinsics=f.intrinsics)
+    g = decode_camera_frame(encode_camera_frame(rgb_only))
+    assert g.depth is None
+    assert g.name == "head_right"
+    np.testing.assert_array_equal(g.rgb, f.rgb)

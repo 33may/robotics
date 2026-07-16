@@ -29,6 +29,10 @@ _DEVAPP_MODULE = "humanoid.logic.oli.devapp"
 #: default forward speed (m/s) for --mode forward without an explicit --vx
 _FORWARD_VX = 0.3
 
+#: dedicated GT-pose path for the mapping recorder (MAY-173) — the nav-map client binds
+#: its own path, so the recorder gets a second one; the World publishes to both.
+_RECORD_POSE_SOCKET = "/tmp/oli-record-pose.sock"
+
 #: substring the World prints right before it binds the socket and waits for the brain
 _SERVING_MARKER = "serving on"
 
@@ -96,9 +100,14 @@ def add_args(ap: argparse.ArgumentParser) -> None:
                     help="AF_UNIX SOCK_STREAM path for the camera frame channel")
     ap.add_argument("--camera-res", type=int, nargs=2, default=[1280, 720], metavar=("W", "H"),
                     help="camera resolution W H (D435i native 1280×720)")
-    ap.add_argument("--camera-every", type=int, default=32,
-                    help="glide: publish a frame every N physics ticks (1 kHz) — 32 ≈ 30 Hz "
-                         "(D435i-faithful); 16 ≈ 60 Hz; lower = more frequent but heavier")
+    ap.add_argument("--stereo-cameras", action="store_true",
+                    help="glide: also stream the head stereo pair (RGB-only) + publish GT pose "
+                         "to the recorder channel — enables dev-app mapping capture (MAY-173); "
+                         "requires --cameras")
+    ap.add_argument("--camera-hz", type=float, default=30.0,
+                    help="glide: camera publish rate in SIM-TIME Hz (D435i-faithful 30; the "
+                         "proven mapping recipe). Sim-time gated — tick-gating ran ~5 Hz sim "
+                         "(caught by the MAY-173 acceptance run)")
     # nav debug overlay (MAY-173/175): the glide World streams its ground-truth base pose on a
     # side channel; the dev-app Nav Map draws it over the baked occupancy artifact.
     ap.add_argument("--debug-pose", nargs="?", const="/tmp/oli-world-pose.sock", default=None,
@@ -146,7 +155,13 @@ def _glide_world_argv(a: argparse.Namespace) -> list[str]:
         py += ["--scene", str(Path(a.scene).resolve())]
     py += _camera_world_flags(a)
     if getattr(a, "cameras", False):
-        py += ["--camera-every", str(a.camera_every)]   # glide World honors the cadence knob
+        py += ["--camera-hz", str(getattr(a, "camera_hz", 30.0))]  # SIM-TIME cadence (recipe: 30)
+        if getattr(a, "stereo_cameras", False):
+            py.append("--stereo-cameras")               # head pair → mapping capture (MAY-173)
+            # GT pose to the recorder's OWN bound path (each debug-pose consumer binds its
+            # own datagram socket; publishing to a reader-less path is free) so a recording
+            # can start at any moment without restarting the World.
+            py += ["--debug-pose", _RECORD_POSE_SOCKET]
     if getattr(a, "debug_pose", None):
         py += ["--debug-pose", a.debug_pose]            # stream ground-truth base pose (nav overlay)
     if getattr(a, "teleport", None):

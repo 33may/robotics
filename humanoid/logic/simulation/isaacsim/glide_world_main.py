@@ -83,21 +83,30 @@ def main() -> None:
     ap.add_argument("--cameras", action="store_true",
                     help="attach Oli's baked D435i cameras and stream RGBD on a separate frame "
                          "channel (off by default so glide pays no render cost)")
+    ap.add_argument("--stereo-cameras", action="store_true",
+                    help="also attach + stream the head stereo pair (head_left/head_right, "
+                         "RGB-only) — the mapping-capture + localizer surface (MAY-173); "
+                         "requires --cameras")
     ap.add_argument("--camera-socket", default="/tmp/oli-world-frames.sock",
                     help="AF_UNIX SOCK_STREAM path for the camera frame channel (separate from --socket)")
     ap.add_argument("--camera-res", type=int, nargs=2, default=[1280, 720], metavar=("W", "H"),
                     help="camera resolution W H (D435i native 1280×720)")
-    ap.add_argument("--camera-every", type=int, default=32,
-                    help="publish cameras every N physics ticks (~30 Hz at 1 kHz) — DECOUPLED "
-                         "from the viewport render rate so 720p cameras don't stall the loop")
+    ap.add_argument("--camera-hz", type=float, default=30.0,
+                    help="camera publish rate in SIM-TIME Hz (D435i-faithful 30). Gated by "
+                         "world.current_time, NOT tick count — world.step() advances "
+                         "rendering_dt (~16.7 ms) on render ticks vs physics_dt (1 ms) "
+                         "otherwise, so tick-gating ran ~5 Hz sim (the v1 killer rate; "
+                         "caught by the MAY-173 1.6 acceptance run, 2026-07-16)")
     ap.add_argument("--scene", default=None,
                     help="USD world referenced as the fixed ground-truth scene (MAY-171) — "
                          "visual reference for Oli's cameras / SLAM. The default ground plane "
                          "is still added for physics; pass 'none' (or omit) to skip.")
-    ap.add_argument("--debug-pose", default=None,
+    ap.add_argument("--debug-pose", action="append", default=None,
                     help="AF_UNIX SOCK_DGRAM path to stream Oli's ground-truth base pose "
-                         "(stamp, x, y, yaw) for nav debug/eval. NOT the invariance spine — the "
-                         "real robot has no such signal; off by default.")
+                         "(stamp, x, y, yaw) for nav debug/eval. Repeatable — each consumer "
+                         "BINDS its own path (nav map, recorder), so the World publishes to "
+                         "every listed path (no-reader sends are free). NOT the invariance "
+                         "spine — the real robot has no such signal; off by default.")
     ap.add_argument("--teleport", default=None,
                     help="AF_UNIX SOCK_DGRAM path to ACCEPT bench teleport commands "
                          "(seq, x, y, yaw → base pose snap). Locbench transit speedup; NOT "
@@ -135,15 +144,16 @@ def main() -> None:
             print(f"[glide-world] scene NOT found → bare ground plane: {args.scene}", flush=True)
     # Free base (NOT pinned): the velocity driver moves the root and PhysX resolves contacts.
     oli = Oli(world, pin_root=False, spawn_pose=(0.0, 0.0, args.spawn_height),
-              cameras=args.cameras, camera_resolution=tuple(args.camera_res))
+              cameras=args.cameras, stereo_cameras=args.cameras and args.stereo_cameras,
+              camera_resolution=tuple(args.camera_res))
     simcomm = SimComm(oli, socket_path=args.socket)
 
     # Debug/eval ground-truth pose channel (opt-in, NOT the spine): a separate SOCK_DGRAM stream of
     # the base (x, y, yaw) so the nav brain's DebugPoseLocalizer can plan on perfect coords before a
     # real localizer exists. Best-effort; production never launches it (the real robot has no GT pose).
-    dbg_pose = DebugPoseServer(args.debug_pose) if args.debug_pose else None
-    if dbg_pose is not None:
-        print(f"[glide-world] debug pose ON → {args.debug_pose} (ground-truth base x,y,yaw)", flush=True)
+    dbg_poses = [DebugPoseServer(p) for p in (args.debug_pose or [])]
+    for p in (args.debug_pose or []):
+        print(f"[glide-world] debug pose ON → {p} (ground-truth base x,y,yaw)", flush=True)
 
     # Bench teleport channel (opt-in, NOT the spine): the evaluator snaps the base to the next
     # episode's spawn instead of walking there — the datagram reuses the debug-pose frame with
@@ -157,9 +167,13 @@ def main() -> None:
     # sub-tick, never blocking the glide control loop (latest-wins per camera). Off by default.
     pub = None
     if args.cameras:
-        pub = CameraPublisher(oli, socket_path=args.camera_socket, every=args.camera_every)
-        print(f"[glide-world] cameras ON ({args.camera_res[0]}×{args.camera_res[1]}) → "
-              f"frame channel {args.camera_socket} (streams: {oli.camera_names})", flush=True)
+        # every=1: the cadence is owned by the LOOP in sim time (see --camera-hz), not
+        # by the publisher's tick filter.
+        pub = CameraPublisher(oli, socket_path=args.camera_socket)
+        streams = list(oli.camera_names) + list(getattr(oli, "stereo_camera_names", []))
+        print(f"[glide-world] cameras ON ({args.camera_res[0]}×{args.camera_res[1]}, "
+              f"{args.camera_hz:g} Hz sim) → frame channel {args.camera_socket} "
+              f"(streams: {streams})", flush=True)
 
     home_isaac = simcomm.pr_to_isaac_vector(np.asarray(HOME_POSE_PR, dtype=np.float32))
     zeros = np.zeros(NUM_JOINTS, dtype=np.float32)
@@ -245,6 +259,9 @@ def main() -> None:
     def _timed_out() -> bool:
         return bool(args.duration) and (time.monotonic() - loop_start) > args.duration
 
+    capture_period_ns = int(1e9 / args.camera_hz) if args.camera_hz > 0 else 0
+    next_capture = _sim_ns()
+
     last_teleport_seq = 0
 
     def _maybe_teleport() -> bool:
@@ -278,7 +295,11 @@ def main() -> None:
                 n_cmds += 1
             for _ in range(args.decimation):
                 _drive_base_substep()
-                render = tick % args.render_every == 0
+                # SIM-TIME camera cadence (MAY-173): a capture boundary FORCES a render this
+                # substep (pixels only refresh on render steps); the viewport keeps its own
+                # tick cadence. next_capture advances by the sim period, never wall time.
+                capture = pub is not None and _sim_ns() >= next_capture
+                render = capture or tick % args.render_every == 0
                 world.step(render=render)
                 # Pin base orientation upright: roll=0, natural pitch (_cp/_sp from the settle),
                 # current yaw. Position stays PhysX-integrated (walls still block); drift-free,
@@ -289,14 +310,16 @@ def main() -> None:
                 oli.set_base_pose(
                     position=(float(_pp[0]), float(_pp[1]), float(_pp[2])),
                     quat_wxyz=(_cp * _czz, -_sp * _szz, _sp * _czz, _cp * _szz))
-                if render and pub is not None:  # camera pixels only refresh on render steps
-                    pub.publish(tick, _sim_ns())   # `tick` = cadence gate; stamp = real sim time
+                if capture:
+                    pub.publish(0, _sim_ns())      # tick 0 → always on the publish sub-tick
+                    next_capture += capture_period_ns
                 tick += 1
             simcomm.publish(_sim_ns())
-            if dbg_pose is not None:
+            if dbg_poses:
                 _pdp = oli.base_world_position()
                 _ydp = _yaw_from_quat_wxyz(oli.base_world_quat_wxyz())
-                dbg_pose.publish(_sim_ns(), float(_pdp[0]), float(_pdp[1]), _ydp)
+                for _srv in dbg_poses:
+                    _srv.publish(_sim_ns(), float(_pdp[0]), float(_pdp[1]), _ydp)
             if cmd is not None and n_cmds % 25 == 0:
                 p = oli.base_world_position()
                 print(f"[glide-world] t={world.current_time:5.2f}s "
@@ -309,8 +332,8 @@ def main() -> None:
     finally:
         if pub is not None:
             pub.close()
-        if dbg_pose is not None:
-            dbg_pose.close()
+        for _srv in dbg_poses:
+            _srv.close()
         if teleport_rx is not None:
             teleport_rx.close()
         simcomm.close()

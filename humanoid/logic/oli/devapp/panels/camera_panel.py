@@ -64,15 +64,22 @@ class CameraPanel(Panel):
             # writeable copy (copy=True) or ImmVision raises "incompatible function arguments".
             rgb = np.array(frame.rgb, dtype=np.uint8, copy=True)
             immvision.image_display(f"{name} rgb##rgb_{name}", rgb, disp, True)
-            imgui.same_line()
-            depth_rgb = np.array(colorize_depth(frame.depth), dtype=np.uint8, copy=True)
-            immvision.image_display(f"{name} depth##depth_{name}", depth_rgb, disp, True)
+            # RGB-only streams (head stereo pair, MAY-173) carry depth=None — skip the
+            # depth tile instead of crashing colorize_depth/nanmin.
+            if frame.depth is not None:
+                imgui.same_line()
+                depth_rgb = np.array(colorize_depth(frame.depth), dtype=np.uint8, copy=True)
+                immvision.image_display(f"{name} depth##depth_{name}", depth_rgb, disp, True)
 
             if frame.intrinsics is not None:
                 k = frame.intrinsics
-                dmin = float(np.nanmin(frame.depth))
-                dmax = float(np.nanmax(frame.depth))
+                if frame.depth is not None:
+                    dmin = float(np.nanmin(frame.depth))
+                    dmax = float(np.nanmax(frame.depth))
+                    depth_note = f"depth[{dmin:.2f},{dmax:.2f}]m"
+                else:
+                    depth_note = "rgb-only"
                 imgui.text_disabled(
-                    f"{w}x{h}  fx={k.fx:.0f} fy={k.fy:.0f}  depth[{dmin:.2f},{dmax:.2f}]m"
+                    f"{w}x{h}  fx={k.fx:.0f} fy={k.fy:.0f}  {depth_note}"
                 )
             imgui.separator()

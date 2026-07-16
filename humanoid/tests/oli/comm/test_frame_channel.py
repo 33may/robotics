@@ -118,3 +118,90 @@ def test_publish_is_nonblocking(tmp_path):
     finally:
         client.close()
         server.close()
+
+
+# ── multi-client (MAY-173 slam-demo-loop 1.6 root-cause fix) ─────────────────────
+# The channel was documented for plural consumers ("dev app, brain/SLAM") but the
+# server accepted exactly ONE client — a second consumer (the recorder; later the
+# localizer) connected into the listen queue and starved silently. The server must
+# fan out to every connected client, each with its own mailbox (a slow client never
+# stalls a fast one), and survive any client dying.
+
+
+def _poll(fn, timeout: float = 3.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        v = fn()
+        if v is not None:
+            return v
+        time.sleep(0.01)
+    return None
+
+
+def test_two_clients_both_receive(tmp_path):
+    path = str(tmp_path / "frames.sock")
+    srv = FrameChannelServer(socket_path=path)
+    srv.serve()
+    c1 = FrameChannelClient(socket_path=path)
+    c2 = FrameChannelClient(socket_path=path)
+    c1.connect(timeout=5.0)
+    c2.connect(timeout=5.0)
+    try:
+        for i in range(5):
+            srv.publish(encode_camera_frame(_frame(stamp=100 + i)))
+            time.sleep(0.02)
+        f1 = _poll(c1.read_latest)
+        f2 = _poll(c2.read_latest)
+        assert f1 is not None and f2 is not None
+        assert decode_camera_frame(f1).stamp_ns >= 100
+        assert decode_camera_frame(f2).stamp_ns >= 100
+    finally:
+        c1.close()
+        c2.close()
+        srv.close()
+
+
+def test_late_joining_client_receives(tmp_path):
+    """A client that connects AFTER frames started flowing (Start Recording mid-
+    session) must receive subsequent frames."""
+    path = str(tmp_path / "frames.sock")
+    srv = FrameChannelServer(socket_path=path)
+    srv.serve()
+    c1 = FrameChannelClient(socket_path=path)
+    c1.connect(timeout=5.0)
+    try:
+        srv.publish(encode_camera_frame(_frame(stamp=1)))
+        assert _poll(c1.read_latest) is not None
+        late = FrameChannelClient(socket_path=path)
+        late.connect(timeout=5.0)
+        try:
+            for i in range(5):
+                srv.publish(encode_camera_frame(_frame(stamp=200 + i)))
+                time.sleep(0.02)
+            f = _poll(late.read_latest)
+            assert f is not None and decode_camera_frame(f).stamp_ns >= 200
+        finally:
+            late.close()
+    finally:
+        c1.close()
+        srv.close()
+
+
+def test_dead_client_does_not_stop_others(tmp_path):
+    path = str(tmp_path / "frames.sock")
+    srv = FrameChannelServer(socket_path=path)
+    srv.serve()
+    c1 = FrameChannelClient(socket_path=path)
+    c2 = FrameChannelClient(socket_path=path)
+    c1.connect(timeout=5.0)
+    c2.connect(timeout=5.0)
+    try:
+        c2.close()                                   # dies mid-session
+        for i in range(5):
+            srv.publish(encode_camera_frame(_frame(stamp=300 + i)))
+            time.sleep(0.02)
+        f = _poll(c1.read_latest)
+        assert f is not None and decode_camera_frame(f).stamp_ns >= 300
+    finally:
+        c1.close()
+        srv.close()

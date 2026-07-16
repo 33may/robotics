@@ -53,6 +53,11 @@ def build_registry(args: argparse.Namespace) -> PanelRegistry:
     reg.register(CameraPanel(camera_source))
     reg.register(TeleopPanel(host=args.joy_host, port=args.joy_port))
     reg.register(StatePanel())
+    if getattr(args, "camera_socket", None):
+        # Live World attached → offer mapping-capture control (MAY-173 slam-demo-loop):
+        # spawns/monitors the standalone recorder process; see panels/record_panel.py.
+        from humanoid.logic.oli.devapp.panels.record_panel import RecordPanel
+        reg.register(RecordPanel(camera_socket=args.camera_socket))
     if getattr(args, "map", None):
         from humanoid.logic.oli.devapp.panels.map_panel import MapPanel
         reg.register(MapPanel(args.map))

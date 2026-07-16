@@ -277,10 +277,12 @@ class Oli:
         return rgb, depth
 
     def camera_intrinsics(self, name: str):
-        """D435i-like intrinsics at this camera's render resolution (CameraIntrinsics)."""
+        """D435i-like intrinsics at this camera's render resolution (CameraIntrinsics).
+        Covers both tables — RGBD cameras and the RGB-only stereo pair (MAY-173)."""
         from humanoid.logic.oli.camera_mounts import rgb_intrinsics
 
-        _cam, mount = self._cameras[name]
+        table = self._cameras if name in self._cameras else self._stereo_cameras
+        _cam, mount = table[name]
         w, h = self._camera_resolution
         return rgb_intrinsics(width=w, height=h, hfov_deg=mount.hfov_deg)
 
