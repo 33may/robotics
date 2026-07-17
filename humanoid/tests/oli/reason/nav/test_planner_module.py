@@ -136,3 +136,50 @@ def test_version_bump_rebuilds_layer_and_drops_path():
     g.grid[4, :] = True
     assert p.plan(_pose(0.5, 0.5), goal, _map(g, version=2)) is None
     assert g.inflate_calls == 2                   # robot layer re-derived on the bump
+
+
+# ── escape corridor: start blocked by inflation only (2026-07-17, Anton) ──────
+# A baked map can leave the robot's spawn inside an inflation-locked pocket
+# (start/end camera blind spot). The planner must escape over RAW-free cells
+# (physically observed/swept floor) to the nearest legally-free cell — never
+# through a raw obstacle.
+
+
+def _pocket_world(n=20, res=0.1):
+    """Free room with a walled pocket rows/cols 2..8 and a 1-cell door at
+    (5, 8). With robot_radius ≥ 1 cell the door is inflation-blocked."""
+    g = np.zeros((n, n), dtype=bool)
+    g[2, 2:9] = True   # bottom wall
+    g[8, 2:9] = True   # top wall
+    g[2:9, 2] = True   # left wall
+    g[2:9, 8] = True   # right wall
+    g[5, 8] = False    # the door
+    return _CountingGrid(g, res)
+
+
+def test_escape_corridor_plans_out_of_inflation_locked_pocket():
+    world = _pocket_world()
+    p = Planner(robot_radius_m=0.15)
+    path = p.plan(_pose(0.55, 0.55), GoalCoordinate(1.55, 1.55), _map(world))
+    assert path is not None
+    # ends at the goal cell
+    assert abs(path[-1][0] - 1.55) < 0.1 and abs(path[-1][1] - 1.55) < 0.1
+    # every waypoint is raw-free: escape never tunnels a real wall
+    for x, y in path:
+        assert not world.is_occupied_cell(*world.world_to_cell(x, y))
+
+
+def test_escape_returns_none_when_start_sealed_by_raw_walls():
+    world = _pocket_world()
+    world.grid[5, 8] = True  # brick up the door — pocket truly sealed
+    p = Planner(robot_radius_m=0.15)
+    path = p.plan(_pose(0.55, 0.55), GoalCoordinate(1.55, 1.55), _map(world))
+    assert path is None
+
+
+def test_unblocked_start_needs_no_escape_and_path_is_legal():
+    world = _pocket_world()
+    p = Planner(robot_radius_m=0.15)
+    # start in open space: normal planning, all waypoints legal in the PLAN grid
+    path = p.plan(_pose(1.25, 1.25), GoalCoordinate(1.85, 1.85), _map(world))
+    assert path is not None

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import heapq
 import math
+from collections import deque
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from ..localization import RobotPose
@@ -114,6 +115,67 @@ def _reconstruct(grid: OccupancyGrid, came: Dict[Cell, Cell], cur: Cell) -> List
     return [grid.cell_to_world(r, c) for r, c in cells]
 
 
+def _goal_component(plan_grid: OccupancyGrid, goal_cell: Cell) -> set:
+    """All plan-free cells 8-connected to the goal (flood fill)."""
+    comp = {goal_cell}
+    q: deque = deque([goal_cell])
+    while q:
+        r, c = q.popleft()
+        for dr, dc, _ in _STEPS:
+            nb: Cell = (r + dr, c + dc)
+            if nb in comp or not plan_grid.in_bounds(*nb) or plan_grid.is_occupied_cell(*nb):
+                continue
+            comp.add(nb)
+            q.append(nb)
+    return comp
+
+
+def _escape_to_free(
+    world: OccupancyGrid, plan_grid: OccupancyGrid, start: Point, goal: Point
+) -> Optional[List[Point]]:
+    """Escape corridor for a start pocket sealed off by the robot layer
+    (2026-07-17, Anton).
+
+    A baked map can leave the spawn inside an inflation-locked pocket (the
+    start/end camera blind spot). BFS from `start` over RAW-free world cells —
+    physically observed/swept floor, never a real obstacle — until touching the
+    goal's plan-free connected component. Returns the escape waypoints
+    ([] when the start is already in the goal component), or None when no
+    raw-free route to the goal component exists.
+    """
+    sr, sc = plan_grid.world_to_cell(*start)
+    gr, gc = plan_grid.world_to_cell(*goal)
+    if not plan_grid.in_bounds(sr, sc) or not plan_grid.in_bounds(gr, gc):
+        return None
+    if plan_grid.is_occupied_cell(gr, gc):
+        return None
+    comp = _goal_component(plan_grid, (gr, gc))
+    if (sr, sc) in comp:
+        return []
+    if world.is_occupied_cell(sr, sc):
+        return None
+    came: Dict[Cell, Cell] = {}
+    seen = {(sr, sc)}
+    q: deque = deque([(sr, sc)])
+    while q:
+        cur = q.popleft()
+        if cur in comp:
+            cells = [cur]
+            while cells[-1] in came:
+                cells.append(came[cells[-1]])
+            cells.reverse()
+            return [plan_grid.cell_to_world(r, c) for r, c in cells]
+        r, c = cur
+        for dr, dc, _ in _STEPS:
+            nb: Cell = (r + dr, c + dc)
+            if nb in seen or not world.in_bounds(*nb) or world.is_occupied_cell(*nb):
+                continue
+            seen.add(nb)
+            came[nb] = cur
+            q.append(nb)
+    return None
+
+
 def _split_ahead(pose: RobotPose, path: List[Point], horizon_m: float) -> Tuple[Point, List[Point]]:
     """Walk `path` from the waypoint nearest the robot until `horizon_m` accumulated; return
     (that horizon waypoint, the remaining tail after it). The local re-plan targets the horizon;
@@ -154,6 +216,7 @@ class Planner:
         # derived robot layer, cached keyed on (grid identity, version) (D9) — identity guards
         # against two mapping sources reusing the same version number for different grids
         self._layer_key: Optional[Tuple[int, int]] = None
+        self._world_grid: Optional[OccupancyGrid] = None
         self._plan_grid: Optional[OccupancyGrid] = None
         self._cost: Optional["np.ndarray"] = None
         # path cache + goal-change detection (D9)
@@ -207,6 +270,7 @@ class Planner:
         key = (id(world_map.grid), world_map.version)
         if key == self._layer_key:
             return
+        self._world_grid = world_map.grid  # the emitted Map VALUE's grid (not a module ref)
         self._plan_grid = world_map.grid.inflate(self._robot_radius_m)
         self._cost = world_map.grid.clearance_cost(
             self._inflation_radius_m, self._clearance_weight
@@ -216,7 +280,15 @@ class Planner:
 
     def _full_plan(self, pose: RobotPose) -> Optional[List[Point]]:
         assert self._plan_grid is not None and self._goal is not None
-        return plan_path(
-            self._plan_grid, (pose.x, pose.y), (self._goal.x, self._goal.y),
-            cost=self._cost, weight=self._weight,
-        )
+        assert self._world_grid is not None
+        start: Point = (pose.x, pose.y)
+        goal: Point = (self._goal.x, self._goal.y)
+        escape = _escape_to_free(self._world_grid, self._plan_grid, start, goal)
+        if escape is None:
+            return None  # no raw-free route to the goal's component
+        if escape:
+            start = escape[-1]  # plan from the escape exit, prepend the corridor
+        path = plan_path(self._plan_grid, start, goal, cost=self._cost, weight=self._weight)
+        if path is None:
+            return None
+        return escape[:-1] + path if escape else path
