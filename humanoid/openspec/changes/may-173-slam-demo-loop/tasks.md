@@ -21,7 +21,14 @@ the parallel agent experiment; the writer supports both (codec slot).
 
 ## 2. Phase 2 — offline artifact build (bake + occupancy-from-depth, D1)
 
-(to be detailed when Phase 1 acceptance is green)
+Deliverable: from ONE teleop dump, every artifact Phase 3 consumes — cuVSLAM
+keyframe map + cuVGL BoW + a robot-derived occupancy grid — via a single
+reusable flow with a clear in/out contract. No GT anywhere in the build path.
+
+- [x] 2.1 cuVGL BoW map on `teleop_v1_demo` bake via the existing container flow (`--steps_to_run cuvgl`, 135 s → `cuvgl_map/` bow_index.pb 16 MB + vocabulary + keyframes 1.7 G). Container `depth`+`occupancy` steps skipped deliberately: they need a FoundationStereo TRT engine we don't have — and we recorded real sensor depth. Est-vs-GT plot (`data/maps/teleop_v1_demo_est_vs_gt.png`): mean 16 cm / p95 25.6 / max 27 over 83 m, 0 jumps; pure drift-stairs, no relocalization on revisit (the exact gap Phase 3 LocalizeInMap closes)
+- [x] 2.2 Occupancy via the VENDOR pipeline (pivot, Anton 16-07: "check what nvidia propose"): `nvblox_inject.py` (TDD, 5 convention tests) maps recorded sensor depth onto the bake's keyframes — head depth → `depth/head_left/` (2.5 cm offset, sub-cell) + chest (35° down, near-field) as NEW keyframes composed from the bake's OWN head_left poses ∘ static FK offset; runtime convention self-check against the meta's `sensor_to_vehicle`. Then container `--steps_to_run occupancy` (nvblox fuse_cusfm, 30 s) → ROS trinary PNG+YAML → existing `occupancy_io.convert_ros_map` (**unknown = blocked**, Anton 16-07). Hand-rolled projector (`occupancy_from_depth.py`) was the dead end that taught the conventions: bake base_link is yaw-flipped; TUM poses compose badly with external extrinsics — frames_meta poses don't
+- [x] 2.3 Verified on `teleop_v1_demo`: 680×225 @ 5 cm; driven path blocked 3/2268 (0.1%) raw, 1.7% @ 0.25 m inflation, 2.5% @ 0.35 m (only tightest shelf-corner turns); artifact loads via `load_occupancy`, world (0,0) free
+- [ ] 2.4 One-script offline flow (`bake_map`): dump → bag synth → edex+compute_poses → cuvgl → occupancy_from_depth → audit; documented IN (dump dir) / OUT (map dir Phase 3 consumes)
 
 ## 3. Phase 3 — deployment: live localizer + LOC MODE (D3, D4, D6)
 
