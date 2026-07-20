@@ -17,3 +17,10 @@ dependencies:
   - cmake>=3.23       # top-level cuVSLAM build + the bindings' scikit-build backend
   - make              # bindings' pyproject pins the "Unix Makefiles" generator
   - pip
+  - pip:
+      - pillow                  # offline dev loop reads dump/edex JPEGs (derisk/build_map/replay)
+      - matplotlib              # replay_proof plots
+      - imgui-bundle==1.92.801  # dev_app runs IN this env for the demo (slam-demo-loop, 17-07;
+      - pygame==2.6.1           #  pins mirror the brain env — full unification planned)
+# post-build step (build.sh): copy the brain env's humanoid.pth into this env's site-packages —
+# `python -m humanoid...` (dev_app) needs the repo parent on sys.path, same as the brain env.

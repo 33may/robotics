@@ -1,0 +1,88 @@
+diff --git a/humanoid-description b/humanoid-description
+--- a/humanoid-description
++++ b/humanoid-description
+@@ -1 +1 @@
+-Subproject commit 63eaa67b5ac72b4375b03636a776351872033330
++Subproject commit 63eaa67b5ac72b4375b03636a776351872033330-dirty
+diff --git a/simulator.py b/simulator.py
+index 3888b24..704fafc 100644
+--- a/simulator.py
++++ b/simulator.py
+@@ -64,6 +64,12 @@ class SimulatorMujoco:
+         # Initialize IMU data structure
+         self.imu_data = datatypes.ImuData()
+ 
++        # Local patch (humanoid/docs/vendor/humanoid-mujoco-sim.md § 10):
++        # gate physics integration on the first RobotCmd. Stops Oli free-falling
++        # in MJCF rest pose during the ~1 s gap between sim bring-up and the
++        # deploy stack publishing its first stand command.
++        self._cmd_received = False
++
+         # Set up callback for receiving robot commands in simulation mode
+         self.robotCmdCallbackPartial = partial(self.robotCmdCallback)
+         self.robot.subscribeRobotCmdForSim(self.robotCmdCallbackPartial)
+@@ -71,6 +77,7 @@ class SimulatorMujoco:
+     # Callback function for receiving robot command data
+     def robotCmdCallback(self, robot_cmd: datatypes.RobotCmd):
+         self.robot_cmd = robot_cmd
++        self._cmd_received = True
+ 
+     # Callback for keypress events in the MuJoCo viewer (currently does nothing)
+     def key_callback(self, keycode):
+@@ -79,9 +86,17 @@ class SimulatorMujoco:
+     def run(self):
+         frame_count = 0
+         self.rate = Rate(self.fps)  # Set the update rate according to FPS
+-        while self.viewer.is_running():    
+-            # Step the MuJoCo physics simulation
+-            mujoco.mj_step(self.mujoco_model, self.mujoco_data)
++        # One forward pass so sensordata reflects the initial MJCF qpos before
++        # we start publishing RobotState. Without this, the first state publish
++        # could carry stale zeros, and StandController.on_start() would seed
++        # init_joint_angles from garbage instead of the real rest pose.
++        mujoco.mj_forward(self.mujoco_model, self.mujoco_data)
++        while self.viewer.is_running():
++            # Skip physics integration until the deploy stack has published at
++            # least one RobotCmd. Sim still publishes state + IMU so deploy can
++            # read init joint angles, but no integration = no gravity collapse.
++            if self._cmd_received:
++                mujoco.mj_step(self.mujoco_model, self.mujoco_data)
+             if not self.floating_base:
+                 # Extract IMU data (orientation, gyro, and acceleration) from simulation
+                 self.imu_data.quat[0] = self.mujoco_data.sensordata[0]
+@@ -108,11 +123,12 @@ class SimulatorMujoco:
+                     self.robot_state.tau[i] = self.mujoco_data.ctrl[i]
+ 
+                     # Apply control commands to the robot based on the received robot command data
+-                    self.mujoco_data.ctrl[i] = (
+-                        self.robot_cmd.Kp[i] * (self.robot_cmd.q[i] - self.robot_state.q[i]) + 
+-                        self.robot_cmd.Kd[i] * (self.robot_cmd.dq[i] - self.robot_state.dq[i]) + 
+-                        self.robot_cmd.tau[i]
+-                    )
++                    if self._cmd_received:
++                        self.mujoco_data.ctrl[i] = (
++                            self.robot_cmd.Kp[i] * (self.robot_cmd.q[i] - self.robot_state.q[i]) +
++                            self.robot_cmd.Kd[i] * (self.robot_cmd.dq[i] - self.robot_state.dq[i]) +
++                            self.robot_cmd.tau[i]
++                        )
+             else:
+                 # Update robot state data from simulation
+                 for i in range(self.actuator_count):
+@@ -121,11 +137,12 @@ class SimulatorMujoco:
+                     self.robot_state.tau[i] = self.mujoco_data.ctrl[i]
+ 
+                     # Apply control commands to the robot based on the received robot command data
+-                    self.mujoco_data.ctrl[i] = (
+-                        self.robot_cmd.Kp[i] * (self.robot_cmd.q[i] - self.robot_state.q[i]) + 
+-                        self.robot_cmd.Kd[i] * (self.robot_cmd.dq[i] - self.robot_state.dq[i]) + 
+-                        self.robot_cmd.tau[i]
+-                    )
++                    if self._cmd_received:
++                        self.mujoco_data.ctrl[i] = (
++                            self.robot_cmd.Kp[i] * (self.robot_cmd.q[i] - self.robot_state.q[i]) +
++                            self.robot_cmd.Kd[i] * (self.robot_cmd.dq[i] - self.robot_state.dq[i]) +
++                            self.robot_cmd.tau[i]
++                        )
+         
+             # Set the timestamp for the current robot state and publish it
+             self.robot_state.stamp = time.time_ns()

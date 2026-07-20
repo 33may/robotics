@@ -244,3 +244,46 @@ class TestBinaryClose:
         occ[4, 4] = True
         closed = binary_close(occ, radius=1)
         assert closed.sum() == 1  # dilate then erode returns the single cell
+
+
+class TestLocalFloorTiles:
+    """local_floor_tile: per-tile floor reference — ramp-proof occupancy (17-07,
+    the cuVSLAM-posed mesh has ~1m of smooth z-drift; a single global floor_z
+    floods the tilted floor into the obstacle band)."""
+
+    @staticmethod
+    def _ramped_scene():
+        """10×4m floor ramping z: 0 → 1.0 along x, plus a 1m-tall box at x≈5."""
+        xs = np.arange(0.025, 10.0, 0.05)
+        ys = np.arange(0.025, 4.0, 0.05)
+        gx, gy = np.meshgrid(xs, ys)
+        floor = np.stack([gx.ravel(), gy.ravel(), gx.ravel() * 0.1], axis=1)
+        bx, by = np.meshgrid(np.arange(5.0, 5.5, 0.05), np.arange(1.5, 2.5, 0.05))
+        box_z = gx.ravel()[0] * 0  # noqa: F841  (clarity below)
+        box = []
+        for z in np.arange(0.05, 1.0, 0.05):
+            box.append(np.stack([bx.ravel(), by.ravel(),
+                                 bx.ravel() * 0.1 + z], axis=1))
+        return np.concatenate([floor] + box)
+
+    def test_global_floor_floods_a_ramp(self):
+        pts = self._ramped_scene()
+        grid, _ = build_grid(pts, floor_z=0.0)
+        r, c = grid.world_to_cell(9.0, 2.0)     # far end: floor is at z≈0.9 —
+        assert grid.grid[r, c]                  # lands in the band → wrongly blocked
+
+    def test_local_floor_keeps_ramp_free_and_box_blocked(self):
+        pts = self._ramped_scene()
+        grid, stats = build_grid(pts, floor_z=0.0, local_floor_tile=1.0)
+        for x in (1.0, 4.0, 9.0):               # ramped floor stays FREE end to end
+            r, c = grid.world_to_cell(x, 3.5)
+            assert not grid.grid[r, c], f"floor at x={x} wrongly blocked"
+        r, c = grid.world_to_cell(5.25, 2.0)    # the box still stamps
+        assert grid.grid[r, c]
+        assert stats.get("local_floor_tile") == 1.0
+
+    def test_zero_tile_is_exact_legacy_behavior(self):
+        pts = self._ramped_scene()
+        g0, _ = build_grid(pts, floor_z=0.0)
+        g1, _ = build_grid(pts, floor_z=0.0, local_floor_tile=0.0)
+        assert np.array_equal(g0.grid, g1.grid)

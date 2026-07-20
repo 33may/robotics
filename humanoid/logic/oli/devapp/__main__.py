@@ -61,6 +61,14 @@ def build_registry(args: argparse.Namespace) -> PanelRegistry:
     if getattr(args, "map", None):
         from humanoid.logic.oli.devapp.panels.map_panel import MapPanel
         reg.register(MapPanel(args.map))
+    if getattr(args, "localizer", None):
+        # Localization cockpit (slam-demo-loop): feature view + accuracy + re-hint.
+        from humanoid.logic.oli.devapp.panels.loc_panel import LocPanel
+        reg.register(LocPanel(
+            camera_source,
+            candidate=args.localizer,
+            map_name=Path(args.loc_map).parent.name + "/" + Path(args.loc_map).name,
+        ))
     return reg
 
 
@@ -86,6 +94,12 @@ def main() -> None:
     ap.add_argument("--debug-pose", default=None,
                     help="World debug-pose SOCK_DGRAM path → stream Oli's ground-truth pose onto "
                          "the map (pairs with glide_world_main --debug-pose)")
+    ap.add_argument("--localizer", default=None, metavar="NAME",
+                    help="Nav steers on this localization realization's ESTIMATE (slam-demo-loop "
+                         "D7); GT demotes to the map ghost + known-start hint. Requires "
+                         "--debug-pose, --loc-map, --camera-socket. Run in bench-<name> env.")
+    ap.add_argument("--loc-map", default=None, metavar="DIR",
+                    help="the --localizer candidate's baked map dir (e.g. <bake>/pycuvslam_map)")
     ap.add_argument("--walk-after", type=float, default=None)
     ap.add_argument("--duration", type=float, default=0.0)
     # self-validation
@@ -94,6 +108,11 @@ def main() -> None:
     ap.add_argument("--frames", type=int, default=20,
                     help="frames to render before the screenshot (default 20)")
     args = ap.parse_args()
+
+    if args.localizer and not (args.debug_pose and args.loc_map and args.camera_socket
+                               and args.map and args.socket):
+        ap.error("--localizer requires --socket, --debug-pose (hint+ghost), --loc-map, "
+                 "--camera-socket and --map (the Nav grid)")
 
     state = AppState()
     reg = build_registry(args)
@@ -112,6 +131,8 @@ def main() -> None:
             joy_host=args.joy_host, joy_port=args.joy_port,
             walk_after=args.walk_after, duration=args.duration,
             debug_pose=args.debug_pose, map_dir=args.map,
+            localizer=args.localizer, loc_map=args.loc_map,
+            camera_socket=args.camera_socket,
         )
         link.start()
 

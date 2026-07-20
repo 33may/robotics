@@ -63,37 +63,48 @@ def _run_service(args) -> None:
     the named realization is lazy-loaded, fed from the World's camera frame channel, stepped
     on a side thread, and measured only — Nav keeps driving on GT. Its lifecycle is
     commanded over the loc-ctrl socket; its est/state ride out on telemetry.
+
+    `--localizer <name>` is the D7 flip (slam-demo-loop): the SAME host attach, but Nav
+    steers on the candidate's estimate via `HostLocalizer` — GT stays connected only as the
+    known-start hint source (first pose → `request_start`) and the dev-side ghost. LOST →
+    `estimate()` None → Nav's zero-velocity hold. Re-hint = a fresh `start` over loc-ctrl.
     """
     from humanoid.logic.oli.comm.debug_pose import DebugPoseClient
-    from humanoid.logic.oli.reason.localization import DebugPoseLocalizer
+    from humanoid.logic.oli.reason.localization import DebugPoseLocalizer, HostLocalizer
     from humanoid.logic.oli.reason.mapping import StaticMapping
     from humanoid.logic.oli.reason.nav import build_nav
     from humanoid.logic.oli.service import ServiceHost
 
     pose_client = DebugPoseClient(args.debug_pose)
-    nav = build_nav(
-        StaticMapping(args.map_dir),
-        DebugPoseLocalizer(pose_client),
-        speed_scale=args.glide_scale,
-    )
 
     loc_host = None
     frame_reader = None
-    if args.shadow:
+    candidate = args.shadow or args.localizer
+    if candidate:
         import json
 
         from humanoid.logic.oli.comm.camera_stream import CameraStreamReader
         from humanoid.logic.oli.reason.localization import LocalizationHost, load_realization
 
         overrides = json.loads(Path(args.shadow_config).read_text()) if args.shadow_config else {}
-        load_realization(args.shadow, overrides)   # fail FAST on unknown name / broken import
+        load_realization(candidate, overrides)   # fail FAST on unknown name / broken import
         frame_reader = CameraStreamReader(args.camera_socket)
-        print(f"[brain] shadow candidate: {args.shadow} — connecting frames "
+        role = "localizer (Nav steers on est)" if args.localizer else "shadow (measured only)"
+        print(f"[brain] {role}: {candidate} — connecting frames "
               f"at {args.camera_socket}...", flush=True)
         frame_reader.connect()
         loc_host = LocalizationHost(
-            lambda: load_realization(args.shadow, overrides), frame_reader)
+            lambda: load_realization(candidate, overrides), frame_reader)
         loc_host.start()
+    if args.localizer:
+        assert loc_host is not None  # candidate attach above is unconditional for --localizer
+
+    nav = build_nav(
+        StaticMapping(args.map_dir),
+        (HostLocalizer(loc_host) if args.localizer and loc_host is not None
+         else DebugPoseLocalizer(pose_client)),
+        speed_scale=args.glide_scale,
+    )
 
     host = ServiceHost(nav, goal_socket=args.goal_socket,
                        telemetry_socket=args.telemetry_socket,
@@ -110,11 +121,24 @@ def _run_service(args) -> None:
     comm.connect()
     print("[brain] connected — running.", flush=True)
     t0 = time.monotonic()
+    hint_sent = not args.localizer   # known-start hint: first GT pose → request_start (D6)
     try:
         while True:
             if args.duration and (time.monotonic() - t0) > args.duration:
                 print("[brain] duration reached; stopping.", flush=True)
                 break
+            if not hint_sent and loc_host is not None:
+                sample = pose_client.latest()
+                if sample is not None:
+                    from humanoid.logic.oli.reason.localization import (
+                        LocalizationSetup, RobotPose)
+                    stamp, x, y, yaw = sample
+                    loc_host.request_start(LocalizationSetup(
+                        map_dir=args.loc_map,
+                        initial_pose=RobotPose(stamp_ns=stamp, x=x, y=y, yaw=yaw)))
+                    print(f"[brain] localizer hint (GT known start): "
+                          f"x={x:.2f} y={y:.2f} yaw={yaw:.2f}", flush=True)
+                    hint_sent = True
             host.poll()  # W4: latest goal command → Nav (non-blocking, latest-wins)
             if orch.step_once() is None:
                 time.sleep(0.0005)  # nothing to do this iteration; yield
@@ -153,7 +177,14 @@ def main() -> None:
                     help="service: run this localization realization in shadow (measured "
                          "only, Nav stays on GT) — locbench Stage 1")
     ap.add_argument("--shadow-config", default=None, metavar="JSON_FILE",
-                    help="config overrides deep-merged over the realization's config.yaml")
+                    help="config overrides deep-merged over the realization's config.yaml "
+                         "(applies to --shadow AND --localizer candidates)")
+    ap.add_argument("--localizer", default=None, metavar="NAME",
+                    help="service: Nav steers on this realization's ESTIMATE (slam-demo-loop "
+                         "D7); hint = first GT pose (known start). Conflicts with --shadow.")
+    ap.add_argument("--loc-map", default=None, metavar="DIR",
+                    help="the --localizer candidate's baked map dir (opaque to the brain; "
+                         "e.g. <bake>/pycuvslam_map)")
     ap.add_argument("--camera-socket", default="/tmp/oli-world-frames.sock",
                     help="the World's camera frame channel (the shadow host consumes it)")
     ap.add_argument("--loc-ctrl-socket", default="/tmp/oli-loc-ctrl.sock",
@@ -177,6 +208,13 @@ def main() -> None:
 
     if args.shadow and not args.service:
         ap.error("--shadow requires --service (the shadow host lives in the service brain)")
+    if args.localizer:
+        if not args.service:
+            ap.error("--localizer requires --service (the host lives in the service brain)")
+        if args.shadow:
+            ap.error("--localizer conflicts with --shadow: one localization host per brain")
+        if not args.loc_map:
+            ap.error("--localizer requires --loc-map (the candidate's baked map dir)")
     if args.service:
         if args.mode != "glide":
             ap.error("--service requires --mode glide (Stage 1 drives the glide path)")

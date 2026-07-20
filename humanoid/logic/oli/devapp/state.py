@@ -100,3 +100,45 @@ class AppState:
         """Read the latest nav state: (pose, path, goal). Any may be None."""
         with self._lock:
             return self.latest_pose, self.latest_path, self.nav_goal
+
+    # Localization validation overlays (slam-demo-loop D8): GT ghost + loc host state are
+    # DISPLAY-ONLY — nothing in the demo loop reads them back. Brain worker thread writes.
+
+    def set_gt_pose(self, pose) -> None:
+        """Publish the latest GT oracle pose for the map ghost (brain thread). `None` = none."""
+        with self._lock:
+            self.gt_pose = pose
+
+    def set_loc_state(self, state) -> None:
+        """Publish the localization host's state string + latest status name (brain thread)."""
+        with self._lock:
+            self.loc_state = state
+
+    def loc_snapshot(self):
+        """Read (gt_pose, loc_state) for the map overlay/readout. Either may be None."""
+        with self._lock:
+            return getattr(self, "gt_pose", None), getattr(self, "loc_state", None)
+
+    def set_loc_diag(self, diag) -> None:
+        """Publish the localizer's display-only diagnostics dict (brain thread)."""
+        with self._lock:
+            self.loc_diag = diag
+
+    def get_loc_diag(self):
+        with self._lock:
+            return getattr(self, "loc_diag", None)
+
+    # Panel → brain commands (same UI-writes/brain-reads split as the nav goal): the
+    # Localization panel sets one pending command; the brain loop consumes it exactly once.
+
+    def set_loc_command(self, command) -> None:
+        """Request a localizer lifecycle action from the UI: 'rehint' | 'stop' | None."""
+        with self._lock:
+            self.loc_command = command
+
+    def pop_loc_command(self):
+        """Consume the pending command (brain thread). Returns None when there is none."""
+        with self._lock:
+            cmd = getattr(self, "loc_command", None)
+            self.loc_command = None
+            return cmd

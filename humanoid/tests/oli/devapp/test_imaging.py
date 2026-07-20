@@ -52,3 +52,31 @@ def test_colorize_depth_invalid_is_black():
     depth = np.array([[np.nan, 1.0]], dtype=np.float32)
     out = colorize_depth(depth)
     assert np.array_equal(out[0, 0], [0, 0, 0])
+
+
+# ── bake_feature_dots (Localization panel feature view, slam-demo-loop 17-07) ─────
+
+
+def test_bake_feature_dots_copies_and_draws():
+    from humanoid.logic.oli.devapp.imaging import bake_feature_dots
+
+    img = np.zeros((60, 80, 3), np.uint8)
+    out = bake_feature_dots(img, [(10.4, 20.7, 5)])
+    assert img.sum() == 0            # source untouched (copy semantics)
+    assert out.sum() > 0             # dot landed
+    assert out.shape == img.shape
+
+
+def test_bake_feature_dots_skips_out_of_frame_points():
+    from humanoid.logic.oli.devapp.imaging import bake_feature_dots
+
+    img = np.zeros((60, 80, 3), np.uint8)
+    out = bake_feature_dots(img, [(500.0, 10.0, 1), (-3.0, 10.0, 2)])
+    assert out.sum() == 0            # nothing to draw, nothing crashed
+
+
+def test_feature_dot_colors_are_stable_per_track_id():
+    from humanoid.logic.oli.devapp.imaging import _id_color
+
+    assert _id_color(42) == _id_color(42)
+    assert _id_color(42) != _id_color(43)

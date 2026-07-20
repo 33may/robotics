@@ -1,13 +1,20 @@
 # cuvslam — ALL tunables live here (playbook rule: a tuning iteration's diff is this one file).
 # Hardcoded magic numbers in module.py are a defect. Group by concern; comment units + why.
 
+# it-3 (2026-07-17): mode switch. "map_relative" = the demo candidate — stereo
+# localize_in_map against a PyCuVSLAM-built map (build_map.py), map-anchored tracking,
+# poses emitted in the WORLD frame (the prebuilt occupancy grid frame) via the map's
+# registration_gt.json. "rgbd_vo" = the frozen L1 baseline (it-2), kept reproducible.
+mode: map_relative
+
 input:
-  camera: head                       # which CameraFrame feeds VO (head = forward-looking, pitch 0)
+  camera: head                       # rgbd_vo mode: which CameraFrame feeds VO
+  stereo: [head_left, head_right]    # map_relative mode: the rig pair (must match build_map's)
 
 # cuVSLAM's own config schema — applied via the vendored utils._apply_odometry_section,
 # so any upstream Odometry.Config key can be tuned from here without touching module.py.
 odometry:
-  odometry_mode: rgbd                # our frames are RGBD (mono color + aligned depth)
+  odometry_mode: rgbd                # rgbd_vo mode only (map_relative uses stereo defaults)
   use_gpu: true
   async_sba: true                    # upstream default in the RGBD example
   rgbd_settings:
@@ -15,3 +22,29 @@ odometry:
     depth_scale_factor: 1000.0       # uint16 depth units per meter (mm) — cuVSLAM requires
                                      # uint16 depth; module.py converts float32-m with THIS knob
     enable_depth_stereo_tracking: false
+
+# map_relative mode — mirrors build_map.py's build settings (rig identity is part of
+# the map contract: the runtime tracker must be configured like the map builder).
+slam:
+  sync_mode: true                    # deterministic; ~10-13 fps on 4070TiS — fine at sim slow-mo
+  rectified_stereo_camera: true      # sim pinhole pair is rectified by construction
+  async_sba: false                   # match build_map (sync SLAM path)
+  max_map_size: 0                    # unlimited — MUST match build_map (upstream default 300)
+
+# localize_in_map search around the hint. Hint = GT start pose (Anton 17-07) or map click.
+# it-3 probe sweep: step 0.25 FAILS with a 0.15 m-off hint (grid too coarse for PnP
+# convergence); 0.0625 passes in 0.1 s. Radius 1.0 covers hint sloppiness incl. the
+# registration's start-pose residual (~0.15 m) + a sloppy click.
+localization:
+  horizontal_search_radius: 1.0      # m
+  vertical_search_radius: 0.5        # m
+  horizontal_step: 0.0625            # m
+  vertical_step: 0.0625              # m
+  angular_step_rads: 0.05
+  registration_file: registration_gt.json   # inside map_dir; world<-map SE(2) (build_map audit)
+  relocalize_period_s: 0.0           # s of SIM time between mid-tracking self-relocs (it-8);
+                                     # 0 = OFF — the demo default (Anton 17-07): the reloc FIX is
+                                     # mm-accurate but v16's post-success SLAM-state swap degrades
+                                     # tracking (ATE 0.055→0.967 m) and each call stalls 1-13 s
+                                     # reloading the map LMDB. Machinery kept behind this switch;
+                                     # JOURNAL it-8 has the evidence.

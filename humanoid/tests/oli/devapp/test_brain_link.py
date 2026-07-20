@@ -245,3 +245,82 @@ def test_brainlink_glide_forwards_velocity_to_world(tmp_path):
     finally:
         link.stop()
         server.close()
+
+
+# ── localization drift-trace line (diagnosis lever, 17-07) ───────────────────────────
+
+
+def test_trace_line_builds_flat_json_record():
+    """_trace_line flattens est/GT/diag into one JSONL-able dict with |est−GT| computed."""
+    import json
+
+    from humanoid.logic.oli.devapp.brain_link import _trace_line
+    from humanoid.logic.oli.reason.localization import (
+        LocalizationOut, LocalizationStatus, RobotPose)
+
+    out = LocalizationOut(
+        stamp_ns=123, pose=RobotPose(stamp_ns=123, x=1.0, y=2.0, yaw=0.5),
+        status=LocalizationStatus.TRACKING, last_fix_stamp_ns=100)
+    gt = RobotPose(stamp_ns=123, x=1.0, y=2.5, yaw=0.4)
+    diag = {"lc_status": True, "pgo_status": False, "lc_events": 3,
+            "lc_good_landmarks": 42, "observations": [(1.0, 2.0, 7)],
+            "reloc_ok": 2, "reloc_fail": 1,
+            "rgb": object()}   # non-serializable frame must NOT leak into the record
+
+    rec = _trace_line(out, gt, diag)
+    assert rec["stamp_ns"] == 123 and rec["status"] == "TRACKING"
+    assert rec["est"] == {"x": 1.0, "y": 2.0, "yaw": 0.5}
+    assert rec["gt"] == {"x": 1.0, "y": 2.5, "yaw": 0.4}
+    assert abs(rec["err"] - 0.5) < 1e-9
+    assert rec["lc_events"] == 3 and rec["lc_good_landmarks"] == 42
+    assert rec["reloc_ok"] == 2 and rec["reloc_fail"] == 1
+    assert rec["n_obs"] == 1
+    json.dumps(rec)   # the whole point: one line of JSONL
+
+
+def test_trace_line_tolerates_missing_gt_and_diag():
+    from humanoid.logic.oli.devapp.brain_link import _trace_line
+    from humanoid.logic.oli.reason.localization import (
+        LocalizationOut, LocalizationStatus)
+
+    out = LocalizationOut(stamp_ns=5, pose=None,
+                          status=LocalizationStatus.LOST, last_fix_stamp_ns=None)
+    rec = _trace_line(out, None, None)
+    assert rec["est"] is None and rec["gt"] is None and rec["err"] is None
+    assert rec["reloc_ok"] is None and rec["reloc_fail"] is None
+    import json
+    json.dumps(rec)
+
+
+# ── M-frame demo mode: GT ghost W→M conversion (bake-time alignment, 17-07) ─────────
+
+
+def test_gt_to_map_inverts_the_bake_registration(tmp_path):
+    """_GtToMap must invert pose_W = R·pose_M + t, yaw_W = yaw_M + theta — the module's
+    registration math — so the ghost lands where the M-frame est actually is."""
+    import json as _json
+    import math as _math
+
+    from humanoid.logic.oli.devapp.brain_link import _GtToMap
+    from humanoid.logic.oli.reason.localization import RobotPose
+
+    th = 0.66
+    R = [[_math.cos(th), -_math.sin(th)], [_math.sin(th), _math.cos(th)]]
+    reg = tmp_path / "registration_gt.json"
+    reg.write_text(_json.dumps({"R": R, "t": [1.5, -2.0], "theta_rad": th}))
+    conv = _GtToMap.load(reg)
+    assert conv is not None
+
+    m = (3.0, 4.0, 0.5)                                   # a pose in M
+    w = RobotPose(stamp_ns=7,                             # forward-mapped to W by hand
+                  x=R[0][0] * m[0] + R[0][1] * m[1] + 1.5,
+                  y=R[1][0] * m[0] + R[1][1] * m[1] - 2.0,
+                  yaw=m[2] + th)
+    back = conv.to_map(w)
+    assert abs(back.x - m[0]) < 1e-9 and abs(back.y - m[1]) < 1e-9
+    assert abs(back.yaw - m[2]) < 1e-9 and back.stamp_ns == 7
+
+
+def test_gt_to_map_load_missing_file_is_none(tmp_path):
+    from humanoid.logic.oli.devapp.brain_link import _GtToMap
+    assert _GtToMap.load(tmp_path / "nope.json") is None

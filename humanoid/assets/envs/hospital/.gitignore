@@ -1,0 +1,4 @@
+# Downloaded NVIDIA Isaac Sim geometry (~1.05 GB) — regenerate with fetch_hospital.py.
+# The scene is provenance-tracked by the fetch script, not committed as binary blobs.
+Isaac/
+NVIDIA/

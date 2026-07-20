@@ -316,3 +316,69 @@ def test_service_shadow_routes_candidate_and_frames():
 def test_shadow_without_cameras_rejected():
     with pytest.raises(ValueError, match="cameras"):
         r.brain_argv(_service_args(shadow="reference", cameras=False))
+
+
+# ── --localizer: Nav steers on the candidate's estimate (slam-demo-loop D7) ───────
+
+
+def test_service_localizer_routes_candidate_frames_and_map():
+    cmd = r.brain_argv(_service_args(
+        localizer="cuvslam", cameras=True,
+        camera_socket="/tmp/oli-world-frames.sock",
+        loc_map="data/maps/teleop_v1_demo/latest/pycuvslam_map"))
+    s = " ".join(cmd)
+    assert "--localizer cuvslam" in s
+    assert "--camera-socket /tmp/oli-world-frames.sock" in s
+    loc_map = cmd[cmd.index("--loc-map") + 1]
+    assert loc_map.startswith("/")           # absolutized like --map-dir (brain cwd=repo root)
+
+
+def test_localizer_without_cameras_rejected():
+    with pytest.raises(ValueError, match="cameras"):
+        r.brain_argv(_service_args(localizer="cuvslam", cameras=False,
+                                   loc_map="x/pycuvslam_map"))
+
+
+def test_localizer_requires_loc_map():
+    with pytest.raises(ValueError, match="loc-map"):
+        r.brain_argv(_service_args(localizer="cuvslam", cameras=True))
+
+
+def test_localizer_conflicts_with_shadow():
+    # one localization host per brain: measured-shadow OR steering-localizer, never both
+    with pytest.raises(ValueError, match="shadow"):
+        r.brain_argv(_service_args(localizer="cuvslam", shadow="reference",
+                                   cameras=True, loc_map="x/pycuvslam_map"))
+
+
+def _dev_app_loc_args(**over):
+    base = dict(mode="glide", dev_app=True, cameras=True,
+                camera_socket="/tmp/oli-world-frames.sock",
+                debug_pose="/tmp/oli-world-pose.sock",
+                map="assets/envs/warehouse_nvidia/nav_maps/v1",
+                localizer="cuvslam", loc_map="data/x/pycuvslam_map")
+    base.update(over)
+    return _args(**base)
+
+
+def test_dev_app_localizer_routes_candidate_and_map():
+    # the dev app IS the brain (--dev-app): the D7 flip rides the same flags there
+    cmd = r.brain_argv(_dev_app_loc_args())
+    s = " ".join(cmd)
+    assert "logic.oli.devapp" in s
+    assert "--localizer cuvslam" in s
+    assert "--camera-socket /tmp/oli-world-frames.sock" in s
+    loc_map = cmd[cmd.index("--loc-map") + 1]
+    assert loc_map.startswith("/")           # absolutized (brain cwd=repo root)
+
+
+def test_dev_app_localizer_without_cameras_rejected():
+    with pytest.raises(ValueError, match="cameras"):
+        r.brain_argv(_dev_app_loc_args(cameras=False))
+
+
+def test_dev_app_localizer_requires_loc_map_and_debug_pose():
+    with pytest.raises(ValueError, match="loc-map"):
+        r.brain_argv(_dev_app_loc_args(loc_map=None))
+    with pytest.raises(ValueError, match="debug-pose"):
+        r.brain_argv(_dev_app_loc_args(debug_pose=None))

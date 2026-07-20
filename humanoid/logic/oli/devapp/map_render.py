@@ -16,6 +16,7 @@ _FREE = np.array([235, 235, 235], np.uint8)  # free → light grey
 _ROBOT = np.array([230, 30, 30], np.uint8)   # robot → red
 _PATH = np.array([70, 130, 255], np.uint8)   # planned path → blue
 _GOAL = np.array([0, 175, 0], np.uint8)      # goal → green
+_GHOST = np.array([130, 130, 140], np.uint8)  # GT ghost → gray (D8 display-only oracle)
 
 
 def base_rgb(grid) -> np.ndarray:
@@ -50,8 +51,11 @@ def _marker(img: np.ndarray, row: int, col: int, color: np.ndarray, size: int = 
         img[r0:r1, c0:c1] = color
 
 
-def compose(grid, base: np.ndarray, pose=None, path=None, goal=None) -> np.ndarray:
-    """Copy `base` and overlay path (blue), goal (green), robot (red + heading). NORTH-UP RGB.
+def compose(grid, base: np.ndarray, pose=None, path=None, goal=None,
+            ghost=None) -> np.ndarray:
+    """Copy `base` and overlay path (blue), goal (green), robot (red + heading), and the
+    optional `ghost` pose (gray + heading) — the GT validation oracle (slam-demo-loop D8,
+    display-only), drawn BEFORE the est marker so est stays on top. NORTH-UP RGB.
 
     Non-destructive: `base` (the static map raster) is never mutated.
     """
@@ -63,10 +67,17 @@ def compose(grid, base: np.ndarray, pose=None, path=None, goal=None) -> np.ndarr
     if goal is not None:
         gr, gc = world_to_pixel(grid, goal[0], goal[1])
         _marker(img, gr, gc, _GOAL, size=5)
+    if ghost is not None:
+        _pose_marker(img, grid, ghost, _GHOST)
     if pose is not None:
-        r, c = world_to_pixel(grid, pose.x, pose.y)
-        dr, dc = -math.sin(pose.yaw), math.cos(pose.yaw)  # +x→+col, +y→−row (north-up)
-        for t in range(4, 20):
-            _marker(img, int(round(r + dr * t)), int(round(c + dc * t)), _ROBOT, size=1)
-        _marker(img, r, c, _ROBOT, size=5)
+        _pose_marker(img, grid, pose, _ROBOT)
     return img
+
+
+def _pose_marker(img: np.ndarray, grid, pose, color: np.ndarray) -> None:
+    """Filled square + heading whisker for one pose. +x→+col, +y→−row (north-up)."""
+    r, c = world_to_pixel(grid, pose.x, pose.y)
+    dr, dc = -math.sin(pose.yaw), math.cos(pose.yaw)
+    for t in range(4, 20):
+        _marker(img, int(round(r + dr * t)), int(round(c + dc * t)), color, size=1)
+    _marker(img, r, c, color, size=5)

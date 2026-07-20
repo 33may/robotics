@@ -113,6 +113,23 @@ class LocalizationHost:
         with self._lock:
             return self._steps
 
+    def diagnostics(self):
+        """Display-only: the module's cached diagnostics dict, if it offers one.
+
+        `_module` is host-thread-owned; this cross-thread read is a deliberate exception —
+        it only dereferences an attribute holding an immutable dict ref (GIL-atomic swap,
+        see the cuvslam module's `_latest_diag`). Worst case: None or one frame stale.
+        Never part of the LocalizationModule contract; absent method → None.
+        """
+        module = self._module
+        if module is None:
+            return None
+        get = getattr(module, "diagnostics", None)
+        try:
+            return get() if callable(get) else None
+        except Exception:  # noqa: BLE001 — display-only, never let it bite the host
+            return None
+
     # ── lifecycle of the host itself ─────────────────────────────────────────
 
     def start(self) -> None:

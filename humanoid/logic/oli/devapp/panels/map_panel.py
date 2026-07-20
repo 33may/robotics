@@ -40,8 +40,10 @@ class MapPanel(Panel):
 
     def draw(self, state: AppState) -> None:
         pose, path, goal = state.nav_snapshot()
+        gt_pose, loc_state = state.loc_snapshot()
         img = np.array(
-            compose(self._grid, self._base, pose=pose, path=path, goal=goal),
+            compose(self._grid, self._base, pose=pose, path=path, goal=goal,
+                    ghost=gt_pose),
             dtype=np.uint8, copy=True,  # ImmVision needs a writeable, contiguous buffer
         )
         h, w = img.shape[:2]
@@ -60,8 +62,19 @@ class MapPanel(Panel):
                 f"pose  x={pose.x:+.2f}  y={pose.y:+.2f}  yaw={pose.yaw:+.2f}   "
                 f"cell={cell}  occupied={occ}"
             )
+            # localization validation readout (D8): |est−GT| against the display-only oracle.
+            # Own line + err FIRST — the number must survive a narrow panel (it is the demo's
+            # headline figure; est≈GT also hides the gray ghost under the red marker).
+            if gt_pose is not None or loc_state is not None:
+                err = (f"|est−GT| = {np.hypot(pose.x - gt_pose.x, pose.y - gt_pose.y):.3f} m"
+                       if gt_pose is not None else "GT: —")
+                imgui.text_colored(imgui.ImVec4(0.55, 0.9, 0.55, 1.0),
+                                   f"{err}   ·   LOC {loc_state or '—'}")
         else:
             imgui.text_disabled("no pose yet — launch the World with --debug-pose")
+            if loc_state is not None:
+                imgui.same_line()
+                imgui.text_colored(imgui.ImVec4(0.9, 0.6, 0.2, 1.0), f"   LOC {loc_state}")
         if goal is not None:
             imgui.same_line()
             status = f"path {len(path)} pts" if path else "NO PATH (blocked/unreachable)"

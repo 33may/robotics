@@ -1,3 +1,11 @@
 
 # MAY-173 coverage-drive recordings (fat frames+poses, regenerated from spec)
 data/coverage_drives/
+.superpowers/
+
+# MAY-173 map/SLAM outputs (bags, recons, baked occupancy — 100+ GB, regenerated from recordings)
+data/maps/
+
+# Runtime junk
+MUJOCO_LOG.TXT
+Oli_____Robot_Brain.ini

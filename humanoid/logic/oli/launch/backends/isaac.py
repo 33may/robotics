@@ -132,6 +132,15 @@ def add_args(ap: argparse.ArgumentParser) -> None:
                          "only) — requires --cameras (the host consumes the frame channel)")
     ap.add_argument("--shadow-config", default=None, metavar="JSON_FILE",
                     help="config overrides for the shadow realization")
+    # demo mode (MAY-173 slam-demo-loop D7): Nav steers on the candidate's ESTIMATED pose.
+    ap.add_argument("--localizer", default=None, metavar="NAME",
+                    help="service: Nav steers on this localization realization's estimate "
+                         "(slam-demo-loop D7); hint = first GT pose at boot (known start). "
+                         "Requires --cameras + --loc-map; conflicts with --shadow. "
+                         "Run with --brain-env bench-<name> (candidate deps).")
+    ap.add_argument("--loc-map", default=None, metavar="DIR",
+                    help="the candidate's baked map dir for --localizer "
+                         "(e.g. <bake>/pycuvslam_map — build with the candidate's build_map.py)")
 
 
 # ── pure command builders ────────────────────────────────────────────────────────
@@ -260,6 +269,22 @@ def brain_argv(a: argparse.Namespace) -> list[str]:
             # Same reason as --scene: absolutize against the launcher CWD so the brain
             # subprocess (cwd=repo root) resolves the artifact dir correctly.
             py += ["--map", str(Path(a.map).resolve())]
+        if getattr(a, "localizer", None):
+            # slam-demo-loop D7 in the dev app's brain: Nav steers on the estimate; GT
+            # demotes to hint + ghost. Same flag surface as the service brain.
+            if not getattr(a, "cameras", False):
+                raise ValueError("--localizer requires --cameras (the localization host "
+                                 "consumes the World's frame channel)")
+            if not getattr(a, "loc_map", None):
+                raise ValueError("--localizer requires --loc-map (the candidate's baked "
+                                 "map dir, e.g. <bake>/pycuvslam_map)")
+            if not getattr(a, "debug_pose", None):
+                raise ValueError("--localizer requires --debug-pose (known-start hint + "
+                                 "the D8 ghost)")
+            if not getattr(a, "map", None):
+                raise ValueError("--localizer requires --map (the Nav occupancy grid)")
+            py += ["--localizer", a.localizer,
+                   "--loc-map", str(Path(a.loc_map).resolve())]
     if a.walk_after is not None:
         py += ["--walk-after", str(a.walk_after)]
     if a.duration:
@@ -286,6 +311,16 @@ def _service_brain_argv(a: argparse.Namespace) -> list[str]:
     if getattr(a, "shadow", None) and not getattr(a, "cameras", False):
         raise ValueError("--shadow requires --cameras (the shadow host consumes the "
                          "World's frame channel)")
+    if getattr(a, "localizer", None):
+        if getattr(a, "shadow", None):
+            raise ValueError("--localizer conflicts with --shadow: one localization host "
+                             "per brain (measured shadow OR steering localizer)")
+        if not getattr(a, "cameras", False):
+            raise ValueError("--localizer requires --cameras (the localization host "
+                             "consumes the World's frame channel)")
+        if not getattr(a, "loc_map", None):
+            raise ValueError("--localizer requires --loc-map (the candidate's baked map "
+                             "dir, e.g. <bake>/pycuvslam_map)")
     py = ["conda", "run", "--no-capture-output", "-n", a.brain_env, "python", "-u",
           str(_BRAIN_ENTRY), "--socket", a.socket,
           "--mode", "glide", "--service",
@@ -297,6 +332,10 @@ def _service_brain_argv(a: argparse.Namespace) -> list[str]:
         py += ["--shadow", a.shadow, "--camera-socket", a.camera_socket]
         if getattr(a, "shadow_config", None):
             py += ["--shadow-config", str(Path(a.shadow_config).resolve())]
+    if getattr(a, "localizer", None):
+        py += ["--localizer", a.localizer,
+               "--loc-map", str(Path(a.loc_map).resolve()),
+               "--camera-socket", a.camera_socket]
     if a.duration:
         py += ["--duration", str(a.duration)]
     return py

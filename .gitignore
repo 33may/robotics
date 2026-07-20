@@ -12,6 +12,8 @@ __pycache__/
 .vscode/
 .polyscope.ini
 imgui.ini
+Oli_____Robot_Brain.ini
+MUJOCO_LOG.TXT
 
 # ---- Tool caches ----------------------------------------------------
 .cache/

@@ -13,8 +13,11 @@ lets the attach loop be integration-tested against a fake World with no Isaac an
 
 from __future__ import annotations
 
+import json
+import math
 import threading
 import time
+from pathlib import Path
 from typing import Optional
 
 from ..comm.client import BrainComm, CommClosedError
@@ -26,6 +29,65 @@ from .state import AppState
 # Planner/controller knobs live in `reason/nav/factory.py` (`build_nav`) — shared by every
 # brain host so dev_app and `brain_main --service` drive the IDENTICAL tuned Nav.
 _REPLAN_DT = 0.25            # seconds between (local) re-plans while a goal holds
+
+
+class _GtToMap:
+    """GT(world) → map-frame SE(2) for the DISPLAY ghost when the demo runs in the
+    baked M frame (bake-time alignment, 17-07). Pure data + math so the brain suite
+    can pin it; loaded from the bake's registration_gt.json (an EVAL artifact —
+    nothing in the control loop reads it). pose_W = R·pose_M + t  ⇒  inverse here."""
+
+    def __init__(self, R, t, theta: float) -> None:
+        self._r = R          # 2×2 row-major list
+        self._t = t
+        self._theta = theta
+
+    @classmethod
+    def load(cls, path) -> "Optional[_GtToMap]":
+        try:
+            d = json.loads(Path(path).read_text())
+            return cls(d["R"], d["t"], float(d["theta_rad"]))
+        except Exception:  # noqa: BLE001 — missing/bad file = ghost simply off
+            return None
+
+    def to_map(self, pose):
+        from ..reason.localization import RobotPose
+        dx, dy = pose.x - self._t[0], pose.y - self._t[1]
+        r = self._r
+        return RobotPose(     # R.T @ (p - t), yaw - theta   (R is orthonormal)
+            stamp_ns=pose.stamp_ns,
+            x=r[0][0] * dx + r[1][0] * dy,
+            y=r[0][1] * dx + r[1][1] * dy,
+            yaw=pose.yaw - self._theta,
+        )
+
+
+def _trace_line(out, gt, diag) -> dict:
+    """Flatten one localization step into a JSONL record (drift-diagnosis trace, 17-07).
+
+    Pure so the brain suite can pin it. Copies only serializable diag fields — the frame
+    (`rgb`) and raw observations stay out; `n_obs` keeps the feature-count signal.
+    """
+    est = out.pose
+    diag = diag or {}
+    obs = diag.get("observations")
+    err = (math.hypot(est.x - gt.x, est.y - gt.y)
+           if est is not None and gt is not None else None)
+    return {
+        "wall_t": time.time(),
+        "stamp_ns": out.stamp_ns,
+        "status": out.status.name,
+        "est": {"x": est.x, "y": est.y, "yaw": est.yaw} if est is not None else None,
+        "gt": {"x": gt.x, "y": gt.y, "yaw": gt.yaw} if gt is not None else None,
+        "err": err,
+        "lc_status": diag.get("lc_status"),
+        "pgo_status": diag.get("pgo_status"),
+        "lc_events": diag.get("lc_events"),
+        "lc_good_landmarks": diag.get("lc_good_landmarks"),
+        "reloc_ok": diag.get("reloc_ok"),
+        "reloc_fail": diag.get("reloc_fail"),
+        "n_obs": len(obs) if obs is not None else None,
+    }
 
 
 class BrainLink:
@@ -48,6 +110,9 @@ class BrainLink:
         duration: float = 0.0,
         debug_pose: Optional[str] = None,
         map_dir: Optional[str] = None,
+        localizer: Optional[str] = None,
+        loc_map: Optional[str] = None,
+        camera_socket: Optional[str] = None,
         comm=None,
         action=None,
         reason=None,
@@ -75,11 +140,63 @@ class BrainLink:
         # behind the same seam.
         self._pose_client = None
         self._localizer = None
+        self._gt_localizer = None
         if debug_pose:
             from ..comm.debug_pose import DebugPoseClient
             from ..reason.localization import DebugPoseLocalizer
             self._pose_client = DebugPoseClient(debug_pose)
             self._localizer = DebugPoseLocalizer(self._pose_client)
+        # `--localizer <name>` = the slam-demo-loop D7 flip inside the dev app's brain: attach
+        # the in-brain LocalizationHost (same seam as brain_main --localizer) and steer Nav on
+        # the candidate's ESTIMATE. GT (debug_pose) demotes to the D8 display ghost + the
+        # known-start hint source (fired in `_run` when the first GT sample lands).
+        self._loc_host = None
+        self._frame_reader = None
+        self._loc_map = loc_map
+        self._hint_sent = True
+        self._start_pose = None                  # M-frame dock hint (start_pose.json), if baked
+        self._gt_to_map = None                   # W→M display converter for the ghost, if baked
+        self._trace_f = None                     # drift-diagnosis JSONL (one line per module step)
+        self._trace_last_stamp = -1
+        if localizer:
+            if not (debug_pose and loc_map and camera_socket):
+                raise ValueError("localizer requires debug_pose (hint+ghost), loc_map and "
+                                 "camera_socket")
+            from ..comm.camera_stream import CameraStreamReader
+            from ..reason.localization import (
+                HostLocalizer, LocalizationHost, load_realization)
+            load_realization(localizer)          # fail FAST on unknown name / broken import
+            # M-frame demo mode (bake-time alignment, 17-07): a start_pose.json beside
+            # the localizer map = every artifact is baked in the cuVSLAM frame. Then the
+            # module runs registration-less (emits raw M poses), the known-start hint is
+            # the FILE (the dock — zero GT in the loop), and the GT ghost converts W→M
+            # for display via the bake's eval registration.
+            sp = (Path(loc_map).parent / "start_pose.json"
+                  if not (Path(loc_map) / "start_pose.json").exists()
+                  else Path(loc_map) / "start_pose.json")
+            self._start_pose = None
+            self._gt_to_map = None
+            overrides = None
+            if sp.exists():
+                d = json.loads(sp.read_text())
+                self._start_pose = (float(d["x"]), float(d["y"]), float(d["yaw"]))
+                overrides = {"localization": {"registration_file": None}}
+                self._gt_to_map = _GtToMap.load(Path(loc_map) / "registration_gt.json")
+                print(f"[devapp-brain] M-frame mode: hint from {sp} "
+                      f"(dock {self._start_pose}), module registration OFF", flush=True)
+            self._frame_reader = CameraStreamReader(camera_socket)
+            print(f"[devapp-brain] localizer (Nav steers on est): {localizer} — "
+                  f"connecting frames at {camera_socket}...", flush=True)
+            self._frame_reader.connect()
+            self._loc_host = LocalizationHost(
+                lambda: load_realization(localizer, overrides), self._frame_reader)
+            self._loc_host.start()
+            trace_path = time.strftime("/tmp/oli-loc-trace-%Y%m%d-%H%M%S.jsonl")
+            self._trace_f = open(trace_path, "w", buffering=1)   # line-buffered: tail -f-able
+            print(f"[devapp-brain] drift trace → {trace_path}", flush=True)
+            self._gt_localizer = self._localizer     # GT → ghost only (D8)
+            self._localizer = HostLocalizer(self._loc_host)   # est → map dot + Nav
+            self._hint_sent = False
         # Nav layer (brain-side): consumes the UI-set GoalCoordinate, plans via its Planner on the
         # emitted Map (StaticMapping), publishes the path back to AppState for the map panel to
         # render. ArmedNav below gates who drives: disarmed = joystick, armed = Nav.
@@ -113,12 +230,62 @@ class BrainLink:
         self._state.set_brain(
             obs, policy_out, mode.name if mode is not None else "—",
             intent=intent, joy=joy)
+        if self._loc_host is not None:    # feed the localization host its obs/intent (per tick)
+            self._loc_host.on_tick(obs, intent)
+            out = self._loc_host.latest()
+            diag = self._loc_host.diagnostics()
+            self._state.set_loc_state(
+                f"{self._loc_host.state}"
+                + (f"/{out.status.name}" if out is not None else ""))
+            self._state.set_loc_diag(diag)
+            gt = (self._gt_localizer.estimate(obs)
+                  if self._gt_localizer is not None else None)
+            if gt is not None and self._gt_to_map is not None:
+                gt = self._gt_to_map.to_map(gt)           # M-frame demo: ghost drawn in M
+            if gt is not None:                            # D8 ghost: display-only GT oracle
+                self._state.set_gt_pose(gt)
+            # drift trace: one JSONL line per NEW module output (dedupe on stamp) — the
+            # offline answer to "did LC fire during the drift stretch?" (diagnosis, 17-07)
+            if (self._trace_f is not None and out is not None
+                    and out.stamp_ns != self._trace_last_stamp):
+                self._trace_last_stamp = out.stamp_ns
+                try:
+                    self._trace_f.write(json.dumps(_trace_line(out, gt, diag)) + "\n")
+                except Exception:  # noqa: BLE001 — tracing must never darken the pose path
+                    pass
+            self._apply_loc_command()
         pose = self._localizer.estimate(obs) if self._localizer is not None else None
         if pose is not None:              # stream the debug/real pose onto the map dot
             self._state.set_pose(pose)
         if self._nav is not None:         # goal→nav→path shuttle + arm gate (pose may be None)
             self._update_nav(pose)
         self._telemetry(intent, joy, policy_out)
+
+    def _apply_loc_command(self) -> None:
+        """Consume one panel-issued lifecycle command ('rehint'/'stop') — UI writes the
+        request into AppState, this brain thread applies it (the nav-goal pattern)."""
+        cmd = self._state.pop_loc_command()
+        if cmd is None or self._loc_host is None:
+            return
+        if cmd == "stop":
+            self._loc_host.request_stop()
+            print("[devapp-brain] localizer stop (panel)", flush=True)
+        elif cmd == "rehint" and self._pose_client is not None:
+            sample = self._pose_client.latest()
+            if sample is None:
+                print("[devapp-brain] re-hint requested but no GT sample yet", flush=True)
+                return
+            from ..reason.localization import LocalizationSetup, RobotPose
+            stamp, x, y, yaw = sample
+            src = "GT"
+            if self._start_pose is not None:   # M-frame mode: re-hint = robot is AT the dock
+                x, y, yaw = self._start_pose
+                src = "dock"
+            self._loc_host.request_start(LocalizationSetup(
+                map_dir=self._loc_map,
+                initial_pose=RobotPose(stamp_ns=stamp, x=x, y=y, yaw=yaw)))
+            print(f"[devapp-brain] re-hint (panel, {src}): x={x:.2f} y={y:.2f} "
+                  f"yaw={yaw:.2f}", flush=True)
 
     def _update_nav(self, pose) -> None:
         """Move the UI-set goal INTO the Nav layer and publish its planned path back OUT.
@@ -191,6 +358,23 @@ class BrainLink:
                         and (time.monotonic() - t0) > self._walk_after):
                     self._reason.set_mode(Mode.WALK)
                     switched = True
+                if not self._hint_sent and self._pose_client is not None:
+                    sample = self._pose_client.latest()
+                    if sample is not None:   # world is alive → send the known-start hint
+                        from ..reason.localization import LocalizationSetup, RobotPose
+                        stamp, x, y, yaw = sample
+                        src = "GT known start"
+                        if self._start_pose is not None:
+                            # M-frame mode: coords from the bake's dock file — the GT
+                            # sample only told us the world is up (timing, not position)
+                            x, y, yaw = self._start_pose
+                            src = "start_pose.json dock"
+                        self._loc_host.request_start(LocalizationSetup(
+                            map_dir=self._loc_map,
+                            initial_pose=RobotPose(stamp_ns=stamp, x=x, y=y, yaw=yaw)))
+                        print(f"[devapp-brain] localizer hint ({src}): "
+                              f"x={x:.2f} y={y:.2f} yaw={yaw:.2f}", flush=True)
+                        self._hint_sent = True
                 if self._orch.step_once() is None:
                     time.sleep(0.0005)
         except CommClosedError as e:
@@ -199,6 +383,11 @@ class BrainLink:
             self._comm.close()
             _maybe_close(self._joystick)
             _maybe_close(self._pose_client)
+            if self._loc_host is not None:
+                self._loc_host.close()
+            _maybe_close(self._frame_reader)
+            if self._trace_f is not None:
+                self._trace_f.close()
 
     def stop(self) -> None:
         """Signal the brain loop to exit and join the thread."""

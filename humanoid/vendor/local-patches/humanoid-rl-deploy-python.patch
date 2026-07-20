@@ -1,0 +1,31 @@
+diff --git a/controllers/HU_D03_03/controllers.yaml b/controllers/HU_D03_03/controllers.yaml
+index 35ec2fa..e56f096 100644
+--- a/controllers/HU_D03_03/controllers.yaml
++++ b/controllers/HU_D03_03/controllers.yaml
+@@ -24,7 +24,8 @@ abilities:
+     script_path: "stand_controller/stand_controller.py"
+ 
+     # 设为true时，启动时自动加载并运行该能力模块
+-    autostart: false
++    # Local patch — see HU_D04_01/controllers.yaml for rationale.
++    autostart: true
+ 
+     # 能力自定义配置
+     config: {
+diff --git a/controllers/HU_D04_01/controllers.yaml b/controllers/HU_D04_01/controllers.yaml
+index 3591493..16485ad 100644
+--- a/controllers/HU_D04_01/controllers.yaml
++++ b/controllers/HU_D04_01/controllers.yaml
+@@ -24,7 +24,11 @@ abilities:
+     script_path: "stand_controller/stand_controller.py"
+ 
+     # 设为true时，启动时自动加载并运行该能力模块
+-    autostart: false
++    # Local patch (humanoid/docs/vendor/humanoid-rl-deploy-python.md § Local patches):
++    # autostart stand so the deploy framework starts publishing RobotCmd the instant
++    # it connects to the bus — eliminates the cli-switch round-trip and prevents
++    # Oli from free-falling during the ~2s gap on bring-up.
++    autostart: true
+ 
+     # 能力自定义配置
+     config: {

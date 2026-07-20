@@ -39,3 +39,33 @@ def colorize_depth(depth: np.ndarray, near: float = 0.2, far: float = 5.0) -> np
     rgb = (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
     rgb[invalid] = 0
     return np.ascontiguousarray(rgb)
+
+
+def _id_color(track_id: int) -> tuple[int, int, int]:
+    """Stable bright RGB for a feature track id (golden-ratio hue walk — adjacent ids get
+    far-apart hues, and a given id keeps its color for its whole tracked life)."""
+    h = (track_id * 0.61803398875) % 1.0
+    i = int(h * 6.0)
+    f = h * 6.0 - i
+    v, p, q, t = 255, 64, int(255 - 191 * f), int(64 + 191 * f)
+    rgb = [(v, t, p), (q, v, p), (p, v, t), (p, q, v), (t, p, v), (v, p, q)][i % 6]
+    return rgb
+
+
+def bake_feature_dots(rgb: np.ndarray, observations, radius: int = 4) -> np.ndarray:
+    """Overlay cuVSLAM feature observations [(u, v, id), …] onto a COPY of `rgb`.
+
+    The dev_app Localization panel's "what the robot sees" view (NVIDIA figure-3 style):
+    square dots colored stably per track id. Pure numpy; observations outside the frame
+    are skipped (defensive — the tracker emits sub-pixel u/v near borders).
+    """
+    img = np.ascontiguousarray(rgb).copy()
+    h, w = img.shape[:2]
+    for u, v, tid in observations:
+        c, r = int(round(u)), int(round(v))
+        if not (0 <= r < h and 0 <= c < w):
+            continue
+        r0, r1 = max(0, r - radius), min(h, r + radius + 1)
+        c0, c1 = max(0, c - radius), min(w, c + radius + 1)
+        img[r0:r1, c0:c1] = _id_color(tid)
+    return img

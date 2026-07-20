@@ -133,6 +133,7 @@ def build_grid(
     bounds: Optional[Tuple[float, float, float, float]] = None,
     traj_xy: Optional[np.ndarray] = None,
     traj_radius: float = 0.25,
+    local_floor_tile: float = 0.0,
 ) -> Tuple[OccupancyGrid, Dict]:
     """Project surface samples into the trinary grid, export unknown=BLOCKED.
 
@@ -157,7 +158,23 @@ def build_grid(
         np.add.at(grid, (rows[ok], cols[ok]), 1)
         return grid
 
-    z_rel = pts[:, 2] - floor_z
+    if local_floor_tile > 0:
+        # Per-TILE floor reference (17-07): a slam-posed mesh carries smooth z-drift
+        # (~1 m over the drive) — one global floor_z floods the tilted floor into the
+        # band. Each `local_floor_tile`-sized tile takes its own floor = min z of its
+        # samples; the ramp varies only ~cm across a tile, and under-rack cells
+        # inherit the true floor from floor points elsewhere in their tile.
+        tcols = np.floor((pts[:, 0] - x0) / local_floor_tile).astype(int)
+        trows = np.floor((pts[:, 1] - y0) / local_floor_tile).astype(int)
+        ntc = max(1, int(np.ceil((x1 - x0) / local_floor_tile)))
+        ntr = max(1, int(np.ceil((y1 - y0) / local_floor_tile)))
+        tok = (trows >= 0) & (trows < ntr) & (tcols >= 0) & (tcols < ntc)
+        tid = np.where(tok, trows * ntc + tcols, 0)
+        tile_floor = np.full(ntr * ntc, np.inf)
+        np.minimum.at(tile_floor, tid[tok], pts[tok, 2])
+        z_rel = pts[:, 2] - np.where(tok, tile_floor[tid], floor_z)
+    else:
+        z_rel = pts[:, 2] - floor_z
     occ_count = counts((z_rel >= band[0]) & (z_rel <= band[1]))
     floor_count = counts(np.abs(z_rel) <= floor_tol)
 
@@ -200,6 +217,7 @@ def build_grid(
         "band": list(band),
         "traj_cleared_cells": traj_cleared,
         "traj_overrode_occupied_cells": traj_overrode,
+        "local_floor_tile": float(local_floor_tile),
         "observed_mask": occupied | free,  # array; CLI pops + saves as .npy
     }
     blocked = occupied | unknown
@@ -252,6 +270,8 @@ def main(argv=None) -> int:
     ap.add_argument("--traj-radius", type=float, default=0.25)
     ap.add_argument("--floor-z", type=float, default=None,
                     help="override floor detection")
+    ap.add_argument("--local-floor-tile", type=float, default=0.0,
+                    help="per-tile floor reference [m]; 0 = single global floor_z")
     a = ap.parse_args(argv)
     traj_xy = None
     if a.traj is not None:
@@ -260,7 +280,8 @@ def main(argv=None) -> int:
     stats = build_from_mesh(
         a.mesh, a.out, resolution=a.res, band=tuple(a.band), floor_tol=a.floor_tol,
         min_occ_samples=a.min_samples, close_radius=a.close, free_close=a.free_close,
-        floor_z=a.floor_z, traj_xy=traj_xy, traj_radius=a.traj_radius)
+        floor_z=a.floor_z, traj_xy=traj_xy, traj_radius=a.traj_radius,
+        local_floor_tile=a.local_floor_tile)
     print(json.dumps(stats, indent=1))
     return 0
 
