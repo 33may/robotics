@@ -67,3 +67,8 @@ humanoid/vendor/oli-main-software-*/install/
 # Adjacent on disk for convenience, but NOT part of this monorepo — it has its
 # own .git and is maintained/committed independently. Keep it fully ignored here.
 humanoid/docs/nvidia-corpus/
+
+# ---- Inspection project ---------------------------------------------
+third_party/            # sparse clones (SO-ARM100 URDF); re-fetch, don't vendor
+data/inspection/        # capture bundles (RGB/IR/depth dumps)
+vbti/logic/data/        # accidental capture dirs from running inside vbti/logic
