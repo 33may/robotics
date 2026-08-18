@@ -1,0 +1,88 @@
+# UR5e inspection workcell — declared-geometry model (MAY-183).
+#
+# Units: meters. pose = [x, y, z, roll, pitch, yaw] (radians), in the PARENT frame.
+# Box pose is the CENTER of the box.
+#
+# Frame tree (why: put each object in the frame it is rigid to; only probe
+# transforms that involve the robot):
+#   base  — robot base frame. Origin inside the robot's foot. THE frame the
+#           solver works in.
+#   table — probed ONCE with the robot (welded together, transform is permanent).
+#           Convention: origin = front-left corner of the slab TOP surface,
+#           x → along front edge to the right, y → away from you across the
+#           table, z → up.
+#   shelf poses are given in the table frame — tape-measured, re-measure in
+#           minutes if furniture moves; no robot needed.
+
+frames:
+  table:
+    parent: base
+    # PROBED 2026-08-18: 5 touch points (4 fit + 1 holdout), calib/probe_fit.py
+    # on calib/table_probe_2026-08-18.yaml. Fit RMS 3.1 mm, holdout 5.7 mm.
+    # (Session was read with pendant Feature="View"; z corrected to Base by
+    # +399.47 mm — see the data file.) Tabletop 5 mm below base origin: the
+    # robot stands on a ~5 mm mounting plate on the slab. Axes parallel <0.05deg.
+    pose: [-0.1718, -0.7849, -0.0049, -0.00070, 0.00060, 0.00004]
+
+boxes:
+  # ---- table (from Anton's CAD sketch, 2026-08-17) ----
+  # Frame: origin = front-left corner of slab TOP; x right (52.9), y away (100), z up.
+  # Sketch "bottom" edge = y=0 (front). All bars 3x3 cm cross-section.
+  # Width 52.9 cm TAPE-MEASURED 2026-08-18 (CAD sketch said 53.5).
+  table_slab:
+    parent: table
+    dims: [0.529, 1.00, 0.03]
+    pose: [0.2645, 0.50, -0.015, 0, 0, 0]
+
+  bar_bottom:                          # level 2: on the slab, spans BETWEEN the two bottom posts
+    parent: table
+    dims: [0.449, 0.03, 0.03]          # x 0.05 -> 0.499 (right post inner face)
+    pose: [0.2745, 0.015, 0.015, 0, 0, 0]
+
+  post_bottom_left:                    # level 3: 3x3 post, h=100; inset 2 from left
+    parent: table
+    dims: [0.03, 0.03, 1.00]
+    pose: [0.035, 0.015, 0.50, 0, 0, 0]
+
+  post_bottom_right:                   # 0 from right, 0 from bottom
+    parent: table
+    dims: [0.03, 0.03, 1.00]
+    pose: [0.514, 0.015, 0.50, 0, 0, 0]
+
+  post_top_right:                      # 0 from right, 3 cm gap from top edge
+    parent: table
+    dims: [0.03, 0.03, 1.00]
+    pose: [0.514, 0.955, 0.50, 0, 0, 0]
+
+  # ---- shelf: ONE keep-out envelope box (decision: arm never reaches inside) ----
+  shelf:
+    parent: table
+    dims: [0.80, 0.35, 1.80]          # PLACEHOLDER full envelope w×d×h
+    pose: [1.60, 0.40, 0.50, 0, 0, 0]  # tape-measured from table corner
+
+# ---- tool: rigid boxes attached to the FLANGE frame (ur_description `flange`:
+# +X out of the tool face). The loader welds these to the robot; the validator
+# sweeps them with the arm. Envelope philosophy: cover the WORST state.
+tool:
+  rg2_gripper:
+    # OnRobot RG2 — per-axis MAX envelope (Anton, 2026-08-17):
+    #   length: CLOSED state (tips swing forward on the R55 arc) — spans
+    #           -18 mm (back plate) -> +212 mm (closed tip) in flange X
+    #   width:  MAX-OPEN state, 149 mm (manual §4.2 drawing)
+    #   height: MEASURED by Anton 2026-08-18 — bottom attachment reaches
+    #           100 mm below the gripper centerline, camera top 70 mm above
+    #           -> 170 mm total, center 15 mm below the flange axis
+    # Mount from Antonio's Isaac USD weld − 22 mm visual calibration.
+    # TCP MEASURED on the real robot (pendant 4-point wizard, 2026-08-18):
+    #   [1.54, -6.72, 239.9] mm in the pendant flange frame (Z out of flange)
+    #   = tip at +239.9 mm along OUR flange X. Saved on pendant as TCP_normal
+    #   in installation `inspection_demo`. USD estimate was 212 — the ~28 mm
+    #   gap is the flange-side mount stack; box back face kept at -18 mm.
+    dims: [0.2580, 0.1490, 0.1700]          # length -18 -> +240, height -100 -> +70 mm
+    pose: [0.1110, 0.0, -0.0150, 0, 0, 0]   # box center in flange frame
+    # (cameras top+bottom live INSIDE this envelope — no separate boxes)
+
+  cable_loop:
+    # the classic forgotten sweep — generous slack envelope around the wrist
+    dims: [0.10, 0.12, 0.12]          # PLACEHOLDER — eyeball generously
+    pose: [-0.05, 0.0, 0.0, 0, 0, 0]  # PLACEHOLDER — behind the flange
