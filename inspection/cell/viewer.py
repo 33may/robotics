@@ -78,6 +78,15 @@ def draw_cell(vis, cfg):
             g.MeshLambertMaterial(color=color, opacity=opacity, transparent=opacity < 1.0),
         )
         vis["cell"][name].set_transform(T)
+    # keep-in volume: ghost box — the arm must never leave it
+    ki = cfg.get("keep_in")
+    if ki:
+        T = frame_to_base(frames, ki.get("parent", "base")) @ pose_to_T(ki["pose"])
+        vis["cell"]["keep_in"].set_object(
+            g.Box(ki["dims"]),
+            g.MeshLambertMaterial(color=0x44BBFF, opacity=0.08, transparent=True),
+        )
+        vis["cell"]["keep_in"].set_transform(T)
     # base-frame axes triad for orientation sanity
     vis["cell"]["base_triad"].set_object(g.triad(0.15))
     return len(boxes)

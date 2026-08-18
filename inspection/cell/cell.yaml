@@ -24,6 +24,14 @@ frames:
     # robot stands on a ~5 mm mounting plate on the slab. Axes parallel <0.05deg.
     pose: [-0.1718, -0.7849, -0.0049, -0.00070, 0.00060, 0.00004]
 
+# ---- keep-in volume: the WHOLE arm+tool must stay inside this box. ----
+# Guards against everything we did NOT model (walls, screens, people space):
+# outside = forbidden by construction. Tune visually in the viewer.
+keep_in:
+  parent: base
+  dims: [1.30, 1.35, 1.26]
+  pose: [0.10, -0.325, 0.57, 0, 0, 0]
+
 boxes:
   # ---- table (from Anton's CAD sketch, 2026-08-17) ----
   # Frame: origin = front-left corner of slab TOP; x right (52.9), y away (100), z up.
