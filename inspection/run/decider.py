@@ -144,6 +144,17 @@ class Console:
             print(prompt, end="", flush=True)
         return self._q.get()
 
+    def drain(self):
+        """Flush any buffered lines. Called right before an approval prompt
+        so stale type-ahead (double-tapped 'y', typing ahead) can never
+        satisfy that prompt sight-unseen. Queue is thread-safe — no lock
+        needed here, unlike arm/disarm which must serialize with _reader."""
+        while True:
+            try:
+                self._q.get_nowait()
+            except queue.Empty:
+                break
+
 
 def show_capture(rgb):
     """Stopgap viewer until the UI toolkit lands: one reused cv2 window."""

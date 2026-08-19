@@ -115,10 +115,28 @@ def test_reader_routes_under_lock():
     assert con._q.empty(), "queue must never receive the in-flight line"
 
 
+def test_console_drain():
+    """Buffered lines typed while disarmed (type-ahead) must never satisfy
+    a later approval prompt sight-unseen — drain() flushes them first."""
+    fs = FeedStream()
+    con = Console(stream=fs)
+    fs.feed("stale1")
+    fs.feed("stale2")
+    t0 = time.time()
+    while con._q.qsize() < 2 and time.time() - t0 < 1.0:
+        time.sleep(0.01)
+    assert con._q.qsize() == 2
+    con.drain()
+    assert con._q.empty()
+    fs.feed("z")
+    assert con.readline() == "z"
+
+
 def main():
     test_gloss(); test_build_menu(); test_parse_command()
     test_console_stop_arming(); test_terminal_decider_parses_until_valid()
     test_reader_routes_under_lock()
+    test_console_drain()
     print("OK test_decider")
 
 

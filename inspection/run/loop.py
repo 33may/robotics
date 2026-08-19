@@ -46,8 +46,10 @@ class Loop:
 
     # ---------------------------------------------------------------- boot
     def boot(self):
-        q_now = self.rig.q()
-        if np.abs(q_now - self.q_survey).max() > START_TOL_RAD:
+        while True:
+            q_now = self.rig.q()
+            if np.abs(q_now - self.q_survey).max() <= START_TOL_RAD:
+                break
             print("boot: planning current -> survey pose")
             path, rep = plan_viewpoint(self.world, self.ik, q_now,
                                        self.ik.fk(self.q_survey),
@@ -55,9 +57,13 @@ class Loop:
             if path is None:
                 print(f"boot REFUSED: {rep.get('reason', rep)}")
                 return False
-            ok, _ = self._approve_and_move(path, "boot -> survey")
-            if not ok:
-                return False
+            ok, reason = self._approve_and_move(path, "boot -> survey")
+            if ok:
+                break
+            if reason == "stopped":
+                print("software stop during boot — re-planning from current q")
+                continue
+            return False        # "refused" or "executor" — pendant/menu, not a retry
         try:
             cap = self.rig.capture(0)
             view = object_in_base(cap["depth_raw"], self.rig.intr,
@@ -114,11 +120,17 @@ class Loop:
         ok, reason = self._approve_and_move(path, rec["action"])
         rec["approved"] = reason != "refused"
         rec["stopped"] = reason == "stopped"
+        rec["reason"] = reason
         if not ok:
-            rec["result"] = ("refused — nothing sent to the robot" if reason == "refused"
-                             else "software stop — arm halted mid-move")
+            if reason == "refused":
+                rec["result"] = "refused — nothing sent to the robot"
+            elif reason == "stopped":
+                print("back to the menu (plans restart from wherever it stopped)")
+                rec["result"] = "software stop — arm halted mid-move"
+            else:  # "executor" — protective stop / safety change / refusal
+                rec["result"] = "executor halted/refused — loop exiting, check pendant"
             self._save()
-            return True
+            return reason != "executor"     # protective stop needs the pendant, not a menu
         self.visited.add((act.h, act.v))
         self.current = (act.h, act.v)
         self.plan_failed.clear()            # new q — refused cells may work now
@@ -143,8 +155,11 @@ class Loop:
 
     # ------------------------------------------------------------- helpers
     def _approve_and_move(self, path, label):
-        """Returns (ok, reason) — reason in {"refused", "stopped", None}."""
+        """Returns (ok, reason) — reason in {"refused", "stopped",
+        "executor", None}. Neutral messages only — callers add context
+        (boot vs turn "back to the menu" wording differs)."""
         self.rig.preview(path)
+        self.console.drain()   # stale type-ahead must never approve a motion
         ans = self.console.readline(
             f"{label}: {len(path)} waypoints previewed — approve? [y/n] ")
         if ans.strip().lower() != "y":
@@ -154,11 +169,14 @@ class Loop:
         self.console.arm_stop()
         try:
             rep = self.rig.move(path)
+        except RuntimeError as e:
+            print(f"EXECUTOR REFUSED/HALTED: {e} — check pendant (protective "
+                  f"stop?), then restart; plans resume from current q")
+            return False, "executor"
         finally:
             self.console.disarm_stop()
         if rep.get("stopped"):
-            print("SOFTWARE STOP — arm halted; back to the menu "
-                  "(plans restart from wherever it stopped)")
+            print("SOFTWARE STOP — arm halted")
             return False, "stopped"
         return True, None
 
@@ -179,14 +197,18 @@ class Loop:
 
     # ----------------------------------------------------------------- run
     def run(self):
-        ok = self.boot()
-        if ok:
-            while len(self.turns) < self.max_turns:
-                if not self.turn():
-                    break
-        self._save()
-        if len(self.acc.points):
-            np.save(self.outdir / "fused_cloud.npy", self.acc.points)
+        try:
+            ok = self.boot()
+            if ok:
+                while len(self.turns) < self.max_turns:
+                    if not self.turn():
+                        break
+        finally:
+            # crash-safe: record + fused cloud must survive any exception
+            # that slips past boot()/turn()'s own handling.
+            self._save()
+            if len(self.acc.points):
+                np.save(self.outdir / "fused_cloud.npy", self.acc.points)
         print(f"run saved: {self.outdir}  ({len(self.turns)} turns, "
               f"{len(self.acc.points)} fused pts)")
 

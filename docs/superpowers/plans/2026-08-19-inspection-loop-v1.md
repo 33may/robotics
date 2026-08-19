@@ -1250,10 +1250,18 @@ confirm the commands below are printed at the end of execution.
       `p inspection/run/loop.py teach`
 - [ ] 3. Place the duck alone on the table.
 - [ ] 4. `p inspection/run/loop.py run --outdir=data/inspection/loop_run1 --question="is there a logo on the duck?"`
-- [ ] 5. First boot move: watch the meshcat preview, approve with `y`,
-      and TEST THE SOFTWARE STOP — press ENTER mid-motion; verify the arm
-      decelerates and the loop returns to the menu. Re-pick the same move.
+- [ ] 5. Boot move → watch preview, approve, press ENTER mid-motion → verify
+      the arm decelerates and the CLI re-plans from the stopped q and offers
+      approval again; approve and complete.
+- [ ] 5b. Repeat the ENTER stop test on the FIRST look move — verify it
+      returns to the menu with the turn recorded (`approved` true,
+      `stopped` true).
 - [ ] 6. Run 3-5 turns, answer, then inspect `run.json` + `fused_cloud.npy`.
+- [ ] 7. Eyeball the seeded object box in meshcat after boot, before
+      approving the first look.
+- [ ] 8. Teach the survey pose with the camera 0.15-0.55 m from the table
+      (deproject clips at 0.13/0.60 m).
+- [ ] 9. At 10-degree cells, watch the first fuse quality.
 
 ---
 
