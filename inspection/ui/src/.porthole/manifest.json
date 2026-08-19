@@ -1,0 +1,29 @@
+{
+  "registry": "porthole",
+  "items": {
+    "scene-view": {
+      "version": "36de3c6",
+      "files": [
+        "panels/SceneViewPanel.tsx"
+      ],
+      "updateMechanism": "Auto",
+      "localModifications": "None"
+    },
+    "camera": {
+      "version": "d0e2605",
+      "files": [
+        "panels/CameraPanel.tsx"
+      ],
+      "updateMechanism": "Auto",
+      "localModifications": "None"
+    },
+    "event-log": {
+      "version": "d0e2605",
+      "files": [
+        "panels/EventLogPanel.tsx"
+      ],
+      "updateMechanism": "Auto",
+      "localModifications": "None"
+    }
+  }
+}

@@ -1,0 +1,124 @@
+/* App styles. Porthole's theme tokens are already loaded; only what the
+   app-owned panels need lives here. Chrome that competes with data is a bug. */
+
+.inspection-cloud-panel {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background: var(--porthole-bg);
+  overflow: hidden;
+}
+
+.inspection-cloud-view {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.inspection-cloud-pane {
+  flex: none;
+  border-left: 1px solid var(--porthole-border);
+  background: var(--porthole-surface);
+  padding: 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inspection-cloud-pane-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--porthole-font-mono);
+  font-size: 12px;
+}
+
+.inspection-cell-id {
+  color: var(--porthole-text);
+}
+
+.inspection-cell-state {
+  font-size: 11px;
+  padding: 0 5px;
+  border-radius: 2px;
+  color: var(--porthole-bg);
+  background: var(--porthole-text-faint);
+}
+
+.inspection-cell-state[data-state='visited'] { background: var(--porthole-ok); }
+.inspection-cell-state[data-state='current'] { background: var(--porthole-accent); }
+.inspection-cell-state[data-state='blocked'] { background: var(--porthole-warn); }
+.inspection-cell-state[data-state='unreachable'] { background: #7a4a4a; color: var(--porthole-text); }
+
+.inspection-cloud-shot {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--porthole-radius);
+  background: #000;
+}
+
+.inspection-cloud-empty {
+  padding: 22px 0;
+  text-align: center;
+  color: var(--porthole-text-faint);
+  font-family: var(--porthole-font-mono);
+  font-size: 12px;
+  border: 1px dashed var(--porthole-border);
+  border-radius: var(--porthole-radius);
+}
+
+.inspection-cell-gloss,
+.inspection-cell-comment,
+.inspection-cell-step {
+  margin: 0;
+  font-size: 12px;
+  color: var(--porthole-text-dim);
+}
+
+.inspection-cell-comment {
+  color: var(--porthole-text);
+  font-style: italic;
+}
+
+.inspection-cell-step {
+  color: var(--porthole-text-faint);
+  font-family: var(--porthole-font-mono);
+  font-size: 11px;
+}
+
+/* ── status strip ─────────────────────────────────────────────────────────── */
+
+.inspection-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 24px;
+  padding: 0 10px;
+  background: var(--porthole-bg);
+  border-top: 1px solid var(--porthole-border);
+  color: var(--porthole-text-dim);
+  font-family: var(--porthole-font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.inspection-phase {
+  padding: 0 6px;
+  border-radius: 2px;
+  color: var(--porthole-bg);
+  background: var(--porthole-text-faint);
+}
+
+.inspection-phase[data-phase='awaiting_approval'] { background: var(--porthole-warn); }
+.inspection-phase[data-phase='executing'] { background: var(--porthole-error); }
+.inspection-phase[data-phase='preview'] { background: var(--porthole-accent); }
+.inspection-phase[data-phase='done'] { background: var(--porthole-ok); }
+
+.inspection-question {
+  color: var(--porthole-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
