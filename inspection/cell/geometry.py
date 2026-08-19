@@ -165,6 +165,30 @@ def object_from_view(depth_u16: np.ndarray, intr: dict, depth_scale: float,
     }
 
 
+def object_in_base(depth_u16: np.ndarray, intr: dict, depth_scale: float,
+                   T_base_cam: np.ndarray) -> dict:
+    """One view -> object candidate in the BASE frame (no rectification).
+
+    The loop plans in the base frame: the viewsphere center and the
+    collision box must not live in the table-rectified frame that
+    object_from_view returns. UR5e FK is mm-accurate, so skipping the
+    per-view tilt correction is safe here (it existed for SO-101 flex).
+    """
+    pts_cam = deproject(depth_u16, intr, depth_scale)
+    pts = crop_workspace(cam_to_base(pts_cam, T_base_cam))
+    if len(pts) < 100:
+        raise RuntimeError(f"only {len(pts)} workspace points — bad view?")
+    plane = fit_table(pts)
+    above = above_table(pts, plane)
+    obj = largest_cluster(above) if len(above) else above
+    return {
+        "points": obj,
+        "centroid": obj.mean(axis=0) if len(obj) else None,
+        "plane": plane,
+        "n_scene": len(pts),
+    }
+
+
 class CloudAccumulator:
     """Grows the object cloud across views; centroid tracks the fused cloud."""
 
