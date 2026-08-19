@@ -1,7 +1,7 @@
 # Day 1 — Geometry Bring-up on the SO-ARM101
 
 Date: 2026-08-14
-Spec: `docs/superpowers/specs/2026-08-12-ai-inspection-project-definition.md`
+Spec: `inspection/2026-08-12-ai-inspection-project-definition.md`
 
 ## Goal for today
 
