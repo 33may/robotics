@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Tests for the decider data model. Run: p inspection/tests/test_decider.py"""
+import queue
+import time
+
 from inspection.run.decider import (Look, Answer, Quit, MenuItem, gloss,
-                                    build_menu, parse_command)
+                                    build_menu, parse_command, Console,
+                                    TerminalDecider, Ctx)
 
 
 def test_gloss():
@@ -37,8 +41,48 @@ def test_parse_command():
     assert parse_command("garbage") is None
 
 
+class FeedStream:
+    """Line source the test controls in real time (stdin stand-in)."""
+    def __init__(self):
+        self.q = queue.Queue()
+
+    def feed(self, line):
+        self.q.put(line + "\n")
+
+    def __iter__(self):
+        while True:
+            line = self.q.get()
+            if line is None:
+                return
+            yield line
+
+
+def test_console_stop_arming():
+    fs = FeedStream()
+    con = Console(stream=fs)
+    fs.feed("first")
+    assert con.readline() == "first"
+    con.arm_stop()                      # robot "moving" now
+    fs.feed("anything")                 # any line while armed = STOP
+    assert con.stop_event.wait(timeout=1.0)
+    con.disarm_stop()
+    fs.feed("after")
+    assert con.readline() == "after"    # queue not polluted by the stop line
+
+
+def test_terminal_decider_parses_until_valid():
+    fs = FeedStream()
+    dec = TerminalDecider(Console(stream=fs))
+    ctx = Ctx(question="logo?", step=1, current_cell=(0, 0),
+              map_ascii="(map)", menu=[MenuItem(1, 0, "one step right")])
+    fs.feed("nonsense")                 # rejected, re-prompts
+    fs.feed("look 1 0")
+    assert dec.decide(ctx) == Look(1, 0)
+
+
 def main():
     test_gloss(); test_build_menu(); test_parse_command()
+    test_console_stop_arming(); test_terminal_decider_parses_until_valid()
     print("OK test_decider")
 
 

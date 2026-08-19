@@ -106,3 +106,73 @@ def parse_command(line):
     if cmd in ("quit", "q") and len(toks) == 1:
         return Quit()
     return None
+
+
+class Console:
+    """Single owner of terminal input. A daemon thread reads lines; while
+    the stop is ARMED (robot in motion) any line fires stop_event instead
+    of queueing — ENTER is the software stop button. The hardware e-stop
+    is unaffected and always available."""
+
+    def __init__(self, stream=None):
+        self._stream = stream if stream is not None else sys.stdin
+        self._q = queue.Queue()
+        self.stop_event = threading.Event()
+        self._armed = False
+        threading.Thread(target=self._reader, daemon=True).start()
+
+    def _reader(self):
+        for line in self._stream:
+            if self._armed:
+                self.stop_event.set()
+            else:
+                self._q.put(line.rstrip("\n"))
+
+    def arm_stop(self):
+        self.stop_event.clear()
+        self._armed = True
+
+    def disarm_stop(self):
+        self._armed = False
+
+    def readline(self, prompt=""):
+        if prompt:
+            print(prompt, end="", flush=True)
+        return self._q.get()
+
+
+def show_capture(rgb):
+    """Stopgap viewer until the UI toolkit lands: one reused cv2 window."""
+    import cv2
+    cv2.imshow("newest capture", cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+    cv2.waitKey(200)        # render once; window persists between turns
+
+
+class TerminalDecider:
+    """Anton in the model slot. The printed ctx IS the future model prompt."""
+
+    def __init__(self, console):
+        self.console = console
+
+    def read(self, cap):
+        if cap.get("rgb") is not None:
+            show_capture(cap["rgb"])
+        print(f"\n[READ] capture: {cap.get('dir', '(fake)')}")
+        return self.console.readline("comment> ")
+
+    def decide(self, ctx):
+        print(f"\n[DECIDE] step {ctx.step}   question: {ctx.question!r}")
+        print(ctx.map_ascii)
+        cur = (f"h={ctx.current_cell[0]} v={ctx.current_cell[1]}"
+               if ctx.current_cell else "survey pose")
+        print(f"you are at: {cur}")
+        for it in ctx.menu[:12]:
+            print(f"  look {it.h} {it.v}    {it.gloss}")
+        if len(ctx.menu) > 12:
+            print(f"  ... {len(ctx.menu) - 12} more cells on the map above")
+        while True:
+            act = parse_command(
+                self.console.readline("look H V | answer TEXT | quit > "))
+            if act is not None:
+                return act
+            print("could not parse — try 'look 6 1', 'answer no logo', 'quit'")
