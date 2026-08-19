@@ -189,3 +189,98 @@ class Loop:
             np.save(self.outdir / "fused_cloud.npy", self.acc.points)
         print(f"run saved: {self.outdir}  ({len(self.turns)} turns, "
               f"{len(self.acc.points)} fused pts)")
+
+
+# ── real rig + CLI ──────────────────────────────────────────────────────────
+
+ROBOT_IP = "192.168.2.50"
+SURVEY_POSE_FILE = Path(__file__).resolve().parent / "survey_pose.json"
+
+
+class RealRig:
+    """UR5e + wrist D405 behind the rig contract. Owns session.json."""
+
+    def __init__(self, world, console, outdir, ip=ROBOT_IP):
+        from inspection.motion.execute import UR5eArm
+        from inspection.perception.camera import (
+            WRIST_SERIAL, capture_bundle, open_camera, session_metadata,
+            t_flange_cam)
+        self._capture_bundle = capture_bundle
+        self.world, self.console = world, console
+        self.outdir = Path(outdir)
+        self.arm = UR5eArm(ip)
+        self.pipe, profile, self.align, self.depth_scale = open_camera()
+        meta = session_metadata(profile, self.depth_scale, WRIST_SERIAL)
+        self.outdir.mkdir(parents=True, exist_ok=True)
+        (self.outdir / "session.json").write_text(
+            json.dumps(meta, indent=2) + "\n")
+        self.intr = meta["intrinsics"]["ir_left"]
+        self._T_fc = t_flange_cam()
+        self._ik = UR5eIK()
+
+    def q(self):
+        return self.arm.q()
+
+    def preview(self, path):
+        self.world.replay(path)
+
+    def move(self, path):
+        return self.arm.execute(path, world=self.world,
+                                stop_event=self.console.stop_event)
+
+    def capture(self, pose_id):
+        from inspection.perception.capture import save_bundle
+        bundle = self._capture_bundle(self.pipe, self.align)
+        q = self.arm.q()
+        T_bf = self._ik.fk(q)
+        pose = {"joints_rad": q, "T_base_flange": T_bf,
+                "T_base_cam": T_bf @ self._T_fc}
+        d = save_bundle(self.outdir, pose_id, bundle, pose)
+        return {"dir": str(d), "rgb": bundle["rgb"],
+                "depth_raw": bundle["depth_raw"],
+                "T_base_cam": pose["T_base_cam"], "q": q}
+
+    def close(self):
+        self.pipe.stop()
+        self.arm.close()
+
+
+def teach(ip: str = ROBOT_IP):
+    """Freedrive the arm to the survey pose, then run this. Read-only."""
+    from rtde_receive import RTDEReceiveInterface
+    q = list(RTDEReceiveInterface(ip).getActualQ())
+    SURVEY_POSE_FILE.write_text(json.dumps({"q_rad": q}, indent=2) + "\n")
+    print(f"survey pose saved: {np.round(np.degrees(q), 1).tolist()} deg "
+          f"-> {SURVEY_POSE_FILE}")
+
+
+def run(outdir: str, ip: str = ROBOT_IP, r: float = 0.35,
+        max_turns: int = 12, question: str = "", seed: int = 0):
+    """The v1 loop. Requires: bringup done, Remote Control, taught survey."""
+    from inspection.motion.execute import preflight
+    from inspection.run.decider import Console, TerminalDecider
+
+    pf = preflight(ip)
+    if not pf["go"]:
+        raise SystemExit(f"preflight NO-GO: {pf}")
+    if not SURVEY_POSE_FILE.exists():
+        raise SystemExit("no survey pose — freedrive there and run "
+                         "`p inspection/run/loop.py teach` first")
+    q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])
+
+    world = RobotCell()
+    world.init_viewer()                    # meshcat preview window
+    console = Console()
+    rig = RealRig(world, console, outdir, ip)
+    try:
+        Loop(rig, TerminalDecider(console), console, outdir,
+             q_survey=q_survey, r=r, max_turns=max_turns,
+             question=question, seed=seed, world=world).run()
+    finally:
+        rig.close()
+
+
+if __name__ == "__main__":
+    import fire
+    fire.core.Display = lambda lines, out: print(*lines, file=out)
+    fire.Fire({"teach": teach, "run": run})

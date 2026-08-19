@@ -6,9 +6,16 @@ the only layer allowed to talk to everything — perception, cell, view,
 motion — and wire them together.
 
 ## Files
-- `explore.py` — interactive azimuth-orbit exploration loop with the
-  three-panel dashboard (live RGB | fused side view | top-down ring).
-  SO-101 era; the UR5e loop will supersede it.
+- `loop.py` — the v1 inspection loop (POC): boot to the taught survey pose,
+  seed the object, then READ -> DECIDE -> plan -> meshcat preview ->
+  approve -> move -> capture -> fuse. Every motion is human-approved;
+  ENTER during motion is the software stop. Subcommands: `teach`
+  (save freedrive survey pose), `run`. Spec:
+  `inspection/2026-08-19-loop-v1-design.md`.
+- `decider.py` — the AI seam. Decider.read/.decide contract, egocentric
+  menu glosses (D4), Console (stdin owner + stop arming), TerminalDecider.
+  BusDecider (UI toolkit) and AgentDecider slot in here later.
+- `survey_pose.json` — taught on hardware, not committed until it exists.
 
 ## Contracts & decisions
 - Nothing imports from `run/`. If a sibling package needs something
@@ -16,8 +23,8 @@ motion — and wire them together.
 - Orchestration only: sequencing, UI, logging, entry points. Any
   geometry, planning, or camera logic that accretes here gets moved to
   its pipeline stage.
-- The VLM slot: it replaces exactly the viewpoint picker inside the
-  loop, nothing else.
+- The AI slot: it replaces exactly the Decider (read + decide), nothing
+  else. The orchestrator owns budget, approval, and the software stop.
 
 ## Does NOT belong here
 - Reusable logic of any kind — this layer is glue, not a library.
