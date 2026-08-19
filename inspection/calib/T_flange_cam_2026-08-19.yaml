@@ -1,0 +1,23 @@
+# UR5e wrist D405 eye-in-hand calibration — provenance
+# Artifact: T_flange_cam_2026-08-19.npy (4x4, meters)
+
+date: 2026-08-19
+robot: UR5e 192.168.2.50
+camera: RealSense D405 serial 123622270954 (left eye = color/IR-left/depth frame)
+frame: URDF ur5e_description `flange` (+X out of tool face) -> camera optical
+method: ChArUco 8x6/20mm on IR-left, cv2.calibrateHandEye PARK, 31 pairs,
+  freedrive + stationarity-gate auto-capture (perception/handeye.py)
+fk: nominal DH (UR5eIK.fk) — raw joints stored per pair in
+  data/inspection/handeye_ur/pair_*.npz; re-FK + re-solve when the factory
+  DH calibration gets extracted from the controller.
+
+# Result (translation mm, rotation = axis permutation + 1.07 deg tilt):
+#   cam at flange [+142.4, -8.3, -47.5]
+#   the -8.3 lateral IS the left-eye half-baseline (18.03/2) — body centered.
+translation_mm: [142.4, -8.3, -47.5]
+optical_axis_tilt_deg: 1.07
+
+quality:
+  cross_method: {park_vs_horaud: "0.01 mm / 0.03 deg", park_vs_daniilidis: "0.32 mm / 0.22 deg"}
+  board_in_base_residual_mm: {median: 2.52, max: 4.41}   # nominal-DH FK floor
+  external_check: "Anthonio D405_to_TCP.txt agrees ~2 mm (independent calib, TCP frame)"
