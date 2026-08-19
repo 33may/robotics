@@ -3,7 +3,8 @@
 One object, one truth: every motion tier (direct move, radial retract, RRT)
 asks the same two questions — `is_colliding(q)` and `path_valid(path)` —
 against the same geometry: UR5e collision meshes + measured tool envelope
-welded to the flange + calibrated cell boxes from cell.yaml + keep-in volume.
+welded to the flange + calibrated cell boxes from cell.yaml (bounds are
+modeled as boxes too — e.g. the floor slab; there is no keep-in mechanism).
 
 Usage (from repo root, robo env active):
     p inspection/cell/world.py            # headless smoke: truth table + timings
@@ -11,12 +12,16 @@ Usage (from repo root, robo env active):
     p inspection/cell/world.py --replay   # meshcat: replay a path, freeze at impact
 
 Design contract (do not break — MAY-184 builds on it):
-- pinocchio internals are PUBLIC: .model .data .geom_model .geom_data — tier-3
-  pyroboplan consumes them directly.
+- pinocchio internals are PUBLIC: .model .data .geom_model .geom_data — used by
+  the viewer, bench and diagnostics. The PLANNER does not touch them: OMPL asks
+  `is_colliding` through a validity callback, which is what lets one world with
+  split margins serve both planning and validation.
 - padding/step are query-time knobs. Resolution contract: step_L1 * LEVER_M
   must stay < padding — enforced here, not assumed.
-- The inspected object is NOT a hard obstacle (MAY-183 rule): `add_object`
-  registers soft geometry for display/standoff only, never a collision pair.
+- The inspected object IS a hard obstacle (Anton 2026-08-18, reverses the
+  MAY-183 soft-object rule): `set_object` swaps the reconstructed primitive
+  into the collision world every perception step. We look, we never touch —
+  endpoint validity at env padding doubles as the standoff.
 - World answers, never decides: no planning logic in this file.
 """
 
@@ -62,6 +67,10 @@ def _frame_to_base(frames, name):
 
 class RobotCell:
     def __init__(self, yaml_path=CELL_YAML, padding=DEFAULT_PADDING):
+        """The ONE world. Split margins live here (env vs self), and the
+        planner queries them through a validity callback — there is no second,
+        inflated "planning world" any more (removed 2026-08-19 with the move
+        from pyroboplan to OMPL). See motion/AGENTS.md for why that mattered."""
         from robot_descriptions.loaders.pinocchio import load_robot_description
 
         robot = load_robot_description("ur5e_description")
@@ -94,28 +103,9 @@ class RobotCell:
             gid = self._add_box_geom(f"cell_{name}", 0, T, box["dims"])
             self._env_geoms.append(gid)
 
-        # --- keep-in volume (not a collision pair: violated when arm LEAVES it)
-        ki = cfg.get("keep_in")
-        self._keep_in = None
-        if ki:
-            T = _frame_to_base(self._frames, ki.get("parent", "base")) \
-                * _pose_to_se3(ki["pose"])
-            half = np.asarray(ki["dims"]) / 2.0
-            self._keep_in = (T.translation - half, T.translation + half)
-
         self._build_pairs()
         self.geom_data = self.geom_model.createData()
         self.set_padding(padding)
-
-        # local AABB corners per robot/tool geom, for the keep-in check
-        self._corners = {}
-        for gid in self._robot_geoms + self._tool_geoms:
-            geom = self.geom_model.geometryObjects[gid].geometry
-            geom.computeLocalAABB()
-            lo, hi = geom.aabb_local.min_, geom.aabb_local.max_
-            self._corners[gid] = np.array(
-                [[x, y, z] for x in (lo[0], hi[0]) for y in (lo[1], hi[1])
-                 for z in (lo[2], hi[2])])
 
         self._viz = None
         self._objects = {}  # soft geometry: display/standoff only, never pairs
@@ -129,63 +119,44 @@ class RobotCell:
     def _build_pairs(self):
         gm = self.geom_model
         jid = lambda g: gm.geometryObjects[g].parentJoint
-        self._self_pairs = []   # indices into collisionPairs (small margin)
-        k = 0
         # self-collision: robot link pairs, adjacent joints filtered (no SRDF ships)
         for i in self._robot_geoms:
             for j in self._robot_geoms:
                 if i < j and abs(jid(i) - jid(j)) > 1:
                     gm.addCollisionPair(pin.CollisionPair(i, j))
-                    self._self_pairs.append(k); k += 1
         # tool vs base..forearm only: wrist_1..3 are kinematically welded to the
         # tool (the guessed cable-loop box overlaps wrist_1 by design)
         for t in self._tool_geoms:
             for i in self._robot_geoms:
                 if jid(i) <= 3:
                     gm.addCollisionPair(pin.CollisionPair(i, t))
-                    self._self_pairs.append(k); k += 1
         # environment vs everything that moves (skip base link: bolted to the cell)
         for e in self._env_geoms:
             for i in self._robot_geoms + self._tool_geoms:
                 if jid(i) >= 1:
                     gm.addCollisionPair(pin.CollisionPair(i, e))
-                    k += 1
 
     def set_padding(self, padding):
+        """Margins classified per pair by its GEOMETRY (robust to runtime
+        object add/remove): robot/tool internal pairs get SELF_PADDING;
+        anything involving the environment or an object gets `padding`."""
         self.padding = padding
-        self_pairs = set(self._self_pairs)
-        for k, req in enumerate(self.geom_data.collisionRequests):
-            req.security_margin = SELF_PADDING if k in self_pairs else padding
+        moving = set(self._robot_geoms) | set(self._tool_geoms)
+        for k, pair in enumerate(self.geom_model.collisionPairs):
+            is_self = pair.first in moving and pair.second in moving
+            self.geom_data.collisionRequests[k].security_margin = \
+                SELF_PADDING if is_self else padding
 
     # ---------------------------------------------------------------- queries
-    def in_bounds(self, q):
-        """True if every robot/tool geometry stays inside the keep-in volume."""
-        if self._keep_in is None:
-            return True
-        lo, hi = self._keep_in
-        pin.forwardKinematics(self.model, self.data, q)
-        pin.updateGeometryPlacements(self.model, self.data,
-                                     self.geom_model, self.geom_data)
-        for gid in self._robot_geoms + self._tool_geoms:
-            M = self.geom_data.oMg[gid]
-            pts = self._corners[gid] @ M.rotation.T + M.translation
-            if (pts < lo).any() or (pts > hi).any():
-                return False
-        return True
-
-    def is_colliding(self, q, padding=None, check_bounds=True):
-        """True = config is INVALID (pair collision or outside keep-in)."""
+    def is_colliding(self, q, padding=None):
+        """True = config is INVALID (some collision pair hits)."""
         if padding is not None and padding != self.padding:
             self.set_padding(padding)
-        if check_bounds and not self.in_bounds(q):
-            return True
         return pin.computeCollisions(self.model, self.data, self.geom_model,
                                      self.geom_data, q, True)  # stop at first
 
     def first_collision(self, q):
-        """Diagnose q: ('out_of_bounds'|'pair', names, contact point) or None."""
-        if not self.in_bounds(q):
-            return ("out_of_bounds", ("keep_in",), None)
+        """Diagnose q: ('pair', names, contact point) or None."""
         pin.computeCollisions(self.model, self.data, self.geom_model,
                               self.geom_data, q, False)  # evaluate ALL pairs
         for k, res in enumerate(self.geom_data.collisionResults):
@@ -226,17 +197,42 @@ class RobotCell:
                 return False, (i, q, self.first_collision(q))
         return True, None
 
-    # ------------------------------------------------- soft objects (the cup)
-    def add_object(self, name, dims, pose, parent="table"):
-        """Inspected-object geometry: DISPLAY + STANDOFF only, never a hard
-        obstacle (MAY-183 rule — a hard cup is unapproachable by construction)."""
+    # --------------------------------------------- objects (the cup) — HARD
+    def set_object(self, name, dims, pose, parent="base"):
+        """Swap the reconstructed object primitive into the collision world
+        (Anton 2026-08-18: the object IS a hard obstacle — we look, never
+        touch; endpoint validity at env padding doubles as the standoff).
+        Call again with the same name to update dims/pose every perception
+        step — pairs are only built once, updates are cheap."""
         T = _frame_to_base(self._frames, parent) * _pose_to_se3(pose)
         self._objects[name] = (np.asarray(dims, dtype=float), T)
+        gname = f"obj_{name}"
+        if self.geom_model.existGeometryName(gname):
+            gobj = self.geom_model.geometryObjects[
+                self.geom_model.getGeometryId(gname)]
+            gobj.placement = T
+            gobj.geometry = coal.Box(*[float(d) for d in dims])
+        else:
+            gid = self._add_box_geom(gname, 0, T, dims)
+            for i in self._robot_geoms + self._tool_geoms:
+                if self.geom_model.geometryObjects[i].parentJoint >= 1:
+                    self.geom_model.addCollisionPair(pin.CollisionPair(i, gid))
+        self.geom_data = self.geom_model.createData()
+        self.set_padding(self.padding)
         if self._viz is not None:
             self._draw_object(name)
 
+    def add_object(self, name, dims, pose, parent="base"):
+        """Alias of set_object (older demos)."""
+        self.set_object(name, dims, pose, parent)
+
     def remove_object(self, name):
         self._objects.pop(name, None)
+        gname = f"obj_{name}"
+        if self.geom_model.existGeometryName(gname):
+            self.geom_model.removeGeometryObject(gname)
+            self.geom_data = self.geom_model.createData()
+            self.set_padding(self.padding)
         if self._viz is not None:
             self._viz.viewer["objects"][name].delete()
 
@@ -339,7 +335,7 @@ class RobotCell:
 Q_PARK = np.array([2.353, -1.325, -2.037, -1.289, 1.484, -2.872])
 Q_TABLE = np.array([-0.80, -1.47, 2.10, -2.21, -1.84, 1.35])  # gripper into slab
 Q_SELF = np.array([-2.60, -1.65, 1.89, 0.52, -2.55, -0.42])   # forearm vs wrist_3
-Q_OUT = np.zeros(6)                                      # stretched out of keep-in
+Q_FLOOR = np.array([-1.96, -2.80, -1.41, 0.99, 0.39, -2.20])  # dives below table level
 
 
 def smoke(cell):
@@ -347,7 +343,7 @@ def smoke(cell):
     cases = [("park (expect FREE)", Q_PARK, False),
              ("through-table (expect COLLIDING)", Q_TABLE, True),
              ("self-fold (expect COLLIDING)", Q_SELF, True),
-             ("stretched out (expect OUT-OF-BOUNDS)", Q_OUT, True)]
+             ("below-table (expect COLLIDING floor)", Q_FLOOR, True)]
     ok = True
     for label, q, expect_bad in cases:
         diag = cell.first_collision(q)
@@ -361,21 +357,21 @@ def smoke(cell):
     n = 2000
     t0 = time.perf_counter()
     for _ in range(n):
-        cell.is_colliding(Q_PARK, check_bounds=False)
+        cell.is_colliding(Q_PARK)
     per = (time.perf_counter() - t0) / n
     print(f"  is_colliding (free config): {per * 1e6:.1f} us")
 
     path40 = [Q_PARK + (i / 39) * 0.3 * np.sin(np.arange(6) + i) for i in range(40)]
     t0 = time.perf_counter()
     for q in path40:
-        cell.is_colliding(q, check_bounds=False)
+        cell.is_colliding(q)
     print(f"  40-config path check: {(time.perf_counter() - t0) * 1e3:.2f} ms")
 
     rng = np.random.default_rng(7)
     qs = rng.uniform(-np.pi, np.pi, size=(1600, 6))
     t0 = time.perf_counter()
     for q in qs:
-        cell.is_colliding(q, check_bounds=False)
+        cell.is_colliding(q)
     print(f"  1600 random configs: {(time.perf_counter() - t0) * 1e3:.1f} ms")
 
     ok_path, info = cell.path_valid([Q_PARK, Q_PARK + np.array([0.4, 0, 0, 0, 0, 0])])
@@ -404,7 +400,7 @@ def main():
         try:
             while True:
                 for label, q in [("park", Q_PARK), ("through-table", Q_TABLE),
-                                 ("self-fold", Q_SELF), ("out-of-bounds", Q_OUT)]:
+                                 ("self-fold", Q_SELF), ("below-table", Q_FLOOR)]:
                     cell.show(q, label=label)
                     time.sleep(3.0)
         except KeyboardInterrupt:

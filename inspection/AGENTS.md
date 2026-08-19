@@ -3,7 +3,7 @@
 ## Purpose
 VLM decides how to inspect an object; this package perceives, models the
 workcell, picks viewpoints, solves motion, and orchestrates the loop.
-Pure Python, no ROS. Stack: pinocchio+coal, pyroboplan, EAIK, ur_rtde,
+Pure Python, no ROS. Stack: pinocchio+coal, OMPL, EAIK, ur_rtde,
 open3d, meshcat.
 
 ## Files

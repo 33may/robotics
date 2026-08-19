@@ -26,11 +26,16 @@ nothing from sibling packages.
   (UR5e design clearances are 17-19 mm at park — 20 mm false-positives).
 - Tool pairs stop at the forearm: wrist_1..3 are kinematically welded to
   the tool; the eyeballed cable-loop box overlaps wrist_1 by design.
-- Keep-in is a bounds check on geometry AABBs, not a collision pair.
-- The inspected object is NEVER a hard obstacle (`add_object` = display/
-  standoff only) — a hard cup is unapproachable by construction.
-- pinocchio internals are public API: `.model .data .geom_model .geom_data`
-  — pyroboplan (MAY-184 tier 3) consumes them directly.
+- Bounds are modeled as BOXES (e.g. the wide `floor` slab) — the keep-in
+  volume mechanism was removed (Anton, 2026-08-18).
+- The inspected object IS a hard obstacle (Anton 2026-08-18, reverses the
+  earlier soft-object rule): `set_object` swaps the reconstructed primitive
+  in every perception step; we look, never touch — endpoint validity at env
+  padding doubles as the standoff. NOTE: the START config must be valid too;
+  a park pose hovering over the object dies at step 0.
+- pinocchio internals are public API: `.model .data .geom_model .geom_data`.
+  The planner no longer consumes them (OMPL queries `is_colliding` through a
+  validity callback), but viewer/bench/diagnostics still do.
 - GENERIC UR home grazes the top-right post in this cell (-0.3 mm) — use
   `Q_PARK` (searched, tool-down over the table) as the park pose.
 
