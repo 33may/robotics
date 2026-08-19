@@ -2,10 +2,11 @@
 """Execution layer — validated paths onto the real UR5e (MAY-184).
 
 The ONLY module that commands robot motion. Consumes waypoint paths from
-plan_viewpoint() and executes them with sequential blocking moveJ, blends
-off. The world validator remains the safety authority: execute() re-checks
-the full path against the live world before the first command and refuses
-on any mismatch — a stale path is a refused path.
+plan_viewpoint() and executes them with sequential async moveJ (interruptible
+— software stop via stop_event), blends off. The world validator remains the
+safety authority: execute() re-checks the full path against the live world
+before the first command and refuses on any mismatch — a stale path is a
+refused path.
 
 Requires the pendant in Remote Control mode (top-right icon in PolyScope).
 State reads work in any mode; motion does not.
@@ -32,6 +33,29 @@ START_TOL_RAD = 0.02    # current q must match path[0] within ~1.1 deg
 
 ROBOT_MODE_RUNNING = 7
 SAFETY_MODE_NORMAL = 1
+
+
+def _wait_async(running_fn, safety_fn, stop_event=None,
+                poll_s=0.05, grace_s=0.3):
+    """Poll an asynchronous move. Returns 'done' | 'stopped' | 'unsafe'.
+
+    grace_s covers the window between issuing moveJ(async) and the
+    controller reporting the op as running — without it a fast first poll
+    sees 'not running' and declares done before the arm ever moves.
+    """
+    t0 = time.monotonic()
+    seen_running = False
+    while True:
+        if stop_event is not None and stop_event.is_set():
+            return "stopped"
+        if not safety_fn():
+            return "unsafe"
+        running = running_fn()
+        seen_running = seen_running or running
+        if not running and (seen_running
+                            or time.monotonic() - t0 > grace_s):
+            return "done"
+        time.sleep(poll_s)
 
 
 def preflight(ip: str = ROBOT_IP) -> dict:
@@ -114,12 +138,14 @@ class UR5eArm:
         return (self.recv.getSafetyMode() == SAFETY_MODE_NORMAL
                 and self.recv.getRobotMode() == ROBOT_MODE_RUNNING)
 
-    def execute(self, path, world=None, step=None) -> dict:
+    def execute(self, path, world=None, step=None, stop_event=None) -> dict:
         """Run a validated waypoint path. Returns an execution report.
 
         Refuses (raises, no motion) when: start mismatch, world says the
-        path is no longer valid, or safety is not NORMAL. Between
-        waypoints, any safety change -> stopJ + raise.
+        path is no longer valid, or safety is not NORMAL. Motion is
+        asynchronous per waypoint so it can be interrupted: stop_event set
+        -> stopJ deceleration, report {"stopped": True} (a normal outcome,
+        not an error). Safety change mid-path still raises.
         """
         path = [np.asarray(q, dtype=float) for q in path]
         if len(path) < 2:
@@ -139,19 +165,29 @@ class UR5eArm:
                 raise RuntimeError(f"world refuses path (segment {bad}) — replan")
 
         t0 = time.perf_counter()
-        done = 0
+        done, stopped = 0, False
         try:
             for q_goal in path[1:]:
                 if not self._safety_ok():
                     raise RuntimeError("safety mode changed mid-path")
-                self.ctrl.moveJ(list(q_goal), self.speed, self.acc)
+                self.ctrl.moveJ(list(q_goal), self.speed, self.acc, True)
+                outcome = _wait_async(
+                    lambda: (self.ctrl.getAsyncOperationProgressEx()
+                             .isAsyncOperationRunning()),
+                    self._safety_ok, stop_event)
+                if outcome == "stopped":
+                    self.ctrl.stopJ(2.0)
+                    stopped = True
+                    break
+                if outcome == "unsafe":
+                    raise RuntimeError("safety mode changed mid-path")
                 done += 1
         except Exception:
             self.stop()
             raise
         err = np.degrees(np.abs(self.q() - path[-1]).max())
         return {"waypoints_done": done, "s": time.perf_counter() - t0,
-                "final_err_deg": float(err)}
+                "final_err_deg": float(err), "stopped": stopped}
 
     def stop(self):
         try:
