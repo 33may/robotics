@@ -80,30 +80,45 @@ def test_terminal_decider_parses_until_valid():
     assert dec.decide(ctx) == Look(1, 0)
 
 
-def test_console_race_condition_armed_check_atomic():
-    """Regression: verify armed-check-and-route is atomic via lock.
+def test_reader_routes_under_lock():
+    """Deterministic test: verify _reader holds lock during armed-check-and-route.
 
-    Feed a line, arm stop, feed another line (should fire stop_event),
-    disarm, feed another line (should appear in queue, not lost).
+    Without the lock in _reader, this test fails: the in-flight line routes to
+    the queue before arm_stop() can flip _armed. With the lock, the reader
+    thread blocks on the lock until the test releases it, by which time
+    _armed=True, and the line routes to stop_event instead.
     """
     fs = FeedStream()
     con = Console(stream=fs)
-    fs.feed("pre-arm")
-    assert con.readline() == "pre-arm"
 
-    con.arm_stop()
-    fs.feed("armed-line")
-    assert con.stop_event.wait(timeout=1.0), "stop_event should fire on armed line"
+    # Hold the lock to block the reader thread
+    con._lock.acquire()
+    fs.feed("inflight")
+    time.sleep(0.2)
 
-    con.disarm_stop()
-    fs.feed("post-disarm")
-    assert con.readline() == "post-disarm", "queue should not be polluted by stop line"
+    # Without the lock in _reader, the line would already be in the queue.
+    # With the lock, reader is blocked and queue/stop_event are untouched.
+    assert con._q.empty(), "reader thread must be blocked on lock"
+    assert not con.stop_event.is_set(), "stop_event must not be set yet"
+
+    # Arm the console while holding the lock (cannot call arm_stop() as it
+    # would deadlock trying to acquire the lock we already hold).
+    con._armed = True
+    con.stop_event.clear()
+
+    # Release the lock; reader thread now unblocks and routes the in-flight
+    # line through the ARMED branch (set stop_event, not queue).
+    con._lock.release()
+
+    # The line should fire stop_event (arming wins over in-flight line).
+    assert con.stop_event.wait(timeout=1.0), "stop_event should fire on in-flight line"
+    assert con._q.empty(), "queue must never receive the in-flight line"
 
 
 def main():
     test_gloss(); test_build_menu(); test_parse_command()
     test_console_stop_arming(); test_terminal_decider_parses_until_valid()
-    test_console_race_condition_armed_check_atomic()
+    test_reader_routes_under_lock()
     print("OK test_decider")
 
 
