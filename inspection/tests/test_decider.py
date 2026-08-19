@@ -80,9 +80,30 @@ def test_terminal_decider_parses_until_valid():
     assert dec.decide(ctx) == Look(1, 0)
 
 
+def test_console_race_condition_armed_check_atomic():
+    """Regression: verify armed-check-and-route is atomic via lock.
+
+    Feed a line, arm stop, feed another line (should fire stop_event),
+    disarm, feed another line (should appear in queue, not lost).
+    """
+    fs = FeedStream()
+    con = Console(stream=fs)
+    fs.feed("pre-arm")
+    assert con.readline() == "pre-arm"
+
+    con.arm_stop()
+    fs.feed("armed-line")
+    assert con.stop_event.wait(timeout=1.0), "stop_event should fire on armed line"
+
+    con.disarm_stop()
+    fs.feed("post-disarm")
+    assert con.readline() == "post-disarm", "queue should not be polluted by stop line"
+
+
 def main():
     test_gloss(); test_build_menu(); test_parse_command()
     test_console_stop_arming(); test_terminal_decider_parses_until_valid()
+    test_console_race_condition_armed_check_atomic()
     print("OK test_decider")
 
 

@@ -119,21 +119,25 @@ class Console:
         self._q = queue.Queue()
         self.stop_event = threading.Event()
         self._armed = False
+        self._lock = threading.Lock()
         threading.Thread(target=self._reader, daemon=True).start()
 
     def _reader(self):
         for line in self._stream:
-            if self._armed:
-                self.stop_event.set()
-            else:
-                self._q.put(line.rstrip("\n"))
+            with self._lock:
+                if self._armed:
+                    self.stop_event.set()
+                else:
+                    self._q.put(line.rstrip("\n"))
 
     def arm_stop(self):
-        self.stop_event.clear()
-        self._armed = True
+        with self._lock:
+            self.stop_event.clear()
+            self._armed = True
 
     def disarm_stop(self):
-        self._armed = False
+        with self._lock:
+            self._armed = False
 
     def readline(self, prompt=""):
         if prompt:
