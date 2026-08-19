@@ -209,14 +209,23 @@ class RealRig:
         self.world, self.console = world, console
         self.outdir = Path(outdir)
         self.arm = UR5eArm(ip)
-        self.pipe, profile, self.align, self.depth_scale = open_camera()
-        meta = session_metadata(profile, self.depth_scale, WRIST_SERIAL)
-        self.outdir.mkdir(parents=True, exist_ok=True)
-        (self.outdir / "session.json").write_text(
-            json.dumps(meta, indent=2) + "\n")
-        self.intr = meta["intrinsics"]["ir_left"]
-        self._T_fc = t_flange_cam()
-        self._ik = UR5eIK()
+        try:
+            self.pipe, profile, self.align, self.depth_scale = open_camera()
+            meta = session_metadata(profile, self.depth_scale, WRIST_SERIAL)
+            self.outdir.mkdir(parents=True, exist_ok=True)
+            (self.outdir / "session.json").write_text(
+                json.dumps(meta, indent=2) + "\n")
+            self.intr = meta["intrinsics"]["ir_left"]
+            self._T_fc = t_flange_cam()
+            self._ik = UR5eIK()
+        except Exception:
+            if hasattr(self, "pipe"):
+                try:
+                    self.pipe.stop()
+                except Exception:
+                    pass
+            self.arm.close()
+            raise
 
     def q(self):
         return self.arm.q()
@@ -248,7 +257,9 @@ class RealRig:
 def teach(ip: str = ROBOT_IP):
     """Freedrive the arm to the survey pose, then run this. Read-only."""
     from rtde_receive import RTDEReceiveInterface
-    q = list(RTDEReceiveInterface(ip).getActualQ())
+    r = RTDEReceiveInterface(ip)
+    q = list(r.getActualQ())
+    r.disconnect()
     SURVEY_POSE_FILE.write_text(json.dumps({"q_rad": q}, indent=2) + "\n")
     print(f"survey pose saved: {np.round(np.degrees(q), 1).tolist()} deg "
           f"-> {SURVEY_POSE_FILE}")
