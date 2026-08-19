@@ -43,7 +43,8 @@ class FakeRig:
 
 
 class ScriptDecider:
-    """READ: canned comment. DECIDE: first menu cell once, then answer."""
+    """READ: canned comment. DECIDE: same menu cell twice (refused, then
+    approved), then answer."""
 
     def __init__(self):
         self.decisions = 0
@@ -53,7 +54,7 @@ class ScriptDecider:
 
     def decide(self, ctx):
         self.decisions += 1
-        if self.decisions == 1:
+        if self.decisions in (1, 2):
             assert ctx.menu, "no reachable cells offered"
             return Look(ctx.menu[0].h, ctx.menu[0].v)
         return Answer("scripted: no logo")
@@ -65,8 +66,9 @@ def test_full_fake_run():
     q_start[5] += np.radians(8)             # boot must plan+move to survey
     fs = FeedStream()
     con = Console(stream=fs)
-    for _ in range(4):                      # approvals: boot move + one look
-        fs.feed("y")
+    fs.feed("y")                            # boot move: approved
+    fs.feed("n")                            # first look at the cell: refused
+    fs.feed("y")                            # second look, same cell: approved
     outdir = Path(tempfile.mkdtemp()) / "run1"
     loop = Loop(FakeRig(q_start), ScriptDecider(), con, outdir,
                 q_survey=q_survey, max_turns=5, question="logo?")
@@ -80,9 +82,63 @@ def test_full_fake_run():
     assert rec["turns"][0]["comment"] == "scripted comment 0"
     assert loop.acc.centroid is not None    # cloud fused
 
+    # the refused look must already be on disk (crash-safe: every turn saved)
+    look_turns = [t for t in rec["turns"] if t["action"].startswith("look")]
+    refused = [t for t in look_turns if t.get("approved") is False]
+    assert len(refused) == 1, "expected exactly one refused look turn"
+    assert refused[0]["stopped"] is False
+    approved = [t for t in look_turns if t.get("approved") is True]
+    assert len(approved) == 1, "expected exactly one approved look turn"
+    assert approved[0]["stopped"] is False
+
+
+class CaptureFailRig(FakeRig):
+    """Boot capture (pose 0) is fine; the first post-move capture (pose 1)
+    raises, like a bad real-world view — the loop must not crash."""
+
+    def capture(self, pose_id):
+        if pose_id == 1:
+            raise RuntimeError("synthetic bad view")
+        return super().capture(pose_id)
+
+
+class LookThenAnswerDecider:
+    """READ: canned comment. DECIDE: one look, then answer regardless of
+    what the capture-fail turn's result was."""
+
+    def __init__(self):
+        self.decisions = 0
+
+    def read(self, cap):
+        return f"comment {self.decisions}"
+
+    def decide(self, ctx):
+        self.decisions += 1
+        if self.decisions == 1:
+            assert ctx.menu, "no reachable cells offered"
+            return Look(ctx.menu[0].h, ctx.menu[0].v)
+        return Answer("scripted: capture-fail path")
+
+
+def test_capture_fail_returns_to_menu():
+    q_survey = DEMO_PARK.copy()             # start already at survey: no boot move
+    fs = FeedStream()
+    con = Console(stream=fs)
+    fs.feed("y")                            # approve the one look move
+    outdir = Path(tempfile.mkdtemp()) / "run2"
+    loop = Loop(CaptureFailRig(q_survey), LookThenAnswerDecider(), con, outdir,
+                q_survey=q_survey, max_turns=5, question="logo?")
+    loop.run()                              # must not raise / crash the run
+
+    rec = json.loads((outdir / "run.json").read_text())
+    acts = [t["action"] for t in rec["turns"]]
+    assert any("capture failed" in t.get("result", "") for t in rec["turns"])
+    assert acts[-1].startswith("answer")    # loop continued past the failure
+
 
 def main():
     test_full_fake_run()
+    test_capture_fail_returns_to_menu()
     print("OK test_loop_fake")
 
 

@@ -55,17 +55,22 @@ class Loop:
             if path is None:
                 print(f"boot REFUSED: {rep.get('reason', rep)}")
                 return False
-            if not self._approve_and_move(path, "boot -> survey"):
+            ok, _ = self._approve_and_move(path, "boot -> survey")
+            if not ok:
                 return False
-        cap = self.rig.capture(0)
-        self.latest_cap = cap
-        view = object_in_base(cap["depth_raw"], self.rig.intr,
-                              self.rig.depth_scale, cap["T_base_cam"])
-        if view["centroid"] is None:
-            print("boot: NO OBJECT above the table")
+        try:
+            cap = self.rig.capture(0)
+            view = object_in_base(cap["depth_raw"], self.rig.intr,
+                                  self.rig.depth_scale, cap["T_base_cam"])
+            if view["centroid"] is None:
+                print("boot: NO OBJECT above the table")
+                return False
+            self.acc.add(view["points"])
+            self._recenter()
+        except RuntimeError as e:
+            print(f"boot: capture failed: {e}")
             return False
-        self.acc.add(view["points"])
-        self._recenter()
+        self.latest_cap = cap
         print(f"boot ok: object at {np.round(self.sphere.center, 3).tolist()}, "
               f"{len(view['points'])} pts")
         return True
@@ -95,6 +100,7 @@ class Loop:
         if reach.get((act.h, act.v)) is None:
             rec["result"] = "unreachable cell — pick again"
             print(rec["result"])
+            self._save()
             return True
         path, prep, roll = self.sphere.plan_to_cell(
             self.world, self.ik, self.rig.q(), act.h, act.v, seed=self.seed)
@@ -102,35 +108,48 @@ class Loop:
             self.plan_failed.add((act.h, act.v))
             rec["result"] = "plan refused — cell dropped from menu this round"
             print(rec["result"])
+            self._save()
             return True
         rec["tier"] = prep["tier"]
-        if not self._approve_and_move(path, rec["action"]):
-            rec["result"] = "not executed (refused or software stop)"
+        ok, reason = self._approve_and_move(path, rec["action"])
+        rec["approved"] = reason != "refused"
+        rec["stopped"] = reason == "stopped"
+        if not ok:
+            rec["result"] = ("refused — nothing sent to the robot" if reason == "refused"
+                             else "software stop — arm halted mid-move")
+            self._save()
             return True
         self.visited.add((act.h, act.v))
         self.current = (act.h, act.v)
         self.plan_failed.clear()            # new q — refused cells may work now
 
-        cap = self.rig.capture(step)
+        try:
+            cap = self.rig.capture(step)
+            view = object_in_base(cap["depth_raw"], self.rig.intr,
+                                  self.rig.depth_scale, cap["T_base_cam"])
+            if len(view["points"]):
+                self.acc.add(view["points"])
+            self._recenter()
+        except RuntimeError as e:
+            print(f"capture failed: {e}")
+            rec["result"] = f"capture failed: {e} — back to menu"
+            self._save()
+            return True
         self.latest_cap = cap
-        view = object_in_base(cap["depth_raw"], self.rig.intr,
-                              self.rig.depth_scale, cap["T_base_cam"])
-        if len(view["points"]):
-            self.acc.add(view["points"])
-        self._recenter()
         rec["result"] = (f"+{len(view['points'])} pts, "
                          f"fused {len(self.acc.points)}")
-        self._save()                        # crash-safe: record every turn
+        self._save()                        # every turn is recorded, not just successes
         return True
 
     # ------------------------------------------------------------- helpers
     def _approve_and_move(self, path, label):
+        """Returns (ok, reason) — reason in {"refused", "stopped", None}."""
         self.rig.preview(path)
         ans = self.console.readline(
             f"{label}: {len(path)} waypoints previewed — approve? [y/n] ")
         if ans.strip().lower() != "y":
             print("refused — nothing sent to the robot")
-            return False
+            return False, "refused"
         print("executing (ENTER = software stop)")
         self.console.arm_stop()
         try:
@@ -140,8 +159,8 @@ class Loop:
         if rep.get("stopped"):
             print("SOFTWARE STOP — arm halted; back to the menu "
                   "(plans restart from wherever it stopped)")
-            return False
-        return True
+            return False, "stopped"
+        return True, None
 
     def _recenter(self):
         center = self.acc.centroid
