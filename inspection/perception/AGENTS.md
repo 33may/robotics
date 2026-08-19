@@ -6,10 +6,13 @@ calibration, and the segmented object primitive that fills the object
 slot in `cell/`.
 
 ## Files
-- `camera.py` — D405 pipeline layer (open/metadata/bundle), migrated from
-  vbti.logic.cameras.d405_still; owns the UR wrist serial.
-- `capture.py` — arm pose + D405 frame bundle → disk; owns the on-disk
-  bundle format. Stationary captures only. STILL SO-101-BOUND — port next.
+- `camera.py` — D405 pipeline layer (open/metadata/bundle/live viewer),
+  migrated from vbti.logic.cameras.d405_still; owns the UR wrist serial and
+  `t_flange_cam()` — loads the latest dated calib/ artifact (OpenCV camera
+  convention: +Z boresight, left-eye frame).
+- `capture.py` — UR5e pose + D405 frame bundle → disk; owns the on-disk
+  bundle format. Stationary captures only. Pose = RTDE joints → UR5eIK
+  flange FK; meta carries joints_rad, T_base_flange, T_base_cam.
 - `handeye.py` — ChArUco collect/solve for T_flange_cam on the UR5e
   (IR-left stream; D405 color is unrectified, never feed its coefficients
   to solvePnP). Collect is hands-free: freedrive + stationarity gate

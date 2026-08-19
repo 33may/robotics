@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
-"""Inspection capture rig: arm pose + D405 frame bundle -> disk.
+"""Inspection capture rig: UR5e pose + D405 frame bundle -> disk.
 
-Owns the on-disk bundle format and the arm/camera glue. The camera layer
-lives in ``vbti.logic.cameras.d405_still``.
+Owns the on-disk bundle format and the arm/camera glue. Camera layer in
+``camera.py``; pose from RTDE joints -> UR5eIK flange FK -> calibrated
+T_flange_cam (left-eye frame). Every bundle is base-frame placeable.
 
 Bundle layout:
     {outdir}/session.json            intrinsics, IR baseline, depth scale
     {outdir}/{pose_id:03d}/
         rgb.png, ir_left.png, ir_right.png
         depth_raw.npy, depth_aligned.npy      uint16, hardware units
-        meta.json                             joints (deg + ticks), timestamp
+        meta.json                             joints, T_base_flange,
+                                              T_base_cam, timestamp
 
 Usage:
-    python -m inspection.perception.capture snap --outdir=data/inspection/test
-    python -m inspection.perception.capture snap --outdir=... --no_arm    # camera only
+    p inspection/perception/capture.py snap --outdir=data/inspection/test
+    p inspection/perception/capture.py snap --outdir=... --no_arm   # camera only
 """
 
 import json
@@ -22,16 +24,20 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from vbti.logic.cameras.d405_still import (
-    open_camera, session_metadata, capture_bundle,
+from inspection.perception.camera import (
+    WRIST_SERIAL, open_camera, session_metadata, capture_bundle, t_flange_cam,
 )
 
-WRIST_SERIAL = "123622270367"  # gripper D405, see cameras.py CAMERA_PRESETS
+ROBOT_IP = "192.168.2.50"
 
 
 def save_bundle(outdir: Path, pose_id: int, bundle: dict,
-                joints_deg: dict | None, joints_ticks: dict | None) -> Path:
-    """Write one frame bundle to {outdir}/{pose_id:03d}/."""
+                pose: dict | None) -> Path:
+    """Write one frame bundle to {outdir}/{pose_id:03d}/.
+
+    pose: {"joints_rad": [...], "T_base_flange": 4x4, "T_base_cam": 4x4}
+    or None for camera-only captures.
+    """
     d = Path(outdir) / f"{pose_id:03d}"
     d.mkdir(parents=True, exist_ok=True)
 
@@ -41,32 +47,27 @@ def save_bundle(outdir: Path, pose_id: int, bundle: dict,
     np.save(d / "depth_raw.npy", bundle["depth_raw"])
     np.save(d / "depth_aligned.npy", bundle["depth_aligned"])
 
-    meta = {"pose_id": pose_id, "timestamp": bundle["timestamp"],
-            "joints_deg": joints_deg, "joints_ticks": joints_ticks}
+    meta = {"pose_id": pose_id, "timestamp": bundle["timestamp"]}
+    if pose is not None:
+        meta.update({k: np.asarray(v).tolist() for k, v in pose.items()})
     (d / "meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     return d
 
 
-def live(serial: str = WRIST_SERIAL) -> None:
-    """Live viewer for the wrist camera: RGB | IR-left side by side. q quits."""
-    pipe, profile, align, depth_scale = open_camera(serial)
-    try:
-        while True:
-            fs = pipe.wait_for_frames(timeout_ms=2000)
-            rgb = np.asanyarray(fs.get_color_frame().get_data())
-            ir = np.asanyarray(fs.get_infrared_frame(1).get_data())
-            view = np.hstack([cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR),
-                              cv2.cvtColor(ir, cv2.COLOR_GRAY2BGR)])
-            cv2.imshow("wrist D405  (q quits)", view)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
-    finally:
-        pipe.stop()
-        cv2.destroyAllWindows()
+def read_pose(robot_ip: str = ROBOT_IP) -> dict:
+    """Current arm pose, all frames a bundle needs. Read-only."""
+    from rtde_receive import RTDEReceiveInterface
+
+    from inspection.motion.ik import UR5eIK
+
+    q = np.array(RTDEReceiveInterface(robot_ip).getActualQ())
+    T_bf = UR5eIK().fk(q)
+    return {"joints_rad": q, "T_base_flange": T_bf,
+            "T_base_cam": T_bf @ t_flange_cam()}
 
 
 def snap(outdir: str, pose_id: int | None = None, serial: str = WRIST_SERIAL,
-         no_arm: bool = False, port: str = "/dev/ttyACM0") -> None:
+         no_arm: bool = False, robot_ip: str = ROBOT_IP) -> None:
     """Capture one bundle at the current (stationary) pose.
 
     pose_id defaults to the next free index in outdir.
@@ -76,12 +77,7 @@ def snap(outdir: str, pose_id: int | None = None, serial: str = WRIST_SERIAL,
         existing = [int(p.name) for p in outdir.glob("[0-9]*") if p.is_dir()]
         pose_id = max(existing, default=-1) + 1
 
-    joints_deg = joints_ticks = None
-    if not no_arm:
-        from vbti.logic.servos.so101 import connect
-        with connect(port) as arm:
-            joints_ticks = arm.read_ticks()
-            joints_deg = arm.read_degrees()
+    pose = None if no_arm else read_pose(robot_ip)
 
     pipe, profile, align, depth_scale = open_camera(serial)
     try:
@@ -93,10 +89,12 @@ def snap(outdir: str, pose_id: int | None = None, serial: str = WRIST_SERIAL,
                            indent=2) + "\n")
 
         bundle = capture_bundle(pipe, align)
-        d = save_bundle(outdir, pose_id, bundle, joints_deg, joints_ticks)
+        d = save_bundle(outdir, pose_id, bundle, pose)
 
         valid = (bundle["depth_raw"] > 0).mean() * 100
-        print(f"Saved {d}  (depth valid: {valid:.1f}% of frame)")
+        cam_p = "" if pose is None else \
+            f", cam at {np.round(pose['T_base_cam'][:3, 3], 3).tolist()} m"
+        print(f"Saved {d}  (depth valid: {valid:.1f}%{cam_p})")
     finally:
         pipe.stop()
 
@@ -104,4 +102,4 @@ def snap(outdir: str, pose_id: int | None = None, serial: str = WRIST_SERIAL,
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
-    fire.Fire({"snap": snap, "live": live})
+    fire.Fire({"snap": snap})

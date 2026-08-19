@@ -9,11 +9,27 @@ be compared against native depth later on byte-identical frames.
 """
 
 import time
+from pathlib import Path
 
 import numpy as np
 
 # UR5e wrist D405 (ex-Anthonio "top" cam). The SO-101 rig used 123622270367.
 WRIST_SERIAL = "123622270954"
+
+_CALIB_DIR = Path(__file__).parents[1] / "calib"
+
+
+def t_flange_cam() -> np.ndarray:
+    """Latest calibrated T_flange_cam (4x4) from calib/ (dated artifacts).
+
+    OpenCV camera convention: +Z boresight, +X image-right, +Y image-down.
+    The frame is the LEFT eye = color/IR-left/depth viewpoint (D405 has no
+    separate RGB sensor).
+    """
+    arts = sorted(_CALIB_DIR.glob("T_flange_cam_*.npy"))
+    if not arts:
+        raise FileNotFoundError(f"no T_flange_cam_*.npy in {_CALIB_DIR}")
+    return np.load(arts[-1])
 
 # 848x480 is the D405's optimal depth resolution (per Intel tuning guide).
 WIDTH, HEIGHT, FPS = 848, 480, 15
