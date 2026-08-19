@@ -14,9 +14,15 @@ from pathlib import Path
 
 import numpy as np
 
-from vbti.logic.servos.fk_so101 import fk
+_CALIB_DIR = Path(__file__).resolve().parents[1] / "calib"
 
-T_FLANGE_CAM_PATH = Path(__file__).resolve().parents[2] / "data" / "inspection" / "handeye" / "T_flange_cam.npy"
+# OpenCV camera frame (calibration native): +Z boresight, +X right, +Y down.
+# Viewsphere camera frame: +X boresight, +Y image-left, +Z image-up.
+# Columns of _CV_TO_XFWD are the xfwd axes expressed in cv coordinates.
+_CV_TO_XFWD = np.eye(4)
+_CV_TO_XFWD[:3, :3] = np.array([[0.0, -1.0, 0.0],
+                                [0.0, 0.0, -1.0],
+                                [1.0, 0.0, 0.0]])
 
 # Generous workspace box in base frame (m) — cuts the far room, keeps the table
 WORKSPACE = {"x": (0.05, 0.60), "y": (-0.45, 0.45), "z": (-0.10, 0.50)}
@@ -31,8 +37,22 @@ MIN_RANGE_M = 0.13         # gripper fingers live at 70-120mm from the camera �
                            # cut them out of every cloud (crude arm mask, v1)
 
 
-def load_T_flange_cam() -> np.ndarray:
-    return np.load(T_FLANGE_CAM_PATH)
+def load_T_flange_cam(convention: str = "cv") -> np.ndarray:
+    """Latest calibrated T_flange_cam (4x4) from calib/ (dated artifacts).
+
+    The frame is the D405 LEFT eye = color/IR-left/depth viewpoint.
+    convention: "cv"   — OpenCV camera axes (+Z boresight), projection math;
+                "xfwd" — viewsphere camera axes (+X boresight, +Z image-up).
+    """
+    arts = sorted(_CALIB_DIR.glob("T_flange_cam_*.npy"))
+    if not arts:
+        raise FileNotFoundError(f"no T_flange_cam_*.npy in {_CALIB_DIR}")
+    T = np.load(arts[-1])
+    if convention == "cv":
+        return T
+    if convention == "xfwd":
+        return T @ _CV_TO_XFWD
+    raise ValueError(f"unknown convention {convention!r}")
 
 
 def deproject(depth_u16: np.ndarray, intr: dict, depth_scale: float,
@@ -56,13 +76,10 @@ def deproject(depth_u16: np.ndarray, intr: dict, depth_scale: float,
     return np.column_stack([x, y, z])
 
 
-def cam_to_base(points_cam: np.ndarray, joints_deg: dict,
-                T_flange_cam: np.ndarray | None = None) -> np.ndarray:
-    """Camera-frame points -> base frame via FK and hand-eye."""
-    if T_flange_cam is None:
-        T_flange_cam = load_T_flange_cam()
-    T = fk(joints_deg) @ T_flange_cam
-    return points_cam @ T[:3, :3].T + T[:3, 3]
+def cam_to_base(points_cam: np.ndarray, T_base_cam: np.ndarray) -> np.ndarray:
+    """Camera-frame points -> base frame. T_base_cam comes stamped in every
+    capture bundle's meta.json (RTDE joints -> flange FK -> hand-eye)."""
+    return points_cam @ T_base_cam[:3, :3].T + T_base_cam[:3, 3]
 
 
 def crop_workspace(points: np.ndarray) -> np.ndarray:
@@ -128,11 +145,11 @@ def largest_cluster(points: np.ndarray) -> np.ndarray:
 
 
 def object_from_view(depth_u16: np.ndarray, intr: dict, depth_scale: float,
-                     joints_deg: dict, plane: np.ndarray | None = None,
-                     T_flange_cam: np.ndarray | None = None) -> dict:
+                     T_base_cam: np.ndarray,
+                     plane: np.ndarray | None = None) -> dict:
     """One view -> object candidate. Returns dict with points/centroid/plane."""
     pts_cam = deproject(depth_u16, intr, depth_scale)
-    pts = crop_workspace(cam_to_base(pts_cam, joints_deg, T_flange_cam))
+    pts = crop_workspace(cam_to_base(pts_cam, T_base_cam))
     if len(pts) < 100:
         raise RuntimeError(f"only {len(pts)} workspace points — bad view?")
     if plane is None:
