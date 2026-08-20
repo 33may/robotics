@@ -275,6 +275,20 @@ def test_executor_fault_enters_fault_and_exit_works():
     assert (sup.outdir / "run.json").exists()
 
 
+def test_sigint_saves_and_exits():
+    import signal
+    from inspection.run.app import install_sigint
+    sup, rig, bus, th = make_sup()
+    install_sigint(sup)
+    try:
+        signal.raise_signal(signal.SIGINT)
+        th.join(15); assert not th.is_alive(), "SIGINT did not shut down"
+        assert (sup.outdir / "run.json").exists()
+        assert sup.stop_event.is_set() or sup.phase == "done"
+    finally:
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
@@ -285,7 +299,8 @@ def main():
     test_stop_mid_execute_returns_to_idle()
     test_capture_fail_not_visited()
     test_executor_fault_enters_fault_and_exit_works()
-    print("OK test_machine (task 3+4)")
+    test_sigint_saves_and_exits()
+    print("OK test_machine (task 5)")
 
 
 if __name__ == "__main__":
