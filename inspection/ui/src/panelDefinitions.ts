@@ -3,12 +3,14 @@
  *
  * Three of these come from porthole's registry and were copied in by
  * `porthole add` — they are ordinary source files in this repo now, editable,
- * and `porthole update` three-way-merges upstream fixes into them. The fourth
- * is app-owned because it encodes viewsphere vocabulary.
+ * and `porthole update` three-way-merges upstream fixes into them. The other
+ * two, `cloud` and `actions`, are app-owned because they encode viewsphere
+ * vocabulary (view/request, view/confirm, the cell state machine).
  */
 
 import { definePanel } from '@porthole/framework';
 
+import { ActionsPanel } from './panels/ActionsPanel.js';
 import { CameraPanel, cameraPanelDefaultConfig } from './panels/CameraPanel.js';
 import {
   CloudInspectPanel,
@@ -68,5 +70,12 @@ export const inspectionPanelDefinitions = [
     component: EventLogPanel,
     defaultConfig: eventLogPanelDefaultConfig,
     description: 'Run event log',
+  }),
+  definePanel({
+    type: 'actions',
+    title: 'actions',
+    component: ActionsPanel,
+    defaultConfig: {},
+    description: 'Survey + view grid + Stop + Exit',
   }),
 ];

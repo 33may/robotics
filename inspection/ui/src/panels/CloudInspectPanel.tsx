@@ -24,6 +24,8 @@ export type ViewCellState =
   | 'visited'
   | 'current'
   | 'available'
+  | 'pending'
+  | 'previewing'
   | 'blocked'
   | 'unreachable';
 
@@ -59,6 +61,8 @@ const STATE_COLOR: Record<ViewCellState, string> = {
   visited: '#7ee2a8',
   current: '#8ab4f8',
   available: '#6d737d',
+  pending: '#b0a0f0',
+  previewing: '#f08bd4',
   blocked: '#f2c76b',
   unreachable: '#5a3a3a',
 };

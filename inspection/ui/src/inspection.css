@@ -122,3 +122,85 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── actions panel ────────────────────────────────────────────────────────── */
+
+.actions-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 8px;
+  background: var(--porthole-bg);
+  overflow-y: auto;
+}
+
+.actions-status {
+  font-family: var(--porthole-font-mono);
+  font-size: 11px;
+  color: var(--porthole-text-dim);
+}
+
+.actions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.actions-row {
+  display: flex;
+  gap: 4px;
+}
+
+.actions-footer {
+  display: flex;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--porthole-border);
+}
+
+.act {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--porthole-border);
+  border-radius: var(--porthole-radius);
+  background: var(--porthole-surface);
+  color: var(--porthole-text);
+  font-family: var(--porthole-font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.act:disabled {
+  color: var(--porthole-text-faint);
+  cursor: not-allowed;
+}
+
+.act-available { background: var(--porthole-surface-raised); }
+.act-current { background: var(--porthole-accent); color: var(--porthole-bg); }
+.act-visited { background: var(--porthole-ok); color: var(--porthole-bg); }
+.act-blocked { background: var(--porthole-warn); color: var(--porthole-bg); }
+.act-unreachable { background: #5a3a3a; }
+.act-pending { background: #b0a0f0; color: var(--porthole-bg); }
+.act-previewing { background: #f08bd4; color: var(--porthole-bg); }
+
+.act-stop {
+  flex: none;
+  min-width: 64px;
+  background: var(--porthole-error);
+  color: var(--porthole-bg);
+  border-color: var(--porthole-error);
+}
+
+.act-stop:disabled {
+  background: var(--porthole-surface);
+  border-color: var(--porthole-border);
+  color: var(--porthole-text-faint);
+}
+
+.act-exit {
+  flex: none;
+  min-width: 64px;
+}

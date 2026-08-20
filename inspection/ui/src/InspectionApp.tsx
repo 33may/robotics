@@ -14,12 +14,17 @@ import { inspectionPanelDefinitions } from './panelDefinitions.js';
 /**
  * `cloud` is added second within the same group as `cell`, which makes it the
  * active tab. Both are kept mounted, so switching tabs costs nothing.
+ *
+ * `actions` docks beside `log`, at the bottom — it's the operator's control
+ * surface, so it belongs in the same glanceable strip as the event log rather
+ * than competing with the 3D views for screen space.
  */
 const inspectionLayout: LayoutSpec = [
   { id: 'cell', type: 'cell' },
   { id: 'camera', type: 'camera', position: { referencePanel: 'cell', direction: 'right' } },
   { id: 'cloud', type: 'cloud', position: { referencePanel: 'camera', direction: 'below' } },
   { id: 'log', type: 'log', position: { referencePanel: 'cell', direction: 'below' } },
+  { id: 'actions', type: 'actions', position: { referencePanel: 'log', direction: 'right' } },
 ];
 
 /**
