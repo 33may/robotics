@@ -60,6 +60,7 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     camera.start()
     poses = PoseStreamer(rig.q, lambda q: pub.publish_pose(sup.world, q))
     poses.active = sup.pose_active            # dispatcher-gated, like the real loop
+    sup.pose_quiesce = poses.quiesce          # settle-leg interlock, like the real loop
     poses.start()
 
     def pump():

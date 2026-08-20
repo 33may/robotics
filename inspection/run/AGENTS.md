@@ -14,7 +14,11 @@ perception, cell, view, motion — and wire them together.
   `inspection/2026-08-20-ui-driven-loop-design.md`.
 - `app.py` — composition root. `run` (bus + window + `Supervisor` +
   `RealRig`, SIGINT-safe shutdown) and `teach` (freedrive-then-save the
-  survey pose).
+  survey pose). The native window is a child process (`inspection/ui/app.py
+  serve`), not a thread: pywebview needs a main thread and this one belongs
+  to the dispatcher. Teardown order is the design's:
+  `stop_event` → `sup.join_workers(bounded)` → `stopJ` → save → close
+  hardware → close window → stop bus.
 - `rigs.py` — `FakeRig`/`RealRig`/`CameraWorker`/`PoseStreamer`. The shared
   rig contract both hardware and the mock implement is `q()`/`move(path)`/
   `capture(pose_id)`/`close()` plus a `stop_event` attribute; `FakeRig`

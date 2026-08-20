@@ -104,14 +104,24 @@ def mock(port: int = 8767, bus_port: int = 8765, seed: int = 0,
     return 0
 
 
-def serve(run_dir: str | None = None, port: int = 8767,
+def serve(run_dir: str | None = None, port: int = 8767, bus_port: int = 8765,
           no_window: bool = False, gui: str = "qt") -> int:
-    """Serve the UI and open the window. No bus — the loop process owns that."""
+    """Serve the UI and open the window. No bus — the loop process owns that.
+
+    `run/app.py run` spawns exactly this as a child process for its native
+    window: pywebview must own a main thread, and that process's main thread
+    is the dispatcher. `bus_port` is passed through as `?bus=` so the window
+    finds a loop that is not on the default port.
+    """
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     if not _require_build():
         return 1
-    print("no bus started here — the loop process owns ws://127.0.0.1:8765", flush=True)
-    _present(serve_ui(DIST, port=port, assets=_asset_mounts(run_dir)), no_window, gui)
+    print(f"no bus started here — the loop process owns "
+          f"ws://127.0.0.1:{bus_port}", flush=True)
+    url = serve_ui(DIST, port=port, assets=_asset_mounts(run_dir))
+    if bus_port != 8765:
+        url = f"{url}/?bus={bus_port}"
+    _present(url, no_window, gui)
     return 0
 
 

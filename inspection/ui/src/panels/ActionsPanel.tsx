@@ -63,7 +63,12 @@ export function ActionsPanel(_props: PanelProps) {
         ))}
       </div>
       <div className="actions-footer">
-        <button className="act act-stop" disabled={status.phase !== 'executing'}
+        {/* Never disabled. A stop button that has to be re-enabled before it
+            works is a stop button you cannot hit in a hurry, and the phase it
+            would key off is a retained topic that can lag the arm. The
+            dispatcher validates it: outside `executing` it is a logged
+            no-op. */}
+        <button className="act act-stop"
                 onClick={() => send('run/stop')}>STOP</button>
         <button className="act act-exit" onClick={() => send('run/exit')}>exit</button>
       </div>

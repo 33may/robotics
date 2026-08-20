@@ -144,6 +144,13 @@ check('actions panel renders (survey button present)',
   await surveyBtn.count() === 1 && /\bact-(available|visited)\b/.test(await surveyClass()),
   `class="${await surveyClass()}"`);
 
+// STOP is never disabled — not even here, at idle, where it has nothing to
+// stop. A stop the UI has to re-enable before it works is not a stop; the
+// dispatcher is what validates it (logged no-op outside `executing`).
+const stopBtn = page.locator('.act-stop');
+check('STOP is always enabled', await stopBtn.count() === 1 && await stopBtn.isEnabled(),
+  `phase="${await statusText()}"`);
+
 // ── drive the two-press survey flow, exactly like an operator would ─────────
 // Press 1: idle -(view/request survey)-> planning -> previewing.
 const idleStatus = await statusText();

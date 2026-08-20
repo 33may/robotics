@@ -9,7 +9,9 @@ The operator-facing UI for the inspection loop. Five panels, built on **porthole
 `Supervisor`, which validates it before anything moves: a stale button click
 can never move the arm (design FR11). Stop hierarchy, strongest first:
 pendant e-stop (hardware) > Ctrl-C (process; `SIGINT` → `request_shutdown`)
-> UI Stop (software, `executing` only). The judgment `run/decider.py`'s
+> UI Stop (software; the dispatcher acts on it in `executing` and logs a
+no-op elsewhere — the button itself is never disabled, because a stop you
+have to wait for the UI to re-enable is not a stop). The judgment `run/decider.py`'s
 `TerminalDecider` used to own is deferred to v2-AI (`decider.py` is parked);
 today it is in the operator's head, exercised through the same two-press
 request/confirm pattern for every view. See
@@ -248,10 +250,15 @@ awkward states (a cell that refuses, Stop mid-move) are reachable without
 hardware.
 
 `serve` starts **no bus**: there can be one bus on a port and it belongs to
-whoever owns the robot. `inspection/run/app.py run` starts its own bus and
-window together (retained state means opening the window any time shows the
-current world — design FR1); `serve` is for pointing a window at a bus some
-other process already owns.
+whoever owns the robot. `serve` is for pointing a window at a bus some other
+process already owns — and that is exactly how `inspection/run/app.py run`
+opens its own window: it spawns `serve` as a **child process**. pywebview
+refuses to start off the main thread, and the loop's main thread is the
+dispatcher (also the only thread that may take a signal), so the window gets
+a main thread of its own. The child serves the frontend on `--port` and dials
+the loop's bus over the socket like any other client; it holds no run state,
+so closing the window cannot touch the run (reopen it by running `serve`
+again). `run --no_window` skips the child and serves in-process for a browser.
 
 ### Pointing the UI at a different bus
 
@@ -261,6 +268,9 @@ other process already owns.
 http://127.0.0.1:8767/?bus=8781                 same host, other port
 http://127.0.0.1:8767/?bus=ws://192.168.2.10:8765   the robot's machine
 ```
+
+`mock` and `serve` both take `--bus_port=` and append it to the URL for you;
+`run` passes its own `--bus_port` through to the window child the same way.
 
 That is how `npm run check` runs a mock beside a real run without the two
 fighting over 8765, and how the window opens on a laptop during a demo.
