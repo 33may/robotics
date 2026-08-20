@@ -367,16 +367,18 @@ def test_invalid_commands_dropped():
 
 
 def test_stale_plan_result_discarded():
+    # NOTE: do not poll for phase == "planning" — trivial direct moves plan in
+    # ~1 ms and the transient is unobservable. Test the guard from the stable
+    # previewing state instead: a stale plan_done must not hijack it.
     sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
         [0, 0, 0, 0, 0, 8]))
     sup.events.put({"cmd": "view/request", "target": "survey"})
-    gen = None
-    wait_for(lambda: sup.phase == "planning", msg="planning")
-    gen = sup.gen
-    # a stale plan_done from a dead generation must be ignored
-    sup.events.put({"ev": "plan_done", "gen": gen - 1, "target": "survey",
-                    "path": [DEMO_PARK.copy()], "detail": "stale"})
     wait_for(lambda: sup.phase == "previewing", msg="previewing")
+    live_path = sup._path
+    sup.events.put({"ev": "plan_done", "gen": sup.gen - 1, "target": "survey",
+                    "path": [DEMO_PARK.copy()], "detail": "stale"})
+    time.sleep(0.2)
+    assert sup.phase == "previewing" and sup._path is live_path
     sup.request_shutdown(); th.join(10)
 
 
@@ -1049,7 +1051,9 @@ Add minimal styles to `inspection/ui/src/inspection.css` following its existing 
 - [ ] **Step 3: Run `npm run check`** — all previous checks + 2 new ones green. If a previous check screenshotted a fixed layout, update its expectation for the fifth panel.
 - [ ] **Step 4: Commit** — `"ui/check: actions panel render + command round-trip"`
 
----### Task 10: Retire v1 — delete loop.py & old test, docs to v2
+---
+
+### Task 10: Retire v1 — delete loop.py & old test, docs to v2
 
 **Files:**
 - Delete: `inspection/run/loop.py`, `inspection/tests/test_loop_fake.py`
