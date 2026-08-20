@@ -175,13 +175,117 @@ def test_blocked_plan_returns_to_idle():
     assert not th.is_alive()
 
 
+def full_boot(sup):
+    sup.events.put({"cmd": "view/request", "target": "survey"})
+    wait_for(lambda: sup.phase == "previewing", msg="boot previewing")
+    sup.events.put({"cmd": "view/confirm", "target": "survey"})
+    wait_for(lambda: sup.phase == "idle" and sup.survey_state == "visited",
+             timeout=60, msg="boot settled")
+
+
+def test_full_cycle_and_visited():
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    full_boot(sup)
+    assert sup.sphere is not None and len(sup.acc.points)
+    views = bus.last("views/state")
+    assert views["survey"]["state"] == "visited"
+    cells = [c for c in views["cells"] if c["state"] == "available"]
+    assert cells, "no reachable cells after boot"
+    target = [cells[0]["h"], cells[0]["v"]]
+    sup.events.put({"cmd": "view/request", "target": target})
+    wait_for(lambda: sup.phase == "previewing", timeout=60, msg="cell preview")
+    sup.events.put({"cmd": "view/confirm", "target": target})
+    wait_for(lambda: tuple(target) in sup.visited, timeout=60, msg="cell visited")
+    assert sup.current == tuple(target)
+    sup.request_shutdown(); th.join(10)
+
+
+def test_stop_mid_execute_returns_to_idle():
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 30]))          # long boot move
+    rig.speed = 0.05                    # slow: ~10 s — time to stop it
+    sup.events.put({"cmd": "view/request", "target": "survey"})
+    wait_for(lambda: sup.phase == "previewing", msg="previewing")
+    sup.events.put({"cmd": "view/confirm", "target": "survey"})
+    wait_for(lambda: sup.phase == "executing", msg="executing")
+    assert sup.pose_active.is_set()
+    sup.events.put({"cmd": "run/stop"})
+    wait_for(lambda: sup.phase == "idle", msg="stopped -> idle")
+    assert not sup.pose_active.is_set()
+    assert not sup.stop_event.is_set(), "dispatcher must clear stop_event"
+    assert sup.survey_state != "visited"
+    sup.request_shutdown(); th.join(10)
+
+
+class CaptureFailRig(FakeRig):
+    def capture(self, pose_id):
+        if pose_id == 1:
+            raise RuntimeError("synthetic bad view")
+        return super().capture(pose_id)
+
+
+def test_capture_fail_not_visited():
+    q_survey = DEMO_PARK.copy()
+    rig = CaptureFailRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 8]))
+    bus = BusSpy()
+    sup = Supervisor(rig, InspectionPublisher(bus),
+                     Path(tempfile.mkdtemp()) / "run", q_survey)
+    th = threading.Thread(target=sup.run, daemon=True); th.start()
+    full_boot(sup)
+    views = bus.last("views/state")
+    target = [c["h"] for c in views["cells"] if c["state"] == "available"][:1] and \
+             [[c["h"], c["v"]] for c in views["cells"] if c["state"] == "available"][0]
+    sup.events.put({"cmd": "view/request", "target": target})
+    wait_for(lambda: sup.phase == "previewing", timeout=60, msg="preview")
+    sup.events.put({"cmd": "view/confirm", "target": target})
+    wait_for(lambda: sup.phase == "idle", timeout=60, msg="settle")
+    assert tuple(target) not in sup.visited
+    sup.request_shutdown(); th.join(10)
+
+
+class FaultRig(FakeRig):
+    def move(self, path):
+        if getattr(self, "_boot_done", False):
+            raise RuntimeError("safety mode changed mid-path")
+        self._boot_done = True
+        return super().move(path)
+
+
+def test_executor_fault_enters_fault_and_exit_works():
+    q_survey = DEMO_PARK.copy()
+    rig = FaultRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 8]))
+    bus = BusSpy()
+    sup = Supervisor(rig, InspectionPublisher(bus),
+                     Path(tempfile.mkdtemp()) / "run", q_survey)
+    th = threading.Thread(target=sup.run, daemon=True); th.start()
+    full_boot(sup)
+    views = bus.last("views/state")
+    target = [[c["h"], c["v"]] for c in views["cells"]
+              if c["state"] == "available"][0]
+    sup.events.put({"cmd": "view/request", "target": target})
+    wait_for(lambda: sup.phase == "previewing", timeout=60, msg="preview")
+    sup.events.put({"cmd": "view/confirm", "target": target})
+    wait_for(lambda: sup.phase == "fault", timeout=60, msg="fault")
+    sup.events.put({"cmd": "view/request", "target": target})   # dead in fault
+    time.sleep(0.2)
+    assert sup.phase == "fault"
+    sup.events.put({"cmd": "run/exit"})
+    th.join(10); assert not th.is_alive()
+    assert (sup.outdir / "run.json").exists()
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
     test_stale_plan_result_discarded()
     test_supersede_during_planning_defers()
     test_blocked_plan_returns_to_idle()
-    print("OK test_machine (task 3)")
+    test_full_cycle_and_visited()
+    test_stop_mid_execute_returns_to_idle()
+    test_capture_fail_not_visited()
+    test_executor_fault_enters_fault_and_exit_works()
+    print("OK test_machine (task 3+4)")
 
 
 if __name__ == "__main__":

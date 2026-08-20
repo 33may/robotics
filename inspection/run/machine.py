@@ -278,7 +278,7 @@ class Supervisor:
                 self.survey_state = "visited"
             else:
                 self.visited.add(target)
-                self.captures[target] = {"step": len(self.turns) + 1,
+                self.captures[target] = {"step": self._next_cell_step(),
                                          "dir": self._last_cap_dir}
                 self.current = target
             self.blocked.clear()
@@ -350,7 +350,7 @@ class Supervisor:
                          "outcome": "done", "detail": ""})
         self.events.put({"ev": "phase", "gen": gen, "phase": "capturing"})
         try:
-            step = len(self.turns) + 1 if target != "survey" else 0
+            step = self._next_cell_step() if target != "survey" else 0
             cap = self.rig.capture(step)
             view = object_in_base(cap["depth_raw"], self.rig.intr,
                                   self.rig.depth_scale, cap["T_base_cam"])
@@ -389,6 +389,12 @@ class Supervisor:
         (self.outdir / "run.json").write_text(json.dumps(
             {"q_survey": self.q_survey.tolist(), "r": self.r,
              "turns": self.turns}, indent=2) + "\n")
+
+    def _next_cell_step(self):
+        """1-indexed ordinal for the next non-survey capture: counts prior
+        *cell* turns only, so the survey's own boot turn doesn't shift
+        every cell's pose id/display step by one."""
+        return sum(1 for t in self.turns if t["target"] != "survey") + 1
 
     def _record_turn(self, target, result, stopped=False):
         self.turns.append({
