@@ -112,10 +112,17 @@ check('bus connected', await page.locator('.porthole-status-dot[data-status="ope
 
 // v2's `run/status` is `{phase, target, visited, total}` — there is no
 // `step` field, so the old `/step \d+/` assertion is stale by construction.
-// What actually proves the topic is live: the status bar's phase chip has
-// rendered real text (starts out "idle").
+// Restore the same proof strength as the v1 check (numeric fields actually
+// flowing through the topic, not just a truthy string): InspectionApp's
+// statusbar renders `visited`/`total` as `${visited}/${reachable ?? '?'}
+// visited of ${total}` — v2 never sets `reachable`, so that slot is always
+// the literal "?", but `visited` and `total` are real numbers from the
+// dispatcher (0/0 at boot). Confirmed against this harness's own baseline
+// capture: "idle 0/? visited of 0". Keep the phase-chip assertion too.
 const phaseText = await page.locator('.inspection-phase').innerText().catch(() => '');
-check('run status published', phaseText.trim().length > 0, `phase="${phaseText}"`);
+const visitedTotalMatch = /\d+\/\S+ visited of \d+/.test(statusbarText);
+check('run status published', phaseText.trim().length > 0 && visitedTotalMatch,
+  `phase="${phaseText}" statusbar="${statusbarText.replace(/\n/g, ' ')}"`);
 
 // ── cell panel: the 3D workcell ──────────────────────────────────────────────
 check('cell panel present', await page.locator('.porthole-scene-panel canvas').count() > 0);
@@ -175,8 +182,12 @@ check('confirm reaches executing', reachedExecuting, `status="${await statusText
 // happy path (every other `pub.log` call is an error/refusal path we are
 // not otherwise triggering). Fired the instant `executing` is observed —
 // the move is short (a small wrist offset), so this loses the race if it
-// waits for anything else first.
-await surveyBtn.click({ timeout: 2000 }).catch(() => {});
+// waits for anything else first. Gated on `reachedExecuting`, mirroring the
+// `if (reachedPreviewing)` confirm click above: under contention, if the
+// previous wait timed out just as the backend actually reached `previewing`,
+// an unconditional click here would land as the FIRST legitimate confirm
+// (moving the arm) instead of a guaranteed-stale one.
+if (reachedExecuting) await surveyBtn.click({ timeout: 2000 }).catch(() => {});
 
 // Two shots apart, taken while the rig is actually moving: proves geometry
 // was drawn AND that poses are streaming. readPixels cannot be used —
