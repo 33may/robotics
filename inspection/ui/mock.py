@@ -1,35 +1,28 @@
-"""A scripted run that drives every topic, with no robot and no camera.
+"""The real Supervisor, wired behind the real bus — no robot, no camera.
 
-Not a "demo mode": it is an ordinary Python process publishing on the ordinary
-socket, so the frontend cannot tell and there is no branch in the UI to rot.
-
-What is real here: the workcell, the collision world, IK, the viewsphere,
-reachability, direct-move validation and the replay. Only perception and the
-arm are faked — the camera returns a synthetic frame and the "fused cloud" is
-generated rather than measured. That means this exercises the publisher's real
-paths, including the ones that are awkward to reach with hardware (a cell that
-plans, a cell that refuses, a preview that freezes at impact).
+Not a "demo mode": `start_mock` builds an ordinary `Supervisor` driving an
+ordinary `FakeRig`, publishing through an ordinary `InspectionPublisher` on the
+ordinary bus, so the frontend cannot tell and there is no scripted branch in
+the UI (or here) to rot. Only the rig and the camera are faked — everything
+else (the workcell, the collision world, IK, the viewsphere, reachability,
+planning, the state machine) is the same code path a real run takes.
 """
 
 from __future__ import annotations
 
 import math
-import random
+import threading
 import time
 
 import numpy as np
 
-from inspection.cell.world import RobotCell, Q_PARK
-from inspection.motion.direct import direct_move
-from inspection.motion.ik import UR5eIK
-from inspection.view.viewsphere import ViewSphere
-
-from .publisher import InspectionPublisher
+from inspection.motion.plan import DEMO_PARK
+from inspection.run.machine import Supervisor
+from inspection.run.rigs import CameraWorker, FakeRig, PoseStreamer
 
 # A mug-sized object standing on the table, in front of the robot.
 OBJECT_CENTER = np.array([0.0, -0.45, 0.10])
 OBJECT_DIMS = [0.09, 0.09, 0.11]
-QUESTION = "is there a logo on this cup?"
 
 
 def cup_cloud(n: int, seed: int, coverage: float) -> np.ndarray:
@@ -67,123 +60,32 @@ def mock_frame(t: float, w: int = 640, h: int = 360) -> np.ndarray:
     return (frame * 255).astype("uint8")
 
 
-def _gloss(current, cell) -> str:
-    """A stand-in for `run/decider.gloss`.
+def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
+    """Wire a real `Supervisor` to a real `FakeRig` behind `bus` — no robot,
+    no camera. Starts the camera/pose workers, the command pump (bus ->
+    `sup.events`), and `sup.run()` itself, each on its own daemon thread, and
+    returns the supervisor already running.
 
-    Duplicated deliberately: nothing in this package imports from `run/`, and
-    the real loop passes its own glosses into `publish_views`.
+    The rig starts off the survey pose (a small wrist offset) so the boot
+    turn is an actual move, not a no-op; `speed=0.6` keeps that move — and
+    every move after it — slow enough to watch and to stop mid-flight.
     """
-    if current is None:
-        return f"elevation index {cell[1]}"
-    dh = (cell[0] - current[0] + 6) % 12 - 6
-    dv = cell[1] - current[1]
-    side = ("same side" if dh == 0 else
-            "opposite side" if abs(dh) == 6 else
-            f"{abs(dh)} step{'s' if abs(dh) > 1 else ''} {'right' if dh > 0 else 'left'}")
-    height = "same height" if dv == 0 else ("higher" if dv > 0 else "lower")
-    return f"{side}, {height}"
+    q_survey = DEMO_PARK.copy()
+    rig = FakeRig(q_survey + np.radians([0, 0, 0, 0, 0, 8]), speed=0.6)
+    sup = Supervisor(rig, pub, outdir, q_survey=q_survey, seed=seed)
+    pub.publish_world(sup.world)
 
+    camera = CameraWorker(grab=lambda: {"rgb": mock_frame(time.time())},
+                          publish=pub.publish_frame)
+    camera.start()
+    poses = PoseStreamer(rig.q, lambda q: pub.publish_pose(sup.world, q))
+    poses.active = sup.pose_active            # dispatcher-gated, like the real loop
+    poses.start()
 
-def run_mock(pub: InspectionPublisher, turns: int = 10, seed: int = 0) -> None:
-    """Drive a whole scripted run. Blocks until it finishes."""
-    rng = random.Random(seed)
-    world = RobotCell()
-    ik = UR5eIK()
+    def pump():
+        for c in bus.commands():
+            sup.events.put(c)
+    threading.Thread(target=pump, name="mock-cmd-pump", daemon=True).start()
 
-    pub.declare()
-    pub.status(phase="idle", question=QUESTION, step=0, max_turns=turns)
-    pub.log("info", "mock: building the workcell")
-    pub.publish_world(world)
-
-    world.set_object("object", OBJECT_DIMS, [*OBJECT_CENTER.tolist(), 0, 0, 0])
-    sphere = ViewSphere(OBJECT_CENTER, r=0.35)
-
-    q_now = np.array(Q_PARK, dtype=float)
-    pub.publish_pose(world, q_now)
-
-    visited: set[tuple] = set()
-    blocked: set[tuple] = set()
-    captures: dict[tuple, dict] = {}
-    current: tuple | None = None
-    t0 = time.time()
-
-    def refresh_views(reach):
-        glosses = {c: _gloss(current, c) for c in sphere.cells()}
-        pub.publish_views(sphere, reach, visited, blocked, current, captures, glosses)
-
-    reach = sphere.reachability(world, ik)
-    pub.publish_object(cup_cloud(6000, seed, 0.12), OBJECT_DIMS, OBJECT_CENTER)
-    refresh_views(reach)
-    pub.log("info", f"mock: {sum(1 for r in reach.values() if r is not None)}/36 cells reachable")
-
-    for step in range(1, turns + 1):
-        candidates = [c for c, r in reach.items()
-                      if r is not None and c not in visited and c not in blocked]
-        if not candidates:
-            break
-        cell = rng.choice(candidates)
-        h, v = cell
-
-        pub.status(phase="planning", step=step, detail=f"look {h} {v}")
-        pub.log("info", f"turn {step}: look {h} {v} — {_gloss(current, cell)}")
-
-        roll = reach[cell]
-        T = sphere.flange_pose(h, v, roll)
-        free = [q for q in ik.branches(T) if not world.is_colliding(q)]
-        free.sort(key=lambda q: np.abs(q - q_now).sum())
-        path = next((p for p in (direct_move(world, q_now, q) for q in free[:3]) if p), None)
-
-        if path is None:
-            blocked.add(cell)
-            pub.log("warn", f"turn {step}: plan refused — cell blocked this round")
-            refresh_views(reach)
-            continue
-
-        pub.status(phase="preview", detail=f"{len(path)} waypoints")
-        clean = pub.replay_path(world, path)
-
-        pub.status(phase="awaiting_approval")
-        time.sleep(0.6)                       # the terminal owns the y/n
-        if not clean:
-            blocked.add(cell)
-            refresh_views(reach)
-            continue
-
-        pub.status(phase="executing")
-        pub.replay_path(world, path, hz=45)   # the move itself, same pose stream
-        q_now = np.asarray(path[-1], dtype=float)
-        visited.add(cell)
-        current = cell
-        blocked.clear()                       # new q — refused cells may work now
-
-        pub.status(phase="capturing")
-        pub.publish_frame(mock_frame(time.time() - t0))
-        captures[cell] = {
-            "step": step,
-            "dir": None,                      # no run dir in mock: no image to show
-            "comment": rng.choice([
-                "handle visible, no logo on this side",
-                "glare on the rim",
-                "printed mark, partially occluded",
-                "clean surface",
-            ]),
-        }
-
-        pub.status(phase="fusing")
-        cloud = cup_cloud(9000, seed, min(1.0, 0.12 + 0.11 * len(visited)))
-        pub.publish_cloud(cloud)
-        pub.publish_object(None, OBJECT_DIMS, OBJECT_CENTER)
-
-        reach = sphere.reachability(world, ik)
-        refresh_views(reach)
-        pub.status(
-            phase="idle",
-            visited=len(visited),
-            reachable=sum(1 for r in reach.values() if r is not None),
-            total=len(reach),
-        )
-        pub.log("info", f"turn {step}: fused {len(cloud)} pts")
-        time.sleep(0.8)
-
-    pub.status(phase="done", detail=f"{len(visited)} views")
-    pub.log("info", "mock: run finished")
+    threading.Thread(target=sup.run, daemon=True).start()
+    return sup

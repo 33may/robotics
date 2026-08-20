@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import tempfile
 import threading
 import webbrowser
 from pathlib import Path
@@ -76,9 +77,9 @@ def _present(url: str, no_window: bool, gui: str) -> None:
         open_window(url, title="inspection", width=1700, height=1000, gui=gui)
 
 
-def mock(turns: int = 10, port: int = 8767, bus_port: int = 8765, seed: int = 0,
-         no_window: bool = False, gui: str = "qt", loop_forever: bool = True) -> int:
-    """A scripted run with no hardware. Everything but perception and the arm is real.
+def mock(port: int = 8767, bus_port: int = 8765, seed: int = 0,
+         no_window: bool = False, gui: str = "qt") -> int:
+    """A real Supervisor + FakeRig run with no hardware, driven over the real bus.
 
     `bus_port` is passed to the UI as `?bus=`, so a mock can run beside a real
     loop without the two fighting over the default port.
@@ -87,22 +88,13 @@ def mock(turns: int = 10, port: int = 8767, bus_port: int = 8765, seed: int = 0,
     if not _require_build():
         return 1
 
-    from inspection.ui.mock import run_mock
+    from inspection.ui.mock import start_mock
 
     bus = PortholeBus(app="inspection", port=bus_port).start()
     pub = InspectionPublisher(bus)
     print(f"bus  ws://127.0.0.1:{bus.port}", flush=True)
 
-    def drive() -> None:
-        while True:
-            run_mock(pub, turns=turns, seed=seed)
-            if not loop_forever:
-                return
-            # Restart with a different seed so a window left open keeps showing
-            # something, and so a screenshot check never lands on a finished run.
-            run_mock(pub, turns=turns, seed=seed + 1)
-
-    threading.Thread(target=drive, name="mock-run", daemon=True).start()
+    start_mock(bus, pub, Path(tempfile.mkdtemp()) / "mock-run", seed=seed)
 
     url = serve_ui(DIST, port=port, assets=_asset_mounts(None))
     if bus_port != 8765:
