@@ -67,6 +67,8 @@ STATE_COLOR = {
     "available": "#6d737d",
     "blocked": "#f2c76b",
     "unreachable": "#5a3a3a",
+    "pending": "#b0a0f0",
+    "previewing": "#f08bd4",
 }
 
 #: Cosmetic only. Mirrors the table in `inspection/cell/viewer.py`, duplicated
@@ -305,6 +307,9 @@ class InspectionPublisher:
         current: tuple | None = None,
         captures: Mapping[tuple, Mapping[str, Any]] | None = None,
         glosses: Mapping[tuple, str] | None = None,
+        pending: tuple | None = None,
+        previewing: tuple | None = None,
+        survey: str = "visited",
     ) -> None:
         """Publish the viewsphere twice: as 3D markers and as clickable data.
 
@@ -320,6 +325,8 @@ class InspectionPublisher:
             visited_set = {tuple(c) for c in visited}
             blocked_set = {tuple(c) for c in blocked}
             current_cell = tuple(current) if current is not None else None
+            pending_cell = tuple(pending) if pending is not None else None
+            previewing_cell = tuple(previewing) if previewing is not None else None
             captures = captures or {}
             glosses = glosses or {}
 
@@ -329,13 +336,15 @@ class InspectionPublisher:
             for h, v in sphere.cells():
                 cell = (h, v)
                 position = center + sphere.cell_dir(h, v) * sphere.r
-                state = self._cell_state(cell, reach, visited_set, blocked_set, current_cell)
+                state = self._cell_state(
+                    cell, reach, visited_set, blocked_set, current_cell,
+                    pending_cell, previewing_cell)
 
                 T = np.eye(4)
                 T[:3, 3] = position
                 markers.append(sphere_node(
                     f"views/{cell_key(h, v)}",
-                    0.012 if state != "current" else 0.02,
+                    0.012 if state not in ("current", "previewing") else 0.02,
                     T,
                     color=STATE_COLOR[state],
                     opacity=0.35 if state == "unreachable" else 0.95,
@@ -366,12 +375,30 @@ class InspectionPublisher:
                 "radius": float(sphere.r),
                 "current": list(current_cell) if current_cell else None,
                 "cells": cells,
+                "survey": {"state": survey},
             })
         except Exception:
             log.exception("publish_views failed")
 
+    def publish_survey_only(self, state: str) -> None:
+        """Publish survey state without sphere data. Used before boot capture."""
+        try:
+            self.bus.publish(TOPIC_VIEWS, {
+                "survey": {"state": state},
+                "center": None,
+                "radius": None,
+                "current": None,
+                "cells": [],
+            })
+        except Exception:
+            log.exception("publish_survey_only failed")
+
     @staticmethod
-    def _cell_state(cell, reach, visited, blocked, current) -> str:
+    def _cell_state(cell, reach, visited, blocked, current, pending=None, previewing=None) -> str:
+        if cell == previewing:
+            return "previewing"
+        if cell == pending:
+            return "pending"
         if cell == current:
             return "current"
         if cell in visited:
