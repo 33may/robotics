@@ -91,7 +91,12 @@ class CameraWorker(threading.Thread):
     def run(self):
         """Loop: grab, update count/latest, publish (in try/except), sleep."""
         while not self._should_stop.is_set():
-            b = self._grab()
+            try:
+                b = self._grab()
+            except Exception as e:
+                log.exception(f"Camera grab failed: {e}")
+                time.sleep(1.0 / self._hz)
+                continue
             if b is not None:
                 with self._cond:
                     self._count += 1
@@ -121,9 +126,9 @@ class CameraWorker(threading.Thread):
             return self._latest
 
     def stop(self):
-        """Signal stop and wait for thread to exit."""
+        """Signal stop and wait for thread to exit with timeout."""
         self._should_stop.set()
-        self.join()
+        self.join(timeout=2.0)
 
 
 class PoseStreamer(threading.Thread):
@@ -155,6 +160,6 @@ class PoseStreamer(threading.Thread):
             time.sleep(1.0 / self._hz)
 
     def stop(self):
-        """Signal stop and wait for thread to exit."""
+        """Signal stop and wait for thread to exit with timeout."""
         self._should_stop.set()
-        self.join()
+        self.join(timeout=2.0)

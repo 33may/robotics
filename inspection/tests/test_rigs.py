@@ -54,10 +54,39 @@ def test_pose_streamer_gated_by_active():
     ps.stop()
 
 
+def test_camera_worker_handles_grab_failure():
+    """CameraWorker survives grab() exceptions; fresh_bundle times out cleanly; stop() returns promptly."""
+    def grab_fails():
+        raise RuntimeError("grab hardware error")
+
+    cam = CameraWorker(grab_fails, hz=100.0)
+    cam.start()
+    time.sleep(0.05)
+    # Thread should be alive despite grab failures
+    assert cam.is_alive(), "CameraWorker thread died after grab() raised"
+
+    # fresh_bundle should timeout cleanly, not hang forever
+    t0 = time.perf_counter()
+    try:
+        cam.fresh_bundle(min_new=1, timeout=0.2)
+        assert False, "should have raised RuntimeError"
+    except RuntimeError as e:
+        assert "no fresh frames" in str(e)
+    elapsed = time.perf_counter() - t0
+    assert elapsed < 0.5, f"fresh_bundle took too long: {elapsed:.2f}s (timeout was 0.2s)"
+
+    # stop() should return promptly even with grab failing
+    t0 = time.perf_counter()
+    cam.stop()
+    elapsed = time.perf_counter() - t0
+    assert elapsed < 1.0, f"stop() took too long: {elapsed:.2f}s (should be bounded)"
+
+
 def main():
     test_fake_move_interpolates_and_stops()
     test_camera_worker_freshness_and_publish()
     test_pose_streamer_gated_by_active()
+    test_camera_worker_handles_grab_failure()
     print("OK test_rigs")
 
 
