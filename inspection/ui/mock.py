@@ -20,30 +20,6 @@ from inspection.motion.plan import DEMO_PARK
 from inspection.run.machine import Supervisor
 from inspection.run.rigs import CameraWorker, FakeRig, PoseStreamer
 
-# A mug-sized object standing on the table, in front of the robot.
-OBJECT_CENTER = np.array([0.0, -0.45, 0.10])
-OBJECT_DIMS = [0.09, 0.09, 0.11]
-
-
-def cup_cloud(n: int, seed: int, coverage: float) -> np.ndarray:
-    """Points on a mug-ish shell, revealed progressively as views accumulate.
-
-    `coverage` in [0, 1] opens an azimuth wedge, so the cloud visibly grows as
-    the run visits more cells instead of appearing complete on the first turn.
-    """
-    rng = np.random.default_rng(seed)
-    theta = rng.uniform(-math.pi, math.pi, n)
-    keep = np.abs(theta) <= math.pi * max(coverage, 0.12)
-    theta = theta[keep]
-    z = rng.uniform(0.0, OBJECT_DIMS[2], theta.size)
-    radius = OBJECT_DIMS[0] / 2 * (1.0 + 0.05 * np.sin(z * 40))
-    points = np.stack([
-        OBJECT_CENTER[0] + radius * np.cos(theta),
-        OBJECT_CENTER[1] + radius * np.sin(theta),
-        OBJECT_CENTER[2] - OBJECT_DIMS[2] / 2 + z,
-    ], axis=1)
-    return points.astype(np.float32)
-
 
 def mock_frame(t: float, w: int = 640, h: int = 360) -> np.ndarray:
     """A synthetic camera frame — moving ramp with a marker."""
@@ -75,6 +51,10 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     sup = Supervisor(rig, pub, outdir, q_survey=q_survey, seed=seed)
     pub.publish_world(sup.world)
 
+    # Daemon threads, deliberately never joined/stopped when `sup` reaches
+    # "done": this process serves more than one run (each `npm run check`
+    # invocation, each manual restart), and a finished Supervisor's camera/
+    # pose threads are cheap to leave running until the process exits.
     camera = CameraWorker(grab=lambda: {"rgb": mock_frame(time.time())},
                           publish=pub.publish_frame)
     camera.start()

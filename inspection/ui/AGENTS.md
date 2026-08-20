@@ -1,20 +1,27 @@
-# inspection/ui — the frontend and its contract with the loop
+# inspection/ui — the frontend and its contract with the backend
 
-The operator-facing UI for the inspection loop. Four panels, built on **porthole**
+The operator-facing UI for the inspection loop. Five panels, built on **porthole**
 (`~/projects/porthole`), talking to Python over the porthole bus.
 
-**This module publishes. It does not decide.** v1 has no command path at all:
-the approval gate and the look/answer decision stay on the terminal
-(`run/decider.py`). The UI is a monitor. That keeps every question about
-authority answered by `run/`, where it already is.
+**This module publishes and sends commands; it does not decide.** v2's
+`ActionsPanel` is a real command path — `view/request`, `view/confirm`,
+`run/stop`, `run/exit` — but every command lands on `run/machine.py`'s
+`Supervisor`, which validates it before anything moves: a stale button click
+can never move the arm (design FR11). Stop hierarchy, strongest first:
+pendant e-stop (hardware) > Ctrl-C (process; `SIGINT` → `request_shutdown`)
+> UI Stop (software, `executing` only). The judgment `run/decider.py`'s
+`TerminalDecider` used to own is deferred to v2-AI (`decider.py` is parked);
+today it is in the operator's head, exercised through the same two-press
+request/confirm pattern for every view. See
+`inspection/2026-08-20-ui-driven-loop-design.md`.
 
 **Nothing in `run/` imports from here.** The existing contract ("nothing imports
 from run/") is preserved in both directions: `publisher.py` takes plain data —
-arrays, dicts, tuples — and knows nothing about `Loop`, `Ctx` or `RealRig`.
+arrays, dicts, tuples — and knows nothing about `Supervisor`, `Ctx` or `RealRig`.
 
 ---
 
-## 1. The four panels
+## 1. The five panels
 
 | Panel | Topic(s) | Source |
 |---|---|---|
@@ -22,6 +29,7 @@ arrays, dicts, tuples — and knows nothing about `Loop`, `Ctx` or `RealRig`.
 | **camera** — live wrist stream | `camera/wrist` | porthole `camera`, copied |
 | **cloud** — fused cloud, clickable view markers, image of the picked view | `cloud/fused`, `views/state` | `src/panels/CloudInspectPanel.tsx`, app-owned |
 | **log** — event stream | `log/events` | porthole `event-log`, copied |
+| **actions** — survey + view grid + Stop + Exit; the operator's only command path | reads `views/state`, `run/status`; sends `view/request`, `view/confirm`, `run/stop`, `run/exit` | `src/panels/ActionsPanel.tsx`, app-owned |
 
 Copied panels are yours: edit them freely, `porthole update` three-way-merges
 upstream fixes as long as `src/.porthole/base/` survives.
@@ -37,7 +45,7 @@ upstream fixes as long as `src/.porthole/base/` survives.
 | `cloud/fused` | stream, retained | per capture | `{points: $nd float32 [N,3]}`, base frame |
 | `camera/wrist` | stream | ~10 Hz | `$img` JPEG |
 | `views/state` | stream, retained | per turn | viewsphere cells (§5) |
-| `run/status` | stream, retained | per phase change | `{phase, step, question, ...}` (§6) |
+| `run/status` | stream, retained | per phase change | `{phase, target, visited, total}` (§6) |
 | `log/events` | event | as they happen | `{level, msg}` |
 
 Every retained topic means a UI opened mid-run sees the current world
@@ -77,6 +85,8 @@ resends the description. That is the protocol (`porthole/docs/scene-protocol.md`
 | `visited` | `#7ee2a8` green | captured from here |
 | `current` | `#8ab4f8` blue | where the camera is now |
 | `available` | `#6d737d` grey | reachable, not yet visited |
+| `pending` | `#b0a0f0` violet | `view/request` sent for this cell; the planner is running |
+| `previewing` | `#f08bd4` pink | plan ok; the 3D panel loops the preview replay, awaiting `view/confirm` |
 | `blocked` | `#f2c76b` amber | planning refused it this round (`plan_failed`) |
 | `unreachable` | `#5a3a3a` dim red | no free IK branch at any roll |
 
@@ -124,7 +134,7 @@ cannot disagree.
   "current": [h, v] | None,
   "cells": [
     {"h": 3, "v": 1,
-     "state": "visited",          # visited|current|available|blocked|unreachable
+     "state": "visited",          # visited|current|pending|previewing|available|blocked|unreachable
      "pos": [x, y, z],            # camera position of the cell, base frame
      "gloss": "one step right, same height",
      "step": 4,                   # turn that visited it, else absent
@@ -132,29 +142,38 @@ cannot disagree.
      "comment": "handle faces away"      # the READ text, if any
     },
     ...
-  ]
+  ],
+  "survey": {"state": "visited"}   # same vocabulary; present even before any
+                                    # sphere exists ("cells" is [] then), so
+                                    # the grid can render the survey button
+                                    # at boot
 }
 ```
 
 `image` is a URL on the UI's own server, not a filesystem path — see §7.
-The panel shows the image when a `visited` marker is clicked, and the text
-"not visited" when any other state is clicked. Clicking sends nothing.
+`CloudInspectPanel` shows the image when a `visited` marker is clicked, and the
+text "not visited" when any other state is clicked — clicking there sends
+nothing. `ActionsPanel` reads this same topic to render the operator's
+buttons and *does* send: a click on an `available`/`blocked` cell (or the
+survey button) sends `view/request`, a click on a `previewing` cell sends
+`view/confirm` (§8).
 
 ---
 
 ## 6. `run/status` — the strip everything else reads
 
 ```python
-{"phase": "idle|planning|preview|awaiting_approval|executing|capturing|fusing|done",
- "step": 4, "max_turns": 12,
- "question": "is there a logo on this cup?",
- "visited": 4, "reachable": 22, "total": 36,
- "detail": "tier 2, 42 waypoints"}
+{"phase": "idle|planning|previewing|executing|capturing|fusing|fault|done",
+ "target": [h, v] | "survey" | None,
+ "visited": 4, "total": 22}
 ```
 
 `phase` exists so the UI can say what the robot is doing without inferring it
-from message timing. `awaiting_approval` is the one that matters: the terminal
-owns the y/n, and the window should not look frozen while it waits.
+from message timing — telling `previewing` (3D panel looping a replay) apart
+from `executing` (3D panel mirroring the live arm) is exactly the ambiguity
+FR3 exists to resolve, and both share the same `target`. `fault` is the one
+that matters most: the executor halted or refused mid-move, the grid goes
+dead, and Exit is the only way out (check the pendant).
 
 ---
 
@@ -176,29 +195,32 @@ the URL.
 
 ---
 
-## 8. Wiring it into the loop
+## 8. Wiring it into the backend
 
-`publisher.py` is a library with no loop dependency. The calls, in the order the
-loop makes them:
+`publisher.py` is a library with no dependency on `run/`. The caller is
+`run/machine.py`'s `Supervisor` — the one dispatcher thread that owns every
+bit of run state, plus its worker threads (`_plan_worker`, `_preview_worker`,
+`_exec_worker`) which call back into it via `self.events`, never directly.
+Read `Supervisor` (module docstring + `_publish_views`/`_publish_all`/
+`_set_phase`) and `inspection/2026-08-20-ui-driven-loop-design.md` ("State
+machine & commands") for exactly when each `pub.*` call happens — a call
+table here would drift the next time a worker changes; the design doc and
+the code are the source of truth.
 
-| Where in `run/loop.py` | Call |
-|---|---|
-| after `RobotCell()` is built | `pub.publish_world(world)` |
-| `_approve_and_move`, replacing `rig.preview(path)` | `pub.replay_path(world, path)` |
-| while `console.readline("approve?")` blocks | `pub.status(phase="awaiting_approval")` |
-| after `rig.move(path)` returns | `pub.publish_pose(world, q_now)` |
-| after `rig.capture(...)` | `pub.publish_capture(cap)` |
-| after `_recenter()` | `pub.publish_object(acc.points, dims, mid)` |
-| after `reach` is computed in `turn()` | `pub.publish_views(sphere, reach, visited, plan_failed, current, captures)` |
-| anywhere the loop prints | `pub.log(level, msg)` |
+The four commands this panel can send, all validated backend-side before
+they touch anything (design FR11):
 
-Keep `rig.preview` as the seam: pointing it at the publisher instead of
-`world.replay` is a one-line change, and meshcat still works if the window is not
-running.
+```
+view/request {target}     target = "survey" | [h, v]
+view/confirm {target}
+run/stop {}
+run/exit {}
+```
 
-**The publisher must never raise into the loop.** A UI that is not connected, a
-closed socket, a browser that was killed — none of these are reasons to abort a
-run with a robot in the middle of a move. Every public method swallows and logs.
+**The publisher must never raise into the dispatcher.** A UI that is not
+connected, a closed socket, a browser that was killed — none of these are
+reasons to abort a run with a robot in the middle of a move. Every public
+method swallows and logs.
 
 ---
 
@@ -208,21 +230,26 @@ run with a robot in the middle of a move. Every public method swallows and logs.
 cd ~/projects/porthole && npm run build -w @porthole/framework   # after any porthole change
 cd ~/projects/robotics/inspection/ui && npm install && npm run build
 
-p inspection/ui/app.py mock                      # fake run, no robot, no camera
-p inspection/ui/app.py serve --run_dir=data/...  # window only; your loop owns the bus
-npm run check                                    # headless render + PNG, 16 checks
+p inspection/run/app.py run --outdir=data/runs/r1   # the real thing: bus + window + Supervisor + RealRig
+p inspection/ui/app.py mock                          # bus + window + Supervisor + FakeRig, no hardware
+p inspection/ui/app.py serve --run_dir=data/...      # window only; some other process owns the bus
+npm run check                                        # headless render + PNG checks (tools/verify-ui.mjs)
 ```
 
-`mock` drives every topic from a scripted run. What is real in it: the workcell,
-the collision world, IK, the viewsphere, reachability, direct-move validation
-and the replay. Only perception and the arm are faked. That makes it an
-ordinary Python process on the ordinary socket — the frontend cannot tell, there
-is no "demo mode" branch in the UI to rot, and awkward states (a cell that
-refuses, a preview that freezes at impact) are reachable without hardware.
+`mock` (`inspection/ui/mock.py`'s `start_mock`) wires an ordinary `Supervisor`
+to an ordinary `FakeRig` behind an ordinary bus — the same dispatcher,
+planner, IK, viewsphere and reachability code a real run uses. Only the arm
+and camera are faked (a slow-interpolating fake arm so `executing` is
+watchable and stoppable; canned camera frames). That makes it indistinguishable
+from a real backend on the wire — no "demo mode" branch in the UI to rot, and
+awkward states (a cell that refuses, Stop mid-move) are reachable without
+hardware.
 
 `serve` starts **no bus**: there can be one bus on a port and it belongs to
-whoever owns the robot. Run the loop in its own process; this just serves the
-bundle and opens the window.
+whoever owns the robot. `inspection/run/app.py run` starts its own bus and
+window together (retained state means opening the window any time shows the
+current world — design FR1); `serve` is for pointing a window at a bus some
+other process already owns.
 
 ### Pointing the UI at a different bus
 

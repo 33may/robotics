@@ -400,6 +400,10 @@ class Supervisor:
             {"q_survey": self.q_survey.tolist(), "r": self.r,
              "turns": self.turns}, indent=2) + "\n")
 
+    # `turns[].step` (below, in `_record_turn`) and capture pose_id/step (here)
+    # are intentionally different namespaces: the former counts every turn
+    # including survey, the latter counts cell captures only. Conflating them
+    # would shift every cell's capture id whenever the survey turn replays.
     def _next_cell_step(self):
         """1-indexed ordinal for the next non-survey capture: counts prior
         *cell* turns only, so the survey's own boot turn doesn't shift

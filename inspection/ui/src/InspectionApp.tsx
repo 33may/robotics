@@ -1,9 +1,13 @@
 /**
  * The inspection dashboard.
  *
- * Four panels, no command path. v1 keeps the approval gate and the look/answer
- * decision on the terminal (`run/decider.py`), so this window is a monitor —
- * every question about authority is answered in `run/`, where it already was.
+ * Five panels: cell, camera, cloud, log, actions. `actions` is a real command
+ * path — clicks send `view/request` / `view/confirm` / `run/stop` / `run/exit`
+ * onto the bus — but authority stays entirely backend-side: `run/machine.py`'s
+ * `Supervisor` validates every command before anything moves, so a stale
+ * button here can never move the arm. Stop hierarchy, strongest first: pendant
+ * e-stop (hardware) > Ctrl-C (process) > this panel's Stop button (software,
+ * `executing` only).
  */
 
 import { BusProvider, PortholeDashboard, useBusStatus, useTopicPayload } from '@porthole/framework';

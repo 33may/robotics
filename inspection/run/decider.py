@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Decider seam for the v1 loop — the AI slot from the project definition.
+"""Decider seam — parked for v2-AI; not wired into the run path since loop v2
+(see inspection/2026-08-20-ui-driven-loop-design.md, "Retired / kept /
+deferred"). The judgment this module used to host is, for now, in the
+operator's head, exercised through `ActionsPanel`'s request/confirm click
+pattern; an AI decider slots into exactly that seam later.
 
 D3/D4 (inspection/2026-08-12-ai-inspection-project-definition.md): the
 decider READs the newest capture (a comment) and DECIDEs look(h, v) or
-answer(text). v1 is Anton at the terminal; BusDecider (UI toolkit) and
-AgentDecider swap in later without touching loop.py.
+answer(text). This module still holds the v1 terminal implementation
+(`Console`, `TerminalDecider`) and the egocentric-gloss helpers (`gloss`,
+`build_menu`) that a future `BusDecider`/`AgentDecider` is expected to reuse.
 """
 import queue
 import sys

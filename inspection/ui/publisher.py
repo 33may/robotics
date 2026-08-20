@@ -9,15 +9,22 @@ that might have a robot in the middle of a move.
 Contract it implements: ``inspection/ui/AGENTS.md``.
 Wire protocol: ``~/projects/porthole/docs/scene-protocol.md``.
 
-Typical use, inside the loop::
+Typical use, from the dispatcher (`run/machine.py`'s `Supervisor`)::
 
     pub = InspectionPublisher(bus, run_dir=outdir)
-    pub.publish_world(world)                       # once, after RobotCell()
-    pub.replay_path(world, path)                   # instead of world.replay()
-    pub.publish_pose(world, rig.q())               # after a real move
-    pub.publish_capture(cap)                       # after rig.capture()
-    pub.publish_object(acc.points, dims, mid)      # after _recenter()
-    pub.publish_views(sphere, reach, visited, blocked, current, captures, glosses)
+    pub.publish_world(world)                        # once, after RobotCell()
+    pub.publish_survey_only(survey_state)            # before a sphere exists
+    pub.publish_pose(world, q, colliding=...)        # preview replay / live mirror, 30 Hz
+    pub.publish_capture(cap)                         # after rig.capture()
+    pub.publish_object(acc.points, dims, mid)        # after _recenter()
+    pub.publish_views(sphere, reach, visited=visited, blocked=blocked,
+                      current=current, captures=captures,
+                      pending=pending, previewing=previewing, survey=survey_state)
+
+`replay_path` is the same pose-per-config port of `RobotCell.replay()`, kept
+for standalone debug CLIs (design: "meshcat for debug CLIs") — the
+dispatcher's own preview loop calls `publish_pose` directly instead, one
+config at a time, so it can be cancelled mid-loop.
 
 Every method is best-effort: a UI that is not connected, a closed socket or a
 killed browser must never abort a run.
@@ -320,6 +327,13 @@ class InspectionPublisher:
         `captures` maps a cell to `{"step": int, "dir": str, "comment": str}`;
         `dir` is a capture directory on disk, which is turned into a URL under
         the capture mount.
+
+        `pending`/`previewing` mark at most one cell each — the target of an
+        in-flight plan, or a looping preview replay awaiting `view/confirm` —
+        and take priority over every other state for that cell. `survey`
+        carries the survey button's own state (`available|pending|previewing|
+        visited`) alongside the sphere cells, in the same top-level payload,
+        so the actions panel can render it from one topic.
         """
         try:
             visited_set = {tuple(c) for c in visited}

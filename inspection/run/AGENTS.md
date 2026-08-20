@@ -1,20 +1,28 @@
 # run — orchestration
 
 ## Purpose
-Top-level entry points: the exploration loop and demo scripts. This is
-the only layer allowed to talk to everything — perception, cell, view,
-motion — and wire them together.
+Top-level entry points: the command-driven inspection loop and demo
+scripts. This is the only layer allowed to talk to everything —
+perception, cell, view, motion — and wire them together.
 
 ## Files
-- `loop.py` — the v1 inspection loop (POC): boot to the taught survey pose,
-  seed the object, then READ -> DECIDE -> plan -> meshcat preview ->
-  approve -> move -> capture -> fuse. Every motion is human-approved;
-  ENTER during motion is the software stop. Subcommands: `teach`
-  (save freedrive survey pose), `run`. Spec:
-  `inspection/2026-08-19-loop-v1-design.md`.
-- `decider.py` — the AI seam. Decider.read/.decide contract, egocentric
-  menu glosses (D4), Console (stdin owner + stop arming), TerminalDecider.
-  BusDecider (UI toolkit) and AgentDecider slot in here later.
+- `machine.py` — `Supervisor`, the v2 command-driven state machine: one
+  dispatcher thread owns every bit of run state; named worker threads
+  (plan/preview/exec) talk back only via events on a queue. Commands:
+  `view/request`, `view/confirm`, `run/stop`, `run/exit`, all validated
+  backend-side (a stale button can never move the arm). Spec:
+  `inspection/2026-08-20-ui-driven-loop-design.md`.
+- `app.py` — composition root. `run` (bus + window + `Supervisor` +
+  `RealRig`, SIGINT-safe shutdown) and `teach` (freedrive-then-save the
+  survey pose).
+- `rigs.py` — `FakeRig`/`RealRig`/`CameraWorker`/`PoseStreamer`: the rig
+  contract (`q`/`move`/`capture`/`frame`/`close`) that both hardware and
+  the mock drive identically.
+- `decider.py` — parked for v2-AI; not wired into the run path since loop
+  v2 (see `inspection/2026-08-20-ui-driven-loop-design.md`). Still holds
+  the egocentric menu-gloss helpers (`gloss`, `build_menu`) and the v1
+  terminal implementation (`Console`, `TerminalDecider`), kept for when
+  an AI decider slots into the request/confirm seam.
 - `survey_pose.json` — taught on hardware, not committed until it exists.
 
 ## Contracts & decisions
@@ -23,8 +31,11 @@ motion — and wire them together.
 - Orchestration only: sequencing, UI, logging, entry points. Any
   geometry, planning, or camera logic that accretes here gets moved to
   its pipeline stage.
-- The AI slot: it replaces exactly the Decider (read + decide), nothing
-  else. The orchestrator owns budget, approval, and the software stop.
+- Command authority: `Supervisor` is the only thing that mutates run
+  state or moves the arm; every command it receives is validated before
+  anything happens (design FR11). The AI slot, when it lands, replaces
+  exactly the operator's judgment at `view/request`/`view/confirm` —
+  not the state machine, the safety checks, or the stop hierarchy.
 
 ## Does NOT belong here
 - Reusable logic of any kind — this layer is glue, not a library.

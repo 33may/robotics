@@ -112,9 +112,9 @@
   background: var(--porthole-text-faint);
 }
 
-.inspection-phase[data-phase='awaiting_approval'] { background: var(--porthole-warn); }
+.inspection-phase[data-phase='previewing'] { background: var(--porthole-accent); }
 .inspection-phase[data-phase='executing'] { background: var(--porthole-error); }
-.inspection-phase[data-phase='preview'] { background: var(--porthole-accent); }
+.inspection-phase[data-phase='fault'] { background: var(--porthole-warn); }
 .inspection-phase[data-phase='done'] { background: var(--porthole-ok); }
 
 .inspection-question {

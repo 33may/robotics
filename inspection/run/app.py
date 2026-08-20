@@ -4,7 +4,7 @@
     p inspection/run/app.py run --outdir=data/runs/r1     # the real thing
     p inspection/run/app.py teach                         # save survey pose
 """
-import json, logging, signal, sys, threading, webbrowser
+import json, logging, signal, threading, webbrowser
 from pathlib import Path
 import numpy as np
 
@@ -26,7 +26,7 @@ def install_sigint(sup):
 
 
 def teach(ip: str = ROBOT_IP):
-    # moved verbatim from loop.py
+    # unchanged from v1 (loop.py, retired — see the 2026-08-20 design doc)
     from rtde_receive import RTDEReceiveInterface
     r = RTDEReceiveInterface(ip)
     q = list(r.getActualQ())
