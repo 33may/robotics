@@ -54,6 +54,55 @@ def test_pose_streamer_gated_by_active():
     ps.stop()
 
 
+def test_pose_streamer_quiesce_waits_for_in_flight_publish():
+    """The I4 interlock: clearing `active` is not enough — a tick already
+    inside the publish callback keeps running, and that callback indexes into
+    the publisher's cached pinocchio geom_data, which `_recenter()` is about
+    to resize. `quiesce()` must not return while one is in flight."""
+    state = {"in_flight": False, "count": 0, "after_quiesce": False,
+             "overlapped": False}
+
+    def publish(q):
+        state["in_flight"] = True
+        if state["after_quiesce"]:
+            state["overlapped"] = True      # published after quiesce said clear
+        time.sleep(0.15)
+        state["count"] += 1
+        state["in_flight"] = False
+
+    ps = PoseStreamer(lambda: np.zeros(6), publish, hz=50.0)
+    ps.start()
+    ps.active.set()
+    t0 = time.perf_counter()
+    while not state["in_flight"]:
+        assert time.perf_counter() - t0 < 2.0, "streamer never published"
+        time.sleep(0.005)
+
+    ps.active.clear()                        # what the dispatcher does
+    assert ps.quiesce(2.0) is True, "quiesce timed out"
+    state["after_quiesce"] = True
+    assert not state["in_flight"], "quiesce returned mid-publish"
+    n = state["count"]
+    time.sleep(0.2)
+    assert state["count"] == n and not state["overlapped"], \
+        "the streamer published after quiesce returned"
+    ps.stop()
+
+
+def test_pose_streamer_quiesce_times_out_while_active():
+    """It is an interlock, not a gate: an `active` that never clears must
+    return False on the budget rather than wedge the caller."""
+    ps = PoseStreamer(lambda: np.zeros(6), lambda q: None, hz=50.0)
+    ps.start()
+    ps.active.set()
+    t0 = time.perf_counter()
+    assert ps.quiesce(0.3) is False
+    assert 0.25 < time.perf_counter() - t0 < 1.5
+    ps.active.clear()
+    assert ps.quiesce(1.0) is True
+    ps.stop()
+
+
 def test_camera_worker_handles_grab_failure():
     """CameraWorker survives grab() exceptions; fresh_bundle times out cleanly; stop() returns promptly."""
     def grab_fails():
@@ -95,6 +144,8 @@ def main():
     test_fake_move_interpolates_and_stops()
     test_camera_worker_freshness_and_publish()
     test_pose_streamer_gated_by_active()
+    test_pose_streamer_quiesce_waits_for_in_flight_publish()
+    test_pose_streamer_quiesce_times_out_while_active()
     test_camera_worker_handles_grab_failure()
     test_grab_aligned_shape_contract()
     print("OK test_rigs")

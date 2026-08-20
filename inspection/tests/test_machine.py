@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Supervisor: request->planning->previewing, supersede, blocked.
 Run: p inspection/tests/test_machine.py"""
+import json
 import tempfile
 import threading
 import time
@@ -102,6 +103,23 @@ class SlowPlanSupervisor(Supervisor):
         q = self.rig.q()
         self.events.put({"ev": "plan_done", "gen": gen, "target": target,
                          "path": [q, q], "detail": "stub"})
+
+
+class GatedSupervisor(Supervisor):
+    """Blocks the dispatcher *before* it handles anything, so a test can load
+    several commands into the FIFO and control the moment any of them is
+    processed. The only way to reproduce a queue-ordering race without
+    racing: without it, "put a confirm, then Ctrl-C" is decided by whether
+    the dispatcher happened to dequeue in the microsecond between."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.gate = threading.Event()
+        self.gate.set()
+
+    def handle(self, ev):
+        self.gate.wait(10.0)
+        super().handle(ev)
 
 
 class RefusingPlanSupervisor(Supervisor):
@@ -331,6 +349,138 @@ def test_executor_fault_enters_fault_and_exit_works():
     assert (sup.outdir / "run.json").exists()
 
 
+def test_exit_during_planning_defers_until_plan_done():
+    """I2a: `run/exit` (or Ctrl-C) while a planner is in flight must NOT tear
+    the dispatcher down under it. `_plan_worker` calls `rig.q()` — on hardware
+    that is the same RTDEReceiveInterface `app.py`'s teardown then
+    disconnects, which is a segfault, not an exception. So the exit waits for
+    plan_done and only then shuts down."""
+    q_survey = DEMO_PARK.copy()
+    rig = FakeRig(q_survey.copy())
+    bus = BusSpy()
+    sup = SlowPlanSupervisor(rig, InspectionPublisher(bus),
+                             Path(tempfile.mkdtemp()) / "run", q_survey)
+    th = threading.Thread(target=sup.run, daemon=True); th.start()
+
+    sup.events.put({"cmd": "view/request", "target": "survey"})
+    wait_for(lambda: sup.phase == "planning", msg="planning (stub blocks here)")
+
+    sup.request_shutdown()
+    time.sleep(0.4)
+    assert sup.phase == "planning", \
+        f"exit must not shut down mid-plan (phase={sup.phase})"
+    assert sup._exit_after, "the exit must have been deferred, not dropped"
+    assert th.is_alive()
+
+    sup.release.set()                       # the planner finishes and reports
+    th.join(10)
+    assert not th.is_alive(), "the deferred exit never fired"
+    assert sup.phase == "done"
+    assert (sup.outdir / "run.json").exists()
+    assert sup.join_workers(5.0), "a worker outlived the shutdown"
+    assert not sup._action_thread.is_alive()
+
+
+def test_exit_during_planning_fires_on_stale_plan_done():
+    """Same deferral, but the plan_done that comes back is stale-gen. The gen
+    guard drops the event's *content*; the deferred exit must still proceed,
+    or the dispatcher waits for a release that will never come."""
+    sup, rig, bus, th = make_sup()
+    sup.phase = "planning"                  # test-only poke: no worker needed
+    sup.events.put({"cmd": "run/exit"})
+    time.sleep(0.2)
+    assert sup.phase == "planning" and sup._exit_after, "exit was not deferred"
+    sup.events.put({"ev": "plan_done", "gen": sup.gen - 1, "target": "survey",
+                    "path": None, "detail": "stale"})
+    th.join(10)
+    assert not th.is_alive(), "a stale plan_done must still release the exit"
+    assert (sup.outdir / "run.json").exists()
+
+
+def test_queued_confirm_cannot_undo_a_ctrl_c():
+    """I3: `request_shutdown` sets stop_event and queues run/exit, but a
+    `view/confirm` already in the FIFO is dispatched FIRST, and
+    `_on_view_confirm` clears stop_event and starts a motion — a Ctrl-C
+    followed by the arm moving. The `_shutting_down` flag, set before the
+    queue put, is what makes that ordering harmless."""
+    q_survey = DEMO_PARK.copy()
+    rig = FakeRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 30]), speed=0.05)
+    bus = BusSpy()
+    sup = GatedSupervisor(rig, InspectionPublisher(bus),
+                          Path(tempfile.mkdtemp()) / "run", q_survey)
+    th = threading.Thread(target=sup.run, daemon=True); th.start()
+    sup.events.put({"cmd": "view/request", "target": "survey"})
+    wait_for(lambda: sup.phase == "previewing", msg="previewing")
+    assert rig.moves == [], "nothing should have moved yet"
+
+    # The race, reproduced deterministically: the confirm is in the queue
+    # (and may already be dequeued) when the signal handler runs.
+    sup.gate.clear()
+    sup.events.put({"cmd": "view/confirm", "target": "survey"})
+    time.sleep(0.05)
+    sup.request_shutdown()
+    sup.gate.set()
+
+    th.join(10)
+    assert not th.is_alive(), "shutdown did not complete"
+    assert rig.moves == [], f"a queued confirm started a motion: {rig.moves}"
+    assert sup.stop_event.is_set(), "the confirm cleared the Ctrl-C stop"
+    assert sup.phase == "done" and sup.survey_state != "visited"
+    assert (sup.outdir / "run.json").exists()
+
+
+def test_stop_mid_execute_saves_the_turn_before_exit():
+    """I5: `run.json` used to be written only on settle and at run end, so a
+    stopped or faulted turn lived in memory until something else saved. Prove
+    the stopped turn is on disk BEFORE any shutdown is requested."""
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 30]))
+    rig.speed = 0.05
+    sup.events.put({"cmd": "view/request", "target": "survey"})
+    wait_for(lambda: sup.phase == "previewing", msg="previewing")
+    sup.events.put({"cmd": "view/confirm", "target": "survey"})
+    wait_for(lambda: sup.phase == "executing", msg="executing")
+    sup.events.put({"cmd": "run/stop"})
+    wait_for(lambda: sup.phase == "idle", msg="stopped -> idle")
+
+    record = sup.outdir / "run.json"
+    assert record.exists(), "run.json not written on the stop turn"
+    turns = json.loads(record.read_text())["turns"]
+    assert turns and turns[-1]["stopped"] is True, turns
+    assert turns[-1]["target"] == "survey"
+
+    sup.request_shutdown(); th.join(10)
+    assert not th.is_alive()
+
+
+def test_join_workers_after_full_boot():
+    """I2b: the design's "join worker (bounded)" step, which `app.py`'s
+    teardown now runs before `rig.close()`."""
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    full_boot(sup)
+    t0 = time.monotonic()
+    assert sup.join_workers(5.0), "workers outlived the join budget"
+    assert time.monotonic() - t0 < 5.0
+    assert sup._action_thread is not None and not sup._action_thread.is_alive()
+    assert sup._preview_thread is None or not sup._preview_thread.is_alive()
+    sup.request_shutdown(); th.join(10)
+    assert not th.is_alive()
+
+
+def test_malformed_target_is_rejected_not_raised():
+    """M5: commands come off the bus untrusted. A malformed target is a
+    refusal with a log line, not a traceback out of the handler."""
+    sup, rig, bus, th = make_sup()
+    for bad in (None, 5, [1, 2, 3], ["a", "b"], [1.5, 0], {"h": 1}):
+        sup.events.put({"cmd": "view/request", "target": bad})
+        sup.events.put({"cmd": "view/confirm", "target": bad})
+    time.sleep(0.4)
+    assert sup.phase == "idle" and sup.target is None
+    sup.request_shutdown(); th.join(10)
+    assert not th.is_alive()
+
+
 def test_sigint_saves_and_exits():
     import signal
     from inspection.run.app import install_sigint
@@ -356,6 +506,12 @@ def main():
     test_stop_mid_execute_returns_to_idle()
     test_capture_fail_not_visited()
     test_executor_fault_enters_fault_and_exit_works()
+    test_exit_during_planning_defers_until_plan_done()
+    test_exit_during_planning_fires_on_stale_plan_done()
+    test_queued_confirm_cannot_undo_a_ctrl_c()
+    test_stop_mid_execute_saves_the_turn_before_exit()
+    test_join_workers_after_full_boot()
+    test_malformed_target_is_rejected_not_raised()
     test_sigint_saves_and_exits()
     print("OK test_machine (task 5)")
 

@@ -93,16 +93,29 @@ class CameraWorker(threading.Thread):
         self._cond = threading.Condition()
         self._count = 0
         self._latest = None
+        self._grab_fails = 0        # consecutive; drives the log rate limit
 
     def run(self):
         """Loop: grab, update count/latest, publish (in try/except), sleep."""
         while not self._should_stop.is_set():
             try:
                 b = self._grab()
-            except Exception as e:
-                log.exception(f"Camera grab failed: {e}")
+            except Exception:
+                # Rate-limited: a camera that has come unplugged fails every
+                # tick, and 10 tracebacks a second bury the rest of the run's
+                # log. First failure gets the traceback (that is the one that
+                # says what broke); after that, one counted line per ~5 s.
+                self._grab_fails += 1
+                if self._grab_fails == 1:
+                    log.exception("camera grab failed")
+                elif self._grab_fails % 50 == 0:
+                    log.warning("camera grab still failing (%d consecutive)",
+                                self._grab_fails)
                 time.sleep(1.0 / self._hz)
                 continue
+            if self._grab_fails:
+                log.info("camera grab recovered after %d failures", self._grab_fails)
+                self._grab_fails = 0
             if b is not None:
                 with self._cond:
                     self._count += 1
@@ -135,6 +148,12 @@ class CameraWorker(threading.Thread):
         """Signal stop and wait for thread to exit with timeout."""
         self._should_stop.set()
         self.join(timeout=2.0)
+        if self.is_alive():
+            # Only reachable if grab() is wedged inside the driver: the pipe is
+            # about to be stopped under a thread still reading it, and that is
+            # worth a line in the shutdown log rather than a silent return.
+            log.warning("CameraWorker did not exit within 2.0 s "
+                        "(grab() blocked?) — closing the pipe anyway")
 
 
 class RealRig:
@@ -214,7 +233,17 @@ class RealRig:
 
 
 class PoseStreamer(threading.Thread):
-    """Daemon thread that publishes pose q_fn() per tick while .active is set."""
+    """Daemon thread that publishes pose q_fn() per tick while .active is set.
+
+    `quiesce()` is the other half of the pose-producer handoff: the publisher
+    caches pinocchio geom_data, and `Supervisor._recenter()` calls
+    `world.set_object()`, which resizes the geometry model. A publish that
+    overlaps that resize is an out-of-bounds write in C++, not an exception.
+    Clearing `active` alone does not prevent the overlap — a tick already
+    inside `_publish_pose` keeps running — so the check-and-mark below is
+    atomic under `_cond`, and `quiesce()` returns only once `active` is clear
+    AND no publish is in flight.
+    """
 
     def __init__(self, q_fn, publish_pose, hz=30.0):
         """Initialize.
@@ -230,18 +259,45 @@ class PoseStreamer(threading.Thread):
         self._hz = hz
         self.active = threading.Event()
         self._should_stop = threading.Event()
+        self._cond = threading.Condition()
+        self._publishing = False
 
     def run(self):
         """Loop: if active.is_set(), publish q_fn() (in try/except), sleep."""
         while not self._should_stop.is_set():
-            if self.active.is_set():
+            # Deciding to publish and announcing it happen under one lock, so
+            # a quiesce() that observes "not publishing" cannot be overtaken
+            # by a tick that had already passed the `active` check.
+            with self._cond:
+                publishing = self._publishing = self.active.is_set()
+            if publishing:
                 try:
                     self._publish_pose(self._q_fn())
                 except Exception as e:
                     log.exception(f"Pose publish callback failed: {e}")
+                finally:
+                    with self._cond:
+                        self._publishing = False
+                        self._cond.notify_all()
             time.sleep(1.0 / self._hz)
+
+    def quiesce(self, timeout=1.0):
+        """Block until no publish is in flight and `active` is clear.
+
+        Returns True if that state was reached, False on timeout (the caller
+        logs and proceeds — this is a safety interlock, not a gate that may
+        wedge a run with a robot in it). The waiter is woken by every publish
+        completing, so the predicate is re-tested at the streamer's own rate.
+        """
+        with self._cond:
+            return self._cond.wait_for(
+                lambda: not self._publishing and not self.active.is_set(),
+                timeout)
 
     def stop(self):
         """Signal stop and wait for thread to exit with timeout."""
         self._should_stop.set()
         self.join(timeout=2.0)
+        if self.is_alive():
+            log.warning("PoseStreamer did not exit within 2.0 s "
+                        "(publish blocked?)")

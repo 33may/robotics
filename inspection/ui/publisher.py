@@ -485,7 +485,9 @@ class InspectionPublisher:
         collision, so a UI that connects afterwards still sees why the path was
         refused. Returns True if the path replayed clean.
 
-        Blocking, like `world.replay()`. Call it where `rig.preview()` is called.
+        Blocking, like `world.replay()`, and not used by the run path — the
+        dispatcher's cancellable preview loop calls `publish_pose` per config
+        instead. This is for the standalone debug CLIs.
         """
         try:
             from inspection.cell.world import DEFAULT_STEP

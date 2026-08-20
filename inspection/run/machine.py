@@ -25,6 +25,15 @@ ever touches `pub` — every `world.is_colliding()` check it needs is
 precomputed once, at preview-worker start, before the loop runs — so
 even an unjoined straggler can't race a planner or `_recenter()`'s
 `world.set_object()` on the shared, non-thread-safe `RobotCell`.
+
+The third pose producer, `PoseStreamer`, is handed off structurally
+rather than by timing: before the settle leg of `_exec_worker` touches
+`_recenter()` it waits for the dispatcher's `_pose_ack` (proof that
+`pose_active` has actually been cleared, not merely that `exec_done` was
+queued) and then for `pose_quiesce()` (proof that no publish is still in
+flight inside the publisher's cached geom_data). Both waits are bounded:
+a missed handoff degrades to the old timing-based behaviour and logs,
+rather than wedging a run with a robot in it.
 """
 from __future__ import annotations
 
@@ -62,6 +71,10 @@ class Supervisor:
         self.stop_event = getattr(rig, "stop_event", None) or threading.Event()
         rig.stop_event = self.stop_event
         self.pose_active = threading.Event()
+        #: Injected by the composition root (`app.py`/`mock.py`) with
+        #: `PoseStreamer.quiesce`. The default is the honest answer for a
+        #: Supervisor with no pose thread behind it: nothing to wait for.
+        self.pose_quiesce = lambda timeout=1.0: True
         self.phase, self.target, self.gen = "idle", None, 0
         self.visited, self.blocked = set(), set()
         self.current, self.sphere = None, None
@@ -71,11 +84,14 @@ class Supervisor:
         self.turns, self.t0 = [], time.time()
         self._preview_cancel = None
         self._preview_thread = None  # joined before any new worker spawns
+        self._action_thread = None   # the one live plan/exec worker, for join_workers
         self._path = None           # path of the current preview
         self._reach = {}            # cached sphere.reachability(), worker-refreshed
-        self._exit_after = False    # run/exit arrived mid-executing/capturing/fusing
+        self._exit_after = False    # run/exit arrived mid-action, shut down at its end
+        self._shutting_down = False  # set by request_shutdown (signal thread)
         self._last_cap_dir = None   # capture dir of the most recent capture()
         self._pending_request = None  # target deferred while a plan is in flight
+        self._pose_ack = threading.Event()  # dispatcher -> exec worker: pose_active clear
 
     # ----------------------------------------------------------------- run
     def run(self):
@@ -93,9 +109,42 @@ class Supervisor:
         self._save()
 
     def request_shutdown(self):
-        """Thread-safe, SIGINT-safe: stop the arm, ask the dispatcher to exit."""
+        """Thread-safe, SIGINT-safe: stop the arm, ask the dispatcher to exit.
+
+        `_shutting_down` is set *before* the command is queued and is the
+        reason a `view/confirm` already sitting in the FIFO cannot undo this
+        (I3): the queue is ordered, so that confirm is dispatched before
+        `run/exit` ever is, and `_on_view_confirm` clears `stop_event` — which
+        would start a motion out of a Ctrl-C. A plain bool is enough: one
+        writer (this call, from the signal handler's thread), one reader (the
+        dispatcher), and no read-modify-write.
+        """
+        self._shutting_down = True
         self.stop_event.set()
         self.events.put({"cmd": "run/exit"})
+
+    def join_workers(self, timeout: float = 5.0) -> bool:
+        """Bounded join of whatever plan/exec/preview thread is still alive.
+
+        The design's "stop event -> join worker (bounded) -> stopJ -> save ->
+        close hardware" step. Without it, `app.py`'s teardown can call
+        `rig.close()` -> `recv.disconnect()` while a worker is inside
+        `rig.q()` on the same RTDE interface. Returns False if anything was
+        still running when the budget ran out (the caller logs; it must still
+        close the hardware — a leaked interface is worse than a leaked thread).
+        """
+        if self._preview_cancel is not None:
+            self._preview_cancel.set()
+        deadline = time.monotonic() + timeout
+        clean = True
+        for th in (self._action_thread, self._preview_thread):
+            if th is None or not th.is_alive():
+                continue
+            th.join(max(0.0, deadline - time.monotonic()))
+            if th.is_alive():
+                clean = False
+                log.warning("worker %s still alive after the join budget", th.name)
+        return clean
 
     # ------------------------------------------------------------- dispatch
     def handle(self, ev):
@@ -105,6 +154,15 @@ class Supervisor:
             if ev.get("gen") != self.gen:
                 log.debug("dropping stale %s (gen %s != current %s)",
                          ev.get("ev"), ev.get("gen"), self.gen)
+                # The event's *content* is moot, but a deferred exit is not:
+                # `plan_done`/`settle_done` mean "the worker that was holding
+                # up the shutdown has finished", and nothing else will ever
+                # arrive to release it. `exec_done` is deliberately not in
+                # this list — outcome "done" is not the end of the worker,
+                # its settle leg keeps running.
+                if self._exit_after and ev.get("ev") in ("plan_done", "settle_done"):
+                    log.info("stale %s released the deferred exit", ev.get("ev"))
+                    self._shutdown()
                 return
             self._handle_worker_event(ev)
         else:
@@ -112,6 +170,13 @@ class Supervisor:
 
     def _handle_cmd(self, ev):
         cmd = ev.get("cmd")
+        if self._shutting_down and cmd in ("view/request", "view/confirm"):
+            # I3: a Ctrl-C (or an Exit) already decided this run is over.
+            # Anything that could start a motion — above all `view/confirm`,
+            # which clears `stop_event` — is dead from here on.
+            log.info("%s dropped: shutting down", cmd)
+            self.pub.log("warn", f"{cmd} dropped: shutting down")
+            return
         if cmd == "view/request":
             self._on_view_request(ev)
         elif cmd == "view/confirm":
@@ -140,6 +205,11 @@ class Supervisor:
     # ------------------------------------------------------------ commands
     def _on_view_request(self, ev):
         target = self._normalize_target(ev.get("target"))
+        if target is None:
+            log.warning("view/request with malformed target: %r", ev.get("target"))
+            self.pub.log("warn", f"view/request ignored: bad target "
+                          f"{ev.get('target')!r}")
+            return
         if self.phase in _BUSY_PHASES:
             log.info("view/request %s dropped: busy (%s)", target, self.phase)
             self.pub.log("warn", f"view/request dropped: busy ({self.phase})")
@@ -184,11 +254,18 @@ class Supervisor:
         self.gen += 1
         self._set_phase("planning", target)
         self._publish_views()
-        threading.Thread(target=self._plan_worker, args=(self.gen, target),
-                         daemon=True).start()
+        self._action_thread = threading.Thread(
+            target=self._plan_worker, args=(self.gen, target),
+            name=f"plan-{self._target_json(target)}", daemon=True)
+        self._action_thread.start()
 
     def _on_view_confirm(self, ev):
         target = self._normalize_target(ev.get("target"))
+        if target is None:
+            log.warning("view/confirm with malformed target: %r", ev.get("target"))
+            self.pub.log("warn", f"view/confirm ignored: bad target "
+                          f"{ev.get('target')!r}")
+            return
         if self.phase != "previewing" or target != self.target:
             log.info("view/confirm %s dropped: phase=%s target=%s",
                      target, self.phase, self.target)
@@ -196,11 +273,14 @@ class Supervisor:
             return
         self._cancel_preview()
         self.stop_event.clear()
+        self._pose_ack.clear()      # armed here so only the dispatcher ever sets it
         self.pose_active.set()
         self._set_phase("executing", self.target)
-        threading.Thread(target=self._exec_worker,
-                         args=(self.gen, self.target, self._path),
-                         daemon=True).start()
+        self._action_thread = threading.Thread(
+            target=self._exec_worker,
+            args=(self.gen, self.target, self._path),
+            name=f"exec-{self._target_json(self.target)}", daemon=True)
+        self._action_thread.start()
 
     def _on_run_stop(self):
         if self.phase == "executing":
@@ -209,19 +289,31 @@ class Supervisor:
             log.info("run/stop no-op in phase %s", self.phase)
 
     def _on_run_exit(self):
-        # exit during executing/capturing/fusing = stop first (if moving),
-        # then shut down once the in-flight action reaches a terminal event
-        # (F4) — never tear down mid-capture/mid-fuse.
-        if self.phase in ("executing", "capturing", "fusing"):
+        # exit during an action = stop first (if moving), then shut down once
+        # the in-flight action reaches a terminal event (F4) — never tear down
+        # mid-capture/mid-fuse, and never with a plan worker still live:
+        # `_plan_worker` calls `rig.q()`, and `app.py`'s teardown would be
+        # disconnecting that very RTDE interface underneath it (I2a).
+        self._shutting_down = True      # no view command may start a motion now
+        if self.phase in ("planning", "executing", "capturing", "fusing"):
             if self.phase == "executing":
                 self.stop_event.set()
             self._exit_after = True
+            log.info("exit deferred: %s in flight", self.phase)
         else:
             self._shutdown()
 
     # --------------------------------------------------------- worker events
     def _on_plan_done(self, ev):
         target, path = ev["target"], ev["path"]
+        if self._exit_after:
+            # An exit arrived mid-planning and was deferred until exactly
+            # here: the plan worker has finished touching `rig`, so tearing
+            # the hardware down is now safe (I2a).
+            log.info("plan_done for %s discarded: exit requested", target)
+            self._pending_request = None
+            self._shutdown()
+            return
         if self._pending_request is not None:
             # Superseded while this plan was in flight (F1a): its result —
             # success or refusal — is moot. Start the deferred request now.
@@ -246,7 +338,7 @@ class Supervisor:
         self._preview_cancel = threading.Event()
         self._preview_thread = threading.Thread(
             target=self._preview_worker, args=(path, self._preview_cancel),
-            daemon=True)
+            name=f"preview-{self._target_json(target)}", daemon=True)
         self._preview_thread.start()
 
     def _on_worker_phase(self, ev):
@@ -258,6 +350,10 @@ class Supervisor:
 
     def _on_exec_done(self, ev):
         self.pose_active.clear()
+        # The ack the exec worker blocks on before its settle leg (I4). Set
+        # unconditionally and only after `pose_active` is clear: on the
+        # "done" path it is the handoff, on stopped/fault nobody is waiting.
+        self._pose_ack.set()
         target, outcome = ev["target"], ev["outcome"]
         if outcome == "stopped":
             self._record_turn(target, "software stop — arm halted mid-move",
@@ -296,9 +392,14 @@ class Supervisor:
                               f"fused {len(self.acc.points)}")
             self._publish_object()
         else:
+            # The move DID happen — only the capture/fuse failed (M3). So the
+            # arm is standing somewhere new: every earlier plan refusal was
+            # judged from a pose that no longer holds, and `current` would
+            # otherwise keep pointing at a cell the camera has left.
+            self.blocked.clear()
+            self.current = None
             self.pub.log("error", ev.get("detail", ""))
             self._record_turn(target, ev.get("detail", ""))
-        self._save()
         if self._exit_after:
             self._shutdown()
         else:
@@ -358,6 +459,22 @@ class Supervisor:
             return
         self.events.put({"ev": "exec_done", "gen": gen, "target": target,
                          "outcome": "done", "detail": ""})
+        # ---- pose-producer handoff, before anything touches the world (I4).
+        # From here this thread runs `_recenter()` -> `world.set_object()`,
+        # which resizes the pinocchio geom_model the publisher indexes into.
+        # Queueing `exec_done` is not enough: `pose_active` is cleared when
+        # the dispatcher *processes* it, and even then a tick may be inside
+        # `_pose_payload`. So wait for the dispatcher's ack, then for the
+        # streamer to confirm no publish is in flight. Both bounded — a
+        # missed handoff must not wedge a run with a robot in it.
+        if not self._pose_ack.wait(2.0):
+            log.warning("no pose handoff ack in 2 s — continuing to capture")
+            self.pub.log("warn", "pose handoff timed out — continuing")
+        # Asked for even after a missed ack: an ack that lands a millisecond
+        # late still leaves the quiesce able to give the real guarantee.
+        if not self.pose_quiesce(1.0):
+            log.warning("pose streamer did not quiesce in 1 s")
+            self.pub.log("warn", "pose stream did not quiesce — continuing")
         self.events.put({"ev": "phase", "gen": gen, "phase": "capturing"})
         try:
             step = self._next_cell_step() if target != "survey" else 0
@@ -411,6 +528,14 @@ class Supervisor:
         return sum(1 for t in self.turns if t["target"] != "survey") + 1
 
     def _record_turn(self, target, result, stopped=False):
+        """Append a turn AND flush the record.
+
+        The save is here rather than at the four call sites so the design's
+        "`run.json` written on every state change, not at run end" cannot be
+        half-true again: before this, a stopped or faulted turn lived only in
+        memory until the next settle or the run's end, so a crash between the
+        two lost it (I5).
+        """
         self.turns.append({
             "step": len(self.turns) + 1,
             "target": self._target_json(target),
@@ -418,6 +543,7 @@ class Supervisor:
             "result": result,
             "stopped": stopped,
         })
+        self._save()
 
     def _set_phase(self, phase, target=None):
         self.phase, self.target = phase, target
@@ -471,6 +597,14 @@ class Supervisor:
             # the shared RobotCell. Bounded — the loop checks `cancel`
             # every ~33 ms at worst, so this should return almost at once.
             self._preview_thread.join(timeout=1.0)
+            if self._preview_thread.is_alive():
+                # The whole point of the join is that the outgoing preview is
+                # provably done touching `pub` before a planner or `_recenter`
+                # runs. If it timed out, that proof is gone — say so instead
+                # of proceeding silently on an assumption that just failed.
+                log.warning("preview thread did not exit within 1 s — "
+                            "proceeding without the join guarantee")
+                self.pub.log("warn", "preview thread slow to cancel")
         self._preview_cancel = None
         self._preview_thread = None
 
@@ -481,7 +615,29 @@ class Supervisor:
 
     @staticmethod
     def _normalize_target(raw):
-        return "survey" if raw == "survey" else tuple(raw)
+        """Command target -> "survey" | (h, v) | None.
+
+        None means "malformed": the caller rejects it with a `pub.log` line
+        the operator can see (M5). Commands arrive from the bus and are
+        untrusted, so `tuple(raw)` on a number or a 5-element list used to
+        raise out of the handler and into the dispatcher's blanket
+        `except Exception`, which logs a traceback and looks like a bug in
+        the state machine rather than a bad message.
+        """
+        if raw == "survey":
+            return "survey"
+        try:
+            h, v = raw                      # TypeError / ValueError on anything else
+            hi, vi = int(h), int(v)
+        except (TypeError, ValueError):
+            return None
+        # `int()` is for numpy scalars off the viewsphere, not for coercion:
+        # a target that is not exactly an integer pair is a bad command, and
+        # silently flooring 3.7 to cell 3 would move the arm somewhere the
+        # operator did not click.
+        if (hi, vi) != (h, v):
+            return None
+        return (hi, vi)
 
     @staticmethod
     def _target_json(target):
