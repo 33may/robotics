@@ -139,7 +139,9 @@ class CameraWorker(threading.Thread):
 
 class RealRig:
     """UR5e + wrist D405. Camera pipe is owned by a CameraWorker; recv is
-    shared with the executor's safety polls behind _recv_lock."""
+    shared with the executor's q()/safety polls behind _recv_lock — every
+    RTDEReceiveInterface read (RealRig.q(), execute()'s internal q()/
+    _safety_ok()) goes through the same lock, one acquisition each."""
 
     def __init__(self, world, stop_event, outdir, ip=ROBOT_IP):
         from inspection.motion.execute import UR5eArm
@@ -150,9 +152,14 @@ class RealRig:
         self.outdir = Path(outdir)
         self.arm = UR5eArm(ip)
         self._recv_lock = threading.Lock()
-        # wrap the arm's recv reads: same lock for q() and safety polls
+        # wrap the arm's recv reads: same lock for q() and safety polls, so
+        # execute()'s own self.q()/self._safety_ok() calls (start-tolerance
+        # check, final-error calc, safety polls) serialize against
+        # RealRig.q() (PoseStreamer, capture()) on the same RTDEReceiveInterface
         arm_safety = self.arm._safety_ok
         self.arm._safety_ok = lambda: self._locked(arm_safety)
+        arm_q = self.arm.q
+        self.arm.q = lambda: self._locked(arm_q)
         try:
             self.pipe, profile, self.align, self.depth_scale = open_camera()
             meta = session_metadata(profile, self.depth_scale, WRIST_SERIAL)
@@ -175,8 +182,9 @@ class RealRig:
             return fn()
 
     def q(self):
-        with self._recv_lock:
-            return self.arm.q()
+        # self.arm.q is already the locked wrapper installed in __init__ —
+        # don't re-acquire here, _recv_lock is a plain (non-reentrant) Lock
+        return self.arm.q()
 
     def start_camera(self, pub, hz=10.0):
         self.camera = CameraWorker(self._grab, publish=pub.publish_frame, hz=hz)
