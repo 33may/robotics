@@ -605,6 +605,12 @@ class Supervisor:
                 log.warning("preview thread did not exit within 1 s — "
                             "proceeding without the join guarantee")
                 self.pub.log("warn", "preview thread slow to cancel")
+                # Keep the handle: `join_workers` at teardown is the last
+                # chance to catch this straggler before `rig.close()`, and
+                # dropping the reference here is what would make it
+                # unreachable. `_preview_cancel` is already set, so a new
+                # preview overwriting these two fields loses nothing.
+                return
         self._preview_cancel = None
         self._preview_thread = None
 

@@ -102,15 +102,16 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float = 0.35,
     q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])
 
     outdir = Path(outdir).resolve()
-    bus = PortholeBus(app="inspection", port=bus_port).start()
-    pub = InspectionPublisher(bus, run_dir=outdir)
-    pub.declare()
     stop_event = threading.Event()
-    # Everything that owns hardware or a thread is built inside the try, so a
-    # failure part-way through setup still runs the teardown below instead of
-    # leaking an open RTDE interface and a running camera pipe.
-    rig = sup = poses = child = None
+    # Everything that owns a socket, hardware or a thread is built inside the
+    # try, so a failure part-way through setup still runs the teardown below
+    # instead of leaking a listening bus, an open RTDE interface and a running
+    # camera pipe.
+    bus = rig = sup = poses = child = None
     try:
+        bus = PortholeBus(app="inspection", port=bus_port).start()
+        pub = InspectionPublisher(bus, run_dir=outdir)
+        pub.declare()
         rig = RealRig(None, stop_event, outdir, ip)   # world set below
         sup = Supervisor(rig, pub, outdir, q_survey, seed=seed, r=r)
         install_sigint(sup)                          # earliest safe Ctrl-C
@@ -133,6 +134,14 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float = 0.35,
         # stop event -> join worker (bounded) -> stopJ -> save -> close.
         if sup is not None:
             sup.stop_event.set()
+            # Clearing the pose gate is what makes the exec worker's I4
+            # handoff winnable on an ABNORMAL exit: if `sup.run()` died (an
+            # escaped exception, a second Ctrl-C) with a worker waiting on
+            # `_pose_ack`, no dispatcher is left to clear `pose_active`, so
+            # its `quiesce()` could never succeed and it would walk into
+            # `_recenter()` with the streamer still publishing. One line,
+            # and the interlock holds on every path out of the run.
+            sup.pose_active.clear()
             if not sup.join_workers(5.0):
                 log.warning("a worker outlived the join budget — closing anyway")
         if poses is not None:
@@ -147,7 +156,8 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float = 0.35,
         if rig is not None:
             rig.close()
         _close_ui(child)
-        bus.stop()
+        if bus is not None:
+            bus.stop()
     print(f"run saved: {outdir}")
 
 
