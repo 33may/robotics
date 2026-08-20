@@ -90,17 +90,17 @@ def session_metadata(profile, depth_scale: float, serial: str) -> dict:
     }
 
 
-def capture_bundle(pipe, align, settle_s: float = 0.1, flush: int = 3) -> dict:
-    """Grab one complete frame bundle. Call only with the camera stationary.
+def grab_aligned(pipe, align) -> dict:
+    """Single-frame wait->align->to-numpy core, shared by capture_bundle and
+    the live rig (RealRig/CameraWorker). Does not flush or settle — call
+    with the camera already stationary/warmed up, or wrap with a flush loop
+    (see capture_bundle).
 
-    Flushes stale frames first so the bundle postdates arrival at the pose.
     Returns {"rgb", "ir_left", "ir_right", "depth_raw", "depth_aligned",
-    "timestamp"} — arrays are copies, safe to hold.
+    "timestamp"} — arrays are copies, safe to hold. "depth_raw" is the
+    unaligned depth frame (matches the ir_left/ir_right intrinsics); "rgb"
+    and "depth_aligned" are aligned to the color viewport.
     """
-    time.sleep(settle_s)
-    for _ in range(flush):
-        pipe.wait_for_frames(timeout_ms=2000)
-
     fs = pipe.wait_for_frames(timeout_ms=2000)
     ts = time.time()
 
@@ -115,6 +115,20 @@ def capture_bundle(pipe, align, settle_s: float = 0.1, flush: int = 3) -> dict:
     return {"rgb": rgb, "ir_left": ir_left, "ir_right": ir_right,
             "depth_raw": depth_raw, "depth_aligned": depth_aligned,
             "timestamp": ts}
+
+
+def capture_bundle(pipe, align, settle_s: float = 0.1, flush: int = 3) -> dict:
+    """Grab one complete frame bundle. Call only with the camera stationary.
+
+    Flushes stale frames first so the bundle postdates arrival at the pose.
+    Returns {"rgb", "ir_left", "ir_right", "depth_raw", "depth_aligned",
+    "timestamp"} — arrays are copies, safe to hold.
+    """
+    time.sleep(settle_s)
+    for _ in range(flush):
+        pipe.wait_for_frames(timeout_ms=2000)
+
+    return grab_aligned(pipe, align)
 
 
 def live(serial: str = WRIST_SERIAL) -> None:

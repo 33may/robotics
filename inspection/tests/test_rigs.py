@@ -82,11 +82,21 @@ def test_camera_worker_handles_grab_failure():
     assert elapsed < 1.0, f"stop() took too long: {elapsed:.2f}s (should be bounded)"
 
 
+def test_grab_aligned_shape_contract():
+    """grab_aligned must exist and capture_bundle must delegate to it."""
+    import inspect
+    from inspection.perception import camera
+    assert callable(getattr(camera, "grab_aligned", None))
+    src = inspect.getsource(camera.capture_bundle)
+    assert "grab_aligned" in src, "capture_bundle must delegate to grab_aligned"
+
+
 def main():
     test_fake_move_interpolates_and_stops()
     test_camera_worker_freshness_and_publish()
     test_pose_streamer_gated_by_active()
     test_camera_worker_handles_grab_failure()
+    test_grab_aligned_shape_contract()
     print("OK test_rigs")
 
 

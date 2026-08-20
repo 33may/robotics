@@ -1,11 +1,17 @@
 """Rig implementations behind the rig contract: q/move/capture/frame/close."""
+import json
 import logging
 import threading
 import time
+from pathlib import Path
 
 import numpy as np
 
+from inspection.motion.ik import UR5eIK
+
 log = logging.getLogger(__name__)
+
+ROBOT_IP = "192.168.2.50"
 
 
 class FakeRig:
@@ -129,6 +135,74 @@ class CameraWorker(threading.Thread):
         """Signal stop and wait for thread to exit with timeout."""
         self._should_stop.set()
         self.join(timeout=2.0)
+
+
+class RealRig:
+    """UR5e + wrist D405. Camera pipe is owned by a CameraWorker; recv is
+    shared with the executor's safety polls behind _recv_lock."""
+
+    def __init__(self, world, stop_event, outdir, ip=ROBOT_IP):
+        from inspection.motion.execute import UR5eArm
+        from inspection.perception.camera import (
+            WRIST_SERIAL, grab_aligned, open_camera, session_metadata,
+            t_flange_cam)
+        self.world, self.stop_event = world, stop_event
+        self.outdir = Path(outdir)
+        self.arm = UR5eArm(ip)
+        self._recv_lock = threading.Lock()
+        # wrap the arm's recv reads: same lock for q() and safety polls
+        arm_safety = self.arm._safety_ok
+        self.arm._safety_ok = lambda: self._locked(arm_safety)
+        try:
+            self.pipe, profile, self.align, self.depth_scale = open_camera()
+            meta = session_metadata(profile, self.depth_scale, WRIST_SERIAL)
+            self.outdir.mkdir(parents=True, exist_ok=True)
+            (self.outdir / "session.json").write_text(json.dumps(meta, indent=2) + "\n")
+            self.intr = meta["intrinsics"]["ir_left"]
+            self._T_fc = t_flange_cam()
+            self._ik = UR5eIK()
+            self._grab = lambda: grab_aligned(self.pipe, self.align)
+            self.camera = None
+        except Exception:
+            if hasattr(self, "pipe"):
+                try: self.pipe.stop()
+                except Exception: pass
+            self.arm.close()
+            raise
+
+    def _locked(self, fn):
+        with self._recv_lock:
+            return fn()
+
+    def q(self):
+        with self._recv_lock:
+            return self.arm.q()
+
+    def start_camera(self, pub, hz=10.0):
+        self.camera = CameraWorker(self._grab, publish=pub.publish_frame, hz=hz)
+        self.camera.start()
+
+    def move(self, path):
+        return self.arm.execute(path, world=self.world, stop_event=self.stop_event)
+
+    def capture(self, pose_id):
+        from inspection.perception.capture import save_bundle
+        bundle = self.camera.fresh_bundle(min_new=3) if self.camera \
+            else self._grab()
+        q = self.q()
+        T_bf = self._ik.fk(q)
+        pose = {"joints_rad": q, "T_base_flange": T_bf,
+                "T_base_cam": T_bf @ self._T_fc}
+        d = save_bundle(self.outdir, pose_id, bundle, pose)
+        return {"dir": str(d), "rgb": bundle["rgb"],
+                "depth_raw": bundle["depth_raw"],
+                "T_base_cam": pose["T_base_cam"], "q": q}
+
+    def close(self):
+        if self.camera: self.camera.stop()
+        try: self.pipe.stop()
+        except Exception: pass
+        self.arm.close()
 
 
 class PoseStreamer(threading.Thread):
