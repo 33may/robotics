@@ -10,6 +10,14 @@
  *   npm run check            # or: node tools/verify-ui.mjs [out.png]
  *
  * Uses the system Chrome, so there is no browser download.
+ *
+ * v2: the backend is a command-driven Supervisor that IDLEs until a command
+ * arrives — nothing auto-plays. So after boot this script drives the mock
+ * itself, the same way an operator would: click the survey button (send
+ * `view/request`), wait for `previewing`, click it again (send
+ * `view/confirm`), wait for the boot capture to settle. Only once that has
+ * happened does the world have a sphere, an object, cloud points and log
+ * rows for the later checks to find.
  */
 
 import { spawn } from 'node:child_process';
@@ -37,13 +45,15 @@ process.on('exit', () => children.forEach((child) => child.kill()));
 // The mock owns the bus and drives every topic. Same process the operator runs.
 const backend = spawn(
   PYTHON,
-  ['-u', `${uiDir}app.py`, 'mock', '--no_window', `--port=${PORT}`, `--bus_port=${BUS_PORT}`, '--turns=6'],
+  ['-u', `${uiDir}app.py`, 'mock', '--no_window', `--port=${PORT}`, `--bus_port=${BUS_PORT}`],
   { cwd: repoRoot, stdio: ['ignore', 'inherit', 'inherit'], env: { ...process.env, BROWSER: 'true' } },
 );
 children.push(backend);
 
-// The workcell, IK and the first few planned moves have to happen before the
-// panels have anything to show.
+// RobotCell()/UR5eIK() construction and the frontend's own mesh fetch both
+// take real seconds. The Supervisor itself idles the instant it starts — it
+// is the meshes and the workcell, not any auto-playing turn, that this waits
+// out.
 await sleep(12000);
 
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--no-sandbox'] });
@@ -68,35 +78,52 @@ await sleep(6000);
 const results = [];
 const check = (name, ok, detail = '') => results.push({ name, ok: Boolean(ok), detail });
 
+/**
+ * Poll `fn` until it returns truthy or `timeoutMs` elapses.
+ *
+ * The v2 backend is a real dispatcher thread behind a real OMPL planner and a
+ * slow-but-real FakeRig (speed=0.6) — every phase transition after a click
+ * takes a real, variable number of milliseconds, never zero and never a fixed
+ * constant. A single fixed sleep either wastes time on the common case or
+ * flakes on the slow one; this waits only as long as actually needed, up to a
+ * generous ceiling.
+ */
+async function waitFor(fn, timeoutMs, intervalMs = 150) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) {
+    if (await fn()) return true;
+    await sleep(intervalMs);
+  }
+  return false;
+}
+
+const actionsStatus = page.locator('.actions-status');
+const statusText = async () => (await actionsStatus.innerText().catch(() => '')).trim();
+// Direct child combinator: excludes the grid's per-cell buttons and the
+// footer's stop/exit buttons, all of which also carry the `.act` class.
+const surveyBtn = page.locator('.actions-panel > button.act');
+const surveyClass = async () => (await surveyBtn.getAttribute('class').catch(() => '')) ?? '';
+
 check('no console errors', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
 
-const status = await page.locator('.inspection-statusbar').innerText().catch(() => '');
+const statusbarText = await page.locator('.inspection-statusbar').innerText().catch(() => '');
 check('bus connected', await page.locator('.porthole-status-dot[data-status="open"]').count() > 0,
-  status.replace(/\n/g, ' '));
-check('run status published', /step \d+/.test(status), status.replace(/\n/g, ' '));
+  statusbarText.replace(/\n/g, ' '));
+
+// v2's `run/status` is `{phase, target, visited, total}` — there is no
+// `step` field, so the old `/step \d+/` assertion is stale by construction.
+// What actually proves the topic is live: the status bar's phase chip has
+// rendered real text (starts out "idle").
+const phaseText = await page.locator('.inspection-phase').innerText().catch(() => '');
+check('run status published', phaseText.trim().length > 0, `phase="${phaseText}"`);
 
 // ── cell panel: the 3D workcell ──────────────────────────────────────────────
 check('cell panel present', await page.locator('.porthole-scene-panel canvas').count() > 0);
-
-const groups = await page.locator('.porthole-scene-groups button').allInnerTexts();
-check('scene has every node group',
-  ['world', 'cell', 'robot', 'tool', 'object', 'views'].every((g) => groups.includes(g)),
-  groups.join(','));
 
 check('robot meshes fetched', meshResponses.length >= 7, `${meshResponses.length} .dae requests`);
 check('robot meshes served 200',
   meshResponses.length > 0 && meshResponses.every((r) => r.status === 200),
   JSON.stringify(meshResponses.slice(0, 3)));
-
-// Two shots apart: proves geometry was drawn AND that poses are streaming.
-// readPixels cannot be used — preserveDrawingBuffer is false, so it returns
-// zeros exactly when the panel is visible.
-const cellPanel = page.locator('.porthole-scene-panel');
-const cellA = await cellPanel.screenshot();
-await sleep(600);
-const cellB = await cellPanel.screenshot();
-check('cell panel drew geometry', cellA.length > 8000, `${cellA.length} byte png`);
-check('cell panel is animating', !cellA.equals(cellB), 'two frames 600ms apart are identical');
 
 // ── camera panel ─────────────────────────────────────────────────────────────
 const cameraSize = await page
@@ -104,6 +131,77 @@ const cameraSize = await page
   .evaluate((el) => `${el.width}x${el.height}`)
   .catch(() => 'none');
 check('camera painted a real frame', cameraSize === '640x360', cameraSize);
+
+// ── actions panel: renders from the first views/state, no drive needed ──────
+check('actions panel renders (survey button present)',
+  await surveyBtn.count() === 1 && /\bact-(available|visited)\b/.test(await surveyClass()),
+  `class="${await surveyClass()}"`);
+
+// ── drive the two-press survey flow, exactly like an operator would ─────────
+// Press 1: idle -(view/request survey)-> planning -> previewing.
+const idleStatus = await statusText();
+await surveyBtn.click();
+
+// This is the check that proves the whole path: DOM click -> bus.send ->
+// websocket -> pump -> dispatcher. `_start_planning` sets the phase
+// synchronously before the planner thread is even spawned, so this never
+// waits on OMPL — only on one command round-trip over the bus.
+const leftIdle = await waitFor(async () => {
+  const t = await statusText();
+  return t === 'planning' || t === 'previewing';
+}, 5000);
+check('click sends a command (status leaves idle within 5s)', leftIdle,
+  `status was "${idleStatus}", now "${await statusText()}"`);
+
+// Scaffolding for the rest of the drive, not a product assertion — but
+// reported as a check (not thrown) so a stall here still leaves every other
+// check's real pass/fail visible instead of aborting the run.
+const reachedPreviewing = await waitFor(async () => (await statusText()) === 'previewing', 30000);
+check('survey plan reaches previewing', reachedPreviewing, `status="${await statusText()}"`);
+
+// Press 2: previewing -(view/confirm)-> executing -> capturing -> fusing -> idle.
+if (reachedPreviewing) await surveyBtn.click();
+
+const reachedExecuting = await waitFor(async () => (await statusText()) === 'executing', 10000);
+check('confirm reaches executing', reachedExecuting, `status="${await statusText()}"`);
+
+// `_on_view_confirm` never re-publishes `views/state`, so the survey button
+// stays labelled "previewing" (and clickable — `previewing` is ACTIONABLE)
+// all the way through executing/capturing/fusing, until settle. Clicking it
+// again here sends a now-stale `view/confirm`, which the dispatcher refuses
+// (phase is no longer `previewing`) — FR11, "a stale button can never move
+// the arm". Real operator mistake, not a script fixture, and it is the one
+// bus.send in this whole script that produces a `log/events` row on the
+// happy path (every other `pub.log` call is an error/refusal path we are
+// not otherwise triggering). Fired the instant `executing` is observed —
+// the move is short (a small wrist offset), so this loses the race if it
+// waits for anything else first.
+await surveyBtn.click({ timeout: 2000 }).catch(() => {});
+
+// Two shots apart, taken while the rig is actually moving: proves geometry
+// was drawn AND that poses are streaming. readPixels cannot be used —
+// preserveDrawingBuffer is false, so it returns zeros exactly when the panel
+// is visible. This is anchored to `executing` on purpose: it is the one
+// phase PoseStreamer is active (`sup.pose_active`), so it is the only phase
+// in which two frames 600ms apart are guaranteed to differ.
+const cellPanel = page.locator('.porthole-scene-panel');
+const cellA = await cellPanel.screenshot();
+await sleep(600);
+const cellB = await cellPanel.screenshot();
+check('cell panel drew geometry', cellA.length > 8000, `${cellA.length} byte png`);
+check('cell panel is animating', !cellA.equals(cellB),
+  'two frames 600ms apart during executing are identical');
+
+// Boot settles: survey visited, sphere + object created, cloud/fused and
+// views/state (with cells) published for the first time.
+const settled = await waitFor(async () => /\bact-visited\b/.test(await surveyClass()), 60000);
+check('boot settles: survey visited', settled, `class="${await surveyClass()}"`);
+
+// ── scene groups: only populated once the sphere/object exist (post-boot) ───
+const groups = await page.locator('.porthole-scene-groups button').allInnerTexts();
+check('scene has every node group',
+  ['world', 'cell', 'robot', 'tool', 'object', 'views'].every((g) => groups.includes(g)),
+  groups.join(','));
 
 // ── cloud panel: markers, picking, and the image pane ────────────────────────
 await page.locator('[data-testid="cloud-tab"], .dv-tab:has-text("cloud")').first().click()
