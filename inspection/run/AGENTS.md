@@ -15,9 +15,13 @@ perception, cell, view, motion — and wire them together.
 - `app.py` — composition root. `run` (bus + window + `Supervisor` +
   `RealRig`, SIGINT-safe shutdown) and `teach` (freedrive-then-save the
   survey pose).
-- `rigs.py` — `FakeRig`/`RealRig`/`CameraWorker`/`PoseStreamer`: the rig
-  contract (`q`/`move`/`capture`/`frame`/`close`) that both hardware and
-  the mock drive identically.
+- `rigs.py` — `FakeRig`/`RealRig`/`CameraWorker`/`PoseStreamer`. The shared
+  rig contract both hardware and the mock implement is `q()`/`move(path)`/
+  `capture(pose_id)`/`close()` plus a `stop_event` attribute; `FakeRig`
+  additionally has `frame()` for its own capture/grab plumbing — `RealRig`
+  has no equivalent. Live camera frames instead flow through
+  `CameraWorker`, wired in `RealRig.start_camera` (hardware) /
+  `mock.start_mock` (mock).
 - `decider.py` — parked for v2-AI; not wired into the run path since loop
   v2 (see `inspection/2026-08-20-ui-driven-loop-design.md`). Still holds
   the egocentric menu-gloss helpers (`gloss`, `build_menu`) and the v1

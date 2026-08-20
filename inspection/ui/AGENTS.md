@@ -154,9 +154,11 @@ cannot disagree.
 `CloudInspectPanel` shows the image when a `visited` marker is clicked, and the
 text "not visited" when any other state is clicked — clicking there sends
 nothing. `ActionsPanel` reads this same topic to render the operator's
-buttons and *does* send: a click on an `available`/`blocked` cell (or the
-survey button) sends `view/request`, a click on a `previewing` cell sends
-`view/confirm` (§8).
+buttons and *does* send: a click on an `available`/`blocked`/`pending` cell
+(or the survey button) sends `view/request` — for `pending` this just
+re-sends the request for the cell already planning, a no-op deduped
+server-side (§8) — and a click on a `previewing` cell sends `view/confirm`
+(§8).
 
 ---
 
