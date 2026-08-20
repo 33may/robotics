@@ -161,6 +161,16 @@ class Supervisor:
             # RobotCell (can take seconds, uncancellable mid-call, C++) —
             # never start a second one concurrently. Defer: last request
             # before the in-flight plan_done wins (F1a).
+            #
+            # A duplicate of the target already queued to run next (or, if
+            # none is queued, of the plan already in flight) is a no-op: the
+            # UI's `pending` button stays clickable while planning is under
+            # way, and re-clicking it must not throw away a completed plan
+            # and pay for a second OMPL pass against the identical target.
+            already = self._pending_request if self._pending_request is not None else self.target
+            if target == already:
+                log.info("request for %s already in flight — ignored", target)
+                return
             self._pending_request = target
             log.info("view/request %s deferred: still planning %s",
                      target, self.target)

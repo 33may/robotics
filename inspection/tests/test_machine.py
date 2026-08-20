@@ -89,11 +89,13 @@ class SlowPlanSupervisor(Supervisor):
         self._lock = threading.Lock()
         self._active_planners = 0
         self.max_concurrent = 0
+        self.calls = 0   # total times a planner ever ran, incl. re-plans
 
     def _plan_worker(self, gen, target):
         with self._lock:
             self._active_planners += 1
             self.max_concurrent = max(self.max_concurrent, self._active_planners)
+            self.calls += 1
         self.release.wait(10.0)
         with self._lock:
             self._active_planners -= 1
@@ -112,6 +114,62 @@ class RefusingPlanSupervisor(Supervisor):
 
 
 def test_supersede_during_planning_defers():
+    # Supersede requires two DISTINCT targets — pre-boot the only valid
+    # target is "survey" itself (no sphere yet, so cell targets are dropped),
+    # and a same-target duplicate is a no-op, not a supersede (see
+    # test_duplicate_view_request_while_planning_is_ignored). So boot for
+    # real first (stub released immediately — boot isn't what's under test
+    # here), then supersede between two real, distinct reachable cells.
+    q_survey = DEMO_PARK.copy()
+    rig = FakeRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 8]))
+    bus = BusSpy()
+    sup = SlowPlanSupervisor(rig, InspectionPublisher(bus),
+                             Path(tempfile.mkdtemp()) / "run", q_survey)
+    th = threading.Thread(target=sup.run, daemon=True)
+    th.start()
+
+    sup.release.set()
+    sup.events.put({"cmd": "view/request", "target": "survey"})
+    wait_for(lambda: sup.phase == "previewing", msg="boot previewing")
+    sup.events.put({"cmd": "view/confirm", "target": "survey"})
+    wait_for(lambda: sup.phase == "idle" and sup.survey_state == "visited",
+             timeout=60, msg="boot settled")
+    sup.release.clear()   # re-arm the stub to block for the real test below
+
+    views = bus.last("views/state")
+    cells = [[c["h"], c["v"]] for c in views["cells"] if c["state"] == "available"]
+    assert len(cells) >= 2, "need two distinct reachable cells to supersede between"
+    target_a, target_b = cells[0], cells[1]
+
+    sup.events.put({"cmd": "view/request", "target": target_a})
+    wait_for(lambda: sup.phase == "planning", msg="planning (stub blocks here)")
+    gen1 = sup.gen
+
+    # supersede with a DIFFERENT target while the first plan is still in
+    # flight -> must defer, not spawn a second planner
+    sup.events.put({"cmd": "view/request", "target": target_b})
+    time.sleep(0.1)
+    assert sup.phase == "planning" and sup.gen == gen1, \
+        "a superseding request must not start a second planner mid-plan"
+    assert sup._pending_request == tuple(target_b)
+
+    sup.release.set()   # let gen1's (now-stale-once-superseded) plan finish
+    wait_for(lambda: sup.phase == "previewing", msg="previewing after deferred replan")
+    assert sup.gen == gen1 + 1, "the deferred request must start its own generation"
+    assert sup._pending_request is None
+    assert sup.max_concurrent == 1, \
+        f"two planners were alive at once: {sup.max_concurrent}"
+
+    sup.request_shutdown(); th.join(10)
+    assert not th.is_alive()
+
+
+def test_duplicate_view_request_while_planning_is_ignored():
+    """Re-clicking the UI's `pending` (still-planning) button re-sends the
+    same view/request. It must be a pure no-op — not a supersede-and-defer —
+    or every extra click throws away a completed OMPL pass and pays for
+    another one (the bug: an operator repeat-clicking "..." could keep the
+    loop from ever reaching previewing)."""
     q_survey = DEMO_PARK.copy()
     rig = FakeRig(q_survey.copy())
     bus = BusSpy()
@@ -124,20 +182,18 @@ def test_supersede_during_planning_defers():
     wait_for(lambda: sup.phase == "planning", msg="planning (stub blocks here)")
     gen1 = sup.gen
 
-    # supersede while the first plan is still in flight -> must defer, not
-    # spawn a second planner
+    # same target again, mid-plan -> ignored outright, not queued
     sup.events.put({"cmd": "view/request", "target": "survey"})
     time.sleep(0.1)
     assert sup.phase == "planning" and sup.gen == gen1, \
-        "a superseding request must not start a second planner mid-plan"
-    assert sup._pending_request == "survey"
+        "a duplicate in-flight request must not disturb the running plan"
+    assert sup._pending_request is None, \
+        "a duplicate of the in-flight target must not be queued either"
 
-    sup.release.set()   # let gen1's (now-stale-once-superseded) plan finish
-    wait_for(lambda: sup.phase == "previewing", msg="previewing after deferred replan")
-    assert sup.gen == gen1 + 1, "the deferred request must start its own generation"
-    assert sup._pending_request is None
-    assert sup.max_concurrent == 1, \
-        f"two planners were alive at once: {sup.max_concurrent}"
+    sup.release.set()   # let the one and only plan finish
+    wait_for(lambda: sup.phase == "previewing", msg="previewing after single plan")
+    assert sup.gen == gen1, "no replan happened, so gen must not have advanced"
+    assert sup.calls == 1, f"expected exactly one plan, got {sup.calls}"
 
     sup.request_shutdown(); th.join(10)
     assert not th.is_alive()
@@ -294,6 +350,7 @@ def main():
     test_invalid_commands_dropped()
     test_stale_plan_result_discarded()
     test_supersede_during_planning_defers()
+    test_duplicate_view_request_while_planning_is_ignored()
     test_blocked_plan_returns_to_idle()
     test_full_cycle_and_visited()
     test_stop_mid_execute_returns_to_idle()
