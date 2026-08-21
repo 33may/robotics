@@ -138,12 +138,17 @@ class InspectionPublisher:
         mesh_mount: str = MESH_MOUNT,
         capture_mount: str = CAPTURE_MOUNT,
         max_cloud_points: int = 400_000,
+        live_stride: int = 2,
     ) -> None:
         self.bus = bus
         self.run_dir = Path(run_dir).resolve() if run_dir else None
         self.mesh_mount = mesh_mount.rstrip("/")
         self.capture_mount = capture_mount.rstrip("/")
         self.max_cloud_points = max_cloud_points
+        #: Downsample factor for the LIVE camera stream only — see
+        #: `publish_frame`. 1 disables it (and freezes the 3D on a machine
+        #: without hardware compositing).
+        self.live_stride = live_stride
 
         # The description is republished whole on every change (protocol §3), so
         # it is assembled here from independently-updated sections.
@@ -520,10 +525,31 @@ class InspectionPublisher:
             log.exception("publish_capture failed")
 
     def publish_frame(self, rgb, quality: int = 70) -> None:
-        """Push one live camera frame. Same topic as `publish_capture`."""
+        """Push one live camera frame, downscaled. Same topic as `publish_capture`.
+
+        The live view is downscaled and the SAVED capture is not: this is a
+        monitor, and the frames that matter for the record go to disk at full
+        resolution through `publish_capture`/`save_bundle`.
+
+        Measured on this box: streaming 848x480 at 10 Hz froze the 3D panel
+        (0.17% of its pixels changing per second, versus 4.2% with the camera
+        off) while poses kept arriving at a healthy 30 Hz. The window is
+        QtWebEngine on a software Vulkan fallback ("GBM is not supported",
+        printed at every startup), so each full-size frame decoded into a 2D
+        canvas competes with the WebGL canvas for the same path and the robot
+        stops moving on screen. A quarter of the pixels is the difference
+        between a live 3D view and a frozen one.
+        """
         try:
+            frame = np.ascontiguousarray(rgb)
+            if self.live_stride > 1 and frame.ndim >= 2:
+                # Stride sampling rather than an interpolating resize: it costs
+                # nothing, needs no image library on this path, and the live
+                # view is for a human to glance at, not to measure from.
+                frame = np.ascontiguousarray(
+                    frame[::self.live_stride, ::self.live_stride])
             self.bus.publish(TOPIC_CAMERA, self.bus.jpeg_payload(
-                np.ascontiguousarray(rgb), quality=quality))
+                frame, quality=quality))
         except Exception:
             log.exception("publish_frame failed")
 
