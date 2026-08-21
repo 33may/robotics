@@ -113,6 +113,12 @@ class UR5eArm:
     through execute(), which refuses anything the world won't vouch for.
     """
 
+    #: Window `_assert_fresh` polls for a controller-timestamp advance before
+    #: declaring the receive stream dead. Packets arrive every 2 ms, so 100 ms
+    #: is ~50 missed packets — unambiguous, and short enough that a safety
+    #: poll failing stale still stops the arm within a fraction of a second.
+    stale_window = 0.10
+
     def __init__(self, ip: str = ROBOT_IP, speed: float = SPEED_RAD_S,
                  acc: float = ACC_RAD_S2, slider: float = SPEED_SLIDER):
         from rtde_control import RTDEControlInterface
@@ -135,10 +141,44 @@ class UR5eArm:
             self.stop()
         self.close()
 
+    def _assert_fresh(self) -> None:
+        """Raise unless the receive stream is provably alive RIGHT NOW.
+
+        ur_rtde's receive thread can die silently (upstream #307): every
+        getter then returns cached state forever — joints AND safety mode —
+        with `isConnected()` still true. Run 2108-ui stamped six captures
+        with bit-identical joints that way while the arm visibly moved, and
+        planned paths from a pose the arm was no longer at.
+
+        `getTimestamp()` is controller-side time, advancing with every 2 ms
+        packet, so "alive" means: the timestamp ADVANCES within the poll
+        window. A single pair compared once is not enough — two immediate
+        reads legitimately land on the same packet.
+
+        Deliberately no auto-reconnect: a stopped run is safe, a silently
+        recovered one hides that every read since the freeze was a lie.
+        """
+        t0 = self.recv.getTimestamp()
+        deadline = time.monotonic() + self.stale_window
+        while time.monotonic() < deadline:
+            if self.recv.getTimestamp() != t0:
+                return
+            time.sleep(0.002)
+        raise RuntimeError(
+            f"RTDE receive stale — pose/safety state frozen at controller "
+            f"t={t0:.3f}s (no packet for {self.stale_window:.2f}s). Joint "
+            f"and safety reads are cached lies from here on; aborting. "
+            f"Remedy: restart the run (or recv.reconnect() by hand).")
+
     def q(self) -> np.ndarray:
+        self._assert_fresh()
         return np.array(self.recv.getActualQ())
 
     def _safety_ok(self) -> bool:
+        # Raises (rather than returning False) on a stale stream: execute()'s
+        # except path calls stop() on the way out, and the error names the
+        # actual failure instead of a generic "safety mode changed".
+        self._assert_fresh()
         return (self.recv.getSafetyMode() == SAFETY_MODE_NORMAL
                 and self.recv.getRobotMode() == ROBOT_MODE_RUNNING)
 

@@ -299,6 +299,48 @@ class CaptureFailRig(FakeRig):
         return super().capture(pose_id)
 
 
+def test_bad_plane_view_rejected():
+    """A view whose fitted table plane contradicts the probed cell is refused.
+
+    The table is at z=0 by measurement; a plane fitted 24 cm up or tilted 48
+    degrees means the camera pose that placed those points was wrong (run
+    2108-ui: a frozen RTDE q did exactly this to five views in a row). Such a
+    view must not enter the accumulator, and the run must carry on.
+    """
+    import inspection.run.machine as machine_mod
+
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    full_boot(sup)                        # real geometry: boot view is sane
+    n_boot = len(sup.acc.points)
+
+    tilt = np.radians(48.0)
+    poisoned = {
+        "points": np.random.default_rng(0).normal(
+            [0.3, 0.0, 0.24], 0.01, (200, 3)),
+        "centroid": np.array([0.3, 0.0, 0.24]),
+        "plane": np.array([np.sin(tilt), 0.0, np.cos(tilt), -0.2]),
+        "n_scene": 200,
+    }
+    real = machine_mod.object_in_base
+    machine_mod.object_in_base = lambda *a, **k: poisoned
+    try:
+        views = bus.last("views/state")
+        target = [[c["h"], c["v"]] for c in views["cells"]
+                  if c["state"] == "available"][0]
+        sup.events.put({"cmd": "view/request", "target": target})
+        wait_for(lambda: sup.phase == "previewing", timeout=60, msg="preview")
+        sup.events.put({"cmd": "view/confirm", "target": target})
+        wait_for(lambda: sup.phase == "idle", timeout=60, msg="settle")
+    finally:
+        machine_mod.object_in_base = real
+
+    assert tuple(target) not in sup.visited, "poisoned view marked visited"
+    assert len(sup.acc.points) == n_boot, "poisoned points entered the fusion"
+    assert sup.phase == "idle", "run did not continue after the rejection"
+    sup.request_shutdown(); th.join(10)
+
+
 def test_capture_fail_not_visited():
     q_survey = DEMO_PARK.copy()
     rig = CaptureFailRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 8]))
@@ -542,6 +584,7 @@ def main():
     test_capture_fail_not_visited()
     test_executor_fault_enters_fault_and_exit_works()
     test_exit_during_planning_defers_until_plan_done()
+    test_bad_plane_view_rejected()
     test_exit_during_planning_fires_on_stale_plan_done()
     test_queued_confirm_cannot_undo_a_ctrl_c()
     test_stop_mid_execute_saves_the_turn_before_exit()

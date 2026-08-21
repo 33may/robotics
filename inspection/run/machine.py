@@ -46,7 +46,7 @@ from pathlib import Path
 
 import numpy as np
 
-from inspection.cell.geometry import CloudAccumulator, object_in_base
+from inspection.cell.geometry import WORKSPACE, CloudAccumulator, object_in_base
 from inspection.cell.world import DEFAULT_STEP, RobotCell
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
@@ -57,6 +57,42 @@ log = logging.getLogger(__name__)
 # Phases in which the arm is either moving or unrecoverable without operator
 # action at the pendant — no new request may be accepted while in one of these.
 _BUSY_PHASES = ("executing", "capturing", "fusing", "fault")
+
+#: Per-view sanity gate on the fitted table plane. The cell's table is probed
+#: ground truth at z=0 in the base frame; a view whose RANSAC plane lands far
+#: from that was placed with a wrong camera pose — whatever the cause (run
+#: 2108-ui: a silently frozen RTDE q stamped five views with the survey pose;
+#: their planes came out at z 90/-490/242 mm, tilted up to 48 deg). Rejecting
+#: on the plane catches ANY pose error, not just the one failure mode we have
+#: already met. Tolerances leave room for real arm flex (4-13 deg of tilt was
+#: historic for the SO-101; the UR5e fits within ~2 deg and ~10 mm).
+PLANE_Z_TOL_M = 0.03
+PLANE_TILT_TOL_DEG = 5.0
+
+
+def _plane_error(plane) -> str | None:
+    """Why the fitted table plane contradicts the probed cell, or None if ok.
+
+    `plane` is `fit_table`'s [a,b,c,d] with the unit normal forced +z. Height
+    is evaluated at the workspace centre — the plane's d alone would measure
+    height at the base origin, outside the crop, where a small tilt reads as
+    a large offset.
+    """
+    a, b, c, d = (float(x) for x in plane)
+    norm = float(np.linalg.norm((a, b, c)))
+    if norm < 1e-9 or c <= 0:
+        return f"degenerate table plane {plane!r}"
+    tilt = float(np.degrees(np.arccos(np.clip(c / norm, -1.0, 1.0))))
+    xc = (WORKSPACE["x"][0] + WORKSPACE["x"][1]) / 2
+    yc = (WORKSPACE["y"][0] + WORKSPACE["y"][1]) / 2
+    z_center = -(a * xc + b * yc + d) / c
+    if abs(z_center) > PLANE_Z_TOL_M:
+        return (f"table plane at z={z_center * 1000:.0f} mm "
+                f"(> {PLANE_Z_TOL_M * 1000:.0f} mm) — camera pose is wrong")
+    if tilt > PLANE_TILT_TOL_DEG:
+        return (f"table plane tilted {tilt:.1f} deg "
+                f"(> {PLANE_TILT_TOL_DEG:.0f} deg) — camera pose is wrong")
+    return None
 
 
 class Supervisor:
@@ -481,6 +517,16 @@ class Supervisor:
             cap = self.rig.capture(step)
             view = object_in_base(cap["depth_raw"], self.rig.intr,
                                   self.rig.depth_scale, cap["T_base_cam"])
+            # The plane gate sits BEFORE anything from this view is kept:
+            # a rejected view must not touch the accumulator, publish a
+            # capture, or mark the cell visited. `settle_done ok=False` is
+            # the same path a failed capture takes — the run carries on.
+            bad = _plane_error(view["plane"])
+            if bad:
+                self.events.put({"ev": "settle_done", "gen": gen,
+                                 "target": target, "ok": False, "npts": 0,
+                                 "detail": f"view rejected: {bad}"})
+                return
             self.events.put({"ev": "phase", "gen": gen, "phase": "fusing"})
             npts = len(view["points"]) if view["points"] is not None else 0
             if target == "survey" and view["centroid"] is None:
