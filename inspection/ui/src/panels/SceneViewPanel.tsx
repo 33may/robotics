@@ -275,6 +275,24 @@ function SceneGraph({ config, onGroups, backgroundRef }: SceneGraphProps) {
   const rootRef = useRef<THREE.Group>(null);
   const nodesRef = useRef(new Map<string, THREE.Object3D>());
   const overriddenRef = useRef(new Set<string>());
+  /**
+   * The newest pose frame, kept so a node built AFTER it arrived can still be
+   * placed.
+   *
+   * Mesh nodes are `await`ed — a `.dae` takes hundreds of milliseconds — so a
+   * pose frame published while they load reaches the handler before those
+   * nodes exist. Without this the frame is lost for them: a backend that
+   * publishes poses continuously self-heals on the next frame, but one that
+   * publishes a single frame per state change (a robot parked at idle, say)
+   * leaves every mesh stranded at its described placement, typically stacked
+   * on the origin, until something moves. Found on a real robot: the tool
+   * primitives were placed correctly while all seven arm meshes sat in a pile.
+   */
+  const lastPoseRef = useRef<{
+    names: readonly string[];
+    data: Float32Array;
+    overrides: NonNullable<ScenePoseFrame['overrides']>;
+  } | null>(null);
   // Points nodes stream their data from another topic; their subscriptions are
   // keyed by node path so a rebuild that drops a node also drops its listener.
   const cloudSubsRef = useRef(new Map<string, () => void>());
@@ -282,6 +300,31 @@ function SceneGraph({ config, onGroups, backgroundRef }: SceneGraphProps) {
   function dropCloudSubscription(path: string): void {
     cloudSubsRef.current.get(path)?.();
     cloudSubsRef.current.delete(path);
+  }
+
+  /** Place a freshly built node using the newest pose frame, if it named it. */
+  function applyLastPose(object: THREE.Object3D, path: string): void {
+    const last = lastPoseRef.current;
+    if (!last) return;
+    const index = last.names.indexOf(path);
+    if (index >= 0) applyMatrix(object, last.data, index * 16);
+
+    // Per-frame material overrides are lost the same way a transform is, and
+    // a missed one is a red "this link is colliding" tint that never appears.
+    const override = last.overrides[path];
+    if (!override) return;
+    overriddenRef.current.add(path);
+    if (override.visible !== undefined) object.visible = override.visible;
+    object.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const material = mesh.material as THREE.MeshLambertMaterial;
+      if (override.color !== undefined) material.color.set(override.color);
+      if (override.opacity !== undefined) {
+        material.opacity = override.opacity;
+        material.transparent = override.opacity < 1;
+      }
+    });
   }
 
   // The description is structural and arrives rarely, so a reactive
@@ -378,6 +421,12 @@ function SceneGraph({ config, onGroups, backgroundRef }: SceneGraphProps) {
       object.visible = spec.visible ?? true;
       object.userData.describedVisible = object.visible;
 
+      // A pose frame that arrived while this node was loading was skipped —
+      // catch up to it now, so an async mesh ends up where a synchronous
+      // primitive already is. The described transform above is the fallback;
+      // the pose stream wins, exactly as it does for a node built in time.
+      applyLastPose(object, spec.path);
+
       nodes.set(spec.path, object);
       root!.add(object);
     }
@@ -417,9 +466,19 @@ function SceneGraph({ config, onGroups, backgroundRef }: SceneGraphProps) {
       const data = transforms.data;
       for (let index = 0; index < names.length; index += 1) {
         const object = nodes.get(names[index]!);
-        if (!object) continue; // a pose for an unknown node is a backend bug
+        // Not necessarily a backend bug: a mesh node still loading is not in
+        // the map yet. `applyLastPose` places it once its build finishes.
+        if (!object) continue;
         applyMatrix(object, data, index * 16);
       }
+      // Copied, not referenced: the decoder hands out views into the message
+      // buffer, and keeping one alive would pin that whole message. A frame is
+      // 16 floats per node — copying it is cheaper than the retention.
+      lastPoseRef.current = {
+        names,
+        data: data.slice(),
+        overrides: overrides ?? {},
+      };
     }
 
     // Overrides are not sticky: anything overridden last frame and not this
