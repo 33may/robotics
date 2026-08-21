@@ -72,6 +72,7 @@ class _ArmProbe(threading.Thread):
         self.ip, self.hz = ip, hz
         self._lock = threading.Lock()
         self._span = 0.0            # max |dq| seen since the last read, degrees
+        self._stale_s = 0.0         # seconds since getTimestamp() last advanced
         self.error = None
 
     def run(self):
@@ -83,13 +84,23 @@ class _ArmProbe(threading.Thread):
         except Exception as e:      # no robot, wrong IP, too many clients
             self.error = str(e)
             return
-        last = None
+        last, ts_last, ts_wall = None, None, time.monotonic()
         while True:
             try:
                 q = np.asarray(recv.getActualQ(), dtype=float)
+                ts = recv.getTimestamp()
             except Exception as e:
                 self.error = str(e)
                 return
+            # The probe must not lie the way the bug lies: this very thread's
+            # recv died silently during the 2108-b diagnosis and kept printing
+            # "arm moved 0.00" through a real move. A frozen controller
+            # timestamp is the tell — surface it instead of the cached joints.
+            now = time.monotonic()
+            if ts != ts_last:
+                ts_last, ts_wall = ts, now
+            with self._lock:
+                self._stale_s = now - ts_wall
             if last is not None:
                 d = float(np.degrees(np.abs(q - last).max()))
                 with self._lock:
@@ -98,10 +109,10 @@ class _ArmProbe(threading.Thread):
             time.sleep(1.0 / self.hz)
 
     def drain(self):
-        """Degrees travelled since the previous call, and reset."""
+        """`(degrees travelled since the previous call, staleness seconds)`."""
         with self._lock:
             span, self._span = self._span, 0.0
-        return span
+            return span, self._stale_s
 
 
 async def _tap(url, topic_filter, show=False, probe=None):
@@ -143,9 +154,14 @@ async def _tap(url, topic_filter, show=False, probe=None):
                     if show:
                         line += f"   pose moved {pose_span:.4f}"
                     if probe is not None:
-                        line += (f"   arm moved {probe.drain():.2f} deg"
-                                 if probe.error is None
-                                 else f"   arm probe failed: {probe.error}")
+                        if probe.error is not None:
+                            line += f"   arm probe failed: {probe.error}"
+                        else:
+                            span, stale = probe.drain()
+                            line += (f"   arm probe STALE {stale:.1f}s — "
+                                     f"its own recv is dead, ignore its degrees"
+                                     if stale > 0.5
+                                     else f"   arm moved {span:.2f} deg")
                     print(line, flush=True)
                 else:
                     print(f"{time.strftime('%H:%M:%S')}  (nothing)", flush=True)
