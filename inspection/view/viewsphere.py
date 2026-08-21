@@ -27,6 +27,7 @@ import time
 
 import numpy as np
 
+from inspection.cell.geometry import load_T_flange_cam
 from inspection.cell.world import RobotCell, DEFAULT_STEP
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint, CUP_POS, CUP_DIMS, DEMO_PARK
@@ -35,11 +36,10 @@ H_BINS = 12                          # 30 deg each, h=0 faces the robot base
 V_ELEVATIONS = (10.0, 40.0, 70.0)    # deg above the table plane (Anton 2026-08-18)
 DEFAULT_R = 0.35                     # camera-to-center distance (configurable)
 
-# NOMINAL hand-eye: top camera ~5 cm out / ~7 cm up in the flange frame,
-# boresight parallel to the tool axis (+X), image-up = flange +Z.
-# TODO: replace with the calibrated matrix after the hand-eye session.
-T_FLANGE_CAM = np.eye(4)
-T_FLANGE_CAM[:3, 3] = [0.05, 0.0, 0.07]
+# CALIBRATED hand-eye (2026-08-19, calib/T_flange_cam_*.npy): left eye at
+# flange [+142.4, -8.3, -47.5] mm, boresight 1.07 deg off the tool axis.
+# Loaded in this module's camera convention (+X boresight, +Z image-up).
+T_FLANGE_CAM = load_T_flange_cam("xfwd")
 
 # roll preference: upright first, then increasingly rotated
 ROLLS = np.deg2rad([0, 30, -30, 60, -60, 90, -90, 120, -120, 150, -150, 180])
