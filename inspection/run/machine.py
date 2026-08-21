@@ -550,6 +550,30 @@ class Supervisor:
         total = sum(1 for r in self._reach.values() if r is not None)
         self.pub.status(phase=phase, target=self._target_json(target),
                         visited=len(self.visited), total=total)
+        if phase in ("idle", "fault"):
+            self._publish_real_pose()
+
+    def _publish_real_pose(self):
+        """Publish where the arm ACTUALLY is. Dispatcher-side, idle/fault only.
+
+        Poses otherwise have exactly two producers — the preview worker while
+        `previewing`, the pose streamer while `executing` — and neither runs
+        here, so this cannot race them (the same phase-exclusivity that makes
+        the publisher's cached pinocchio data safe).
+
+        Without this the retained `scene/poses` topic is either EMPTY at
+        startup — every visual mesh then renders at its identity placement,
+        stacked on the base — or left showing the last frame of a preview that
+        was cancelled, i.e. an arm position that never happened. FR1 says a
+        window opened at any moment shows the current world; the arm's real
+        configuration is part of that.
+        """
+        try:
+            self.pub.publish_pose(self.world, self.rig.q())
+        except Exception:
+            # A rig that cannot report its pose must never break the
+            # dispatcher — the UI just keeps the previous frame.
+            log.exception("publish_real_pose failed")
 
     def _publish_all(self):
         self.pub.publish_world(self.world)

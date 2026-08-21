@@ -75,6 +75,10 @@ def preflight(ip: str = ROBOT_IP) -> dict:
         "q_deg": list(np.round(np.degrees(r.getActualQ()), 2)),
     }
     dash.disconnect()
+    # Disconnect explicitly: a receive interface left to garbage collection
+    # tears its socket down late and prints "RTDEReceiveInterface boost system
+    # Exception: (asio.misc:2) End of file" into the middle of a run's log.
+    r.disconnect()
     rep["go"] = rep["robot_mode_ok"] and rep["safety_ok"] and rep["remote_control"]
     return rep
 

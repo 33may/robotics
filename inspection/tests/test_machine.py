@@ -481,6 +481,41 @@ def test_malformed_target_is_rejected_not_raised():
     assert not th.is_alive()
 
 
+def test_idle_publishes_the_real_pose():
+    """The arm's actual configuration is part of "the current world" (FR1).
+
+    Caught on the first hardware run: nothing published `scene/poses` at idle,
+    so a window opened before any motion drew every robot mesh at its identity
+    placement — the whole arm collapsed onto the base. The retained topic must
+    carry a real frame from the moment the machine reaches idle, and again
+    whenever it returns there (a cancelled preview otherwise leaves the last
+    frame of a path the arm never took).
+    """
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    wait_for(lambda: sup.phase == "idle", msg="idle")
+    wait_for(lambda: any(t == "scene/poses" for t, _ in bus.published),
+             msg="no pose frame published at idle")
+    frame = bus.last("scene/poses")
+    assert frame["names"], "pose frame carries no nodes"
+
+    # `transforms` crosses the bus as a tagged ndarray (protocol §3.1):
+    # {"$nd": {dtype, shape, data}} holding [N, 4, 4] float32.
+    nd = frame["transforms"]["$nd"]
+    mats = np.frombuffer(nd["data"], dtype=nd["dtype"]).reshape(nd["shape"])
+    assert len(mats) == len(frame["names"])
+
+    # ...and the frame must describe where the arm really is, not the identity
+    # placement. At the survey pose the arm is extended, so at least one link
+    # sits well clear of the base origin; an all-identity frame (the bug) has
+    # every translation at zero.
+    far = float(np.abs(mats[:, :3, 3]).max())
+    assert far > 0.1, f"every link is at the base origin (max |t| = {far})"
+
+    sup.request_shutdown(); th.join(10)
+    assert not th.is_alive()
+
+
 def test_sigint_saves_and_exits():
     import signal
     from inspection.run.app import install_sigint
@@ -512,6 +547,7 @@ def main():
     test_stop_mid_execute_saves_the_turn_before_exit()
     test_join_workers_after_full_boot()
     test_malformed_target_is_rejected_not_raised()
+    test_idle_publishes_the_real_pose()
     test_sigint_saves_and_exits()
     print("OK test_machine (task 5)")
 
