@@ -65,6 +65,48 @@ def _frame_to_base(frames, name):
     return _frame_to_base(frames, f.get("parent", "base")) * _pose_to_se3(f["pose"])
 
 
+#: `base` (UR controller) -> `base_link` (URDF, REP-103) and back: pi about Z.
+#: Its own inverse, which is why one constant serves both directions.
+_RZ_PI = pin.SE3(np.diag([-1.0, -1.0, 1.0]), np.zeros(3))
+
+
+def _mount_in_controller_base(model, *geom_models):
+    """Re-express the robot in the UR controller's `base` frame.
+
+    ur5e_description is rooted at `base_link`, which REP-103 aligns X+ forward;
+    the controller's `base` — the frame the teach pendant reports, and the frame
+    every number we measure is written in (`cell.yaml`'s probed table,
+    `calib/`'s artifacts) — is that rotated pi about Z. The URDF ships both and
+    says so on `base_link-base_fixed_joint`.
+
+    We put the WORLD in `base` rather than converting at every boundary, so
+    there is exactly one frame in the system: what the pendant shows, what the
+    planner solves in, what the UI draws. Rotating the mount (not the cell) is
+    what makes `cell.yaml` correct as measured.
+
+    Load-bearing: this must run BEFORE any cell box is added, because those are
+    attached to joint 0 too and are already in `base` — rotating them as well
+    would just move the bug. Postcondition: the `base` frame coincides with the
+    world, which is asserted below and is the cheapest proof this worked.
+    """
+    model.jointPlacements[1] = _RZ_PI * model.jointPlacements[1]
+    for frame in model.frames:
+        # Frame 0 IS the world; rotating it would rotate the thing we are
+        # expressing everything else in.
+        if frame.parentJoint == 0 and frame.name != "universe":
+            frame.placement = _RZ_PI * frame.placement
+    for geom_model in geom_models:
+        for gobj in geom_model.geometryObjects:
+            if gobj.parentJoint == 0:
+                gobj.placement = _RZ_PI * gobj.placement
+
+    base = model.frames[model.getFrameId("base")]
+    if not np.allclose(base.placement.homogeneous, np.eye(4), atol=1e-9):
+        raise RuntimeError(
+            "mount failed: `base` should coincide with the world frame, got\n"
+            f"{base.placement}")
+
+
 class RobotCell:
     def __init__(self, yaml_path=CELL_YAML, padding=DEFAULT_PADDING):
         """The ONE world. Split margins live here (env vs self), and the
@@ -75,9 +117,10 @@ class RobotCell:
 
         robot = load_robot_description("ur5e_description")
         self.model = robot.model
-        self.data = self.model.createData()
         self.geom_model = robot.collision_model
         self.visual_model = robot.visual_model
+        _mount_in_controller_base(self.model, self.geom_model, self.visual_model)
+        self.data = self.model.createData()
         self.padding = padding
 
         cfg = yaml.safe_load(Path(yaml_path).read_text())
