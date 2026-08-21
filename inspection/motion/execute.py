@@ -17,9 +17,12 @@ Usage (from repo root, robo env active):
     p inspection/motion/execute.py demo               # +-5 deg wrist_3 wiggle
 """
 
+import logging
 import time
 
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 ROBOT_IP = "192.168.2.50"
 
@@ -141,34 +144,59 @@ class UR5eArm:
             self.stop()
         self.close()
 
-    def _assert_fresh(self) -> None:
-        """Raise unless the receive stream is provably alive RIGHT NOW.
+    def _ts_advancing(self) -> bool:
+        """Is the controller timestamp advancing within the poll window?
 
-        ur_rtde's receive thread can die silently (upstream #307): every
-        getter then returns cached state forever — joints AND safety mode —
-        with `isConnected()` still true. Run 2108-ui stamped six captures
-        with bit-identical joints that way while the arm visibly moved, and
-        planned paths from a pose the arm was no longer at.
-
-        `getTimestamp()` is controller-side time, advancing with every 2 ms
-        packet, so "alive" means: the timestamp ADVANCES within the poll
-        window. A single pair compared once is not enough — two immediate
-        reads legitimately land on the same packet.
-
-        Deliberately no auto-reconnect: a stopped run is safe, a silently
-        recovered one hides that every read since the freeze was a lie.
+        A single pair compared once is not enough — two immediate reads
+        legitimately land on the same 2 ms packet — so poll for an advance.
         """
         t0 = self.recv.getTimestamp()
         deadline = time.monotonic() + self.stale_window
         while time.monotonic() < deadline:
             if self.recv.getTimestamp() != t0:
-                return
+                return True
             time.sleep(0.002)
+        return False
+
+    def _assert_fresh(self) -> None:
+        """The receive stream must be provably alive RIGHT NOW — heal or raise.
+
+        ur_rtde's receive thread dies silently (upstream #307, and #235
+        reports the sporadic "End of file" as a regression after 1.5.0):
+        every getter then returns cached state forever — joints AND safety
+        mode — with `isConnected()` often still true. Run 2108-ui stamped
+        six captures with bit-identical joints that way while the arm
+        visibly moved, and planned paths from a pose the arm had left.
+
+        `getTimestamp()` is controller-side time, advancing with every
+        packet, so "alive" means: the timestamp ADVANCES within the window.
+
+        On a dead stream: reconnect and re-verify — the operator asked for
+        a stable stream, not an abort per hiccup (this stream died in all
+        three hardware runs on 2026-08-21, once before any motion at all).
+        The recovery is LOUD, never silent: cached data was a lie, so the
+        log must say the stream died even when the heal works. Only a
+        reconnect that still yields a frozen timestamp raises.
+        """
+        if self._ts_advancing():
+            return
+        t_frozen = self.recv.getTimestamp()
+        log.warning("RTDE receive stream DEAD (timestamp frozen at %.3f) — "
+                    "reconnecting...", t_frozen)
+        try:
+            healed = bool(self.recv.reconnect())
+        except Exception:
+            log.exception("RTDE reconnect raised")
+            healed = False
+        if healed and self._ts_advancing():
+            log.warning("RTDE receive stream RECONNECTED — reads are live "
+                        "again (values between the freeze at t=%.3f and now "
+                        "were cached)", t_frozen)
+            return
         raise RuntimeError(
             f"RTDE receive stale — pose/safety state frozen at controller "
-            f"t={t0:.3f}s (no packet for {self.stale_window:.2f}s). Joint "
-            f"and safety reads are cached lies from here on; aborting. "
-            f"Remedy: restart the run (or recv.reconnect() by hand).")
+            f"t={t_frozen:.3f}s and reconnect failed. Joint and safety reads "
+            f"are cached lies from here on; aborting.")
 
     def q(self) -> np.ndarray:
         self._assert_fresh()
