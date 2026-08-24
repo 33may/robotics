@@ -89,6 +89,15 @@ data/runs/<id>/
 `cell` is `[h, v]`, or `null` for the survey view. Flush to disk on **every**
 write (same rule as `run/machine.py:_save` — state on disk at all times).
 
+**Reference dataset:** `data/runs/2408-seeded` (Anton, 2026-08-24) — the first
+real sweep: 26 turns, 25 captures, survey + **24 of 36 cells**, 58 MB, one
+object. Stage 2+ exit gates use it; `2108-d` (4 cells) stays as the small
+fixture in `test_eyes_replay.py`. It validates the join rule on real data:
+`pose_id 3` has no dir (step 4 was a software stop on cell `[10, 0]`), and the
+retry at step 5 landed in dir `004` — a stopped turn consumes an ordinal and
+leaves no directory. Every dir's name equals its `meta.json:pose_id`; rgb is
+848×480 as assumed.
+
 **Capture↔cell join** (verified against `run/machine.py:566`): capture
 `pose_id k` (k ≥ 1) is the k-th **non-survey** turn in `run.json` `turns[]`
 order; `pose_id 0` / dir `000` is the survey. Turn `step` and `pose_id` are
@@ -759,6 +768,15 @@ optional note-writer, exposing `view_at`, `views_near`, `get_view`, `crop`,
 decides by measurement). `views_near` uses `grid.neighbors`; an uncaptured
 neighbour returns nothing and writes a miss note — a next-move hint that cost
 no motion.
+
+**A cell may hold more than one view.** A revisit or a retry after a failed
+capture can produce two dirs for the same `[h, v]` (in `2408-seeded` the retry
+of `[10, 0]` produced only one, because the stopped turn never wrote a dir —
+but the store must not assume that). Contract: `store.views(cell)` returns
+**all**, oldest first; `view_at(cell)` returns the **newest** — a later look
+supersedes an earlier one at the same pose. Task 6 adds a store-level
+regression test for the two-views-one-cell case, plus a `2408-seeded` smoke
+assertion (25 views, 24 cells, no view for the un-captured `pose_id 3`).
 
 ## Stage 3–7 stubs (detailed when reached)
 - **Stage 3** — `eyes/verbs_local.py`: SAM 3 (detect+segment), PP-OCRv6
