@@ -957,13 +957,13 @@ hf auth login                                  # after accepting the terms at
   `matmul_ok`, `transformers`, `hf_token`, `sam3_available`; CLI
   `p inspection/eyes/env_check.py` printing a pass/fail line each.
 
-- [ ] **Step 1: Write `env_check.py`** — every check is one the memory says has
+- [x] **Step 1: Write `env_check.py`** — every check is one the memory says has
   actually bitten someone: capability must be `(12, 0)`; a real bf16 matmul must
   run on device (PTX JIT gotcha); `transformers >= 5.0` for `Sam3Model`; token
   present; `facebook/sam3` config fetchable (proves the gate was accepted).
-- [ ] **Step 2: Run it** — `p inspection/eyes/env_check.py`. Expected before the
+- [x] **Step 2: Run it** — `p inspection/eyes/env_check.py`. Expected before the
   install: every line FAIL but no traceback. After: all PASS.
-- [ ] **Step 3: Commit** — `eyes: environment verifier for the local verb stack`
+- [x] **Step 3: Commit** — `eyes: environment verifier for the local verb stack`
 
 ### Task 8: `eyes/verbs_local.py` — detect + segment behind a backend seam
 
@@ -984,7 +984,7 @@ hf auth login                                  # after accepting the terms at
   `input_boxes` are exemplars).
 - Stage 4's subagent gets `LocalVerbs` alongside its `ViewTools`.
 
-- [ ] **Step 1: Write the failing test** — stub-backed, so it runs with no GPU:
+- [x] **Step 1: Write the failing test** — stub-backed, so it runs with no GPU:
 
 ```python
 #!/usr/bin/env python3
@@ -1035,20 +1035,22 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: Run — must fail** (`ModuleNotFoundError: inspection.eyes.verbs_local`).
-- [ ] **Step 3: Implement `verbs_local.py`** — `LocalVerbs` owns the clipping,
+- [x] **Step 2: Run — must fail** (`ModuleNotFoundError: inspection.eyes.verbs_local`).
+- [x] **Step 3: Implement `verbs_local.py`** — `LocalVerbs` owns the clipping,
   score filter and ordering (backend-independent policy, testable with no GPU);
   `Sam3Backend` owns only model I/O and imports torch inside its methods.
-- [ ] **Step 4: Run test — must pass.**
-- [ ] **Step 5: Real-weights smoke** (needs Task 7 green) — CLI
+- [x] **Step 4: Run test — must pass.**
+- [x] **Step 5: Real-weights smoke** (needs Task 7 green) — CLI
   `p inspection/eyes/verbs_local.py inspection/data/runs/2408-seeded 3 1`:
   detect `"cup"` on that cell, print boxes+scores and the segment's mask area,
   and **measure latency** (memory: claims diverge 40×, ours is unverified).
-- [ ] **Step 6: Commit** — `eyes: detect and segment verbs behind a backend seam`
+- [x] **Step 6: Commit** — `eyes: detect and segment verbs behind a backend seam`
 
-### Task 9: `read_text` (PP-OCRv6)
+### Task 9: `read_text` (PP-OCRv6) — DONE
 
-Detailed when reached. Shape: `read_text(img) -> list[TextLine]` with
+Built and measured. Shape as predicted, with two corrections found by running it:
+the transformers engine has no polygon option (quads only), and `min_score`
+is load-bearing (noise reads of 0.14-0.49 on a cup with no text). Shape: `read_text(img) -> list[TextLine]` with
 `TextLine(text, score, polygon)`; polygon output, not quads. Installs
 `paddleocr` and runs it through `engine="transformers"`. The chain the design
 implies is `detect("cup") → crop → read_text`, so the test asserts a crop of a
