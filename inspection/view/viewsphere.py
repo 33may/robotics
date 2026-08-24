@@ -31,10 +31,10 @@ from inspection.cell.geometry import load_T_flange_cam
 from inspection.cell.world import RobotCell, DEFAULT_STEP
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint, CUP_POS, CUP_DIMS, DEMO_PARK
-
-H_BINS = 12                          # 30 deg each, h=0 faces the robot base
-V_ELEVATIONS = (10.0, 40.0, 70.0)    # deg above the table plane (Anton 2026-08-18)
-DEFAULT_R = 0.35                     # camera-to-center distance (configurable)
+# Cell addressing lives in the light half (grid.py) so the AI tiers can speak
+# about cells without importing IK/motion. Re-exported here: callers that
+# already say `from ...viewsphere import H_BINS` keep working.
+from inspection.view.grid import H_BINS, V_ELEVATIONS, DEFAULT_R
 
 # CALIBRATED hand-eye (2026-08-19, calib/T_flange_cam_*.npy): left eye at
 # flange [+142.4, -8.3, -47.5] mm, boresight 1.07 deg off the tool axis.

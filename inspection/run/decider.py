@@ -16,9 +16,11 @@ import sys
 import threading
 from dataclasses import dataclass, field
 
-from inspection.view.viewsphere import H_BINS, V_ELEVATIONS
-
-_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
+# The cell vocabulary moved to view/grid.py (Anton 2026-08-24) so the image
+# tier and a future AgentDecider share one wording without importing motion —
+# this module used to drag the whole IK stack in for two integers.
+from inspection.view.grid import (H_BINS, V_ELEVATIONS, cell_gloss as gloss,
+                                  step_delta as _dh)
 
 
 @dataclass(frozen=True)
@@ -54,29 +56,6 @@ class Ctx:
     map_ascii: str
     menu: list                      # [MenuItem], nearest first
     comments: list = field(default_factory=list)   # prior READs, oldest first
-
-
-def _dh(cur_h, h, n_h):
-    """Signed shortest azimuth steps cur -> cell; +1 = one step right."""
-    return (h - cur_h + n_h // 2) % n_h - n_h // 2
-
-
-def gloss(cur, cell, n_h=H_BINS, elevations=V_ELEVATIONS):
-    """Egocentric label for cell relative to cur (D4 menu gloss)."""
-    if cur is None:
-        return f"elevation {elevations[cell[1]]:.0f} deg"
-    dh = _dh(cur[0], cell[0], n_h)
-    dv = cell[1] - cur[1]
-    if abs(dh) == n_h // 2:
-        side = "opposite side"
-    elif dh == 0:
-        side = "same side"
-    else:
-        n = abs(dh)
-        side = f"{_WORDS[n]} step{'s' if n > 1 else ''} " \
-               f"{'right' if dh > 0 else 'left'}"
-    height = "same height" if dv == 0 else ("higher" if dv > 0 else "lower")
-    return f"{side}, {height}"
 
 
 def build_menu(reach, visited, cur, elevations=V_ELEVATIONS):
