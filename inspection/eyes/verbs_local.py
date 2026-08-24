@@ -131,11 +131,14 @@ class Sam3Backend:
         self._det = self._det_proc = None
         self._trk = self._trk_proc = None
 
+    # NOT AutoProcessor: for this repo it resolves to Sam3VideoProcessor, whose
+    # image path rejects `text=` outright (Sam3ImageProcessorKwargs has no such
+    # field). The still-image classes must be named explicitly.
     def _load_detector(self):
         if self._det is None:
             import torch
-            from transformers import AutoProcessor, Sam3Model
-            self._det_proc = AutoProcessor.from_pretrained(self.repo)
+            from transformers import Sam3Model, Sam3Processor
+            self._det_proc = Sam3Processor.from_pretrained(self.repo)
             self._det = Sam3Model.from_pretrained(
                 self.repo, dtype=getattr(torch, self.dtype)).to(self.device).eval()
         return self._det, self._det_proc
@@ -143,8 +146,8 @@ class Sam3Backend:
     def _load_tracker(self):
         if self._trk is None:
             import torch
-            from transformers import AutoProcessor, Sam3TrackerModel
-            self._trk_proc = AutoProcessor.from_pretrained(self.repo)
+            from transformers import Sam3TrackerModel, Sam3TrackerProcessor
+            self._trk_proc = Sam3TrackerProcessor.from_pretrained(self.repo)
             self._trk = Sam3TrackerModel.from_pretrained(
                 self.repo, dtype=getattr(torch, self.dtype)).to(self.device).eval()
         return self._trk, self._trk_proc
