@@ -69,6 +69,26 @@ humanoid/vendor/oli-main-software-*/install/
 humanoid/docs/nvidia-corpus/
 
 # ---- Inspection project ---------------------------------------------
-third_party/            # sparse clones (SO-ARM100 URDF); re-fetch, don't vendor
-data/inspection/        # capture bundles (RGB/IR/depth dumps)
-vbti/logic/data/        # accidental capture dirs from running inside vbti/logic
+# NOTE: git does NOT support inline comments. `#` only opens a comment at the
+# START of a line, so `third_party/   # sparse clones` was a pattern that
+# literally contained "   # sparse clones" and matched nothing. The three
+# rules below had never ignored anything. Keep every comment on its own line.
+
+# sparse clones (SO-ARM100 URDF); re-fetch, don't vendor
+third_party/
+# capture bundles, from back when project data sat in a root-level data/
+data/inspection/
+# accidental capture dirs from running inside vbti/logic
+vbti/logic/data/
+
+# Project data lives under inspection/data/ now, which the root-anchored rule
+# above never matched — 417 MB of run captures were one `git add .` away from
+# the history. Recorded runs are evidence, not source: they are the only copy
+# of what the robot did with the code of that day, so they get backed up,
+# never versioned. `inspection/data/isaac_models/` stays TRACKED — those are
+# authored CAD assets, an input rather than an output.
+inspection/data/runs/
+inspection/data/inspection/
+# regenerable by investigation/fill_probe.py and hull_blueprint.py
+inspection/data/framing/
+inspection/data/tool/
