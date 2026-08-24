@@ -909,7 +909,156 @@ supersedes an earlier one at the same pose. Task 6 adds a store-level
 regression test for the two-views-one-cell case, plus a `2408-seeded` smoke
 assertion (25 views, 24 cells, no view for the un-captured `pose_id 3`).
 
-## Stage 3–7 stubs (detailed when reached)
+## Stage 3 — Local tool models (detect / segment / OCR)
+
+**Decisions (Anton, 2026-08-24):** the model stack installs **into `robo`**, not
+a separate env — Stage 7 wires the machinery into the live loop, so the process
+holding pinocchio/ur_rtde must import the verbs in-process. And **SAM 3 with the
+HF gate accepted**, not the Apache fallback.
+
+Research already settled (memory `perception/local-tool-models-detect-segment-ocr`,
+2026-08-21) — do not re-litigate:
+- `facebook/sam3` is ONE checkpoint for detect+segment, transformers-native.
+- **API trap:** `Sam3Model.input_boxes` are *concept exemplars*, NOT "segment
+  this box". Box→mask must go through `Sam3TrackerModel`.
+- SAM 3 finds `"cup"`, not `"the logo on the cup"` — simple noun phrases only.
+  The pipeline is therefore **detect object → crop → OCR reads the logo**.
+- Input is resized to square 1008, so our 848×480 is *upscaled* — helps small
+  logos, costs latency. If <500 ms is needed: `config.image_size` 1008→560.
+- OCR: **PP-OCRv6_medium via `engine="transformers"`**, DB detector set to
+  **polygon** output (quad boxes lose on a curved cup). Never the native paddle
+  engine on Blackwell — `cudaErrorLaunchFailure` after several images.
+- Blackwell: verify with `get_device_capability() == (12, 0)` **plus a real
+  matmul**, not `is_available()` — CUDA 12.8/12.9 shipped without
+  `libnvptxcompiler.so`, so runtime PTX JIT can fail while AOT works.
+
+Env baseline recorded before the install: torch absent, transformers absent,
+numpy 2.4.6, open3d 0.19.0, pin 4.0.0, ur-rtde 1.6.5, 152 packages,
+RTX 5090 / driver 580.178.04 / 32 GB, 586 GB free.
+
+### Task 7: the environment and its verifier
+
+**Anton runs** (the install and the gate need his account; snapshot first so a
+bad interaction with the robot stack is one `pip install -r` away from undone):
+
+```bash
+pip freeze > ~/robo-before-torch.txt          # rollback point
+pip install torch --index-url https://download.pytorch.org/whl/cu128
+pip install "transformers>=5.15" accelerate
+hf auth login                                  # after accepting the terms at
+                                               # huggingface.co/facebook/sam3
+```
+
+**Files:**
+- Create: `inspection/eyes/env_check.py` (script, not a test — it needs the GPU)
+
+**Interfaces:**
+- Produces: `check_env() -> dict` with keys `torch`, `cuda`, `capability`,
+  `matmul_ok`, `transformers`, `hf_token`, `sam3_available`; CLI
+  `p inspection/eyes/env_check.py` printing a pass/fail line each.
+
+- [ ] **Step 1: Write `env_check.py`** — every check is one the memory says has
+  actually bitten someone: capability must be `(12, 0)`; a real bf16 matmul must
+  run on device (PTX JIT gotcha); `transformers >= 5.0` for `Sam3Model`; token
+  present; `facebook/sam3` config fetchable (proves the gate was accepted).
+- [ ] **Step 2: Run it** — `p inspection/eyes/env_check.py`. Expected before the
+  install: every line FAIL but no traceback. After: all PASS.
+- [ ] **Step 3: Commit** — `eyes: environment verifier for the local verb stack`
+
+### Task 8: `eyes/verbs_local.py` — detect + segment behind a backend seam
+
+**Files:**
+- Create: `inspection/eyes/verbs_local.py`
+- Test: `inspection/tests/test_eyes_verbs.py`
+
+**Interfaces:**
+- Consumes: `ViewImage` from `eyes/tools.py`.
+- Produces: `Detection` frozen dataclass `(box: tuple[int,int,int,int], score:
+  float, label: str)`; `Segment` frozen dataclass `(mask: np.ndarray bool
+  (H,W), box, score)`; `LocalVerbs(backend)` with `detect(img: ViewImage,
+  phrase: str, min_score=0.3) -> list[Detection]` (highest score first, boxes
+  clipped to frame) and `segment(img: ViewImage, box) -> Segment`.
+- Backends: `StubBackend` (deterministic, no torch — what the tests use) and
+  `Sam3Backend(device="cuda", dtype="bfloat16")` (lazy-loads both checkpoints:
+  `Sam3Model` for text→boxes, `Sam3TrackerModel` for box→mask, because
+  `input_boxes` are exemplars).
+- Stage 4's subagent gets `LocalVerbs` alongside its `ViewTools`.
+
+- [ ] **Step 1: Write the failing test** — stub-backed, so it runs with no GPU:
+
+```python
+#!/usr/bin/env python3
+"""Local verbs over a stub backend. Run: p inspection/tests/test_eyes_verbs.py"""
+import numpy as np
+
+from inspection.eyes.tools import ViewImage
+from inspection.eyes.verbs_local import (Detection, LocalVerbs, Segment,
+                                         StubBackend)
+
+IMG = ViewImage(cell=(3, 1), cap_dir="003",
+                rgb=np.zeros((480, 848, 3), np.uint8), text="cell [3, 1]")
+
+
+def test_detect_sorts_and_clips():
+    backend = StubBackend(boxes=[((10, 10, 100, 100), 0.4, "cup"),
+                                 ((-20, 5, 900, 500), 0.9, "cup")])
+    dets = LocalVerbs(backend).detect(IMG, "cup")
+    assert [d.score for d in dets] == [0.9, 0.4]          # highest first
+    assert dets[0].box == (0, 5, 848, 480)                # clipped to frame
+    assert isinstance(dets[0], Detection) and dets[0].label == "cup"
+
+
+def test_detect_drops_low_scores():
+    backend = StubBackend(boxes=[((0, 0, 10, 10), 0.1, "cup")])
+    assert LocalVerbs(backend).detect(IMG, "cup", min_score=0.3) == []
+
+
+def test_segment_returns_mask_of_frame_size():
+    seg = LocalVerbs(StubBackend()).segment(IMG, (10, 10, 100, 100))
+    assert isinstance(seg, Segment)
+    assert seg.mask.shape == (480, 848) and seg.mask.dtype == bool
+    assert seg.mask[50, 50] and not seg.mask[400, 700]     # inside vs outside
+
+
+def test_module_has_no_torch_at_import():
+    import sys
+    assert "torch" not in sys.modules      # backends load lazily; stub needs none
+
+
+def main():
+    test_detect_sorts_and_clips(); test_detect_drops_low_scores()
+    test_segment_returns_mask_of_frame_size(); test_module_has_no_torch_at_import()
+    print("OK test_eyes_verbs")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+- [ ] **Step 2: Run — must fail** (`ModuleNotFoundError: inspection.eyes.verbs_local`).
+- [ ] **Step 3: Implement `verbs_local.py`** — `LocalVerbs` owns the clipping,
+  score filter and ordering (backend-independent policy, testable with no GPU);
+  `Sam3Backend` owns only model I/O and imports torch inside its methods.
+- [ ] **Step 4: Run test — must pass.**
+- [ ] **Step 5: Real-weights smoke** (needs Task 7 green) — CLI
+  `p inspection/eyes/verbs_local.py inspection/data/runs/2408-seeded 3 1`:
+  detect `"cup"` on that cell, print boxes+scores and the segment's mask area,
+  and **measure latency** (memory: claims diverge 40×, ours is unverified).
+- [ ] **Step 6: Commit** — `eyes: detect and segment verbs behind a backend seam`
+
+### Task 9: `read_text` (PP-OCRv6)
+
+Detailed when reached. Shape: `read_text(img) -> list[TextLine]` with
+`TextLine(text, score, polygon)`; polygon output, not quads. Installs
+`paddleocr` and runs it through `engine="transformers"`. The chain the design
+implies is `detect("cup") → crop → read_text`, so the test asserts a crop of a
+`ViewImage` survives into OCR with its provenance text intact.
+
+**Stage 3 exit gate:** `env_check.py` all-PASS; `test_eyes_verbs.py` green on
+the stub; the real-weights CLI finds a cup in a `2408-seeded` view and prints a
+measured latency; OCR reads text off a crop.
+
+## Stage 4–7 stubs (detailed when reached)
 - **Stage 3** — `eyes/verbs_local.py`: SAM 3 (detect+segment), PP-OCRv6
   (transformers engine, polygon output), crop chain. cu128 wheels, 5090 only.
 - **Stage 4** — `eyes/inspect_agent.py` + `eyes/models.py` (thin swappable
