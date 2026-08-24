@@ -71,24 +71,49 @@ boxes:
 # ---- tool: rigid boxes attached to the FLANGE frame (ur_description `flange`:
 # +X out of the tool face). The loader welds these to the robot; the validator
 # sweeps them with the arm. Envelope philosophy: cover the WORST state.
+  # ---- RG2 + camera stack: a CROSS, not a slab (Anton, 2026-08-24) ----
+  # The old model was ONE box, 258 x 149 x 170 mm, taking each axis's worst
+  # value independently: closed length AND max-open width AND full bracket
+  # height. That describes a gripper which never exists, and its four corners
+  # are pure phantom volume. Under tilt those corners sweep into the robot's
+  # own upper arm: on run 2408-cup1 at a 0.226 m shell it blocked 15 of 36
+  # viewsphere cells (`investigation/block_report.py` names the pair).
+  #
+  # Replaced by three boxes tracing the real silhouette. Measured, not drawn:
+  #   * CAD per-part bounds from Antonio's USD (`tool_hull_from_usd.py`).
+  #     NOTE the USD's default --slide-mm=-22 is a VISUAL nudge, not physical:
+  #     at -22 the open fingers reach 198.1 and cell.yaml's closed estimate is
+  #     212; the pendant TCP is 239.9. At slide +6 the open reach is 226.1 and
+  #     +13.8 closed lands on 239.9 EXACTLY. So real flange X = USD(-22) + 28,
+  #     and that 28 mm IS the mount stack, which the USD does not model.
+  #   * bracket height: MEASURED by Anton 2026-08-18 (100 mm below the
+  #     centerline, camera top 70 mm above).
+  #   * lens at [+142.4, -8.3, -47.5] mm — hand-eye calib 2026-08-19.
+  # `investigation/hull_blueprint.py` renders this against the CAD and ASSERTS
+  # every one of the 22 parts, the lens and the TCP sit inside the union.
+  # Re-run it after ANY edit here. Reachability (2408-cup1): 4->19 cells at
+  # r=0.22, 21->28 at r=0.24, 29->31 at r=0.28.
 tool:
-  rg2_gripper:
-    # OnRobot RG2 — per-axis MAX envelope (Anton, 2026-08-17):
-    #   length: CLOSED state (tips swing forward on the R55 arc) — spans
-    #           -18 mm (back plate) -> +212 mm (closed tip) in flange X
-    #   width:  MAX-OPEN state, 149 mm (manual §4.2 drawing)
-    #   height: MEASURED by Anton 2026-08-18 — bottom attachment reaches
-    #           100 mm below the gripper centerline, camera top 70 mm above
-    #           -> 170 mm total, center 15 mm below the flange axis
-    # Mount from Antonio's Isaac USD weld − 22 mm visual calibration.
-    # TCP MEASURED on the real robot (pendant 4-point wizard, 2026-08-18):
-    #   [1.54, -6.72, 239.9] mm in the pendant flange frame (Z out of flange)
-    #   = tip at +239.9 mm along OUR flange X. Saved on pendant as TCP_normal
-    #   in installation `inspection_demo`. USD estimate was 212 — the ~28 mm
-    #   gap is the flange-side mount stack; box back face kept at -18 mm.
-    dims: [0.2580, 0.1490, 0.1700]          # length -18 -> +240, height -100 -> +70 mm
-    pose: [0.1110, 0.0, -0.0150, 0, 0, 0]   # box center in flange frame
-    # (cameras top+bottom live INSIDE this envelope — no separate boxes)
+  rg2_base:
+    # The only genuinely tall section: base castings reach Z -40.1..+35.2 but
+    # all end by X=36. Carrying that height further forward is what created
+    # the phantom corners.
+    dims: [0.0580, 0.0900, 0.0790]          # X -18..40, |Y| 45, Z -42..+37
+    pose: [0.0110, 0.0, -0.0025, 0, 0, 0]
+
+  rg2_body:
+    # Slender body through to the CLOSED fingertip at +240. Width stays at the
+    # max-open 149 mm: the fingers really do open that far, and width costs
+    # almost no cells (measured: 149->100 mm gains 1).
+    dims: [0.2000, 0.1490, 0.0500]          # X 40..240, |Y| 74.5, Z -25..+25
+    pose: [0.1400, 0.0, 0.0, 0, 0, 0]
+
+  cam_stack:
+    # Camera + brackets: a THIN VERTICAL slab at the lens station, 17 mm to
+    # either side. This is the piece that is tall, and it is 34 mm thick — not
+    # 258 mm long as the old single box implied.
+    dims: [0.0340, 0.0800, 0.1700]          # X 125.4..159.4, |Y| 40, Z -100..+70
+    pose: [0.1424, 0.0, -0.0150, 0, 0, 0]
 
   cable_loop:
     # the classic forgotten sweep — generous slack envelope around the wrist
