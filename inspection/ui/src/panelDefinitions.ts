@@ -17,6 +17,10 @@ import {
   cloudInspectPanelDefaultConfig,
 } from './panels/CloudInspectPanel.js';
 import { EventLogPanel, eventLogPanelDefaultConfig } from './panels/EventLogPanel.js';
+import {
+  ImageChainPanel,
+  imageChainPanelDefaultConfig,
+} from './panels/ImageChainPanel.js';
 import { SceneViewPanel, sceneViewPanelDefaultConfig } from './panels/SceneViewPanel.js';
 import type { SceneViewPanelConfig } from './panels/SceneViewPanel.js';
 
@@ -36,6 +40,11 @@ const cellPanelConfig: SceneViewPanelConfig = {
   cameraPosition: [1.4, -1.4, 1.1],
   cameraTarget: [0.0, -0.35, 0.25],
   originAxes: 0.15,
+  // Clicking a viewsphere marker starts the PREVIEW for that cell — the same
+  // `view/request` the actions panel sends, so there is one command path with
+  // two buttons. `view/confirm` is deliberately NOT here: the press that
+  // actually moves the arm stays in one place (Anton 2026-08-24).
+  pickCommand: { prefix: 'views/', cmd: 'view/request' },
 };
 
 export const inspectionPanelDefinitions = [
@@ -63,6 +72,13 @@ export const inspectionPanelDefinitions = [
     defaultConfig: cloudInspectPanelDefaultConfig,
     description: 'Fused cloud, viewpoints, and the shot from the picked one',
     keepMounted: true,
+  }),
+  definePanel({
+    type: 'chain',
+    title: 'chain',
+    component: ImageChainPanel,
+    defaultConfig: imageChainPanelDefaultConfig,
+    description: 'Capture → prompt → mask → accepted points, for the last view',
   }),
   definePanel({
     type: 'log',

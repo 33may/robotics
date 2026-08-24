@@ -60,6 +60,7 @@ TOPIC_CAMERA = "camera/wrist"
 TOPIC_VIEWS = "views/state"
 TOPIC_STATUS = "run/status"
 TOPIC_LOG = "log/events"
+TOPIC_CHAIN = "chain/latest"
 
 MESH_MOUNT = "/meshes"
 CAPTURE_MOUNT = "/captures"
@@ -180,6 +181,7 @@ class InspectionPublisher:
             self.bus.declare(TOPIC_VIEWS, qos="stream", kind="json")
             self.bus.declare(TOPIC_STATUS, qos="stream", kind="json")
             self.bus.declare(TOPIC_LOG, qos="event")
+            self.bus.declare(TOPIC_CHAIN, qos="stream", kind="json")
             self._declared = True
         except Exception:
             log.exception("declare failed")
@@ -438,6 +440,33 @@ class InspectionPublisher:
             log.warning("capture %s is outside run_dir %s", directory, self.run_dir)
             return None
         return f"{self.capture_mount}/{relative.as_posix()}/rgb.png"
+
+    def publish_chain(self, directory, files: Mapping[str, str],
+                      **stats: Any) -> None:
+        """The identity chain for the newest capture: four images + the numbers.
+
+        RETAINED, and it carries URLs rather than pixels — the images are
+        static files the browser fetches over the same mount as every other
+        capture image and caches off the main thread (AGENTS.md §7). A panel
+        opened mid-run therefore shows the last chain immediately.
+
+        `files` maps stage -> filename inside the capture dir; `rgb` is added
+        here because it is the capture's own image and no one rewrites it.
+        Stages that did not happen (a view that fell back to depth growth has
+        no box and no mask) are simply absent — the panel renders what exists
+        rather than inventing a placeholder.
+        """
+        try:
+            base = self._capture_url(directory)
+            if base is None:
+                return
+            base = base.rsplit("/", 1)[0]
+            images = {"rgb": f"{base}/rgb.png"}
+            images.update({stage: f"{base}/{name}"
+                           for stage, name in dict(files).items()})
+            self.bus.publish(TOPIC_CHAIN, {"images": images, **stats})
+        except Exception:
+            log.exception("publish_chain failed")
 
     # ── motion ─────────────────────────────────────────────────────────────
 

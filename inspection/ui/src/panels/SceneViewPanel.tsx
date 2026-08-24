@@ -32,6 +32,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { Canvas } from '@react-three/fiber';
+import type { ThreeEvent } from '@react-three/fiber';
 import { Grid, OrbitControls } from '@react-three/drei';
 import { useBus, useTopicEffect, useTopicPayload } from '@porthole/framework';
 import type { NdArray, PanelProps } from '@porthole/framework';
@@ -101,6 +102,12 @@ export interface SceneViewPanelConfig extends Record<string, unknown> {
   hiddenGroups: readonly string[];
   /** Show the group visibility overlay. */
   showGroupToggles: boolean;
+  /**
+   * Make described nodes clickable. A click on a node whose path starts with
+   * `prefix` sends `{cmd, target}` on the bus, where target is the path with
+   * the prefix removed. Null (the default) leaves the scene read-only.
+   */
+  pickCommand: { readonly prefix: string; readonly cmd: string } | null;
 }
 
 export const sceneViewPanelDefaultConfig: SceneViewPanelConfig = {
@@ -112,6 +119,7 @@ export const sceneViewPanelDefaultConfig: SceneViewPanelConfig = {
   originAxes: 0.2,
   hiddenGroups: [],
   showGroupToggles: true,
+  pickCommand: null,
 };
 
 // ── mesh loading ────────────────────────────────────────────────────────────
@@ -427,6 +435,11 @@ function SceneGraph({ config, onGroups, backgroundRef }: SceneGraphProps) {
       // the pose stream wins, exactly as it does for a node built in time.
       applyLastPose(object, spec.path);
 
+      // The scene path travels with the object so a pointer hit can name
+      // what it hit: a raycast lands on a leaf mesh, several levels below the
+      // node, and walking up to a tagged ancestor is what turns that into an
+      // identity the backend published and can parse back.
+      object.userData.portholePath = spec.path;
       nodes.set(spec.path, object);
       root!.add(object);
     }
@@ -527,7 +540,30 @@ function SceneGraph({ config, onGroups, backgroundRef }: SceneGraphProps) {
     }
   });
 
-  return <group ref={rootRef} />;
+  /**
+   * Forward a click on a described node as a command.
+   *
+   * Deliberately dumb: this panel does not know what a viewsphere cell is. It
+   * strips the configured prefix and sends the REST of the path — the very id
+   * the backend minted when it published the marker — so the vocabulary stays
+   * on the backend side of the bus and `_normalize_target` parses its own
+   * naming. `pickCommand` defaults to null, so a scene view is read-only
+   * unless an app opts it in.
+   */
+  function handlePick(event: ThreeEvent<MouseEvent>): void {
+    const pick = config.pickCommand;
+    if (!pick) return;
+    for (let obj: THREE.Object3D | null = event.object; obj; obj = obj.parent) {
+      const path = obj.userData?.portholePath as string | undefined;
+      if (path === undefined) continue;
+      if (!path.startsWith(pick.prefix)) return;   // a described node, not a target
+      event.stopPropagation();                     // don't also orbit the camera
+      bus.send({ cmd: pick.cmd, target: path.slice(pick.prefix.length) });
+      return;
+    }
+  }
+
+  return <group ref={rootRef} onClick={handlePick} />;
 }
 
 function reportBuildFailure(error: unknown): void {

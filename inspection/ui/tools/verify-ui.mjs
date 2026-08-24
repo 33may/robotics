@@ -137,7 +137,11 @@ const cameraSize = await page
   .locator('.porthole-camera-panel canvas')
   .evaluate((el) => `${el.width}x${el.height}`)
   .catch(() => 'none');
-check('camera painted a real frame', cameraSize === '640x360', cameraSize);
+// The mock renders 640x360 but `publish_frame` stride-samples the LIVE stream
+// by `live_stride` (2 by default — full-size frames froze the 3D panel, see
+// publisher.py). So 320x180 is the correct expectation; asserting the
+// pre-stride size made this check permanently red and therefore ignored.
+check('camera painted a real frame', cameraSize === '320x180', cameraSize);
 
 // ── actions panel: renders from the first views/state, no drive needed ──────
 check('actions panel renders (survey button present)',
@@ -250,8 +254,8 @@ const MARKER_RGB = [
   [104, 110, 120], // available, as composited at 0.95 opacity over the panel bg
 ];
 
-async function findMarkerPixel() {
-  const shot = await cloudPanel.screenshot();
+async function findMarkerPixel(panel = cloudPanel) {
+  const shot = await panel.screenshot();
   return page.evaluate(
     async ([dataUrl, targets]) => {
       const image = new Image();
@@ -318,6 +322,60 @@ if (picked) {
   const hasEmpty = (await page.locator('.inspection-cloud-empty').count()) > 0;
   check('pane shows an image or says not visited', hasImage || hasEmpty, `state=${state}`);
 }
+
+// ── 3D click: a marker in the CELL panel starts the preview ──────────────────
+// The same `view/request` the actions panel sends, from the scene view. Any
+// backend REACTION proves the wiring: a legal cell moves the phase off idle,
+// an already-visited one answers with a "dropped" log line. Asserting on
+// either keeps the check from depending on which of 36 markers the pixel scan
+// happened to land on.
+await page.locator('[data-testid="cell-tab"], .dv-tab:has-text("cell")').first().click()
+  .catch(() => {});
+await sleep(400);
+const scenePanel = page.locator('.porthole-scene-panel');
+const sceneBox = await scenePanel.boundingBox();
+const sceneTarget = sceneBox ? await findMarkerPixel(scenePanel) : null;
+check('a viewsphere marker is visible in the cell panel', sceneTarget !== null);
+
+let reacted = false;
+if (sceneBox && sceneTarget) {
+  const before = await page.locator('.porthole-event-log tbody tr').count();
+  const phaseBefore = await page.locator('.inspection-phase').innerText().catch(() => '');
+  await page.mouse.click(sceneBox.x + sceneTarget.x, sceneBox.y + sceneTarget.y);
+  await sleep(900);
+  const after = await page.locator('.porthole-event-log tbody tr').count();
+  const phaseAfter = await page.locator('.inspection-phase').innerText().catch(() => '');
+  reacted = after > before || phaseAfter !== phaseBefore;
+}
+check('clicking a 3D marker reaches the backend', reacted,
+  'no phase change and no new log row after the click');
+
+// ── chain panel: the identity chain for the last capture ─────────────────────
+// The mock runs the real segmentation path over a stub backend and writes real
+// capture files, so by now the survey has produced a full chain on disk.
+await page.locator('[data-testid="chain-tab"], .dv-tab:has-text("chain")').first().click()
+  .catch(() => {});
+await sleep(1200);
+
+const chainImgs = page.locator('.inspection-chain-img');
+const nChain = await chainImgs.count();
+check('chain panel shows the 2x2 grid', nChain === 4,
+  `${nChain} images (missing stages render as .inspection-chain-missing)`);
+
+// Counting <img> tags is not enough — a broken URL still renders one. Ask the
+// browser whether the bytes actually decoded.
+let decoded = 0;
+for (let i = 0; i < nChain; i += 1) {
+  if (await chainImgs.nth(i).evaluate((el) => el.complete && el.naturalWidth > 0)) {
+    decoded += 1;
+  }
+}
+check('chain images actually loaded', decoded === 4, `${decoded}/${nChain} decoded`);
+
+const chainSource = await page.locator('.inspection-chain-source').first().textContent()
+  .catch(() => '');
+check('chain reports the identity source', /mask|depth/.test(chainSource ?? ''),
+  `header="${chainSource}"`);
 
 // ── log panel ────────────────────────────────────────────────────────────────
 const logRows = await page.locator('.porthole-event-log tbody tr').count();

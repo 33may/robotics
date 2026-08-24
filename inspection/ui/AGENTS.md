@@ -1,6 +1,6 @@
 # inspection/ui — the frontend and its contract with the backend
 
-The operator-facing UI for the inspection loop. Five panels, built on **porthole**
+The operator-facing UI for the inspection loop. Six panels, built on **porthole**
 (`~/projects/porthole`), talking to Python over the porthole bus.
 
 **This module publishes and sends commands; it does not decide.** v2's
@@ -23,7 +23,7 @@ arrays, dicts, tuples — and knows nothing about `Supervisor`, `Ctx` or `RealRi
 
 ---
 
-## 1. The five panels
+## 1. The six panels
 
 | Panel | Topic(s) | Source |
 |---|---|---|
@@ -31,7 +31,12 @@ arrays, dicts, tuples — and knows nothing about `Supervisor`, `Ctx` or `RealRi
 | **camera** — live wrist stream | `camera/wrist` | porthole `camera`, copied |
 | **cloud** — fused cloud, clickable view markers, image of the picked view | `cloud/fused`, `views/state` | `src/panels/CloudInspectPanel.tsx`, app-owned |
 | **log** — event stream | `log/events` | porthole `event-log`, copied |
+| **chain** — the identity chain for the newest capture, 2×2 | `chain/latest` | `src/panels/ImageChainPanel.tsx`, app-owned |
 | **actions** — survey + view grid + Stop + Exit; the operator's only command path | reads `views/state`, `run/status`; sends `view/request`, `view/confirm`, `run/stop`, `run/exit` | `src/panels/ActionsPanel.tsx`, app-owned |
+
+`chain` tabs in beside `cloud`, deliberately **not** beside `cell`: a panel
+placed `within` a group is added last and becomes the active tab, and the
+preview replay the operator approves against plays in `cell`.
 
 Copied panels are yours: edit them freely, `porthole update` three-way-merges
 upstream fixes as long as `src/.porthole/base/` survives.
@@ -49,6 +54,7 @@ upstream fixes as long as `src/.porthole/base/` survives.
 | `views/state` | stream, retained | per turn | viewsphere cells (§5) |
 | `run/status` | stream, retained | per phase change | `{phase, target, visited, total}` (§6) |
 | `log/events` | event | as they happen | `{level, msg}` |
+| `chain/latest` | stream, retained | per capture | `{images: {rgb, prompt, mask, kept}, pose_id, source, score, …}` (§7) |
 
 Every retained topic means a UI opened mid-run sees the current world
 immediately — no replay, no "restart the backend so the window has something to
@@ -196,6 +202,29 @@ serve_ui(dist, assets={
 An 848×480 PNG per view, twelve views, is not bus traffic — and the browser
 already caches, streams and decodes them off the main thread. The bus carries
 the URL.
+
+The **chain overlays** follow the same rule. Each capture dir gets, beside
+`rgb.png`, three renderings of how that view's object points were decided:
+
+```
+NNN/rgb.png             what the camera saw
+NNN/chain_prompt.png    the cloud so far, reprojected + the box built from it
+NNN/chain_mask.png      what the segmenter called object inside that box
+NNN/chain_kept.png      the points that entered the object cloud
+NNN/mask.png            the raw mask, for offline replay
+```
+
+Written by `perception/overlay.py:save_chain` in the same orientation as
+`rgb.png`; `chain/latest` carries only their URLs plus the numbers. A stage
+that did not happen is simply absent from `images` — a view that fell back to
+depth growth has no mask — and the panel says "not produced" rather than
+inventing a placeholder.
+
+**The mock writes real capture files** (`FakeRig(outdir=...)`) and runs the
+real segmentation path over `StubBackend`, so `npm run check` exercises this
+end to end with no GPU and no robot. Before that it mounted nothing, and every
+capture-image URL was silently dropped — a whole class of breakage no check
+could see.
 
 ---
 

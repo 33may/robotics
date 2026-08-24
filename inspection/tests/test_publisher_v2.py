@@ -69,9 +69,47 @@ def test_previewing_precedence_and_survey_only():
                       "radius": None, "current": None, "cells": []}
 
 
+def test_chain_payload_carries_urls_not_pixels():
+    """`chain/latest` must stay a JSON envelope of URLs: the images are static
+    files on the /captures mount, and putting 848x480 frames on the bus is the
+    thing that froze the 3D panel (see publish_frame)."""
+    import tempfile
+    from pathlib import Path
+    from inspection.ui.publisher import InspectionPublisher, TOPIC_CHAIN
+    with tempfile.TemporaryDirectory() as tmp:
+        run = Path(tmp)
+        (run / "003").mkdir()
+        bus = BusSpy()
+        pub = InspectionPublisher(bus, run_dir=run)
+        pub.publish_chain(run / "003",
+                          {"prompt": "chain_prompt.png", "mask": "chain_mask.png"},
+                          pose_id=3, source="mask", score=0.73, kept=3220)
+        p = bus.last(TOPIC_CHAIN)
+        assert p["images"]["rgb"] == "/captures/003/rgb.png"
+        assert p["images"]["prompt"] == "/captures/003/chain_prompt.png"
+        assert p["images"]["mask"] == "/captures/003/chain_mask.png"
+        assert "kept" not in p["images"]          # stage absent, not invented
+        assert p["source"] == "mask" and p["score"] == 0.73 and p["kept"] == 3220
+
+
+def test_chain_outside_the_run_dir_is_dropped():
+    """A capture dir that is not under run_dir has no servable URL; publishing
+    one would render as a broken image in the panel."""
+    import tempfile
+    from pathlib import Path
+    from inspection.ui.publisher import InspectionPublisher, TOPIC_CHAIN
+    with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as other:
+        bus = BusSpy()
+        pub = InspectionPublisher(bus, run_dir=Path(tmp))
+        pub.publish_chain(Path(other), {"mask": "chain_mask.png"})
+        assert not [t for t, _ in bus.published if t == TOPIC_CHAIN]
+
+
 def main():
     test_states_and_survey()
     test_previewing_precedence_and_survey_only()
+    test_chain_payload_carries_urls_not_pixels()
+    test_chain_outside_the_run_dir_is_dropped()
     print("OK test_publisher_v2")
 
 

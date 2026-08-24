@@ -36,6 +36,18 @@ def mock_frame(t: float, w: int = 640, h: int = 360) -> np.ndarray:
     return (frame * 255).astype("uint8")
 
 
+def _stub_segmenter():
+    """The real `ObjectSegmenter` policy over a backend that needs no weights.
+
+    `StubBackend.segment` fills the prompt box, so the mock's mask is the
+    reprojected object's box — geometrically sensible on the synthetic scene
+    and enough to drive every downstream artifact.
+    """
+    from inspection.eyes.verbs_local import StubBackend
+    from inspection.run.segmenter import ObjectSegmenter
+    return ObjectSegmenter(backend=StubBackend())
+
+
 def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     """Wire a real `Supervisor` to a real `FakeRig` behind `bus` — no robot,
     no camera. Starts the camera/pose workers, the command pump (bus ->
@@ -47,8 +59,14 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     every move after it — slow enough to watch and to stop mid-flight.
     """
     q_survey = DEMO_PARK.copy()
-    rig = FakeRig(q_survey + np.radians([0, 0, 0, 0, 0, 8]), speed=0.6)
-    sup = Supervisor(rig, pub, outdir, q_survey=q_survey, seed=seed)
+    rig = FakeRig(q_survey + np.radians([0, 0, 0, 0, 0, 8]), speed=0.6,
+                  outdir=outdir)
+    # A STUB segmenter, not a real one: the mock must stay GPU-free and
+    # offline, but the identity path — prompt box, mask, masked lift, chain
+    # overlays — is then the same code a real run takes, so the frontend has
+    # something real to render and the checks can assert on it.
+    sup = Supervisor(rig, pub, outdir, q_survey=q_survey, seed=seed,
+                     segmenter=_stub_segmenter())
     pub.publish_world(sup.world)
 
     # Daemon threads, deliberately never joined/stopped when `sup` reaches

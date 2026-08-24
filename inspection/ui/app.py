@@ -91,12 +91,17 @@ def mock(port: int = 8767, bus_port: int = 8765, seed: int = 0,
     from inspection.ui.mock import start_mock
 
     bus = PortholeBus(app="inspection", port=bus_port).start()
-    pub = InspectionPublisher(bus)
+    # The mock writes real capture files now, so give the publisher its run
+    # dir and MOUNT it: without both, every capture-image URL is dropped and
+    # the cloud/chain panels are blank in a way no check would notice.
+    mock_run = Path(tempfile.mkdtemp()) / "mock-run"
+    mock_run.mkdir(parents=True, exist_ok=True)
+    pub = InspectionPublisher(bus, run_dir=mock_run)
     print(f"bus  ws://127.0.0.1:{bus.port}", flush=True)
 
-    start_mock(bus, pub, Path(tempfile.mkdtemp()) / "mock-run", seed=seed)
+    start_mock(bus, pub, mock_run, seed=seed)
 
-    url = serve_ui(DIST, port=port, assets=_asset_mounts(None))
+    url = serve_ui(DIST, port=port, assets=_asset_mounts(mock_run))
     if bus_port != 8765:
         url = f"{url}/?bus={bus_port}"
     _present(url, no_window, gui)

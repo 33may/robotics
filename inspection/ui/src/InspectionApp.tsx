@@ -27,6 +27,13 @@ const inspectionLayout: LayoutSpec = [
   { id: 'cell', type: 'cell' },
   { id: 'camera', type: 'camera', position: { referencePanel: 'cell', direction: 'right' } },
   { id: 'cloud', type: 'cloud', position: { referencePanel: 'camera', direction: 'below' } },
+  // `chain` tabs in beside `cloud`, NOT beside `cell`. A panel placed
+  // `within` a group is added last and becomes the active tab, and the
+  // preview replay the operator approves from plays in `cell` — parking the
+  // chain there would hide the thing you press `view/confirm` against.
+  // Both are review surfaces, so they share a group; drag it anywhere, the
+  // layout is persisted under the `inspection` storage key.
+  { id: 'chain', type: 'chain', position: { referencePanel: 'cloud', direction: 'within' } },
   { id: 'log', type: 'log', position: { referencePanel: 'cell', direction: 'below' } },
   { id: 'actions', type: 'actions', position: { referencePanel: 'log', direction: 'right' } },
 ];
