@@ -527,12 +527,240 @@ bitmap; `PlanWriter`/`FindingWriter` API-locked out of geometry.
 
 ---
 
-## Stage 2–7 stubs (detailed when reached)
+## Stage 2 — Geometry tool API
 
-- **Stage 2** — `eyes/tools.py`: verbs over `RunStore` + capture dirs.
-  `get_view` resolves `cap_dir/rgb.png`; `views_near` walks the grid with
-  wraparound in h, clamped v; uncaptured neighbour → `FindingWriter.note`
-  miss + empty return. Pixels+text both.
+**Decision (Anton, 2026-08-24):** the vocabulary both AI tiers need — index
+math, visited bitmap + ASCII, egocentric gloss, action listing — lives in a
+new light `inspection/view/grid.py`, NOT in `eyes/` and not in a new `state/`
+package (`RunStore` is already the state; this is a *language over the grid*).
+`viewsphere.py` imports its constants back from it. Legality of a move comes
+from motion, so `grid.py` takes the feasible set as an argument and never
+imports motion/IK.
+
+### Task 5: `view/grid.py` — the shared grid vocabulary
+
+**Files:**
+- Create: `inspection/view/grid.py`
+- Modify: `inspection/view/viewsphere.py:37-39` (constants → import from grid)
+- Modify: `inspection/run/decider.py:19,57-79` (drop `_dh`/`gloss`, import them)
+- Test: `inspection/tests/test_grid.py`
+
+**Interfaces:**
+- Produces: `H_BINS=12`, `V_ELEVATIONS=(10.0, 40.0, 70.0)`, `DEFAULT_R=0.35`;
+  `step_delta(cur_h, h, h_bins=H_BINS) -> int` (signed shortest azimuth steps,
+  `+1` = one step right); `cell_gloss(cur, cell, h_bins=H_BINS,
+  elevations=V_ELEVATIONS) -> str` (wording identical to today's
+  `decider.gloss`); `neighbors(cell, h_bins=H_BINS, n_v=3) -> list[tuple]`
+  (4-connected: h wraps, v clamps, excludes self); `coverage_map(cov, cur=None,
+  elevations=V_ELEVATIONS) -> str`; `moves_from(cur, allowed, ...) -> list[Move]`
+  where `Move` is a frozen dataclass `(cell: tuple, gloss: str)`, nearest first.
+- Consumed by: `eyes/tools.py` (Task 6) and the MAY-187 `AgentDecider`.
+- `run/decider.py` keeps re-exporting the name `gloss` so
+  `tests/test_decider.py` passes untouched — that test is the refactor's net.
+
+- [x] **Step 1: Write the failing test** — `inspection/tests/test_grid.py`
+
+```python
+#!/usr/bin/env python3
+"""Grid vocabulary — index math, gloss, coverage ASCII.
+Run: p inspection/tests/test_grid.py"""
+import sys
+from pathlib import Path
+
+import numpy as np
+
+from inspection.view.grid import (H_BINS, V_ELEVATIONS, cell_gloss,
+                                  coverage_map, moves_from, neighbors,
+                                  step_delta)
+
+
+def test_step_delta_wraps():
+    assert step_delta(5, 6) == 1
+    assert step_delta(11, 0) == 1            # wraps forward past h=0
+    assert step_delta(0, 11) == -1
+    assert abs(step_delta(5, 11)) == H_BINS // 2      # opposite side
+
+
+def test_cell_gloss_matches_decider_wording():
+    assert cell_gloss((5, 1), (6, 1)) == "one step right, same height"
+    assert cell_gloss((5, 1), (3, 1)) == "two steps left, same height"
+    assert cell_gloss((11, 0), (0, 0)) == "one step right, same height"
+    assert cell_gloss((5, 1), (11, 2)) == "opposite side, higher"
+    assert cell_gloss((5, 1), (5, 0)) == "same side, lower"
+    assert cell_gloss(None, (3, 2)) == "elevation 70 deg"
+
+
+def test_neighbors_wrap_in_h_clamp_in_v():
+    assert set(neighbors((0, 0))) == {(11, 0), (1, 0), (0, 1)}   # v floor
+    assert len(neighbors((0, 1))) == 4
+    assert set(neighbors((0, 2))) == {(11, 2), (1, 2), (0, 1)}   # v ceiling
+    assert (0, 0) not in neighbors((0, 0))
+
+
+def test_coverage_map_ascii():
+    cov = np.zeros((3, 12), dtype=bool)
+    cov[0, 2] = True; cov[1, 3] = True
+    txt = coverage_map(cov, cur=(3, 1))
+    assert txt.count("#") == 1 and txt.count("@") == 1   # cur overrides its mark
+    assert txt.splitlines()[0].startswith("v2")          # highest elevation first
+
+
+def test_moves_from_nearest_first():
+    mv = moves_from((5, 1), {(6, 1), (4, 1), (5, 2), (11, 2)})
+    assert mv[0].cell == (4, 1)                  # tie at distance 1, tuple order
+    assert mv[0].gloss == "one step left, same height"
+    assert mv[-1].cell == (11, 2)                # farthest last
+
+
+def test_grid_is_light():
+    import inspection.view.grid as g
+    src = Path(g.__file__).read_text()
+    assert "inspection.motion" not in src and "inspection.cell" not in src
+    assert "pinocchio" not in sys.modules        # importing grid must stay cheap
+
+
+def main():
+    test_step_delta_wraps(); test_cell_gloss_matches_decider_wording()
+    test_neighbors_wrap_in_h_clamp_in_v(); test_coverage_map_ascii()
+    test_moves_from_nearest_first(); test_grid_is_light()
+    print("OK test_grid")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+- [x] **Step 2: Run — must fail** (`ModuleNotFoundError: inspection.view.grid`).
+  Run: `p inspection/tests/test_grid.py`
+- [x] **Step 3: Implement `inspection/view/grid.py`**
+
+```python
+#!/usr/bin/env python3
+"""Grid vocabulary for the viewsphere — index math and the words for it.
+
+The light half of the viewsphere: cell addressing (h wraps, v clamps), the
+egocentric gloss both AI tiers speak, and the coverage bitmap's rendering.
+numpy only — importing this must NEVER pull in IK/motion/pinocchio, because
+the image tier (eyes/) and the decider both live on it (Anton 2026-08-24).
+
+Move legality comes from motion (`viewsphere.reachability`), so `moves_from`
+takes the feasible set as an argument rather than computing it.
+"""
+from dataclasses import dataclass
+
+import numpy as np
+
+H_BINS = 12                          # 30 deg each, h=0 faces the robot base
+V_ELEVATIONS = (10.0, 40.0, 70.0)    # deg above the table (Anton 2026-08-18)
+DEFAULT_R = 0.35                     # camera-to-center distance
+
+_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
+
+
+@dataclass(frozen=True)
+class Move:
+    cell: tuple
+    gloss: str
+
+
+def step_delta(cur_h, h, h_bins=H_BINS):
+    """Signed shortest azimuth steps cur -> h; +1 = one step right."""
+    return (h - cur_h + h_bins // 2) % h_bins - h_bins // 2
+
+
+def cell_gloss(cur, cell, h_bins=H_BINS, elevations=V_ELEVATIONS):
+    """Egocentric label for cell relative to cur (D4 menu gloss)."""
+    if cur is None:
+        return f"elevation {elevations[cell[1]]:.0f} deg"
+    dh = step_delta(cur[0], cell[0], h_bins)
+    dv = cell[1] - cur[1]
+    if abs(dh) == h_bins // 2:
+        side = "opposite side"
+    elif dh == 0:
+        side = "same side"
+    else:
+        n = abs(dh)
+        side = f"{_WORDS[n]} step{'s' if n > 1 else ''} " \
+               f"{'right' if dh > 0 else 'left'}"
+    height = "same height" if dv == 0 else ("higher" if dv > 0 else "lower")
+    return f"{side}, {height}"
+
+
+def neighbors(cell, h_bins=H_BINS, n_v=len(V_ELEVATIONS)):
+    """4-connected neighbours: h wraps around the ring, v clamps at the ends."""
+    h, v = cell
+    out = [((h - 1) % h_bins, v), ((h + 1) % h_bins, v)]
+    if v - 1 >= 0:
+        out.append((h, v - 1))
+    if v + 1 < n_v:
+        out.append((h, v + 1))
+    return out
+
+
+def coverage_map(cov, cur=None, elevations=V_ELEVATIONS):
+    """ASCII bitmap of a (n_v, h_bins) coverage array, highest ring first."""
+    cov = np.asarray(cov, dtype=bool)
+    n_v, n_h = cov.shape
+    rows = []
+    for v in range(n_v - 1, -1, -1):
+        line = ""
+        for h in range(n_h):
+            if cur is not None and (int(cur[0]), int(cur[1])) == (h, v):
+                line += "@"
+            else:
+                line += "#" if cov[v, h] else "."
+        rows.append(f"v{v} {elevations[v]:>2.0f}deg |{line}|")
+    rows.append(" " * 9 + "h" + "".join(str(h % 10) for h in range(n_h)))
+    return "\n".join(rows)
+
+
+def moves_from(cur, allowed, h_bins=H_BINS, elevations=V_ELEVATIONS):
+    """Describe an allowed cell set from cur, nearest first. Feasibility is
+    the caller's business — this only orders and names the options."""
+    def dist(cell):
+        if cur is None:
+            return (0, cell[0], cell[1])
+        return (abs(step_delta(cur[0], cell[0], h_bins)) + abs(cell[1] - cur[1]),
+                cell[0], cell[1])
+
+    return [Move(tuple(c), cell_gloss(cur, c, h_bins, elevations))
+            for c in sorted(allowed, key=dist)]
+```
+
+- [x] **Step 4: Run test — must pass.** `p inspection/tests/test_grid.py`
+- [x] **Step 5: Point the old homes at it.** In `viewsphere.py`, delete the
+  three constant definitions and import them instead (keeps
+  `from inspection.view.viewsphere import H_BINS` working everywhere):
+
+```python
+from inspection.view.grid import H_BINS, V_ELEVATIONS, DEFAULT_R
+```
+
+  In `decider.py`, delete `_WORDS`, `_dh` and `gloss` and import replacements
+  (the module keeps exporting the name `gloss`, so `test_decider.py` is
+  untouched):
+
+```python
+from inspection.view.grid import (H_BINS, V_ELEVATIONS, cell_gloss as gloss,
+                                  step_delta as _dh)
+```
+
+- [x] **Step 6: Run the neighbours' tests — must still pass.**
+  `p inspection/tests/test_decider.py` and `p inspection/tests/test_machine.py`
+- [x] **Step 7: Commit** — `view: grid.py — the shared cell vocabulary, split out of the viewsphere`
+
+### Task 6: `eyes/tools.py` — the orchestrator's verbs
+
+Detailed when reached (house rule). Shape fixed now so Task 5's interfaces
+are stable: `ViewTools(store, writer=None)` binding a `RunStore` plus an
+optional note-writer, exposing `view_at`, `views_near`, `get_view`, `crop`,
+`coverage`, `note`. `get_view` resolves `cap_dir/rgb.png` and returns a
+`ViewImage` carrying **both** pixels and text (the design ships both and
+decides by measurement). `views_near` uses `grid.neighbors`; an uncaptured
+neighbour returns nothing and writes a miss note — a next-move hint that cost
+no motion.
+
+## Stage 3–7 stubs (detailed when reached)
 - **Stage 3** — `eyes/verbs_local.py`: SAM 3 (detect+segment), PP-OCRv6
   (transformers engine, polygon output), crop chain. cu128 wheels, 5090 only.
 - **Stage 4** — `eyes/inspect_agent.py` + `eyes/models.py` (thin swappable

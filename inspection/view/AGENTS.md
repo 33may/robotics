@@ -6,6 +6,12 @@ and track which have been seen. Later, the VLM picks cells from this
 enumeration — it replaces the picker, nothing else.
 
 ## Files
+- `grid.py` — the LIGHT half: cell addressing and the words for it.
+  `H_BINS`/`V_ELEVATIONS`/`DEFAULT_R`, `step_delta` (h wraps), `neighbors`
+  (4-connected, v clamps), `cell_gloss` ("two steps right, higher"),
+  `coverage_map` (ASCII bitmap), `moves_from` (order + name an allowed set).
+  numpy only — `eyes/` and the future `AgentDecider` both import it, so it
+  must never grow a motion/IK dependency. `p inspection/tests/test_grid.py`.
 - `viewsphere.py` — v2, UR5e stack. `ViewSphere(center, r)`: {h, v} cells
   (12 azimuth × 3 elevation bins, ONE shell of configurable radius, h0
   faces the base — azimuth computed from the actual center), cell →
@@ -14,6 +20,10 @@ enumeration — it replaces the picker, nothing else.
   motion ladder. `p inspection/view/viewsphere.py [--r R] [--demo]`.
 
 ## Contracts & decisions
+- The grid vocabulary is shared, the geometry is not (Anton 2026-08-24):
+  cell indices, gloss and coverage rendering live in `grid.py` for both AI
+  tiers; poses, reachability and planning stay in `viewsphere.py`. Move
+  legality comes from motion, so `moves_from` receives the feasible set.
 - Camera ROLL about the boresight is a free parameter: upright preferred,
   rolled variants tried before declaring a cell blocked. Image rotation
   is acceptable; unreachability is not.
