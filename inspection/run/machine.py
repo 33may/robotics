@@ -40,16 +40,20 @@ from __future__ import annotations
 import json
 import logging
 import queue
+import re
 import threading
 import time
 from pathlib import Path
 
 import numpy as np
 
-from inspection.cell.geometry import WORKSPACE, CloudAccumulator, object_in_base
+from inspection.cell.geometry import (BOX_PCT, JUMP_GATE_M, WORKSPACE,
+                                     CloudAccumulator)
 from inspection.cell.world import DEFAULT_STEP, RobotCell
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
+from inspection.run.segmenter import object_view
+from inspection.view.grid import object_extent, radius_for_extent
 from inspection.view.viewsphere import ViewSphere
 
 log = logging.getLogger(__name__)
@@ -97,8 +101,13 @@ def _plane_error(plane) -> str | None:
 
 class Supervisor:
     def __init__(self, rig, pub, outdir, q_survey, world=None, ik=None,
-                 r=0.35, seed=0):
+                 r=None, seed=0, segmenter=None):
         self.rig, self.pub = rig, pub
+        #: Optional `run.segmenter.ObjectSegmenter`. None keeps the pure
+        #: depth pipeline, which is what the fake rig and most tests want;
+        #: the composition root injects a real one. Never constructed here —
+        #: that would drag SAM 3 weights into every unit test.
+        self.segmenter = segmenter
         self.outdir = Path(outdir); self.q_survey = np.asarray(q_survey, float)
         self.world = world if world is not None else RobotCell()
         self.ik = ik if ik is not None else UR5eIK()
@@ -482,6 +491,90 @@ class Supervisor:
             log.exception("preview worker failed")
             self.pub.log("error", "preview failed — see logs")
 
+    def _object_from_capture(self, cap):
+        """One capture -> (view, segmentation | None). Identity in image space.
+
+        The object is whatever the mask says it is, because every purely
+        geometric rule we tried could not separate a cable lying against the
+        cup: at 20 mm they are genuinely adjacent, and distance has nothing
+        to say about that (run 2408-cup2 view 003 — object extent 175.8 mm
+        with growth, 89.1 mm with a mask).
+
+        Identity persists WITHOUT any text prompt or tracking state: the
+        cloud we have plus this view's pose already say where the object must
+        appear, so reprojecting it gives a fresh box every frame for free.
+        Only the box SOURCE differs between the survey and later views —
+        everything after the box is one path.
+
+        Falls back to the depth pipeline whenever the mask cannot be trusted.
+        That keeps a model failure to a LIVENESS cost (a fuzzier box, which
+        the jump gate and percentile extent still guard) instead of a safety
+        one, and it is why those two guards stay even though segmentation now
+        does the real work.
+
+        The policy itself lives in `run.segmenter.object_view` so the offline
+        replay measures this exact code and not a copy of it.
+        """
+        return object_view(cap, self.rig.intr, self.rig.intr_color,
+                           self.rig.depth_scale, self.acc.points,
+                           self.segmenter,
+                           on_fallback=lambda why: self.pub.log("warn", why))
+
+    def _publish_chain(self, cap, view, seg, dropped):
+        """Render and announce the identity chain for the capture just fused.
+
+        Four images — what the camera saw, the reprojected cloud and the box
+        built from it, the mask, and the points that actually entered the
+        cloud — so the question "why did this view contribute THAT?" is
+        answerable from the UI instead of from a hand-written replay script.
+
+        Best-effort throughout: this is diagnostics, and the points it
+        describes are already fused.
+        """
+        d = cap.get("dir")
+        if not d:
+            return
+        try:
+            from inspection.perception.overlay import save_chain
+            files = save_chain(
+                d, cap.get("rgb"), cap["T_base_cam"], self.rig.intr_color,
+                source_points=view.get("prompt_source"),
+                box=view.get("prompt_box") if seg is None else seg.box,
+                mask=seg.mask if seg is not None else None,
+                kept_points=self.acc.last_kept)
+            mn, mx = self.acc.aabb(pct=BOX_PCT) or (None, None)
+            self.pub.publish_chain(
+                d, files,
+                pose_id=cap.get("pose_id"),
+                source="mask" if seg is not None else "depth",
+                score=round(seg.score, 3) if seg is not None else None,
+                mask_px=int(seg.mask.sum()) if seg is not None else None,
+                offered=int(len(view.get("points", ()))),
+                kept=int(len(self.acc.last_kept)),
+                dropped=int(dropped),
+                extent_mm=[round(float(v) * 1000, 1) for v in (mx - mn)]
+                if mn is not None else None,
+                cloud=int(len(self.acc.points)))
+        except Exception:
+            log.exception("chain publish failed for %s", d)
+
+    def _save_mask(self, cap, seg):
+        """Persist the mask beside its capture; never fail the run over it.
+
+        Best-effort by design: the mask is a debugging and replay artifact,
+        and the points it produced are already fused. A disk error here must
+        not abort a settle that otherwise succeeded.
+        """
+        d = cap.get("dir")
+        if not d:
+            return
+        try:
+            from inspection.perception.capture import save_mask
+            save_mask(d, seg.mask, seg.score, seg.box,
+                      {"T_base_cam": cap["T_base_cam"]})
+        except Exception:
+            log.exception("could not save object mask to %s", d)
+
     def _exec_worker(self, gen, target, path):
         try:
             rep = self.rig.move(path)
@@ -515,8 +608,7 @@ class Supervisor:
         try:
             step = self._next_cell_step() if target != "survey" else 0
             cap = self.rig.capture(step)
-            view = object_in_base(cap["depth_raw"], self.rig.intr,
-                                  self.rig.depth_scale, cap["T_base_cam"])
+            view, seg = self._object_from_capture(cap)
             # The plane gate sits BEFORE anything from this view is kept:
             # a rejected view must not touch the accumulator, publish a
             # capture, or mark the cell visited. `settle_done ok=False` is
@@ -528,17 +620,24 @@ class Supervisor:
                                  "detail": f"view rejected: {bad}"})
                 return
             self.events.put({"ev": "phase", "gen": gen, "phase": "fusing"})
+            if seg is not None:
+                self._save_mask(cap, seg)
             npts = len(view["points"]) if view["points"] is not None else 0
             if target == "survey" and view["centroid"] is None:
                 self.events.put({"ev": "settle_done", "gen": gen, "target": target,
                                  "ok": False, "npts": 0,
                                  "detail": "NO OBJECT above the table"})
                 return
-            if npts:
-                self.acc.add(view["points"])
+            dropped = self.acc.add(view["points"]) if npts else 0
+            if dropped:
+                # Loud on purpose: a detached blob is a scene problem (a cable,
+                # a second object drifting in), not a routine filter event.
+                self.pub.log("warn", f"rejected {dropped} detached points "
+                                     f"(>{JUMP_GATE_M*100:.0f} cm from the object)")
             self._recenter()
             if self.sphere is not None:
                 self._reach = self.sphere.reachability(self.world, self.ik)
+            self._publish_chain(cap, view, seg, dropped)
             self.pub.publish_capture(cap)
             self._last_cap_dir = cap.get("dir")
             self.events.put({"ev": "settle_done", "gen": gen, "target": target,
@@ -550,8 +649,24 @@ class Supervisor:
     # ------------------------------------------------------------- helpers
     def _recenter(self):
         center = self.acc.centroid
+        # pct-trimmed: raw min/max let 168 stray cable points (4.7% of the
+        # cloud) grow the box until it contained the arm's own pose and every
+        # plan died in OMPL's start tree. See CloudAccumulator.aabb.
+        mn, mx = self.acc.aabb(pct=BOX_PCT)
+        if self.r is None:
+            # DERIVED ONCE, from the survey cloud, then frozen for the run.
+            # Frozen because cells are the keys for coverage and evidence: a
+            # shell that tightened as the cloud grew would silently re-point
+            # addresses that have already been visited and photographed.
+            # rig.intr is the IR-left/depth intrinsics; the colour frame the
+            # VLM reads differs by ~1.6% in fy on the D405 — below the noise
+            # in the extent itself.
+            extent = object_extent(mn, mx)
+            self.r = radius_for_extent(extent, self.rig.intr["fy"],
+                                       self.rig.intr["height"])
+            self.pub.log("info", f"shell r={self.r:.3f} m derived from a "
+                                 f"{extent * 1000:.0f} mm object")
         self.sphere = ViewSphere(center, r=self.r)
-        mn, mx = self.acc.aabb()
         dims = np.maximum(mx - mn + 0.04, 0.05)         # 2 cm margin each side
         mid = (mn + mx) / 2
         self.world.set_object("object", dims.tolist(),
@@ -702,6 +817,14 @@ class Supervisor:
         """
         if raw == "survey":
             return "survey"
+        # Marker id, as published in the scene: "h07v1" (ui.publisher.cell_key).
+        # Clicking a sphere in the 3D view hands back the id the BACKEND chose,
+        # so the viewsphere's naming stays on this side of the bus and the
+        # copied scene panel never learns what a cell is. Strict on purpose —
+        # a near-miss id is a bad command, not a cell to guess at.
+        if isinstance(raw, str):
+            m = re.fullmatch(r"h(\d{2})v(\d)", raw)
+            return (int(m.group(1)), int(m.group(2))) if m else None
         try:
             h, v = raw                      # TypeError / ValueError on anything else
             hi, vi = int(h), int(v)

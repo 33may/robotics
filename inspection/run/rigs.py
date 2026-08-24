@@ -17,14 +17,24 @@ ROBOT_IP = "192.168.2.50"
 class FakeRig:
     """Fake rig for testing: stoppable interpolating moves, synthetic captures."""
 
-    def __init__(self, q0, stop_event=None, dt=0.01, speed=3.0):
+    def __init__(self, q0, stop_event=None, dt=0.01, speed=3.0, outdir=None):
         self._q = np.asarray(q0, dtype=float)
         self.stop_event = stop_event or threading.Event()
         self.dt, self.speed = dt, speed
+        #: When set, captures are WRITTEN like the real rig's. Without it a
+        #: capture reports a dir that does not exist, so everything keyed on
+        #: capture files — view images, the chain overlays — is silently
+        #: absent and cannot be exercised without hardware. Tests leave it
+        #: None; the mock backend sets it.
+        self.outdir = Path(outdir) if outdir else None
         from inspection.tests.synth import synth_capture
         depth, intr, scale, T_bc, _ = synth_capture()
         self._depth, self._T_bc = depth, T_bc
         self.intr, self.depth_scale = intr, scale
+        # The synthetic camera has one imager, so the colour view and the
+        # depth view coincide; on the D405 they differ by 2.6 mm (measured).
+        # Same key, so the settle leg needs no branch for the fake.
+        self.intr_color = intr
         self.moves = []
 
     def q(self):
@@ -63,11 +73,26 @@ class FakeRig:
     def capture(self, pose_id):
         """Capture synthetic observation at current pose.
 
-        Returns: {"dir", "rgb", "depth_raw", "T_base_cam", "q"}
+        Returns: {"dir", "rgb", "depth_raw", "depth_aligned", "T_base_cam", "q"}
         """
-        return {"dir": f"(fake {pose_id:03d})", "rgb": self.frame(),
-                "depth_raw": self._depth, "T_base_cam": self._T_bc,
-                "q": self._q.copy()}
+        # rgb must be frame-sized here, not the 64x64 preview `frame()`
+        # returns: the settle leg segments it against `depth_aligned`, and a
+        # mask has to match the depth it is applied to.
+        h, w = self._depth.shape
+        rgb = np.zeros((h, w, 3), np.uint8)
+        rgb[:, :, 1] = np.linspace(0, 255, w, dtype=np.uint8)[None, :]
+        d = f"(fake {pose_id:03d})"
+        if self.outdir is not None:
+            import cv2
+            real = self.outdir / f"{pose_id:03d}"
+            real.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(real / "rgb.png"), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+            (real / "meta.json").write_text(json.dumps(
+                {"pose_id": pose_id, "rgb_rotation_deg": 0}, indent=2) + "\n")
+            d = str(real)
+        return {"dir": d, "rgb": rgb, "pose_id": pose_id,
+                "depth_raw": self._depth, "depth_aligned": self._depth,
+                "T_base_cam": self._T_bc, "q": self._q.copy()}
 
     def close(self):
         """Close rig (no-op for fake)."""
@@ -185,6 +210,10 @@ class RealRig:
             self.outdir.mkdir(parents=True, exist_ok=True)
             (self.outdir / "session.json").write_text(json.dumps(meta, indent=2) + "\n")
             self.intr = meta["intrinsics"]["ir_left"]
+            # `depth_aligned` is warped into the COLOUR viewport, which is the
+            # frame the rgb mask is computed in — so the masked lift uses this
+            # pair and the mask needs no warping at all.
+            self.intr_color = meta["intrinsics"]["color"]
             self._T_fc = t_flange_cam()
             self._ik = UR5eIK()
             self._grab = lambda: grab_aligned(self.pipe, self.align)
@@ -221,8 +250,11 @@ class RealRig:
         pose = {"joints_rad": q, "T_base_flange": T_bf,
                 "T_base_cam": T_bf @ self._T_fc}
         d = save_bundle(self.outdir, pose_id, bundle, pose)
-        return {"dir": str(d), "rgb": bundle["rgb"],
+        return {"dir": str(d), "rgb": bundle["rgb"], "pose_id": pose_id,
                 "depth_raw": bundle["depth_raw"],
+                # RAW orientation, like everything else returned here:
+                # `save_bundle` rotates only what it writes to disk.
+                "depth_aligned": bundle["depth_aligned"],
                 "T_base_cam": pose["T_base_cam"], "q": q}
 
     def close(self):

@@ -249,6 +249,47 @@ def test_blocked_plan_returns_to_idle():
     assert not th.is_alive()
 
 
+class _BlindBackend:
+    """Segmenter that always returns nothing — a stand-in for weights that
+    failed to load, an occluded object, or a confident-but-empty mask."""
+
+    def segment(self, rgb, box):
+        return np.zeros(rgb.shape[:2], dtype=bool), 0.0
+
+
+def _stub_segmenter(backend=None):
+    from inspection.eyes.verbs_local import StubBackend
+    from inspection.run.segmenter import ObjectSegmenter
+    return ObjectSegmenter(backend=backend or StubBackend())
+
+
+def test_survey_runs_through_the_segmenter_when_injected():
+    """The masked path end to end on the fake rig: a prompt box is built from
+    the bootstrap cluster, the mask comes back, and the cloud is fused from
+    masked depth rather than from grown depth."""
+    seg = _stub_segmenter()
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]), segmenter=seg)
+    full_boot(sup)
+    assert seg.calls >= 1, "settle leg never asked for a mask"
+    assert seg.misses == 0
+    assert len(sup.acc.points), "masked lift produced no object"
+    assert sup.sphere is not None
+    sup.request_shutdown(); th.join(10)
+
+
+def test_survey_falls_back_to_depth_when_the_mask_misses():
+    """A model failure is a liveness cost, never a dead run: the survey still
+    completes on the depth pipeline and the loop keeps its object."""
+    seg = _stub_segmenter(_BlindBackend())
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]), segmenter=seg)
+    full_boot(sup)                       # would hang or fail if it did not
+    assert seg.misses >= 1, "blind backend should have been rejected"
+    assert len(sup.acc.points), "fallback did not produce the object"
+    sup.request_shutdown(); th.join(10)
+
+
 def full_boot(sup):
     sup.events.put({"cmd": "view/request", "target": "survey"})
     wait_for(lambda: sup.phase == "previewing", msg="boot previewing")
@@ -322,8 +363,10 @@ def test_bad_plane_view_rejected():
         "plane": np.array([np.sin(tilt), 0.0, np.cos(tilt), -0.2]),
         "n_scene": 200,
     }
-    real = machine_mod.object_in_base
-    machine_mod.object_in_base = lambda *a, **k: poisoned
+    # Patch the seam the settle leg actually calls: identity resolution moved
+    # into `run.segmenter.object_view`, which returns (view, segmentation).
+    real = machine_mod.object_view
+    machine_mod.object_view = lambda *a, **k: (poisoned, None)
     try:
         views = bus.last("views/state")
         target = [[c["h"], c["v"]] for c in views["cells"]
@@ -333,7 +376,7 @@ def test_bad_plane_view_rejected():
         sup.events.put({"cmd": "view/confirm", "target": target})
         wait_for(lambda: sup.phase == "idle", timeout=60, msg="settle")
     finally:
-        machine_mod.object_in_base = real
+        machine_mod.object_view = real
 
     assert tuple(target) not in sup.visited, "poisoned view marked visited"
     assert len(sup.acc.points) == n_boot, "poisoned points entered the fusion"
@@ -514,13 +557,28 @@ def test_malformed_target_is_rejected_not_raised():
     """M5: commands come off the bus untrusted. A malformed target is a
     refusal with a log line, not a traceback out of the handler."""
     sup, rig, bus, th = make_sup()
-    for bad in (None, 5, [1, 2, 3], ["a", "b"], [1.5, 0], {"h": 1}):
+    for bad in (None, 5, [1, 2, 3], ["a", "b"], [1.5, 0], {"h": 1},
+                # marker-id lookalikes: a 3D click sends a string, so a
+                # near-miss must be refused rather than guessed at
+                "h7v1", "h07v", "views/h07v1", "hxxvy", ""):
         sup.events.put({"cmd": "view/request", "target": bad})
         sup.events.put({"cmd": "view/confirm", "target": bad})
     time.sleep(0.4)
     assert sup.phase == "idle" and sup.target is None
     sup.request_shutdown(); th.join(10)
     assert not th.is_alive()
+
+
+def test_marker_id_target_from_a_3d_click():
+    """Clicking a viewsphere marker in the 3D view sends the id the BACKEND
+    published (`ui.publisher.cell_key`), so the scene panel never has to learn
+    what a cell is. `_normalize_target` parses its own naming back."""
+    from inspection.ui.publisher import cell_key
+    norm = Supervisor._normalize_target
+    for h, v in ((0, 0), (7, 1), (11, 2)):
+        assert norm(cell_key(h, v)) == (h, v)
+    assert norm("survey") == "survey"       # still its own thing
+    assert norm((3, 1)) == (3, 1)           # the actions panel's form still works
 
 
 def test_idle_publishes_the_real_pose():
@@ -580,6 +638,8 @@ def main():
     test_duplicate_view_request_while_planning_is_ignored()
     test_blocked_plan_returns_to_idle()
     test_full_cycle_and_visited()
+    test_survey_runs_through_the_segmenter_when_injected()
+    test_survey_falls_back_to_depth_when_the_mask_misses()
     test_stop_mid_execute_returns_to_idle()
     test_capture_fail_not_visited()
     test_executor_fault_enters_fault_and_exit_works()
@@ -590,6 +650,7 @@ def main():
     test_stop_mid_execute_saves_the_turn_before_exit()
     test_join_workers_after_full_boot()
     test_malformed_target_is_rejected_not_raised()
+    test_marker_id_target_from_a_3d_click()
     test_idle_publishes_the_real_pose()
     test_sigint_saves_and_exits()
     print("OK test_machine (task 5)")

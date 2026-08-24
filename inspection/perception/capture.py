@@ -24,6 +24,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from inspection.cell.geometry import is_half_turn, rotate180
 from inspection.perception.camera import (
     WRIST_SERIAL, open_camera, session_metadata, capture_bundle, t_flange_cam,
 )
@@ -41,17 +42,65 @@ def save_bundle(outdir: Path, pose_id: int, bundle: dict,
     d = Path(outdir) / f"{pose_id:03d}"
     d.mkdir(parents=True, exist_ok=True)
 
-    cv2.imwrite(str(d / "rgb.png"), cv2.cvtColor(bundle["rgb"], cv2.COLOR_RGB2BGR))
+    # ---- ORIENTATION (Anton 2026-08-24): the COLOUR frame is stored UPRIGHT.
+    # Viewsphere roll is {0, 180}, so a half-turn capture is corrected here,
+    # once, and every reader downstream (UI preview, label sheets, the VLM)
+    # gets an upright image without each having to know about roll.
+    #
+    # `rgb` and `depth_aligned` share the colour viewport and rotate TOGETHER.
+    # `depth_raw` and the IR pair are left RAW on purpose: they are what
+    # `cell.geometry.object_in_base` deprojects against `T_base_cam` and the
+    # session intrinsics, so the reconstruction path is untouched and old runs
+    # stay replayable. Rotating one of a pixel-paired set is the bug here —
+    # not rotating at all.
+    rgb, depth_aligned = bundle["rgb"], bundle["depth_aligned"]
+    rot = 0
+    if pose is not None and is_half_turn(pose["T_base_cam"]):
+        rgb, depth_aligned, rot = rotate180(rgb), rotate180(depth_aligned), 180
+
+    cv2.imwrite(str(d / "rgb.png"), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
     cv2.imwrite(str(d / "ir_left.png"), bundle["ir_left"])
     cv2.imwrite(str(d / "ir_right.png"), bundle["ir_right"])
     np.save(d / "depth_raw.npy", bundle["depth_raw"])
-    np.save(d / "depth_aligned.npy", bundle["depth_aligned"])
+    np.save(d / "depth_aligned.npy", depth_aligned)
 
-    meta = {"pose_id": pose_id, "timestamp": bundle["timestamp"]}
+    meta = {"pose_id": pose_id, "timestamp": bundle["timestamp"],
+            # 0 or 180: how much rgb.png / depth_aligned.npy were rotated
+            # relative to depth_raw and T_base_cam. Absent on runs captured
+            # before 2026-08-24 — treat a missing key as "raw on disk".
+            "rgb_rotation_deg": rot}
     if pose is not None:
         meta.update({k: np.asarray(v).tolist() for k, v in pose.items()})
     (d / "meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     return d
+
+
+def save_mask(capture_dir, mask: np.ndarray, score: float,
+              box, pose: dict | None) -> None:
+    """Add the object mask to an already-written capture dir.
+
+    Segmentation happens after `save_bundle` (it needs the cloud accumulated
+    so far to build its prompt), so the mask is a second, additive write
+    rather than part of the bundle. A run stays fully replayable offline:
+    `mask.png` is what decided which depth pixels became object points.
+
+    Stored in the SAME orientation as `rgb.png` so the two overlay directly —
+    callers hold masks in raw orientation, and the half-turn correction is
+    applied here exactly as `save_bundle` applies it to rgb.
+    """
+    d = Path(capture_dir)
+    if not d.is_dir():
+        return
+    mask = np.asarray(mask, dtype=bool)
+    if pose is not None and is_half_turn(pose["T_base_cam"]):
+        mask = rotate180(mask)
+    cv2.imwrite(str(d / "mask.png"), mask.astype(np.uint8) * 255)
+    meta_path = d / "meta.json"
+    meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    meta["mask"] = {"score": round(float(score), 4),
+                    "box": [int(v) for v in box],   # prompt box, RAW frame
+                    "px": int(mask.sum())}
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
 
 
 def read_pose(robot_ip: str = ROBOT_IP) -> dict:

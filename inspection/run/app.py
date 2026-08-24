@@ -81,7 +81,7 @@ def teach(ip: str = ROBOT_IP):
     print(f"survey pose saved: {np.round(np.degrees(q), 1).tolist()} deg")
 
 
-def run(outdir: str, ip: str = ROBOT_IP, r: float = 0.35,
+def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
         port: int = 8767, bus_port: int = 8765, no_window: bool = False,
         seed: int = 0, gui: str = "qt"):
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -89,6 +89,7 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float = 0.35,
     from inspection.motion.execute import preflight
     from inspection.run.machine import Supervisor
     from inspection.run.rigs import PoseStreamer, RealRig
+    from inspection.run.segmenter import ObjectSegmenter
     from inspection.ui.app import _require_build
     from inspection.ui.publisher import InspectionPublisher
 
@@ -113,7 +114,11 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float = 0.35,
         pub = InspectionPublisher(bus, run_dir=outdir)
         pub.declare()
         rig = RealRig(None, stop_event, outdir, ip)   # world set below
-        sup = Supervisor(rig, pub, outdir, q_survey, seed=seed, r=r)
+        # Object identity is settled in image space (run 2408-cup2): a cable
+        # 20 mm from the cup is adjacent, so no distance rule can refuse it.
+        # Weights load lazily on the first capture, not here.
+        sup = Supervisor(rig, pub, outdir, q_survey, seed=seed, r=r,
+                         segmenter=ObjectSegmenter())
         install_sigint(sup)                          # earliest safe Ctrl-C
         rig.world = sup.world
         rig.start_camera(pub)
