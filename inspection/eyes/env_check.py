@@ -62,13 +62,18 @@ def check_env():
     except ImportError as e:
         out["hf_token"] = (False, str(e))
 
-    try:                                    # proves the gate was accepted
-        from huggingface_hub import model_info
-        info = model_info(SAM3_REPO)
-        out["sam3_gate"] = (True, f"{SAM3_REPO} @ {info.sha[:8]}")
+    # Must FETCH A FILE, not just read metadata: facebook/sam3 is
+    # `gated: manual`, and its metadata resolves for anyone — only the
+    # download 401s. Checking model_info() alone reports a green gate on a
+    # machine that cannot pull a single weight.
+    try:
+        from huggingface_hub import hf_hub_download
+        hf_hub_download(SAM3_REPO, "config.json")
+        out["sam3_gate"] = (True, f"{SAM3_REPO} config fetched")
     except Exception as e:
-        out["sam3_gate"] = (False, f"{type(e).__name__} — accept terms at "
-                                   f"huggingface.co/{SAM3_REPO}")
+        hint = ("accept terms at huggingface.co/" + SAM3_REPO
+                if "Gated" in type(e).__name__ else str(e)[:60])
+        out["sam3_gate"] = (False, f"{type(e).__name__} — {hint}")
 
     return out
 
