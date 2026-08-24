@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from inspection.eyes.store import FactWriter, RunStore
+from inspection.view.grid import DEFAULT_R
 
 
 def load_run(run_dir, v_elevs=(10.0, 40.0, 70.0), h_bins=12):
@@ -22,8 +23,13 @@ def load_run(run_dir, v_elevs=(10.0, 40.0, 70.0), h_bins=12):
         store = RunStore.open(run_dir)
         store._d["views"] = []                 # views: rebuilt from disk truth
     else:
+        # `or DEFAULT_R`, not `get(..., DEFAULT_R)`: the radius is derived at
+        # the survey now, so a run that ended before its first successful
+        # survey writes `"r": null` — a PRESENT key, which `get`'s default
+        # never sees. That None reached `_gloss`'s format string and killed
+        # replay of exactly the partial runs worth inspecting.
         store = RunStore.create(run_dir, h_bins=h_bins, v_elevs=v_elevs,
-                                r=run.get("r", 0.35))
+                                r=run.get("r") or DEFAULT_R)
     facts = FactWriter(store)
     for d in sorted(p for p in run_dir.iterdir()
                     if p.is_dir() and p.name.isdigit()):

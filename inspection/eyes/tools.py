@@ -10,13 +10,44 @@ The text is deterministic provenance built from geometry — never a model's
 words. Nothing in this module can move the robot: it reads captured views
 and, at most, records that a view it wanted does not exist.
 """
+import json
 from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
 
+from inspection.cell.geometry import (UPRIGHT_TOL_DEG, image_tilt_deg,
+                                     rotate180)
 from inspection.eyes.store import RunStore
 from inspection.view.grid import coverage_map, neighbors
+
+
+def upright(rgb, T_base_cam, stored_rotation_deg=None):
+    """Pixels the right way up, plus a provenance note. `(rgb, note)`.
+
+    `stored_rotation_deg` is `meta.json`'s `rgb_rotation_deg` — how much the
+    file on disk was ALREADY rotated when it was written. Since 2026-08-24 the
+    capture writer stores the colour frame upright, so this is normally 180 for
+    a half-turn cell and nothing is left to do here. Runs captured before that
+    have no such key; `None` means "raw on disk" and the correction happens
+    now, from the pose. Without this distinction a new run would be flipped
+    twice and land back upside down.
+
+    Only the exact half-turn is ever corrected: a 180 deg flip is lossless and
+    keeps the frame landscape, so a corrected view is still 848x480 and
+    directly comparable. Anything else is REPORTED, not rotated — the
+    hand-taught survey pose is not on the viewsphere (measured -16 deg on run
+    2408-seeded) and straightening it would mean interpolating away the
+    corners, while hiding that the taught pose is crooked.
+    """
+    tilt = image_tilt_deg(T_base_cam)
+    if stored_rotation_deg:
+        return rgb, " · upright on disk"
+    if abs(abs(tilt) - 180.0) <= UPRIGHT_TOL_DEG:
+        return rotate180(rgb), " · flipped upright"
+    if abs(tilt) > UPRIGHT_TOL_DEG:
+        return rgb, f" · TILTED {tilt:+.0f} deg, not corrected"
+    return rgb, ""
 
 
 @dataclass(frozen=True)
@@ -84,7 +115,16 @@ class ViewTools:
         # capture.py:44 writes through RGB2BGR — invert it, or every image the
         # VLM sees has its red and blue channels swapped.
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-        return ViewImage(rec.cell, rec.cap_dir, rgb, self._gloss(rec))
+        # Orientation is corrected HERE and nowhere earlier: the geometry path
+        # (`cell.geometry.object_in_base`) deprojects the raw depth against
+        # this same T_base_cam, so flipping pixels upstream would silently
+        # mirror the point cloud. Raw on disk stays raw.
+        meta_path = self._store.run_dir / rec.cap_dir / "meta.json"
+        stored = None
+        if meta_path.exists():
+            stored = json.loads(meta_path.read_text()).get("rgb_rotation_deg")
+        rgb, note = upright(rgb, rec.T_base_cam, stored)
+        return ViewImage(rec.cell, rec.cap_dir, rgb, self._gloss(rec) + note)
 
     def crop(self, img: ViewImage, box):
         """Sub-image; box (x0, y0, x1, y1) is clipped to the frame."""

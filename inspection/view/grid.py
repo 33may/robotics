@@ -15,7 +15,68 @@ import numpy as np
 
 H_BINS = 12                          # 30 deg each, h=0 faces the robot base
 V_ELEVATIONS = (10.0, 40.0, 70.0)    # deg above the table (Anton 2026-08-18)
-DEFAULT_R = 0.35                     # camera-to-center distance
+DEFAULT_R = 0.35                     # fallback only — the shell is DERIVED
+
+# ---- shell radius: derived from the object, not declared -------------------
+# The object should occupy the same fraction of frame height whether it is a
+# 30 mm bolt or a 300 mm bottle — that is what keeps the system general.
+# Computed ONCE from the survey cloud and then frozen: cells are the keys for
+# coverage and evidence, so a shell that breathes as the cloud grows would
+# silently re-point addresses that have already been visited.
+# FILL_TARGET is NOMINAL, measured against the AABB diagonal — and no cell
+# ever sees all three axes at once, so the real silhouette comes out ~1.4x
+# smaller than nominal (fill_probe on 2408-seeded: nominal 0.43, measured
+# 0.20-0.36, mean 0.31). 0.62 nominal is therefore ~0.45 of frame height in
+# the actual images. Verify a change with:
+#   p inspection/investigation/fill_probe.py --run <run> --fill <f>
+#   p inspection/investigation/frame_preview.py --run <run>
+FILL_TARGET = 0.62        # nominal fill of frame height, on the diagonal
+EXTENT_RULE = "sphere"    # which dimension FILL_TARGET is measured against
+R_MIN = 0.24              # measured floor — see below; NOT a tool clearance
+R_MAX = 0.40              # past this reachability collapses (24/36 cells)
+# R_MIN was 0.22, taken from a sweep on the DEMO cup at the DEMO position. With
+# the real object where it actually sits (run 2408-cup1) that shell reaches
+# only 19/36 cells against 28/36 at 0.24 — a cliff, and the run that used
+# 0.226 wasted most of its orbit on blocked cells.
+# The cliff is NOT tool geometry and NOT the cup: it is how much the object is
+# inflated. A 94x115x111 mm cup becomes AABB+40 mm, and coal adds another
+# 20 mm each side -> the solver sees ~174x195x191 mm. Thinning that recovers
+# 0.22 completely (+20 mm box: 29/36) but the padding IS the standoff
+# (Anton 2026-08-18, the inspected object is a hard obstacle), so the floor
+# moves instead of the margin. Re-derive with investigation/block_report.py
+# if the padding contract ever changes.
+
+
+def object_extent(mn, mx, rule=EXTENT_RULE):
+    """The object dimension the fill target is measured against [m].
+
+    The three rules differ by which viewing cell they protect, and the choice
+    moves the radius roughly 2x — more than the fill target itself does:
+      "sphere"    AABB diagonal — the silhouette from the WORST cell, so no
+                  cell can clip. Conservative; high rings under-fill.
+      "upright"   AABB height — what a low side view sees.
+      "footprint" largest horizontal extent — what a top-down view sees.
+    """
+    d = np.asarray(mx, dtype=float) - np.asarray(mn, dtype=float)
+    if rule == "sphere":
+        return float(np.linalg.norm(d))
+    if rule == "upright":
+        return float(d[2])
+    if rule == "footprint":
+        return float(np.max(d[:2]))
+    raise ValueError(f"unknown extent rule {rule!r}")
+
+
+def radius_for_extent(extent, fy, height_px, fill=FILL_TARGET):
+    """Camera distance at which `extent` metres span `fill` of the frame.
+
+    Pinhole similar triangles: a length L at distance r projects to fy*L/r
+    pixels, so r = fy*L / (fill*height_px). Clamped to the reachable band —
+    a clamped radius is an honest "as close as this cell allows", not a
+    failure, so it returns silently.
+    """
+    r = fy * float(extent) / (fill * height_px)
+    return float(np.clip(r, R_MIN, R_MAX))
 
 _WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
 

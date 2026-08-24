@@ -41,8 +41,14 @@ from inspection.view.grid import H_BINS, V_ELEVATIONS, DEFAULT_R
 # Loaded in this module's camera convention (+X boresight, +Z image-up).
 T_FLANGE_CAM = load_T_flange_cam("xfwd")
 
-# roll preference: upright first, then increasingly rotated
-ROLLS = np.deg2rad([0, 30, -30, 60, -60, 90, -90, 120, -120, 150, -150, 180])
+# Roll preference: upright first, then a half turn — and NOTHING else
+# (Anton 2026-08-24). Both are LOSSLESS to undo in image space and both keep
+# the frame landscape, so every capture can be presented to the VLM in one
+# orientation. Measured on the demo cup at r=0.244: {0, 180} reaches 26/36
+# cells — exactly what the old twelve-roll ladder reached. The nine
+# intermediate rolls bought no reachability at all, they only produced
+# tilted images that no de-rotation can fix without interpolating.
+ROLLS = np.deg2rad([0, 180])
 
 
 def _rot_x(a):
