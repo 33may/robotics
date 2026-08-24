@@ -5,7 +5,8 @@ from pathlib import Path
 
 import numpy as np
 
-from inspection.eyes.store import RunStore, FactWriter, ViewRecord
+from inspection.eyes.store import (FactWriter, FindingWriter, PlanWriter,
+                                   RunStore, ViewRecord)
 
 T = np.eye(4); T[:3, 3] = [0.1, 0.2, 0.3]
 
@@ -46,8 +47,38 @@ def test_no_motion_imports():
     assert "inspection.motion" not in src and "inspection.run" not in src
 
 
+def test_agent_writers():
+    with tempfile.TemporaryDirectory() as tmp:
+        store = _fresh(tmp)
+        plan, finder = PlanWriter(store), FindingWriter(store)
+        plan.set_hypothesis("logo likely on far wall")
+        plan.set_plan("sweep h=3..5 at v=1")
+        plan.note("view 12 shows a fragment at right edge")
+        rel = finder.add_finding((3, 1), "partial logo, right edge",
+                                 transcript_text='{"turns": []}')
+        finder.note("wanted neighbour (4,1) — not captured", cell=(3, 1))
+        again = RunStore.open(Path(tmp))
+        assert again.hypothesis == "logo likely on far wall"
+        assert again.plan.startswith("sweep")
+        assert [n["who"] for n in again.notes()] == ["plan", "finding"]
+        f = again.findings()[0]
+        assert f["cell"] == [3, 1] and (Path(tmp) / "eyes" / rel).exists()
+
+
+def test_trust_levels_by_construction():
+    # The model-facing writers must PHYSICALLY lack geometry verbs.
+    for cls in (PlanWriter, FindingWriter):
+        api = {m for m in dir(cls) if not m.startswith("_")}
+        assert "add_view" not in api, cls
+    assert {m for m in dir(PlanWriter) if not m.startswith("_")} == \
+        {"set_plan", "set_hypothesis", "note"}
+    assert {m for m in dir(FindingWriter) if not m.startswith("_")} == \
+        {"add_finding", "note"}
+
+
 def main():
     test_add_view_and_query(); test_flush_and_reopen(); test_no_motion_imports()
+    test_agent_writers(); test_trust_levels_by_construction()
     print("OK test_eyes_store")
 
 

@@ -7,6 +7,7 @@ touch views/visited/coverage. Flushed to eyes/store.json on every write.
 Never imports motion/run — the image tier does not move the robot.
 """
 import json
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -68,6 +69,20 @@ class RunStore:
             cov[v, h] = True
         return cov
 
+    def notes(self):
+        return list(self._d["notes"])
+
+    def findings(self):
+        return list(self._d["findings"])
+
+    @property
+    def hypothesis(self):
+        return self._d["hypothesis"]
+
+    @property
+    def plan(self):
+        return self._d["plan"]
+
 
 class FactWriter:
     """Deterministic-code tier: the ONLY writer of geometric ground truth."""
@@ -82,3 +97,47 @@ class FactWriter:
              "t": float(t),
              "T_base_cam": np.asarray(T_base_cam, float).tolist()})
         self._s._flush()
+
+
+class PlanWriter:
+    """Orchestrator tier: reasoning state only. No geometry verbs exist here."""
+
+    def __init__(self, store: RunStore):
+        self._s = store
+
+    def set_plan(self, text):
+        self._s._d["plan"] = str(text); self._s._flush()
+
+    def set_hypothesis(self, text):
+        self._s._d["hypothesis"] = str(text); self._s._flush()
+
+    def note(self, text, cell=None):
+        _note(self._s, "plan", text, cell)
+
+
+class FindingWriter:
+    """Inspection-subagent tier: per-view findings + verbatim transcripts."""
+
+    def __init__(self, store: RunStore):
+        self._s = store
+
+    def add_finding(self, cell, summary, transcript_text):
+        tdir = self._s.path / "transcripts"
+        tdir.mkdir(parents=True, exist_ok=True)
+        rel = f"transcripts/f{len(self._s._d['findings']):03d}.json"
+        (self._s.path / rel).write_text(transcript_text)
+        self._s._d["findings"].append(
+            {"cell": list(cell), "summary": str(summary), "transcript": rel,
+             "t": time.time()})
+        self._s._flush()
+        return rel
+
+    def note(self, text, cell=None):
+        _note(self._s, "finding", text, cell)
+
+
+def _note(store, who, text, cell):
+    store._d["notes"].append(
+        {"who": who, "cell": list(cell) if cell is not None else None,
+         "text": str(text), "t": time.time()})
+    store._flush()
