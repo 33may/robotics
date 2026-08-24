@@ -760,14 +760,145 @@ from inspection.view.grid import (H_BINS, V_ELEVATIONS, cell_gloss as gloss,
 
 ### Task 6: `eyes/tools.py` — the orchestrator's verbs
 
-Detailed when reached (house rule). Shape fixed now so Task 5's interfaces
-are stable: `ViewTools(store, writer=None)` binding a `RunStore` plus an
-optional note-writer, exposing `view_at`, `views_near`, `get_view`, `crop`,
-`coverage`, `note`. `get_view` resolves `cap_dir/rgb.png` and returns a
-`ViewImage` carrying **both** pixels and text (the design ships both and
-decides by measurement). `views_near` uses `grid.neighbors`; an uncaptured
-neighbour returns nothing and writes a miss note — a next-move hint that cost
-no motion.
+**Files:**
+- Create: `inspection/eyes/tools.py`
+- Test: `inspection/tests/test_eyes_tools.py`
+
+**Interfaces:**
+- Consumes: `RunStore`/`ViewRecord` (Task 1), the writers (Task 2),
+  `view/grid.py` (Task 5).
+- Produces: `ViewTools(store, writer=None)` with `view_at(cell)`,
+  `views_near(cell)`, `get_view(target)`, `crop(img, box)`, `coverage()`,
+  `note(text, cell=None)`; `ViewImage` frozen dataclass
+  `(cell, cap_dir, rgb: np.ndarray, text: str, box: tuple | None)`.
+- Stage 3 hangs detect/segment/OCR off `ViewImage`; Stage 4's subagent is
+  handed a `ViewTools` bound to a `FindingWriter`.
+
+**Contracts fixed here:**
+- `view_at` returns the **newest** view of a cell (`store.views(cell)` returns
+  all, oldest first) — a retry or revisit supersedes the earlier look.
+- `views_near` = `grid.neighbors` (4-connected, h wraps, v clamps). Captured
+  neighbours come back as records; uncaptured ones come back as `None` **and**
+  write a miss note through `writer` when one is bound. That note is a
+  next-move hint that cost no motion — the design's whole reason for the verb.
+- `get_view` reads `cap_dir/rgb.png` with cv2 and converts **BGR→RGB**
+  (`perception/capture.py:44` writes it through `RGB2BGR`; not inverting here
+  hands the VLM colour-swapped images). cv2 is imported inside the function so
+  the module stays importable and cheap for pixel-free callers.
+- Both pixels and text on every return (design: ship both, decide by
+  measurement). Text is deterministic provenance built from grid + store —
+  never a model's words.
+
+- [x] **Step 1: Write the failing test** — `inspection/tests/test_eyes_tools.py`
+
+```python
+#!/usr/bin/env python3
+"""Verb surface over the run structure. Run: p inspection/tests/test_eyes_tools.py"""
+import tempfile
+from pathlib import Path
+
+import numpy as np
+
+from inspection.eyes.store import FactWriter, FindingWriter, RunStore
+from inspection.eyes.tools import ViewImage, ViewTools
+
+T = np.eye(4)
+
+
+def _rig(tmp):
+    """Store with two views of (3,1) — a revisit — plus a neighbour at (4,1)."""
+    root = Path(tmp)
+    store = RunStore.create(root, h_bins=12, v_elevs=(10.0, 40.0, 70.0), r=0.35)
+    facts = FactWriter(store)
+    for pid, (cell, name) in enumerate([((3, 1), "001"), ((4, 1), "002"),
+                                        ((3, 1), "003")], start=1):
+        d = root / name; d.mkdir()
+        img = np.zeros((480, 848, 3), np.uint8)
+        img[:, :, 0] = pid * 10                      # RED channel marks the dir
+        import cv2
+        cv2.imwrite(str(d / "rgb.png"), cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+        facts.add_view(cell=cell, pose_id=pid, cap_dir=name, T_base_cam=T,
+                       t=float(pid))
+    return store
+
+
+def test_view_at_returns_newest():
+    with tempfile.TemporaryDirectory() as tmp:
+        tools = ViewTools(_rig(tmp))
+        assert len(tools._store.views(cell=(3, 1))) == 2      # both kept
+        assert tools.view_at((3, 1)).cap_dir == "003"         # newest wins
+        assert tools.view_at((9, 0)) is None                  # never captured
+
+
+def test_views_near_hits_and_logs_misses():
+    with tempfile.TemporaryDirectory() as tmp:
+        store = _rig(tmp)
+        tools = ViewTools(store, writer=FindingWriter(store))
+        near = dict(tools.views_near((3, 1)))
+        assert set(near) == {(2, 1), (4, 1), (3, 0), (3, 2)}  # 4-connected
+        assert near[(4, 1)].cap_dir == "002"                  # captured
+        assert near[(2, 1)] is None                           # not captured
+        misses = [n for n in store.notes() if "not captured" in n["text"]]
+        assert len(misses) == 3 and misses[0]["who"] == "finding"
+
+
+def test_get_view_pixels_are_rgb_not_bgr():
+    with tempfile.TemporaryDirectory() as tmp:
+        img = ViewTools(_rig(tmp)).get_view((4, 1))
+        assert isinstance(img, ViewImage) and img.rgb.shape == (480, 848, 3)
+        assert img.rgb[0, 0, 0] == 20 and img.rgb[0, 0, 2] == 0   # RED, not blue
+        assert "cell [4, 1]" in img.text and "dir 002" in img.text
+
+
+def test_crop_clips_and_records():
+    with tempfile.TemporaryDirectory() as tmp:
+        tools = ViewTools(_rig(tmp))
+        c = tools.crop(tools.get_view((4, 1)), (800, 400, 900, 500))  # over edge
+        assert c.rgb.shape == (80, 48, 3)          # clipped to 848x480
+        assert c.box == (800, 400, 848, 480) and "crop" in c.text
+
+
+def test_coverage_text():
+    with tempfile.TemporaryDirectory() as tmp:
+        txt = ViewTools(_rig(tmp)).coverage(cur=(3, 1))
+        assert "@" in txt and txt.count("#") == 1  # (4,1) seen, (3,1) is cur
+        assert "2/36" in txt
+
+
+def test_seeded_run_if_present():
+    real = Path("inspection/data/runs/2408-seeded")
+    if not (real / "run.json").exists():
+        print("  (skip: 2408-seeded not present)"); return
+    from inspection.eyes.replay import load_run
+    tools = ViewTools(load_run(real))
+    assert len(tools._store.views()) == 25 and len(tools._store.visited()) == 24
+    cell = sorted(tools._store.visited())[0]
+    assert tools.get_view(cell).rgb.shape == (480, 848, 3)
+    print(tools.coverage(cur=cell))
+
+
+def main():
+    test_view_at_returns_newest(); test_views_near_hits_and_logs_misses()
+    test_get_view_pixels_are_rgb_not_bgr(); test_crop_clips_and_records()
+    test_coverage_text(); test_seeded_run_if_present()
+    print("OK test_eyes_tools")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+- [x] **Step 2: Run — must fail** (`ModuleNotFoundError: inspection.eyes.tools`).
+- [x] **Step 3: Implement `inspection/eyes/tools.py`** — `ViewImage` dataclass
+  plus `ViewTools` as specified above; text gloss built from
+  `grid.cell_gloss`-style facts (cell, azimuth degrees from `h`, elevation from
+  `v_elevs`, radius, dir), coverage text from `grid.coverage_map` plus an
+  `N/36 cells seen` line and a legend.
+- [x] **Step 4: Run test — must pass** (seeded smoke prints the real bitmap).
+- [x] **Step 5: Commit** — `eyes: the verb surface — views, neighbours, pixels, coverage`
+
+**Stage 2 exit gate:** `test_eyes_tools.py` green including the `2408-seeded`
+smoke; the printed coverage bitmap shows 24 of 36 cells; misses logged as notes.
 
 **A cell may hold more than one view.** A revisit or a retry after a failed
 capture can produce two dirs for the same `[h, v]` (in `2408-seeded` the retry

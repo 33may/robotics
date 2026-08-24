@@ -16,6 +16,11 @@ accumulating in the orchestrator's context over a 5–30 step run.
 - `store.py` — the run structure. `RunStore` (read API + flush to
   `<run>/eyes/store.json` on every write) and the three writers.
   `ViewRecord(cell, pose_id, cap_dir, t, T_base_cam)`.
+- `tools.py` — the verb surface: `ViewTools(store, writer=None)` with
+  `view_at` (newest view of a cell), `views_near` (4-connected; an uncaptured
+  neighbour returns None and is logged as a note), `get_view` → `ViewImage`
+  (pixels **and** text), `crop` (clipped), `coverage` (ASCII + count), `note`.
+  Debug CLI: `p inspection/eyes/tools.py inspection/data/runs/2408-seeded`.
 - `replay.py` — `load_run(run_dir, v_elevs, h_bins) -> RunStore`: a captured
   data-engine run becomes the store's substrate. Idempotent.
   Debug CLI: `p inspection/eyes/replay.py inspection/data/runs/2108-d`.
