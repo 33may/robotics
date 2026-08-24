@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""View store: facts tier. Run: p inspection/tests/test_eyes_store.py"""
+import tempfile
+from pathlib import Path
+
+import numpy as np
+
+from inspection.eyes.store import RunStore, FactWriter, ViewRecord
+
+T = np.eye(4); T[:3, 3] = [0.1, 0.2, 0.3]
+
+
+def _fresh(tmp):
+    return RunStore.create(Path(tmp), h_bins=12, v_elevs=(10.0, 40.0, 70.0), r=0.35)
+
+
+def test_add_view_and_query():
+    with tempfile.TemporaryDirectory() as tmp:
+        store = _fresh(tmp)
+        facts = FactWriter(store)
+        facts.add_view(cell=None, pose_id=0, cap_dir="000", T_base_cam=T, t=1.0)
+        facts.add_view(cell=(3, 1), pose_id=1, cap_dir="001", T_base_cam=T, t=2.0)
+        assert store.visited() == {(3, 1)}          # survey is not a cell
+        assert len(store.views()) == 2
+        v = store.views(cell=(3, 1))[0]
+        assert isinstance(v, ViewRecord) and v.cap_dir == "001"
+        assert v.T_base_cam.shape == (4, 4)
+        cov = store.coverage()
+        assert cov.shape == (3, 12) and cov[1, 3] and cov.sum() == 1
+
+
+def test_flush_and_reopen():
+    with tempfile.TemporaryDirectory() as tmp:
+        store = _fresh(tmp)
+        FactWriter(store).add_view(cell=(0, 2), pose_id=1, cap_dir="001",
+                                   T_base_cam=T, t=1.0)
+        again = RunStore.open(Path(tmp))            # fresh object, disk only
+        assert again.visited() == {(0, 2)}
+        assert np.allclose(again.views()[0].T_base_cam, T)
+        assert (Path(tmp) / "eyes" / "store.json").exists()
+
+
+def test_no_motion_imports():
+    import inspection.eyes.store as m
+    src = Path(m.__file__).read_text()
+    assert "inspection.motion" not in src and "inspection.run" not in src
+
+
+def main():
+    test_add_view_and_query(); test_flush_and_reopen(); test_no_motion_imports()
+    print("OK test_eyes_store")
+
+
+if __name__ == "__main__":
+    main()
