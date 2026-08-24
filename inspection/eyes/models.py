@@ -36,6 +36,10 @@ class StubVlm:
                     "answer": "unknown"}
         return self.script.pop(0)
 
+    @staticmethod
+    def to_pixel_box(box, width, height):
+        return tuple(int(v) for v in box)          # already pixels
+
 
 class GeminiVlm:
     """Google Gemini behind `respond`. Reads GEMINI_API_KEY from the env.
@@ -68,6 +72,26 @@ class GeminiVlm:
         y, x = point_yx
         return (round(x / 1000.0 * width), round(y / 1000.0 * height))
 
+    @staticmethod
+    def to_pixel_box(box, width, height):
+        """ER-2's [ymin, xmin, ymax, xmax] (0-1000) -> (x0, y0, x1, y1) px.
+
+        Confirmed against a real reply: asked to crop the cup, ER-2 emitted
+        [390, 460, 715, 595], which decodes to (390, 187, 505, 343) — SAM 3
+        independently boxed the same cup at (392, 188, 504, 342). Interpreting
+        those numbers as raw pixels put the crop off the bottom of the frame.
+
+        Values already outside 0-1000 cannot be normalised coordinates, so
+        they are passed through as pixels — the model occasionally answers in
+        the frame's own units after being told the frame size.
+        """
+        vals = [float(v) for v in box]
+        if max(vals) > 1000.0:
+            return tuple(int(v) for v in vals)
+        ymin, xmin, ymax, xmax = vals
+        return (round(xmin / 1000.0 * width), round(ymin / 1000.0 * height),
+                round(xmax / 1000.0 * width), round(ymax / 1000.0 * height))
+
     def respond(self, parts, schema=None):
         from google.genai import types
         client = self._lazy()
@@ -90,10 +114,47 @@ class GeminiVlm:
         text = (out.text or "").strip()
         if not schema:
             return text
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            # Keep the raw text: a malformed answer is evidence about the model,
-            # and the bench needs to see it rather than a swallowed exception.
-            return {"evidence": [], "reasoning": f"unparsed model output: {text}",
-                    "answer": "unknown"}
+        obj = first_json_object(text)
+        if obj is not None:
+            return obj
+        # Keep the raw text: a malformed answer is evidence about the model,
+        # and the bench needs to see it rather than a swallowed exception.
+        return {"evidence": [], "reasoning": f"unparsed model output: {text}",
+                "answer": "unknown"}
+
+
+def first_json_object(text):
+    """First balanced {...} in a string, or None.
+
+    ER-2 in JSON mode reliably emits a correct object and then trails extra
+    closing braces after it (measured: `{"tool": "detect", ...}}\\n"}\\n}`).
+    A plain json.loads throws away a perfectly good tool call because of that
+    tail, so scan for the first balanced object instead. Strings are tracked
+    so a brace inside a value cannot end the scan early.
+    """
+    start = text.find("{")
+    if start < 0:
+        return None
+    depth, in_str, esc = 0, False, False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(text[start:i + 1])
+                except json.JSONDecodeError:
+                    return None
+    return None

@@ -77,8 +77,32 @@ class Finding:
         return f"{self.answer} — {ev}" if ev else str(self.answer)
 
 
+def _boxes_to_pixels(args, model, img):
+    """Convert any box argument into frame pixels using the MODEL's convention.
+
+    Each model states geometry its own way — ER-2 emits [ymin, xmin, ymax,
+    xmax] normalised 0-1000, y first — so the adapter owns the conversion and
+    the agent stays model-agnostic. Without this the agent silently crops the
+    wrong region, which looks like a model failure and is not one.
+    """
+    if "box" not in args:
+        return args
+    h, w = img.rgb.shape[:2]
+    convert = getattr(model, "to_pixel_box", None)
+    out = dict(args)
+    out["box"] = (convert(args["box"], w, h) if convert
+                  else tuple(int(v) for v in args["box"]))
+    return out
+
+
 def _dispatch(name, args, tools, verbs, writer, img):
-    """Run one tool call against THIS view. Returns (text, new_image|None)."""
+    """Run one tool call against THIS view. Returns (text, new_image|None).
+
+    `img` is ALWAYS the original full frame, never the last crop: the model
+    states boxes in full-frame coordinates because the full frame is what it
+    was shown first. Feeding it the previous crop made every second box land
+    on a sliver of the first one.
+    """
     if name == "detect":
         dets = verbs.detect(img, args.get("phrase", "object"))
         return ("detect: " + (", ".join(f"{d.label} {d.score:.2f} at {d.box}"
@@ -121,6 +145,7 @@ def inspect_view(tools, verbs, writer, model, cell, task, hypothesis=None,
     # START of the sequence (position alone is worth up to a 41% swing).
     parts = [prompt, ("full frame", img.rgb)]
     current = img
+    done = {}                       # tool call -> its result, to refuse repeats
 
     for _ in range(max_turns):
         reply = model.respond(parts, schema={"order": SCHEMA_ORDER})
@@ -128,13 +153,38 @@ def inspect_view(tools, verbs, writer, model, cell, task, hypothesis=None,
                                    else {"raw": str(reply)})
         if isinstance(reply, dict) and "tool" in reply:
             name = reply["tool"]
-            result, new_img = _dispatch(name, reply.get("args", {}) or {},
-                                        tools, verbs, writer, current)
+            args = _boxes_to_pixels(reply.get("args", {}) or {}, model, img)
+            key = f"{name}:{json.dumps(args, sort_keys=True, default=str)}"
+            if key in done:
+                # Measured: ER-2 called detect four times with identical
+                # arguments and stalled. Removing distractor actions is the
+                # single biggest lever on agent loops (AgentOccam WebArena
+                # 16.5 -> 25.8%), so say it plainly instead of re-running.
+                result = (f"{name} was already called with these arguments and "
+                          f"returned: {done[key]} — the result will not change. "
+                          f"Use a different tool or give your answer now.")
+                transcript["turns"].append({"result": result})
+                parts.append(f"[{name}] {result}")
+                continue
+            try:
+                # Always the original frame — see _dispatch's docstring.
+                result, new_img = _dispatch(name, args,
+                                            tools, verbs, writer, img)
+                done[key] = result
+            except Exception as e:
+                # A bad box is not a crash, it is a message. Categorical
+                # failure feedback raises success AND cuts retries (LLM3:
+                # 40% -> 60% with fewer calls); an exception here would throw
+                # away a run over one malformed argument.
+                h, w = img.rgb.shape[:2]
+                result, new_img = (f"{name} failed: {e}. The frame is "
+                                   f"{w}x{h}; boxes are [x0, y0, x1, y1] in "
+                                   f"FULL-FRAME pixels."), None
             transcript["turns"].append({"result": result})
             parts.append(f"[{name}] {result}")
             if new_img is not None:
                 current = new_img
-                parts.append((f"crop of the same frame", new_img.rgb))
+                parts.append(("crop of the same frame", new_img.rgb))
             continue
 
         answer = (reply or {}).get("answer", "unknown")
