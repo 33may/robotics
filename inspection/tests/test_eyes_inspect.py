@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""The inspection subagent's run loop. Run: p inspection/tests/test_eyes_inspect.py"""
+import json
+import tempfile
+from pathlib import Path
+
+import numpy as np
+
+from inspection.eyes.inspect_agent import SCHEMA_ORDER, inspect_view
+from inspection.eyes.models import StubVlm
+from inspection.eyes.store import FactWriter, FindingWriter, RunStore
+from inspection.eyes.tools import ViewTools
+from inspection.eyes.verbs_local import LocalVerbs, StubBackend
+
+T = np.eye(4)
+
+
+def _rig(tmp):
+    root = Path(tmp)
+    store = RunStore.create(root, h_bins=12, v_elevs=(10.0, 40.0, 70.0), r=0.35)
+    d = root / "001"; d.mkdir()
+    import cv2
+    img = np.zeros((480, 848, 3), np.uint8); img[:, :, 1] = 90
+    cv2.imwrite(str(d / "rgb.png"), img)
+    FactWriter(store).add_view(cell=(3, 1), pose_id=1, cap_dir="001",
+                               T_base_cam=T, t=1.0)
+    return store
+
+
+def _run(tmp, script):
+    store = _rig(tmp)
+    tools = ViewTools(store, writer=FindingWriter(store))
+    verbs = LocalVerbs(StubBackend(boxes=[((100, 100, 300, 300), 0.9, "cup")],
+                                   lines=[([[110, 110], [200, 110], [200, 140],
+                                            [110, 140]], "ACME", 0.92)]))
+    finding = inspect_view(tools, verbs, FindingWriter(store), StubVlm(script),
+                           cell=(3, 1), task="is there a logo on this cup?")
+    return store, finding
+
+
+def test_single_turn_answer_is_recorded():
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, [{"evidence": ["a green cup fills the frame"],
+                               "reasoning": "no marking is visible on this side",
+                               "answer": "no"}])
+        assert f.answer == "no" and f.cell == (3, 1)
+        assert store.findings()[0]["summary"].startswith("no")
+        assert len(store.findings()) == 1
+
+
+def test_tool_turns_run_then_the_answer_lands():
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, [
+            {"tool": "detect", "args": {"phrase": "cup"}},
+            {"tool": "read_text", "args": {}},
+            {"evidence": ["text ACME on the body"],
+             "reasoning": "the OCR read sits inside the cup box",
+             "answer": "yes"}])
+        assert f.answer == "yes"
+        assert [t["tool"] for t in f.transcript["turns"] if "tool" in t] == \
+            ["detect", "read_text"]
+
+
+def test_transcript_is_written_verbatim_but_only_the_summary_returns():
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, [
+            {"tool": "detect", "args": {"phrase": "cup"}},
+            {"evidence": ["e"], "reasoning": "r", "answer": "no"}])
+        rel = store.findings()[0]["transcript"]
+        disk = json.loads((store.path / rel).read_text())
+        assert len(disk["turns"]) == len(f.transcript["turns"]) >= 3
+        assert "prompt" in disk and "cell [3, 1]" in disk["prompt"]
+        assert store.findings()[0]["summary"] == f.summary
+        assert len(f.summary) < len(json.dumps(disk))     # distilled, not verbatim
+
+
+def test_uncaptured_neighbour_becomes_a_note_not_a_move():
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, [
+            {"tool": "note", "args": {"text": "want the far side, not captured"}},
+            {"evidence": ["e"], "reasoning": "r", "answer": "unknown"}])
+        texts = [n["text"] for n in store.notes()]
+        assert any("far side" in t for t in texts)
+        assert all(n["who"] == "finding" for n in store.notes())
+
+
+def test_schema_puts_reasoning_before_answer():
+    # Answer-first erases the CoT gain entirely (LaMDA GSM8K 14.3 -> 6.1), and
+    # JSON mode is what causes it: 100% of GPT-3.5 responses emitted `answer`
+    # before `reason`. Field ORDER is the contract, not decoration.
+    assert SCHEMA_ORDER.index("reasoning") < SCHEMA_ORDER.index("answer")
+    assert SCHEMA_ORDER.index("evidence") < SCHEMA_ORDER.index("reasoning")
+    assert "confidence" not in SCHEMA_ORDER      # verbalized confidence ~ chance
+
+
+def test_the_subagent_is_never_given_a_way_to_move():
+    from inspection.eyes import inspect_agent
+    src = Path(inspect_agent.__file__).read_text()
+    assert "inspection.motion" not in src and "inspection.run" not in src
+    for verb in ("view_at", "views_near"):
+        assert verb not in inspect_agent.TOOLS        # no cross-view retrieval
+    assert set(inspect_agent.TOOLS) == {"detect", "segment", "read_text",
+                                        "crop", "note"}
+
+
+def main():
+    test_single_turn_answer_is_recorded()
+    test_tool_turns_run_then_the_answer_lands()
+    test_transcript_is_written_verbatim_but_only_the_summary_returns()
+    test_uncaptured_neighbour_becomes_a_note_not_a_move()
+    test_schema_puts_reasoning_before_answer()
+    test_the_subagent_is_never_given_a_way_to_move()
+    print("OK test_eyes_inspect")
+
+
+if __name__ == "__main__":
+    main()
