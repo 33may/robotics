@@ -168,3 +168,142 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ── D1: a healthy stream must never be declared dead by a slow scheduler ────
+
+class SlowClockRecv(LiveRecv):
+    """Healthy 500 Hz stream, but the first two reads land on the SAME
+    packet — which is legitimate — and the process is then descheduled so
+    that `time.sleep(0.002)` returns well after the poll window closed.
+
+    This is the loaded-machine case. It reproduces on a busy box and never
+    on an idle one, which is exactly the profile of a bug that survived 23
+    isolated reproduction attempts and killed every real run.
+    """
+
+    def __init__(self, oversleep=0.5):
+        super().__init__()
+        self._reads = 0
+        self._oversleep = oversleep
+        self.real_sleep = time.sleep
+
+    def getTimestamp(self):
+        self._reads += 1
+        if self._reads <= 2:
+            return self._t          # same 2 ms packet — legitimate
+        self._t += 0.002            # stream is alive and advancing
+        return self._t
+
+
+#: Captured before any test patches them. `execute` does `import time`, so
+#: patching `ex.time.monotonic` mutates the shared module — restoring from a
+#: value read *after* patching would reinstall the fake.
+_REAL_MONOTONIC = time.monotonic
+_REAL_SLEEP = time.sleep
+
+
+class _descheduled:
+    """Simulates a loaded machine: reads are cheap, but `sleep(0.002)` returns
+    only after `oversleep` seconds because the thread lost the CPU.
+
+    The overshoot must land on the SLEEP, not between two adjacent reads —
+    that is the real failure. Two back-to-back `getTimestamp()` calls are
+    microseconds apart; it is the sleep in between that can stretch.
+    """
+
+    def __init__(self, oversleep=0.5):
+        self.oversleep = oversleep
+        self.t = 0.0
+
+    def _mono(self):
+        self.t += 0.0001            # a read costs ~nothing
+        return self.t
+
+    def _sleep(self, _s):
+        self.t += self.oversleep    # ... and then the scheduler forgets us
+
+    def __enter__(self):
+        time.sleep = self._sleep
+        time.monotonic = self._mono
+        return self
+
+    def __exit__(self, *exc):
+        time.sleep = _REAL_SLEEP
+        time.monotonic = _REAL_MONOTONIC
+
+
+def test_slow_scheduler_does_not_kill_a_live_stream():
+    """The regression: `_ts_advancing` checked its deadline at the TOP of the
+    loop, so an overshooting sleep returned False without ever re-reading —
+    declaring a healthy stream dead and tearing down a working socket."""
+    recv = SlowClockRecv()
+    arm = make_arm(recv)
+    with _descheduled():
+        assert arm._ts_advancing() is True, \
+            "healthy stream declared dead when the scheduler overshot"
+    assert recv.reconnects == 0, "tore down a socket that was fine"
+
+
+def test_frozen_stream_still_detected_under_a_slow_clock():
+    """The fix must not blunt the guard: a genuinely frozen stream must still
+    be caught even when the clock leaps."""
+    arm = make_arm(FrozenRecv())
+    with _descheduled():
+        assert arm._ts_advancing() is False
+
+
+# ── D3: the autopsy must stay out of the mid-move safety path ──────────────
+
+def test_safety_poll_does_not_run_the_autopsy():
+    """`_safety_ok` is polled every 50 ms DURING a move by the same thread
+    that watches `stop_event`. Forking `ss` there (5 s timeout, under
+    `_recv_lock`) would stall STOP with the arm travelling. Diagnostics
+    belong on the q() path, where a pause is harmless."""
+    import inspection.motion.execute as ex
+    calls = []
+    real = ex.stream_autopsy
+    ex.stream_autopsy = lambda recv, ip=None: calls.append("ran") or "stub"
+    try:
+        arm = make_arm(HealingRecv())
+        arm._safety_ok()
+        assert calls == [], "autopsy ran inside the mid-move safety poll"
+        arm2 = make_arm(HealingRecv())
+        arm2.q()
+        assert calls == ["ran"], "autopsy should still run on the q() path"
+    finally:
+        ex.stream_autopsy = real
+
+
+# ── D2: a dead stream must not become a reconnect storm ────────────────────
+
+def test_reconnect_is_rate_limited():
+    """`PoseStreamer` swallows the RuntimeError and retries at 30 Hz, and the
+    safety poll runs at 20 Hz. Without a backoff, an unrecoverable stream
+    means ~50 reconnect attempts a second against the controller — a connect
+    storm that is itself a plausible way to get hung up on."""
+    recv = FrozenRecv()               # never heals
+    arm = make_arm(recv)
+    arm.reconnect_backoff = 5.0
+    for _ in range(20):               # 20 rapid callers, as the threads do
+        try:
+            arm.q()
+        except RuntimeError:
+            pass
+    assert recv.reconnects == 1, (
+        f"{recv.reconnects} reconnect attempts in a burst — expected 1 "
+        "until the backoff expires")
+
+
+def test_backoff_expires_and_allows_a_later_retry():
+    """The latch must not be permanent: a stream that comes back later still
+    has to be healable."""
+    recv = FrozenRecv()
+    arm = make_arm(recv)
+    arm.reconnect_backoff = 0.0       # expired immediately
+    for _ in range(3):
+        try:
+            arm.q()
+        except RuntimeError:
+            pass
+    assert recv.reconnects == 3

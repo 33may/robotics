@@ -18,7 +18,11 @@ Usage (from repo root, robo env active):
 """
 
 import logging
+import subprocess
+import sys
+import threading
 import time
+import traceback
 
 import numpy as np
 
@@ -30,12 +34,51 @@ ROBOT_IP = "192.168.2.50"
 # we start far below it). Blends off by decision — see AGENTS.md.
 SPEED_RAD_S = 0.25      # ~14 deg/s
 ACC_RAD_S2 = 0.5
-SPEED_SLIDER = 0.25
+#: The controller's GLOBAL speed slider, and it is authoritative: `__init__`
+#: writes it on every connect, so it overwrites whatever the operator set on
+#: the PolyScope pendant (visibly — the pendant slider snaps to this value).
+#: Set it here, not on the pendant.
+#: Effective top joint speed = SPEED_RAD_S * SPEED_SLIDER, so 0.5 gives
+#: 0.125 rad/s ~= 7.2 deg/s, still ~7x under the 50 deg/s pendant cap.
+#: Raising it does NOT weaken collision safety: the path and its validation
+#: are pure geometry (`world.path_valid` at DEFAULT_STEP) and are unaffected
+#: by how fast the path is traversed. What it does cost is stopping distance
+#: after a software stop, which is the reason to move it in steps.
+SPEED_SLIDER = 0.5      # Anton 2026-08-24: 0.25 -> 0.5
 
 START_TOL_RAD = 0.02    # current q must match path[0] within ~1.1 deg
 
 ROBOT_MODE_RUNNING = 7
 SAFETY_MODE_NORMAL = 1
+
+# ── RTDE subscription: the smallest recipe that answers our four getters ────
+#
+# UR's RTDE Guide states the failure directly: "The client should read data
+# periodically from the socket. The connection is closed by the robot
+# controller when the receive buffer overflows." That is the documented
+# origin of the `asio.misc:2 End of file` we kept seeing.
+#
+# ur_rtde subscribes to EVERY output variable when `variables` is left empty
+# (~30 fields, rtde_receive_interface.cpp:120-150) and runs an e-Series at
+# 500 Hz: ~1180 B x 500 Hz ~= 590 KB/s. A 128 KB socket buffer — the kernel
+# default, and ur_rtde never calls setsockopt(SO_RCVBUF) — therefore
+# overflows after ~0.22 s of the receive thread not being scheduled. That is
+# the entire stall budget on a machine also running a planner, a websocket
+# bus and a software-Vulkan Chromium.
+#
+# We call exactly four getters. Subscribing to only their variables gives
+# ~67 B at 125 Hz ~= 8.4 KB/s, so the same buffer takes ~15 s to fill: a
+# ~68x larger stall budget. 125 Hz is ample — the fastest consumer is the
+# 20 Hz safety poll, and `stale_window` (100 ms) spans ~12 packets.
+#
+# Names are the RTDE wire names, verified against the getters in
+# rtde_receive_interface.cpp (getTimestamp/getActualQ/getRobotMode/
+# getSafetyMode look up exactly these keys). Getting one wrong is loud, not
+# silent: `getStateData` misses and the getter raises "unable to get state
+# data for specified key" — it does NOT return a default. That matters,
+# because one of these is the safety mode.
+RECV_VARIABLES = ["timestamp", "actual_q", "robot_mode", "safety_mode"]
+RECV_FREQUENCY = 125.0
 
 
 def _wait_async(running_fn, safety_fn, stop_event=None,
@@ -66,7 +109,7 @@ def preflight(ip: str = ROBOT_IP) -> dict:
     from rtde_receive import RTDEReceiveInterface
     from dashboard_client import DashboardClient
 
-    r = RTDEReceiveInterface(ip)
+    r = RTDEReceiveInterface(ip, RECV_FREQUENCY, RECV_VARIABLES)
     dash = DashboardClient(ip)
     dash.connect()
     rep = {
@@ -109,6 +152,56 @@ def bringup(ip: str = ROBOT_IP) -> dict:
     return preflight(ip)
 
 
+def stream_autopsy(recv, ip: str = ROBOT_IP) -> str:
+    """Why the receive stream stopped: kicked out, or reader thread died?
+
+    Six scenarios reproducing the app's ingredients in isolation (see
+    `rtde_soak.py`: preflight churn, RTDEControl, the RTDEIO leak, the
+    Chromium window, the D405 pipeline, multi-threaded reads) all SURVIVED,
+    while every real run dies. So the next real death has to explain
+    itself, and one observation splits the fix in half:
+
+      socket GONE / FIN_WAIT / CLOSE_WAIT -> the controller hung up on us.
+          Cause is on the wire or in the controller (client limit, a
+          malformed request, a protocol violation) — the pendant log names
+          it, and the fix is ours.
+      socket still ESTABLISHED, no data    -> ur_rtde's reader thread died
+          under a live socket. That is a library bug (#235 calls the
+          sporadic EOF a post-1.5.0 regression; we run 1.6.5) and no amount
+          of app-side care fixes it — the answer is a version change or our
+          own RTDE client.
+
+    `isConnected()` is recorded but NOT trusted: it is the flag that lies
+    during this failure. The thread dump names who was mid-read. Bounded
+    and exception-proof: this runs on the failure path of a robot in
+    motion, so it must never be the thing that raises.
+    """
+    lines = []
+    try:
+        lines.append(f"isConnected()={recv.isConnected()} (not trusted)")
+    except Exception as e:
+        lines.append(f"isConnected() raised: {e}")
+    try:
+        out = subprocess.run(
+            ["ss", "-tnop", "state", "all"], capture_output=True, text=True,
+            timeout=5).stdout
+        socks = [ln.strip() for ln in out.splitlines() if ip in ln]
+        lines.append("sockets to the controller:")
+        lines.extend(f"    {s}" for s in socks or ["    (NONE — socket gone)"])
+    except Exception as e:
+        lines.append(f"ss failed: {e}")
+    try:
+        frames = sys._current_frames()
+        lines.append("threads:")
+        for th in threading.enumerate():
+            f = frames.get(th.ident)
+            where = "".join(traceback.format_stack(f)[-2:]).strip() if f else "?"
+            lines.append(f"    {th.name}: {where.splitlines()[0].strip()}")
+    except Exception as e:
+        lines.append(f"thread dump failed: {e}")
+    return "\n  ".join(lines)
+
+
 class UR5eArm:
     """Motion gateway. One instance = one RTDEControl session.
 
@@ -122,6 +215,18 @@ class UR5eArm:
     #: poll failing stale still stops the arm within a fraction of a second.
     stale_window = 0.10
 
+    #: Minimum seconds between reconnect ATTEMPTS. Callers are plural and
+    #: fast — `PoseStreamer` swallows the RuntimeError and retries at 30 Hz,
+    #: the safety poll runs at 20 Hz — so an unrecoverable stream would
+    #: otherwise mean ~50 reconnects a second against the controller. That
+    #: connect storm is a plausible way to get hung up on, i.e. the guard
+    #: would be manufacturing the failure it exists to survive.
+    reconnect_backoff = 2.0
+
+    #: monotonic() of the last reconnect attempt. Class-level default so an
+    #: instance built with __new__ (the no-hardware test path) still works.
+    _last_reconnect = float("-inf")
+
     def __init__(self, ip: str = ROBOT_IP, speed: float = SPEED_RAD_S,
                  acc: float = ACC_RAD_S2, slider: float = SPEED_SLIDER):
         from rtde_control import RTDEControlInterface
@@ -131,7 +236,8 @@ class UR5eArm:
         pf = preflight(ip)
         if not pf["go"]:
             raise RuntimeError(f"preflight NO-GO: {pf}")
-        self.recv = RTDEReceiveInterface(ip)
+        self.ip = ip                           # kept for the reconnect path
+        self.recv = RTDEReceiveInterface(ip, RECV_FREQUENCY, RECV_VARIABLES)
         self.ctrl = RTDEControlInterface(ip)   # raises unless Remote mode
         RTDEIOInterface(ip).setSpeedSlider(slider)
         self.speed, self.acc = speed, acc
@@ -149,17 +255,36 @@ class UR5eArm:
 
         A single pair compared once is not enough — two immediate reads
         legitimately land on the same 2 ms packet — so poll for an advance.
+
+        The deadline is checked AFTER the read, never before. The earlier
+        order (`while monotonic() < deadline:`) could return False having
+        read the timestamp only twice: both landing on one 2 ms packet is
+        legitimate, and if the process was then descheduled so that
+        `sleep(0.002)` returned after the window closed, the loop exited
+        without ever looking again. That declares a HEALTHY stream dead and
+        tears down a working socket — and it only misfires on a loaded
+        machine, which is why 23 isolated reproductions on an idle box all
+        survived while every full run died. Now the last thing before
+        returning False is always a fresh read.
         """
         t0 = self.recv.getTimestamp()
         deadline = time.monotonic() + self.stale_window
-        while time.monotonic() < deadline:
+        while True:
             if self.recv.getTimestamp() != t0:
                 return True
+            if time.monotonic() >= deadline:
+                return False
             time.sleep(0.002)
-        return False
 
-    def _assert_fresh(self) -> None:
+    def _assert_fresh(self, diagnose: bool = True) -> None:
         """The receive stream must be provably alive RIGHT NOW — heal or raise.
+
+        `diagnose=False` suppresses the socket autopsy. The safety poll runs
+        it that way: during a move, the thread polling `_safety_ok()` every
+        50 ms is the SAME thread that watches `stop_event`, and it holds
+        `_recv_lock` throughout. Forking `ss` there would stall STOP — and
+        every other recv reader — with the arm travelling. Diagnostics belong
+        on the `q()` path, where the arm is parked and a pause is harmless.
 
         ur_rtde's receive thread dies silently (upstream #307, and #235
         reports the sporadic "End of file" as a regression after 1.5.0):
@@ -174,6 +299,17 @@ class UR5eArm:
         On a dead stream: reconnect and re-verify — the operator asked for
         a stable stream, not an abort per hiccup (this stream died in all
         three hardware runs on 2026-08-21, once before any motion at all).
+
+        KNOWN WART in `reconnect()` (rtde_receive_interface.cpp:282-320), not
+        yet addressed: it hard-resets `frequency_` to 500 Hz on an e-Series,
+        so a healed stream runs at 4x the bandwidth this module subscribed
+        for. It keeps `variables_`, so the narrow recipe survives and the
+        post-heal budget is ~3.8 s of stall rather than the fresh ~15 s —
+        still ~17x better than the ~0.22 s that caused the original drops.
+        It also spins in an unbounded `while (!getFirstStateReceived())`,
+        which with `_recv_lock` held would wedge the app rather than fail.
+        Rebuilding the interface instead would fix both; that change is
+        unvalidated on this cell, so it waits for its own hardware test.
         The recovery is LOUD, never silent: cached data was a lie, so the
         log must say the stream died even when the heal works. Only a
         reconnect that still yields a frozen timestamp raises.
@@ -183,6 +319,19 @@ class UR5eArm:
         t_frozen = self.recv.getTimestamp()
         log.warning("RTDE receive stream DEAD (timestamp frozen at %.3f) — "
                     "reconnecting...", t_frozen)
+        # Autopsy BEFORE the reconnect: reconnect() replaces the very socket
+        # state that says who killed the stream.
+        since = time.monotonic() - self._last_reconnect
+        if since < self.reconnect_backoff:
+            # Another thread just tried and it did not take. Fail this caller
+            # immediately rather than piling another connect onto the wire.
+            raise RuntimeError(
+                f"RTDE receive stale — frozen at controller t={t_frozen:.3f}s; "
+                f"a reconnect {since:.1f}s ago did not take, backing off. "
+                f"Joint and safety reads are cached lies from here on.")
+        self._last_reconnect = time.monotonic()
+        if diagnose:
+            log.warning("stream autopsy:\n  %s", stream_autopsy(self.recv))
         try:
             healed = bool(self.recv.reconnect())
         except Exception:
@@ -206,7 +355,8 @@ class UR5eArm:
         # Raises (rather than returning False) on a stale stream: execute()'s
         # except path calls stop() on the way out, and the error names the
         # actual failure instead of a generic "safety mode changed".
-        self._assert_fresh()
+        # diagnose=False: this is the mid-move poll — see _assert_fresh.
+        self._assert_fresh(diagnose=False)
         return (self.recv.getSafetyMode() == SAFETY_MODE_NORMAL
                 and self.recv.getRobotMode() == ROBOT_MODE_RUNNING)
 

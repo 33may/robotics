@@ -70,8 +70,16 @@ without ugly motion. Replaces top-level `ik.py` and `safety.py` (SO-101 legacy).
 - Never moveL between viewpoints: the chord passes through the object.
 - cuRobo ruled out. VAMP ruled out for now — ships precompiled UR5, not UR5e
   (different link lengths); revisit only if rebuilt from our URDF.
-- Execution via ur_rtde `moveJ`, blends off (`execute.py`). Conservative
-  defaults: 0.25 rad/s, 0.5 rad/s², speed slider 25%.
+- Execution via ur_rtde `moveJ`, blends off (`execute.py`): 0.25 rad/s,
+  0.5 rad/s², speed slider **50%** (Anton 2026-08-24, was 25%) — effective
+  top speed 0.125 rad/s ≈ 7.2 deg/s against a 50 deg/s pendant cap.
+- **The speed slider is code-authoritative.** `UR5eArm.__init__` calls
+  `setSpeedSlider` on every connect, which writes THROUGH to the PolyScope
+  pendant — a value set on the pendant is silently reverted the moment the
+  loop connects. Change `SPEED_SLIDER`, not the pendant.
+- Speed is decoupled from collision safety: the path and `world.path_valid`
+  are pure geometry, unaffected by traversal rate. The real cost of speed is
+  stopping distance after a software stop, so raise it in steps.
 
 ## Removed
 - `retract.py` (radial retract via an outer shell) — deleted 2026-08-19,
