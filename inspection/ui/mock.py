@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 import threading
+from pathlib import Path
 import time
 
 import numpy as np
@@ -81,9 +82,18 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     sup.pose_quiesce = poses.quiesce          # settle-leg interlock, like the real loop
     poses.start()
 
+    # Same handler the real run uses: the mock is how the approval gate gets
+    # rehearsed without hardware, and rehearsing against different wiring
+    # rehearses nothing.
+    from inspection.brain.live import make_ask_handler
+    ask = make_ask_handler(sup, pub, Path(outdir))
+
     def pump():
         for c in bus.commands():
-            sup.events.put(c)
+            if c.get("cmd") == "brain/ask":
+                ask(c.get("question"))
+            else:
+                sup.events.put(c)
     threading.Thread(target=pump, name="mock-cmd-pump", daemon=True).start()
 
     threading.Thread(target=sup.run, daemon=True).start()

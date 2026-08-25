@@ -127,9 +127,18 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
         sup.pose_quiesce = poses.quiesce             # settle-leg interlock
         poses.start()
 
+        from inspection.brain.live import make_ask_handler
+        start_brain = make_ask_handler(sup, pub, outdir)
+
         def pump():
             for c in bus.commands():
-                sup.events.put(c)
+                # `brain/ask` is the ONLY command not forwarded to the
+                # Supervisor: it starts a thinker, not a motion. Everything
+                # that can move the arm still goes through the one queue.
+                if c.get("cmd") == "brain/ask":
+                    start_brain(str(c.get("question") or "").strip())
+                else:
+                    sup.events.put(c)
         threading.Thread(target=pump, name="cmd-pump", daemon=True).start()
 
         child = _open_ui(outdir, port, bus_port, no_window, gui)

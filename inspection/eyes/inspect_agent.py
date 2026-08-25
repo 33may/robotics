@@ -36,9 +36,20 @@ import time
 TOOLS = {"detect", "segment", "read_text", "crop", "note"}
 
 # Enforced order of the answer object — see the module docstring.
-SCHEMA_ORDER = ("evidence", "reasoning", "answer")
+#
+# `framing` trails the triple deliberately. The CoT constraint is that the
+# ANSWER must not precede the REASONING; nothing is harmed by an appendix
+# written after the answer, and putting framing earlier would push `answer`
+# out of last place for no gain.
+SCHEMA_ORDER = ("evidence", "reasoning", "answer", "framing")
 
-MAX_TURNS = 6
+# Raised 10 -> 16 (Anton 2026-08-25, duck run). Note what this does NOT fix:
+# in `2508-aiduck` the only view that exhausted its budget ([3, 0], twice)
+# spent it calling the STUB detector, which answers every phrase with a fixed
+# box at (10, 10, 100, 100). The model kept trying to reconcile a fake box
+# with real pixels and never cropped. More turns buy a longer detect->crop->
+# read chain on a curved surface; they do not buy a way out of a lying tool.
+MAX_TURNS = 16
 
 _RULES = """You are inspecting ONE captured camera frame of an object.
 
@@ -50,20 +61,69 @@ Rules:
   Tools: detect{phrase}, segment{box}, read_text{}, crop{box}, note{text}.
 - If you want a view that does not exist, do NOT ask to move — record it with
   note{text}. Something else decides whether it is worth the motion.
-- When done reply with {"evidence": [...], "reasoning": "...", "answer": "..."}
-  in that order. Give evidence first, reasoning second, the answer last.
-- Do not report a confidence number."""
+- When done reply with {"evidence": [...], "reasoning": "...", "answer": "...",
+  "framing": {...}} in that order. Give evidence first, reasoning second, the
+  answer third.
+- Do not report a confidence number.
+
+`framing` reports the VIEWING GEOMETRY of whatever the task is about, as seen
+in this frame. Three short strings:
+  {"target":  where it sits in the frame, or "not visible"
+   "facing":  how square-on its surface is and WHICH WAY IT TURNS AWAY —
+              "face-on", "turning away to the left", "edge-on to the right"
+   "better":  which way the camera would have to shift to frame it better —
+              one of: left, right, closer, higher, lower, none}
+Both directions are FRAME directions: left means the left of this image. You
+are describing a viewpoint, not commanding a robot — never name a cell, an
+angle, or a compass direction, and never say the arm should move. Something
+else owns motion; it only needs to know what you can see and how well."""
+
+
+#: Keys we ask for in `framing`, in the order they read best.
+FRAMING_KEYS = ("target", "facing", "better")
+
+
+def normalise_framing(raw):
+    """Coerce whatever the model produced into `{str: str}`. Never raises.
+
+    Two failure modes are already on record and both land here: a model that
+    returns a bare string where an object was asked for, and one that returns
+    an object where the consumer assumed a string (which took the trace panel
+    down with React #31 on 2026-08-25). Normalising once, at the tier boundary,
+    means neither the orchestrator's renderer nor the UI has to type-check.
+
+    `framing` is advisory, so a malformed one is dropped rather than fought
+    over — an inspection that saw the object clearly must not be discarded
+    because its appendix was the wrong shape.
+    """
+    if isinstance(raw, str) and raw.strip():
+        return {"target": raw.strip()}
+    if not isinstance(raw, dict):
+        return {}
+    out = {}
+    for k in FRAMING_KEYS:
+        v = raw.get(k)
+        if isinstance(v, (list, tuple)):
+            v = ", ".join(str(x) for x in v)
+        if v not in (None, ""):
+            out[k] = str(v).strip()
+    return out
 
 
 class Finding:
     """What comes back from one inspect run. The summary is what travels."""
 
-    def __init__(self, cell, answer, evidence, reasoning, transcript):
+    def __init__(self, cell, answer, evidence, reasoning, transcript,
+                 framing=None):
         self.cell = cell
         self.answer = answer
         self.evidence = list(evidence)
         self.reasoning = reasoning
         self.transcript = transcript
+        # Viewing geometry of the target in THIS frame — camera-centric, and
+        # the only part of a finding that is about the VIEW rather than the
+        # object. The orchestrator turns it into a direction; see brain/render.
+        self.framing = normalise_framing(framing)
 
     @property
     def summary(self):
@@ -125,19 +185,70 @@ def _dispatch(name, args, tools, verbs, writer, img):
     return (f"unknown tool {name!r} — tools are {sorted(TOOLS)}", None)
 
 
+def _save_seen(tools, img, tag, kind="crops"):
+    """Persist EXACTLY the pixels handed to the model. Run-relative path back.
+
+    Two reasons this writes a file instead of pointing at the capture on disk:
+
+    - Crops only ever existed in memory, so the most interesting images in a
+      run — the ones the model chose to look closer at — were the only ones
+      nobody could review afterwards.
+    - The full frame on disk is RAW. `ViewTools.get_view` uprights it in
+      memory (tools.py:126), so a viewer pointed at `<cap>/rgb.png` shows a
+      half-turn capture upside down — a different image from the one the model
+      answered about. For an observability surface that is the worst possible
+      failure: it looks right and it is lying.
+
+    Best-effort: a failed write must not end an otherwise good inspection.
+    """
+    try:
+        import cv2
+        d = tools._store.path / kind
+        d.mkdir(parents=True, exist_ok=True)
+        name = f"{tag}.png"
+        cv2.imwrite(str(d / name), cv2.cvtColor(img.rgb, cv2.COLOR_RGB2BGR))
+        return f"eyes/{kind}/{name}"
+    except Exception:                            # noqa: BLE001
+        return None
+
+
 def inspect_view(tools, verbs, writer, model, cell, task, hypothesis=None,
-                 max_turns=MAX_TURNS):
+                 max_turns=MAX_TURNS, answer_schema=None, on_turn=None):
     """Run the inspection subagent over one captured view.
 
     `tools` is a ViewTools bound to the run, `verbs` a LocalVerbs, `writer` a
     FindingWriter (the only writer this tier may hold), `model` anything with
     `.respond(parts, schema)`.
+
+    `on_turn(n, max_turns, event, **fields)` is called as the loop runs, so a
+    watcher can show it happening instead of a frozen gap. This subagent takes
+    tens of seconds and used to surface only when it landed — which made the
+    slowest part of a run the only invisible one.
     """
+    def _tick(n, event, **fields):
+        if on_turn is not None:
+            try:
+                on_turn(n, max_turns, event, **fields)
+            except Exception:                        # noqa: BLE001
+                pass          # a watcher must never break the thing it watches
     img = tools.get_view(cell)
+    # `answer_schema` is the orchestrator saying what SHAPE of readout it wants
+    # back ("yes|no", "the text, verbatim", "count of marks"). It is enforced by
+    # prompt text and nothing else: `models.respond`'s schema argument is only a
+    # truthiness flag that switches Gemini into JSON mode (models.py:111), so
+    # the shape has to be stated here. The field ORDER is never negotiable —
+    # answer-before-reasoning erases 100% of the CoT gain — so a caller may
+    # constrain the answer's contents, never the order it arrives in.
     prompt = (f"{_RULES}\n\nView: {img.text}\nTask: {task}"
+              + (f"\nRequired shape of `answer`: {answer_schema}"
+                 if answer_schema else "")
               + (f"\nCurrent hypothesis: {hypothesis}" if hypothesis else ""))
 
     transcript = {"cell": list(cell) if cell else None, "task": task,
+                  "answer_schema": answer_schema,
+                  # The uprighted array, not the raw capture — see _save_seen.
+                  "image": _save_seen(tools, img, img.cap_dir, kind="frames"),
+                  "view_text": img.text,
                   "hypothesis": hypothesis, "prompt": prompt,
                   "t": time.time(), "turns": []}
     # The full frame stays first in every request: the crop is additional
@@ -147,7 +258,9 @@ def inspect_view(tools, verbs, writer, model, cell, task, hypothesis=None,
     current = img
     done = {}                       # tool call -> its result, to refuse repeats
 
-    for _ in range(max_turns):
+    _tick(0, "start", cell=list(cell) if cell else None, task=task)
+    for turn_i in range(max_turns):
+        _tick(turn_i + 1, "thinking")
         reply = model.respond(parts, schema={"order": SCHEMA_ORDER})
         transcript["turns"].append(dict(reply) if isinstance(reply, dict)
                                    else {"raw": str(reply)})
@@ -180,7 +293,22 @@ def inspect_view(tools, verbs, writer, model, cell, task, hypothesis=None,
                 result, new_img = (f"{name} failed: {e}. The frame is "
                                    f"{w}x{h}; boxes are [x0, y0, x1, y1] in "
                                    f"FULL-FRAME pixels."), None
-            transcript["turns"].append({"result": result})
+            _tick(turn_i + 1, "tool", tool=name, args=args,
+                  result=str(result)[:300])
+            turn_rec = {"result": result}
+            if new_img is not None:
+                turn_rec["image"] = _save_seen(
+                    tools, new_img,
+                    f"{img.cap_dir}_{len(transcript['turns']):02d}")
+                # Announce the crop the moment it exists on disk. Without this
+                # the live view streams the subagent's WORDS but none of its
+                # pictures, which is backwards for a vision agent — the crop
+                # it chose is the most informative thing it does.
+                _tick(turn_i + 1, "image", image=turn_rec["image"], tool=name)
+            transcript["turns"].append(turn_rec)
+            # ORDER IS LOAD-BEARING: the result text goes in BEFORE the crop
+            # pixels, never after. Persisting crops is a side effect and must
+            # not disturb the sequence the model reads.
             parts.append(f"[{name}] {result}")
             if new_img is not None:
                 current = new_img
@@ -188,15 +316,25 @@ def inspect_view(tools, verbs, writer, model, cell, task, hypothesis=None,
             continue
 
         answer = (reply or {}).get("answer", "unknown")
+        framing = normalise_framing((reply or {}).get("framing"))
+        _tick(turn_i + 1, "done", answer=answer, framing=framing)
         finding = Finding(cell, answer, (reply or {}).get("evidence", []),
-                          (reply or {}).get("reasoning", ""), transcript)
+                          (reply or {}).get("reasoning", ""), transcript,
+                          framing=framing)
         transcript["answer"] = answer
+        transcript["framing"] = framing
         writer.add_finding(cell, finding.summary, json.dumps(transcript, indent=1))
         return finding
 
     # Out of turns: that is a finding about the model, not an exception.
+    _tick(max_turns, "exhausted")
     transcript["answer"] = "unknown"
+    # Say so in the framing too. "read failed here" and "looked, saw nothing
+    # here" are opposite facts for a planner deciding where to go next, and a
+    # blank ledger row would render them identically.
     finding = Finding(cell, "unknown", [], f"no answer within {max_turns} turns",
-                      transcript)
+                      transcript,
+                      framing={"target": f"unread — the inspection of this view "
+                                         f"ran out of turns after {max_turns}"})
     writer.add_finding(cell, finding.summary, json.dumps(transcript, indent=1))
     return finding

@@ -87,8 +87,17 @@ class FakeRig:
             real = self.outdir / f"{pose_id:03d}"
             real.mkdir(parents=True, exist_ok=True)
             cv2.imwrite(str(real / "rgb.png"), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+            # `T_base_cam` and `timestamp` are not decoration: `eyes/replay.py`
+            # requires both to join a capture dir to its viewsphere cell, so a
+            # meta.json without them makes the mock's captures unloadable by
+            # the image tier — the mock stops being a rehearsal exactly where
+            # the orchestrator starts. Match the real writer
+            # (perception/capture.py:67).
             (real / "meta.json").write_text(json.dumps(
-                {"pose_id": pose_id, "rgb_rotation_deg": 0}, indent=2) + "\n")
+                {"pose_id": pose_id, "rgb_rotation_deg": 0,
+                 "timestamp": time.time(),
+                 "T_base_cam": np.asarray(self._T_bc, float).tolist()},
+                indent=2) + "\n")
             d = str(real)
         return {"dir": d, "rgb": rgb, "pose_id": pose_id,
                 "depth_raw": self._depth, "depth_aligned": self._depth,
