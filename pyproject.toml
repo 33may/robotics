@@ -9,6 +9,7 @@ description = "UR5e AI-driven inspection track (self-contained under inspection/
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
+    "scipy",             # cKDTree: seeded object growth in cell/geometry.py
     "pin>=3.0",          # pinocchio + coal: the collision world and FK
     "ompl>=2.0.1",       # tier-2 sampling search (2.0 switched to nanobind)
     "eaik",              # analytic UR5e IK, all branches
