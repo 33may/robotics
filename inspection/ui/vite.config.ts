@@ -35,5 +35,21 @@ export default defineConfig({
     ],
   },
   build: { outDir: 'dist', emptyOutDir: true },
-  server: { port: 5174, host: true },
+  server: {
+    port: 5174,
+    host: true,
+    /**
+     * Capture images and robot meshes are served by the PYTHON side, not Vite
+     * — they are mounted from the run directory at request time
+     * (`ui/app.py:_asset_mounts`). Without this proxy every
+     * `<img src="/captures/...">` 404s under `npm run dev`, so the trace panel
+     * renders empty boxes: the exact thing you opened it to look at.
+     *
+     * Points at the default `app.py trace|mock|serve` static port.
+     */
+    proxy: {
+      '/captures': 'http://127.0.0.1:8767',
+      '/meshes': 'http://127.0.0.1:8767',
+    },
+  },
 });

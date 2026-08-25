@@ -130,8 +130,60 @@ def serve(run_dir: str | None = None, port: int = 8767, bus_port: int = 8765,
     return 0
 
 
+def trace(run_dir: str, port: int = 8767, bus_port: int = 8765,
+          no_window: bool = False, gui: str = "qt", poll: float = 0.5) -> int:
+    """Open a brain run's trace: every stage of the agentic loop, as a stream.
+
+        p inspection/ui/app.py trace --run_dir=inspection/data/runs/2408-cup1
+
+    Owns a bus, but drives no robot and plans nothing — it reads
+    `<run>/eyes/trace.jsonl` and republishes it whenever the file changes. That
+    is the whole live story too: a run in progress is just a file still being
+    appended to, so watching one and re-opening a finished one are the same
+    code path (see `brain/trace.py`).
+    """
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    if not _require_build():
+        return 1
+
+    from inspection.brain.trace import TRACE_NAME, read_trace
+
+    run_path = Path(run_dir).expanduser().resolve()
+    trace_file = run_path / "eyes" / TRACE_NAME
+    if not trace_file.exists():
+        print(f"no trace at {trace_file} — run inspection/brain/loop.py first")
+        return 1
+
+    bus = PortholeBus(app="inspection", port=bus_port).start()
+    pub = InspectionPublisher(bus, run_dir=run_path)
+    print(f"bus  ws://127.0.0.1:{bus.port}", flush=True)
+
+    def watch() -> None:
+        stamp = None
+        while True:
+            try:
+                now = trace_file.stat().st_mtime_ns
+                if now != stamp:
+                    stamp = now
+                    events = read_trace(run_path)
+                    pub.publish_trace(events)
+                    pub.log("info", f"trace: {len(events)} events")
+            except Exception:
+                logging.getLogger("inspection.ui").exception("trace watch failed")
+            threading.Event().wait(poll)
+
+    threading.Thread(target=watch, daemon=True).start()
+
+    url = serve_ui(DIST, port=port, assets=_asset_mounts(run_path))
+    if bus_port != 8765:
+        url = f"{url}/?bus={bus_port}"
+    _present(url, no_window, gui)
+    bus.stop()
+    return 0
+
+
 if __name__ == "__main__":
     import fire
 
     fire.core.Display = lambda lines, out: print(*lines, file=out)
-    sys.exit(fire.Fire({"mock": mock, "serve": serve}) or 0)
+    sys.exit(fire.Fire({"mock": mock, "serve": serve, "trace": trace}) or 0)

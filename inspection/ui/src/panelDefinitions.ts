@@ -22,6 +22,7 @@ import {
   imageChainPanelDefaultConfig,
 } from './panels/ImageChainPanel.js';
 import { SceneViewPanel, sceneViewPanelDefaultConfig } from './panels/SceneViewPanel.js';
+import { TracePanel, tracePanelDefaultConfig } from './panels/TracePanel.js';
 import type { SceneViewPanelConfig } from './panels/SceneViewPanel.js';
 
 /**
@@ -86,6 +87,10 @@ export const inspectionPanelDefinitions = [
     component: EventLogPanel,
     defaultConfig: eventLogPanelDefaultConfig,
     description: 'Run event log',
+    // Kept mounted so it accumulates events while it sits behind `actions`.
+    // A log that only starts recording when you look at it is not a log —
+    // and it is the tab you switch to precisely when something went wrong.
+    keepMounted: true,
   }),
   definePanel({
     type: 'actions',
@@ -93,5 +98,12 @@ export const inspectionPanelDefinitions = [
     component: ActionsPanel,
     defaultConfig: {},
     description: 'Survey + view grid + Stop + Exit',
+  }),
+  definePanel({
+    type: 'trace',
+    title: 'trace',
+    component: TracePanel,
+    defaultConfig: tracePanelDefaultConfig,
+    description: 'Every stage of the agentic loop: thoughts, tool calls, images, findings',
   }),
 ];

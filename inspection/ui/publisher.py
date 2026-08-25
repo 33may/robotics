@@ -61,6 +61,7 @@ TOPIC_VIEWS = "views/state"
 TOPIC_STATUS = "run/status"
 TOPIC_LOG = "log/events"
 TOPIC_CHAIN = "chain/latest"
+TOPIC_TRACE = "trace/state"
 
 MESH_MOUNT = "/meshes"
 CAPTURE_MOUNT = "/captures"
@@ -182,6 +183,7 @@ class InspectionPublisher:
             self.bus.declare(TOPIC_STATUS, qos="stream", kind="json")
             self.bus.declare(TOPIC_LOG, qos="event")
             self.bus.declare(TOPIC_CHAIN, qos="stream", kind="json")
+            self.bus.declare(TOPIC_TRACE, qos="stream", kind="json")
             self._declared = True
         except Exception:
             log.exception("declare failed")
@@ -440,6 +442,54 @@ class InspectionPublisher:
             log.warning("capture %s is outside run_dir %s", directory, self.run_dir)
             return None
         return f"{self.capture_mount}/{relative.as_posix()}/rgb.png"
+
+    def _asset_url(self, relative: str) -> str | None:
+        """A run-relative path from the trace -> URL under the capture mount.
+
+        The brain writes paths, not URLs: it has no idea a UI exists. The
+        mapping belongs here, and so does the refusal — anything absolute or
+        climbing out of the run dir is dropped rather than served.
+        """
+        rel = str(relative).strip()
+        if not rel or rel.startswith("/") or ".." in Path(rel).parts:
+            return None
+        return f"{self.capture_mount}/{rel}"
+
+    def publish_trace(self, events: list[dict]) -> None:
+        """The whole run trace, RETAINED, image paths rewritten as URLs.
+
+        Whole-state rather than per-event: the bus rule is "publish state, not
+        deltas" (AGENTS.md), and it buys the thing that matters here — a panel
+        opened halfway through a run, or three days later, sees the entire
+        thought stream immediately instead of only what arrives next. Runs are
+        5-30 steps, so republishing all of it on every append is cheap.
+        """
+        try:
+            out = []
+            for ev in events:
+                ev = dict(ev)
+                if ev.get("images"):
+                    ev["images"] = [u for u in (self._asset_url(p)
+                                                for p in ev["images"]) if u]
+                # `sub_step` carries ONE image — a crop announced while the
+                # subagent is still running. Same mapping, or it streams a
+                # path the browser cannot fetch.
+                if isinstance(ev.get("image"), str):
+                    ev["image"] = self._asset_url(ev["image"])
+                sub = ev.get("sub")
+                if isinstance(sub, dict):
+                    sub = dict(sub)
+                    if sub.get("image"):
+                        sub["image"] = self._asset_url(sub["image"])
+                    sub["turns"] = [
+                        {**t, "image": self._asset_url(t["image"])}
+                        if isinstance(t, dict) and t.get("image") else t
+                        for t in sub.get("turns", [])]
+                    ev["sub"] = sub
+                out.append(ev)
+            self.bus.publish(TOPIC_TRACE, {"events": out})
+        except Exception:
+            log.exception("publish_trace failed")
 
     def publish_chain(self, directory, files: Mapping[str, str],
                       **stats: Any) -> None:
