@@ -44,7 +44,7 @@ ACC_RAD_S2 = 0.5
 #: are pure geometry (`world.path_valid` at DEFAULT_STEP) and are unaffected
 #: by how fast the path is traversed. What it does cost is stopping distance
 #: after a software stop, which is the reason to move it in steps.
-SPEED_SLIDER = 0.5      # Anton 2026-08-24: 0.25 -> 0.5
+SPEED_SLIDER = 0.75      # Anton: 0.25 -> 0.5 (08-24) -> 0.75 (08-25)
 
 START_TOL_RAD = 0.02    # current q must match path[0] within ~1.1 deg
 
