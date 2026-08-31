@@ -50,6 +50,194 @@ SELF_PADDING = 0.005
 
 UR5E_HOME = np.array([0.0, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0.0])
 
+# --- taught safety keep-outs (freedrive taps, 2026-08-31) -------------------
+# Walls (`planes:`) become thick slabs with one face exactly ON the plane —
+# not coal Halfspaces, whose narrow phase vs the UR5e BVH link meshes is not
+# a path we have validated; slabs reuse the box pipeline end to end.
+# Corners (`corners:`) become ONE convex prism each: the keep-out is the
+# INTERSECTION of the half-spaces behind the two walls (Anton 2026-08-31) —
+# two separate geoms would OR them and eat the free space beside each wall.
+# Sizing: a keep-out only has to cover (true obstacle ∩ reachable set), and
+# nothing the arm+tool can touch lies outside a ~1.35 m ball around the base
+# (0.85 reach + wrist stack + 0.24 tool, stretched straight). Shapes are cut
+# just past that — big enough to be safe, small enough to look like the room.
+_WORKSPACE_MID = np.array([0.0, 0.0, 0.65])  # slab faces center on this
+PLANE_SLAB = (3.0, 1.5, 0.3)   # wall panel: 3 m along, z -0.1..1.4, 0.3 thick
+PRISM_L = 2.4                  # wedge clip length: > max apex-to-base distance
+                               # (0.90 m, corner4) + the 1.35 m reach ball
+PRISM_Z = (-0.10, 1.40)        # corner prism vertical extent, base frame [m]
+_PRISM_TRIS = [(0, 1, 2), (0, 2, 3), (4, 6, 5), (4, 7, 6), (0, 4, 5),
+               (0, 5, 1), (1, 5, 6), (1, 6, 2), (2, 6, 7), (2, 7, 3),
+               (3, 7, 4), (3, 4, 0)]
+
+
+REACH_BALL = 1.35  # m — nothing on the arm+tool can leave this ball (0.85
+                   # reach + wrist stack + 0.24 tool, stretched straight)
+
+
+def _wall_basis(n):
+    """Orthonormal (x along the wall ~horizontal, y up the wall, z = normal)."""
+    n = n / np.linalg.norm(n)
+    seed = np.array([0.0, 0.0, 1.0]) if abs(n[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
+    x = np.cross(seed, n)
+    x /= np.linalg.norm(x)
+    return x, np.cross(n, x), n
+
+
+def build_keepouts(cfg, frame_T):
+    """cell.yaml keep-outs -> concrete shapes, shared by the collision world
+    and the viewer (what you see IS what the solver checks). frame_T maps a
+    frame name to its 4x4 base transform.
+
+    Returns (panels, prisms): panels = (name, R, center, dims) boxes,
+    prisms = (name, 8 wedge vertices).
+
+    Wall panels are mutually CLIPPED at each other's plane so walls meet in a
+    clean corner instead of crossing, and EVERYTHING is cut to the top-view
+    bounding square: wall outer faces on the walled sides, the reach limit on
+    the open sides (Anton 2026-08-31 — the model should look like the room).
+    Beyond the square nothing is reachable without first crossing a kept
+    shape, which the dense path check catches; single-config checks lose
+    coverage only outside the square."""
+    walls = []
+    for name, pl in cfg.get("planes", {}).items():
+        T = frame_T(pl.get("parent", "base"))
+        n = T[:3, :3] @ np.asarray(pl["normal"], dtype=float)
+        walls.append((name, T[:3, :3] @ np.asarray(pl["point"], float) + T[:3, 3],
+                      n / np.linalg.norm(n)))
+
+    # top-view bounding square: wall outer faces where walls exist, the reach
+    # limit on the open sides — nothing may stick out of it
+    bounds = np.array([-REACH_BALL, REACH_BALL, -REACH_BALL, REACH_BALL])
+    for _, p, n in walls:
+        outer = p - n * PLANE_SLAB[2]
+        if abs(n[0]) > 0.9:
+            bounds[0 if n[0] > 0 else 1] = outer[0]
+        elif abs(n[1]) > 0.9:
+            bounds[2 if n[1] > 0 else 3] = outer[1]
+
+    def clipped_prism(name, verts8):
+        """Cut a wedge prism to the square; re-hull the survivors."""
+        bot = _clip_poly_xy(verts8[:4], bounds)
+        top = _clip_poly_xy(verts8[4:], bounds)
+        if len(bot) < 3 or len(top) < 3:
+            return None
+        from scipy.spatial import ConvexHull
+        pts = np.array(bot + top)
+        return name, pts, ConvexHull(pts, qhull_options="QJ").simplices
+
+    panels, prisms = [], []
+    thick = PLANE_SLAB[2]
+    for name, p, n in walls:
+        x, y, n = _wall_basis(n)
+        foot = _WORKSPACE_MID - n * ((_WORKSPACE_MID - p) @ n)
+        d0 = min(abs(p @ n), REACH_BALL)          # base-to-plane distance
+        half = max(np.sqrt(REACH_BALL ** 2 - d0 ** 2), 0.3)
+        s_min, s_max = -half, half                # extent along x, from foot
+        for name2, p2, n2 in walls:
+            if name2 == name:
+                continue
+            slope = x @ n2
+            if abs(slope) < 1e-3:                 # ~parallel, no corner
+                continue
+            s_star = ((p2 - foot) @ n2) / slope   # crossing of the other plane
+            if slope > 0:
+                s_min = max(s_min, s_star)
+            else:
+                s_max = min(s_max, s_star)
+        if s_max - s_min < 0.05:                  # fully behind another wall
+            continue
+        center = foot + x * ((s_min + s_max) / 2) - n * (thick / 2)
+        panels.append((f"plane_{name}", np.column_stack([x, y, n]), center,
+                       (s_max - s_min, PLANE_SLAB[1], thick)))
+
+    # auto room corners: the region behind BOTH walls of a reachable pair
+    for i in range(len(walls)):
+        for j in range(i + 1, len(walls)):
+            (name_a, pa, na), (name_b, pb, nb) = walls[i], walls[j]
+            d = np.cross(na, nb)
+            if np.linalg.norm(d) < 0.1:
+                continue
+            d /= np.linalg.norm(d)
+            # a point on the corner line (component along d pinned to mid)
+            A = np.vstack([na, nb, d])
+            q0 = np.linalg.solve(A, [na @ pa, nb @ pb, d @ _WORKSPACE_MID])
+            if np.linalg.norm(q0 - d * (d @ q0)) > REACH_BALL + 0.1:
+                continue                          # corner line out of reach
+            prisms.append(clipped_prism(
+                f"corner_{name_a}_{name_b}", wedge_vertices(
+                    {"point": q0, "normal": na}, {"point": q0, "normal": nb})))
+
+    # declared obstacle corners
+    for name, corner in cfg.get("corners", {}).items():
+        T = frame_T(corner.get("parent", "base"))
+        pl_a, pl_b = (
+            {"point": T[:3, :3] @ np.asarray(p["point"], float) + T[:3, 3],
+             "normal": T[:3, :3] @ np.asarray(p["normal"], float)}
+            for p in corner["planes"].values())
+        prisms.append(clipped_prism(f"corner_{name}",
+                                    wedge_vertices(pl_a, pl_b)))
+    return panels, [pr for pr in prisms if pr is not None]
+
+
+def wedge_vertices(plane_a, plane_b, L=PRISM_L, z_range=PRISM_Z):
+    """Corner keep-out (intersection of the half-spaces BEHIND two planes)
+    -> 8 prism vertices, same frame as the planes. Cross-section is the
+    parallelogram spanned by the two wall rays from the apex; extrusion runs
+    along the walls' intersection line, cut at the z_range heights."""
+    pa, na = (np.asarray(plane_a[k], dtype=float) for k in ("point", "normal"))
+    pb, nb = (np.asarray(plane_b[k], dtype=float) for k in ("point", "normal"))
+    na, nb = na / np.linalg.norm(na), nb / np.linalg.norm(nb)
+    if abs((pa - pb) @ nb) > 0.02:
+        raise ValueError("corner planes do not share their point (apex)")
+    d = np.cross(na, nb)
+    d /= np.linalg.norm(d)
+    if d[2] < 0:
+        d = -d                       # extrusion direction, upward
+    if d[2] < 0.5:
+        raise ValueError("corner line is far from vertical — check the taps")
+    walls = []
+    for n_own, n_other in ((na, nb), (nb, na)):
+        w = np.cross(n_own, d)
+        w /= np.linalg.norm(w)
+        walls.append(w if w @ n_other < 0 else -w)  # ray runs BEHIND the other
+    quad = [pa, pa + L * walls[0], pa + L * (walls[0] + walls[1]),
+            pa + L * walls[1]]
+    return np.array([q + d * ((z - q[2]) / d[2])
+                     for z in z_range for q in quad])
+
+
+def _convex_prism(vertices, triangles=_PRISM_TRIS):
+    verts = coal.StdVec_Vec3s()
+    tris = coal.StdVec_Triangle()
+    for v in vertices:
+        verts.append(np.asarray(v, dtype=float))
+    for i, j, k in triangles:
+        tris.append(coal.Triangle(int(i), int(j), int(k)))
+    return coal.Convex(verts, tris)
+
+
+def _clip_poly_xy(poly, bounds):
+    """Sutherland–Hodgman: convex polygon (list of 3D points) clipped to the
+    top-view rectangle bounds = (x0, x1, y0, y1); z interpolates on edges."""
+    pts = [np.asarray(p, dtype=float) for p in poly]
+    x0, x1, y0, y1 = bounds
+    for axis, lim, keep_less in ((0, x1, True), (0, x0, False),
+                                 (1, y1, True), (1, y0, False)):
+        nxt = []
+        for i, a in enumerate(pts):
+            b = pts[(i + 1) % len(pts)]
+            ina = a[axis] <= lim if keep_less else a[axis] >= lim
+            inb = b[axis] <= lim if keep_less else b[axis] >= lim
+            if ina:
+                nxt.append(a)
+            if ina != inb:
+                nxt.append(a + (lim - a[axis]) / (b[axis] - a[axis]) * (b - a))
+        pts = nxt
+        if not pts:
+            return []
+    return pts
+
 
 def _pose_to_se3(pose):
     x, y, z, roll, pitch, yaw = pose
@@ -107,6 +295,38 @@ def _mount_in_controller_base(model, *geom_models):
             f"{base.placement}")
 
 
+def merged_keepout_mesh(panels, prisms):
+    """Union of all keep-out footprints, extruded once -> [(vertices, faces)].
+
+    DISPLAY ONLY: every keep-out spans the same PRISM_Z band (panels are
+    sized/centered to match), so their union is a 2D polygon union — one
+    watertight mesh per connected blob, no overlapping translucent faces to
+    z-fight (Anton 2026-08-31). Collision keeps the separate convex shapes;
+    the covered REGION is identical either way."""
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    import trimesh
+
+    polys = []
+    for _, R, center, dims in panels:
+        x, n = R[:, 0], R[:, 2]
+        polys.append(Polygon([
+            (center + sx * x * dims[0] / 2 + sn * n * dims[2] / 2)[:2]
+            for sx, sn in ((-1, -1), (1, -1), (1, 1), (-1, 1))]))
+    z_mid = sum(PRISM_Z) / 2
+    for _, verts, _ in prisms:
+        bot = verts[verts[:, 2] < z_mid]       # ordered ring from the clipper
+        polys.append(Polygon(bot[:, :2]))
+    union = unary_union([p.buffer(1e-3) for p in polys])  # weld shared edges
+    meshes = []
+    for poly in getattr(union, "geoms", [union]):
+        m = trimesh.creation.extrude_polygon(poly, height=PRISM_Z[1] - PRISM_Z[0])
+        v = np.array(m.vertices)
+        v[:, 2] += PRISM_Z[0]
+        meshes.append((v, np.array(m.faces)))
+    return meshes
+
+
 class RobotCell:
     def __init__(self, yaml_path=CELL_YAML, padding=DEFAULT_PADDING):
         """The ONE world. Split margins live here (env vs self), and the
@@ -145,6 +365,18 @@ class RobotCell:
                 * _pose_to_se3(box["pose"])
             gid = self._add_box_geom(f"cell_{name}", 0, T, box["dims"])
             self._env_geoms.append(gid)
+
+        # --- taught safety keep-outs: clipped wall panels + corner prisms,
+        # from the same builder the viewer draws (one truth)
+        panels, prisms = build_keepouts(
+            cfg, lambda f: _frame_to_base(self._frames, f).homogeneous)
+        for name, R, center, dims in panels:
+            gid = self._add_box_geom(f"cell_{name}", 0, pin.SE3(R, center), dims)
+            self._env_geoms.append(gid)
+        for name, verts, tris in prisms:
+            gobj = pin.GeometryObject(f"cell_{name}", 0, pin.SE3.Identity(),
+                                      _convex_prism(verts, tris))
+            self._env_geoms.append(self.geom_model.addGeometryObject(gobj))
 
         self._build_pairs()
         self.geom_data = self.geom_model.createData()
@@ -379,6 +611,16 @@ Q_PARK = np.array([2.353, -1.325, -2.037, -1.289, 1.484, -2.872])
 Q_TABLE = np.array([-0.80, -1.47, 2.10, -2.21, -1.84, 1.35])  # gripper into slab
 Q_SELF = np.array([-2.60, -1.65, 1.89, 0.52, -2.55, -0.42])   # forearm vs wrist_3
 Q_FLOOR = np.array([-1.96, -2.80, -1.41, 0.99, 0.39, -2.20])  # dives below table level
+# one reach into each taught keep-out (found by seeded random search; each
+# config's ONLY environment contact is the named shape)
+Q_KEEPOUT = {
+    "cell_plane_back": [-2.275, -0.689, -0.014, -1.346, 0.665, 0.644],
+    "cell_plane_side_left": [-3.043, -1.894, -0.552, 1.179, -0.387, 0.084],
+    "cell_corner_corner1": [-0.874, -2.511, -0.914, 1.465, -0.998, 1.145],
+    "cell_corner_corner2": [1.707, 0.076, -1.196, -2.432, -1.735, 1.824],
+    "cell_corner_corner3": [-1.509, -2.961, 1.148, -2.822, 0.703, 0.799],
+    "cell_corner_corner4": [-1.439, -3.035, -0.267, -2.262, -0.421, 1.861],
+}
 
 
 def smoke(cell):
@@ -387,6 +629,8 @@ def smoke(cell):
              ("through-table (expect COLLIDING)", Q_TABLE, True),
              ("self-fold (expect COLLIDING)", Q_SELF, True),
              ("below-table (expect COLLIDING floor)", Q_FLOOR, True)]
+    cases += [(f"into {name} (expect COLLIDING)", np.array(q), True)
+              for name, q in Q_KEEPOUT.items()]
     ok = True
     for label, q, expect_bad in cases:
         diag = cell.first_collision(q)
@@ -394,6 +638,12 @@ def smoke(cell):
         status = "PASS" if bad == expect_bad else "FAIL"
         detail = "free" if diag is None else f"{diag[0]} {diag[1]}"
         ok &= bad == expect_bad
+        # a keep-out case must be caught by ITS shape, not merely any contact
+        if expect_bad and label.startswith("into ") and diag is not None:
+            want = label.split()[1]
+            if want not in diag[1]:
+                status, ok = "FAIL", False
+                detail += f"  (expected contact with {want})"
         print(f"  [{status}] {label}: {detail}")
 
     print("\n== timing (MAY-183 targets: 21us/check, 0.43ms/40-waypoint, 34ms/1600) ==")

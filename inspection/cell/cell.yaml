@@ -24,14 +24,73 @@ frames:
     # robot stands on a ~5 mm mounting plate on the slab. Axes parallel <0.05deg.
     pose: [-0.1718, -0.7849, -0.0049, -0.00070, 0.00060, 0.00004]
 
+# ---- safety keep-outs (2026-08-31 rebuild after the workcell move) ----
+# Taught by freedrive corner taps (calib/planes_2026-08-31.yaml, fitted by
+# calib/plane_fit.py): 2 taps on the wall-wall junction line + 1 per wall.
+# plane = {point, normal}; normal points to the SAFE side (robot base origin
+# positive). Two representations (Anton 2026-08-31):
+#   planes:  standalone wall — keep-out is the WHOLE half-space behind it.
+#   corners: keep-out is the INTERSECTION of the half-spaces behind its two
+#            planes (the wedge between the walls) — a convex obstacle corner,
+#            NOT two global half-space cuts.
+# Mirrored to PolyScope safety planes by hand once the set is complete.
+corners:
+  corner1:
+    parent: base
+    planes:
+      a:                    # wall extending +x from the corner line
+        point: [0.3849, -0.6164, 0.7096]
+        normal: [-0.0243, 0.9997, 0.0080]
+      b:                    # wall extending -y from the corner line
+        point: [0.3849, -0.6164, 0.7096]
+        normal: [-0.9997, -0.0230, -0.0101]
+  corner2:                  # the tripod — 3-tap style, planes forced vertical
+    parent: base
+    planes:
+      a:
+        point: [0.2400, -0.7982, 0.6304]
+        normal: [-0.0675, 0.9977, 0.0]
+      b:
+        point: [0.2400, -0.7982, 0.6304]
+        normal: [-0.9939, 0.1107, 0.0]
+  corner3:                  # left-side corner, dihedral 71.7 deg — Anton: WRONG, reprobe pending
+    parent: base
+    planes:
+      a:                    # wall at x ~ -0.37, extending -y
+        point: [-0.3751, -0.6536, 0.8584]
+        normal: [0.9995, 0.0290, 0.0080]
+      b:                    # wall extending -x, tilted into the room
+        point: [-0.3751, -0.6536, 0.8584]
+        normal: [0.2858, 0.9582, 0.0109]
+
+  corner4:                  # front-left "subcorner", tripod style, dihedral 73.4 deg
+    parent: base
+    planes:
+      a:
+        point: [-0.2032, -0.8798, 0.3290]
+        normal: [0.2239, 0.9746, 0.0]
+      b:
+        point: [-0.2032, -0.8798, 0.3290]
+        normal: [0.9980, 0.0632, 0.0]
+
+planes:
+  side_left:                # left wall — SNAPPED parallel to table/plumb,
+    parent: base            # one-tap reprobe (Anton 2026-08-31, point 7)
+    point: [-0.4995, -0.2272, 0.6601]
+    normal: [1.0, 0.0, 0.0]
+  back:                     # back wall — SNAPPED parallel to the table/plumb
+    parent: base            # (Anton 2026-08-31; raw fit was 0.6/2.3 deg off).
+    point: [0.0435, 0.4922, 0.1751]   # anchored at the tap NEAREST the robot,
+    normal: [0.0, -1.0, 0.0]          # so all three taps stay in the keep-out
+
 boxes:
   # ---- bounds are modeled as BOXES, not a keep-in volume (Anton, 2026-08-18).
   # The room is open — no side bounds needed. The one real bound: don't dive
   # below table level. Modeled as a wide floor slab just under the table.
-  floor:
-    parent: base
-    dims: [3.00, 3.00, 0.10]
-    pose: [0.00, -0.325, -0.11, 0, 0, 0]   # top face at z = -0.06
+  floor:                    # cropped to the top-view square (wall outer faces
+    parent: base            # / reach limit), same as the keep-outs
+    dims: [2.15, 2.14, 0.10]
+    pose: [0.275, -0.279, -0.11, 0, 0, 0]  # top face at z = -0.06
 
   # ---- table (from Anton's CAD sketch, 2026-08-17) ----
   # Frame: origin = front-left corner of slab TOP; x right (52.9), y away (100), z up.
@@ -42,31 +101,7 @@ boxes:
     dims: [0.529, 1.00, 0.03]
     pose: [0.2645, 0.50, -0.015, 0, 0, 0]
 
-  bar_bottom:                          # level 2: on the slab, spans BETWEEN the two bottom posts
-    parent: table
-    dims: [0.449, 0.03, 0.03]          # x 0.05 -> 0.499 (right post inner face)
-    pose: [0.2745, 0.015, 0.015, 0, 0, 0]
-
-  post_bottom_left:                    # level 3: 3x3 post, h=100; inset 2 from left
-    parent: table
-    dims: [0.03, 0.03, 1.00]
-    pose: [0.035, 0.015, 0.50, 0, 0, 0]
-
-  post_bottom_right:                   # 0 from right, 0 from bottom
-    parent: table
-    dims: [0.03, 0.03, 1.00]
-    pose: [0.514, 0.015, 0.50, 0, 0, 0]
-
-  post_top_right:                      # 0 from right, 3 cm gap from top edge
-    parent: table
-    dims: [0.03, 0.03, 1.00]
-    pose: [0.514, 0.955, 0.50, 0, 0, 0]
-
-  # ---- shelf: ONE keep-out envelope box (decision: arm never reaches inside) ----
-  shelf:
-    parent: table
-    dims: [0.80, 0.35, 1.80]          # PLACEHOLDER full envelope w×d×h
-    pose: [1.60, 0.40, 0.50, 0, 0, 0]  # tape-measured from table corner
+  # (posts + bottom bar DISASSEMBLED in the 2026-08-31 workcell move — removed)
 
 # ---- tool: rigid boxes attached to the FLANGE frame (ur_description `flange`:
 # +X out of the tool face). The loader welds these to the robot; the validator

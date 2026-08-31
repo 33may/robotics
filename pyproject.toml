@@ -15,6 +15,9 @@ dependencies = [
     "eaik",              # analytic UR5e IK, all branches
     "pyyaml",
     "meshcat",           # 3D verdicts — the primary way we inspect behaviour
+    "shapely",           # keep-out footprint union (cell/world.py, display)
+    "trimesh",           # extrude the merged footprint into one clean mesh
+    "mapbox-earcut",     # trimesh's polygon triangulation engine
 ]
 
 [tool.setuptools.packages.find]

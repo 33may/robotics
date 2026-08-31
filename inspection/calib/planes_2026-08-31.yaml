@@ -1,0 +1,52 @@
+# Safety-plane tap session 2026-08-31 — UR5e after the workcell move.
+# Freedrive taps via calib/tap_probe.py (RTDE getActualTCPPose, Base frame,
+# TCP_normal, closed RG2 tip). Units: meters.
+#
+# Corner recipe (Anton): 2 taps ON the corner line itself, then 1 tap on
+# each of the two walls meeting at that line. line + edge tap = a plane.
+# Tripod recipe (Anton): 3 taps [wallA end, APEX, wallB end], planes forced
+# VERTICAL — taps projected to xy, corner line assumed plumb.
+corners:
+  corner1:
+    line:                             # taps on the wall-wall junction line
+      - [0.3849, -0.6164, 0.7096]     # point 1 (high)
+      - [0.3880, -0.6138, 0.3959]     # point 2 (low)
+    edges:
+      - [0.6062, -0.6094, 0.5070]     # point 3 — wall extending +x
+      - [0.3897, -0.7720, 0.5886]     # point 4 — wall extending -y
+  corner2:
+    style: tripod                     # the tripod, taps at z ~ 0.63
+    taps:
+      - [0.4114, -0.7866, 0.6241]     # point 1 — wall A end
+      - [0.2400, -0.7982, 0.6304]     # point 2 — APEX
+      - [0.2269, -0.9158, 0.6453]     # point 3 — wall B end
+  corner3:                            # left-side corner; tap order was
+    line:                             # edge, line, line, edge this time
+      - [-0.3751, -0.6536, 0.8584]    # point 2 (high)
+      - [-0.3720, -0.6500, 0.4603]    # point 3 (low)
+    edges:
+      - [-0.3686, -0.8172, 0.6402]    # point 1 — wall extending -y
+      - [-0.4991, -0.6131, 0.5490]    # point 4 — wall extending -x
+
+  corner4:                            # "subcorner", front-left, taps at z ~ 0.33
+    style: tripod                     # vertical corner per Anton
+    taps:
+      - [-0.3029, -0.8569, 0.3314]    # point 8 — wall A end
+      - [-0.2032, -0.8798, 0.3290]    # point 9 — APEX
+      - [-0.1975, -0.9698, 0.3320]    # point 10 — wall B end
+
+# Standalone walls: 3 spread taps -> exact plane, keep-out = whole
+# half-space behind it.
+planes:
+  side_left:                          # left wall — REPROBED (11:5x): declared
+    style: axis                       # vertical + parallel to table, one tap
+    axis: x                           # normal along +x, toward the robot
+    taps:
+      - [-0.4995, -0.2272, 0.6601]    # point 7
+    # superseded 3-tap fit (drifted +x going back, Anton rejected):
+    #   [-0.5306, -0.3917, 0.6993], [-0.4731, 0.0922, 0.7919], [-0.4869, -0.0556, 0.3289]
+  back:                               # "more or less back plane", y ~ +0.5
+    taps:
+      - [-0.2925, 0.5023, 0.5147]
+      - [0.3209, 0.5130, 0.6180]
+      - [0.0435, 0.4922, 0.1751]

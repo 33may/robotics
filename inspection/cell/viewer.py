@@ -79,6 +79,22 @@ def draw_cell(vis, cfg):
             g.MeshLambertMaterial(color=color, opacity=opacity, transparent=opacity < 1.0),
         )
         vis["cell"][name].set_transform(T)
+
+    # taught safety keep-outs (2026-08-31): clipped wall panels + corner wedge
+    # prisms — the SAME builder the collision world loads, so what you see IS
+    # what the solver checks
+    try:
+        from inspection.cell.world import build_keepouts, merged_keepout_mesh
+        mat = g.MeshLambertMaterial(color=0xC0392B, opacity=0.22,
+                                    transparent=True)
+        panels, prisms = build_keepouts(
+            cfg, lambda f: frame_to_base(frames, f))
+        for i, (verts, faces) in enumerate(merged_keepout_mesh(panels, prisms)):
+            vis["cell"]["keepout"][f"blob_{i}"].set_object(
+                g.TriangularMeshGeometry(verts, faces), mat)
+    except Exception as e:  # keep the box view alive without the world module
+        print(f"WARNING: keep-outs not drawn ({e})", flush=True)
+
     # base-frame axes triad for orientation sanity
     vis["cell"]["base_triad"].set_object(g.triad(0.15))
     return len(boxes)

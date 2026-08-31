@@ -92,3 +92,4 @@ inspection/data/inspection/
 # regenerable by investigation/fill_probe.py and hull_blueprint.py
 inspection/data/framing/
 inspection/data/tool/
+inspection/cell/topview.png
