@@ -64,9 +64,23 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if all(r.ok for r in reports) else 1
     elif a.cmd == "show":
         import subprocess
+        # The full six-story review workspace (record/rr) when the run has
+        # derived step clouds; minimal pose/image/cloud projection otherwise.
+        try:
+            from inspection.record.rr import view as rr_view
+            from inspection.record.rr import workspace as rr_ws
+            rr_ws._replay_dir(a.id)  # raises SystemExit if no step clouds
+            out = rr_ws.build(a.id)
+            print(f"wrote {out} (full workspace)")
+            if not a.no_open:
+                rr_view.show(a.id)
+            return 0
+        except (Exception, SystemExit):
+            pass
         from inspection.record.show import show_run
         out = show_run(root / a.id, Path(a.out or f"/tmp/{a.id}.rrd"))
-        print(f"wrote {out}")
+        print(f"wrote {out} (minimal — no derived step clouds; "
+              f"run step_replay/derive for the full workspace)")
         if not a.no_open:
             viewer = Path(sys.executable).parent / "rerun"
             subprocess.Popen([str(viewer if viewer.exists() else "rerun"),
