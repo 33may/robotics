@@ -38,7 +38,13 @@ def _card(run_dir: Path, stale_s: float, now: float) -> Card | None:
     try:
         run = RunRecord.model_validate_json((run_dir / "run.json").read_text())
     except Exception:
-        return None
+        try:  # pre-schema layout -> adapt-on-read
+            from inspection.record.legacy import adapt_run, is_legacy
+            if not is_legacy(run_dir):
+                return None
+            run = adapt_run(run_dir).run
+        except Exception:
+            return None
 
     effective = run.status
     if run.status == "running":
