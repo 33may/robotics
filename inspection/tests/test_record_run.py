@@ -97,6 +97,29 @@ def test_missing_run_dir_raises(tmp_path):
         Run.load(tmp_path / "nope")
 
 
+def test_rgb_upright_and_raw_differ_only_when_rotated(tmp_path):
+    make_run(tmp_path, run_id="0709-rot")
+    run = Run.load(tmp_path / "0709-rot")
+    step = run.captured[0]
+    import cv2
+    marked = np.zeros((4, 6, 3), np.uint8); marked[0, 0] = (255, 0, 0)
+    cv2.imwrite(str(step.dir / "rgb.png"), cv2.cvtColor(marked, cv2.COLOR_RGB2BGR))
+    up, raw = step.rgb(upright=True), step.rgb(upright=False)
+    if step.record.rgb_rotation_deg == 180:
+        assert not np.array_equal(up, raw)
+        assert np.array_equal(np.rot90(up, 2), raw)
+    else:
+        assert np.array_equal(up, raw)
+
+
+def test_depth_and_missing_binaries_are_none(tmp_path):
+    make_run(tmp_path, run_id="0709-bin")
+    step = Run.load(tmp_path / "0709-bin").captured[0]
+    np.save(step.dir / "depth_aligned.npy", np.ones((4, 6), np.uint16))
+    assert step.depth().shape == (4, 6)
+    assert step.cloud() is None and step.mask() is None
+
+
 def test_derived_probes_fits_then_flat_layout_then_none(tmp_path):
     """derived/<id> mirrors runs/<id> as a sibling of the run's own root;
     probes the legacy fits/<method> bucket, then the flat derive.py layout."""
