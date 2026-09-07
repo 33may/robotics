@@ -82,6 +82,57 @@ def test_stale_running_run_reported_crashed(tmp_path):
     assert rep.effective_status == "crashed"
 
 
+# --- AI subtree: menu-hash cross-check on the REAL layout ---------------------
+
+def test_ai_menu_hash_mismatch_flagged_on_new_layout(tmp_path):
+    """CROSS-TASK FIX: validate.py used to probe the old `ai/<seq>/menu.json`
+    (task-4's binding layout is `ai/<seq>/menu/menu_def.json`), so this check
+    silently no-op'd against every real run. Written via AIRunWriter — the
+    same writer the brain thread uses — to prove the fix against the real
+    on-disk shape, not a hand-rolled stand-in."""
+    from inspection.record.ai_writer import AIRunWriter
+    from inspection.record.schema import MenuDef
+
+    d = make_run(tmp_path)
+    a = AIRunWriter.create(d, orchestrator_model="opus",
+                           menu_id="viewsphere-menu", menu_hash="a" * 64)
+    a.menu_def(MenuDef(menu_id="viewsphere-menu", version="1",
+                       content_hash="b" * 64, code_sha="deadbeef",
+                       verbs=["move"]))
+    rep = validate_run(d)
+    assert not rep.ok
+    assert any("menu_hash" in p.what for p in rep.problems)
+
+
+def test_ai_menu_hash_match_is_clean(tmp_path):
+    from inspection.record.ai_writer import AIRunWriter
+    from inspection.record.schema import MenuDef
+
+    d = make_run(tmp_path)
+    a = AIRunWriter.create(d, orchestrator_model="opus",
+                           menu_id="viewsphere-menu", menu_hash="b" * 64)
+    a.menu_def(MenuDef(menu_id="viewsphere-menu", version="1",
+                       content_hash="b" * 64, code_sha="deadbeef",
+                       verbs=["move"]))
+    rep = validate_run(d)
+    assert rep.ok, [p.what for p in rep.problems]
+
+
+def test_ai_menu_absent_is_a_noop_warning_not_error(tmp_path):
+    """No menu/menu_def.json on disk yet — the cross-check has nothing to
+    compare against; it must not hard-error, but it must say so (warn),
+    not silently do nothing."""
+    from inspection.record.ai_writer import AIRunWriter
+
+    d = make_run(tmp_path)
+    AIRunWriter.create(d, orchestrator_model="opus",
+                       menu_id="viewsphere-menu", menu_hash="a" * 64)
+    rep = validate_run(d)
+    assert rep.ok  # a warn never fails the report
+    warns = [p for p in rep.problems if p.severity == "warn" and "ai/" in p.where]
+    assert warns, [p.what for p in rep.problems]
+
+
 def test_validate_archive_loops_all_runs(tmp_path):
     make_run(tmp_path, run_id="0309-a")
     make_run(tmp_path, run_id="0309-b")

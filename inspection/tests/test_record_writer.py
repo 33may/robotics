@@ -140,6 +140,38 @@ def test_events_append_as_jsonl(tmp_path):
     assert json.loads(lines[1])["kind"] == "approved"
 
 
+# --- late-arriving fields (Flow A/rig quirks) ----------------------------------
+
+def test_set_view_method_params_merges_r(tmp_path):
+    w = _writer(tmp_path)
+    w.set_view_method_params("vs1", r=0.24)
+    run = json.loads((w.dir / "run.json").read_text())
+    assert run["view_methods"][0]["params"]["r"] == 0.24
+    # existing params survive the merge
+    assert run["view_methods"][0]["params"]["h_bins"] == 12
+
+
+def test_set_view_method_params_unknown_id_raises(tmp_path):
+    w = _writer(tmp_path)
+    with pytest.raises(KeyError):
+        w.set_view_method_params("ghost", r=0.24)
+
+
+def test_set_question_flushes_run_json(tmp_path):
+    w = _writer(tmp_path, question=None)
+    w.set_question("is there a logo?")
+    run = RunRecord.model_validate_json((w.dir / "run.json").read_text())
+    assert run.question == "is there a logo?"
+
+
+def test_write_session_after_create(tmp_path):
+    w = _writer(tmp_path, rig="fake", session=None)
+    assert not (w.dir / "session.json").exists()
+    w.write_session(SESSION)
+    on_disk = SessionRecord.model_validate_json((w.dir / "session.json").read_text())
+    assert on_disk.serial == SESSION.serial
+
+
 # --- close --------------------------------------------------------------------
 
 def test_close_writes_manifest_over_binaries(tmp_path):

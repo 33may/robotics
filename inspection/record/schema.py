@@ -18,8 +18,8 @@ Layout a run obeys:
       steps/<NNN>/view_state.json  ViewState       candidate views at that moment
       steps/<NNN>/*.png|npy|ply    capture + geometry bytes (in manifest)
       ai/<seq>/airun.json          AIRunRecord     one orchestrator session
-      ai/<seq>/menu.json           MenuDef         menu definition snapshot
-      ai/<seq>/menu_input/<NNN>.json  MenuInput    per-turn AI-tier menu context
+      ai/<seq>/menu/menu_def.json  MenuDef         menu definition snapshot
+      ai/<seq>/menu/inputs.jsonl   MenuInput       per-turn AI-tier menu context, one per line
       ai/<seq>/trace.jsonl         (event stream — inner typing lands with wiring)
       ai/<seq>/transcripts/<tNNN>.json  TranscriptRecord  VLM subagent runs
       ai/<seq>/artifacts/<tNNN>_<turn>_<tool>.png  tool-use images
@@ -345,7 +345,7 @@ class ConfigSnapshot(RecordModel):
 
 
 class MenuDef(RecordModel):
-    """ai/<seq>/menu.json — the menu definition, snapshot + shared id.
+    """ai/<seq>/menu/menu_def.json — the menu definition, snapshot + shared id.
 
     The menu is the pure function (ViewState, MenuInput) -> LLM text; this is
     its definition side. Provenance follows the scores.jsonl pattern:
@@ -363,7 +363,7 @@ class MenuDef(RecordModel):
 
 
 class MenuInput(RecordModel):
-    """ai/<seq>/menu_input/<NNN>.json — AI-tier menu context, one per turn.
+    """ai/<seq>/menu/inputs.jsonl — AI-tier menu context, one per turn (one line each).
 
     ViewState is physical truth; THIS carries what the agent-side rendering
     additionally consumed (seen cells, findings count, recommendations).
@@ -443,6 +443,8 @@ class AnswerRecord(RecordModel):
     evidence_images: list[EvidenceImage] = Field(default_factory=list)
     step_ids: list[int] = Field(default_factory=list)
     transcript_ids: list[str] = Field(default_factory=list)
+    views_inspected: list[list[int]] = Field(default_factory=list)  # cells the agent looked at (brain/loop.py)
+    coverage: str | None = None  # ASCII coverage map in effect at answer time
 
 
 class OperatorEvent(BaseModel):
@@ -511,8 +513,8 @@ RELATIONS = [
     ("RunRecord", "||--o|", "AnswerRecord", "answer.json"),
     ("RunRecord", "||--o{", "OperatorEvent", "events.jsonl"),
     ("StepRecord", "||--||", "ViewState", "steps/NNN/view_state.json"),
-    ("AIRunRecord", "}o--||", "MenuDef", "ai/seq/menu.json"),
-    ("AIRunRecord", "||--o{", "MenuInput", "ai/seq/menu_input/NNN.json"),
+    ("AIRunRecord", "}o--||", "MenuDef", "ai/seq/menu/menu_def.json"),
+    ("AIRunRecord", "||--o{", "MenuInput", "ai/seq/menu/inputs.jsonl"),
     ("AIRunRecord", "||--o{", "TranscriptRecord", "transcripts/tNNN.json"),
     ("TranscriptRecord", "}o--||", "StepRecord", "step_id"),
     ("RunRecord", "||--o{", "DerivationMeta", "derived/run/method/meta.json"),

@@ -466,6 +466,23 @@ def test_answer_evidence_images_typed():
     assert ans.evidence_images[0].step_id == 1
 
 
+def test_answer_carries_views_inspected_and_coverage():
+    """brain/loop.py:_answer's payload — cells the agent actually looked at
+    plus the ASCII coverage map in effect when it answered. Optional: legacy
+    answers and non-AI runs never had these."""
+    ans = AnswerRecord(verdict="yes", reasoning="r",
+                       views_inspected=[[3, 0], [3, 1]],
+                       coverage="2/48 cells seen (# seen · . unseen · @ current)")
+    back = AnswerRecord.model_validate_json(ans.model_dump_json())
+    assert back.views_inspected == [[3, 0], [3, 1]]
+    assert back.coverage.startswith("2/48")
+
+
+def test_answer_views_inspected_and_coverage_are_optional():
+    ans = AnswerRecord(verdict="yes", reasoning="r")
+    assert ans.views_inspected == [] and ans.coverage is None
+
+
 # --- derivation provenance ----------------------------------------------------
 
 def test_derivation_meta_round_trips():

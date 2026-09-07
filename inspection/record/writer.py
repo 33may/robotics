@@ -150,6 +150,31 @@ class RunWriter:
         )
         self._write_step(rec)
 
+    # --- late-arriving fields ---------------------------------------------------
+
+    def set_view_method_params(self, method_id: str, **params) -> None:
+        """Merge kwargs into run.view_methods[method_id].params; flush run.json.
+
+        Survey-derived values (the viewsphere `r`) are only known after the
+        run has already been created.
+        """
+        for vm in self._run.view_methods:
+            if vm.id == method_id:
+                vm.params = {**vm.params, **params}
+                break
+        else:
+            raise KeyError(f"no view method '{method_id}' on this run")
+        self._flush_run()
+
+    def set_question(self, q: str) -> None:
+        """Set run.question; flush run.json (Flow A's ask arrives after create)."""
+        self._run.question = q
+        self._flush_run()
+
+    def write_session(self, session: SessionRecord) -> None:
+        """Write session.json (rigs whose camera opens only after create)."""
+        _write_json(self.dir / "session.json", session)
+
     # --- events ---------------------------------------------------------------
 
     def event(self, kind: str, step_id: int | None = None,

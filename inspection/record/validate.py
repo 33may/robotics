@@ -129,11 +129,19 @@ def validate_run(run_dir: Path, deep: bool = False,
     for adir in sorted((run_dir / "ai").iterdir()) if (run_dir / "ai").exists() else []:
         airun = _load(rep, adir / "airun.json", AIRunRecord) \
             if (adir / "airun.json").exists() else None
-        menu = _load(rep, adir / "menu.json", MenuDef) \
-            if (adir / "menu.json").exists() else None
-        if airun and menu and airun.menu_hash != menu.content_hash:
-            rep.problems.append(Problem("error", f"ai/{adir.name}",
-                                        "menu_hash != MenuDef.content_hash"))
+        menu_path = adir / "menu" / "menu_def.json"
+        menu = _load(rep, menu_path, MenuDef) if menu_path.exists() else None
+        if airun is not None:
+            if menu is not None:
+                if airun.menu_hash != menu.content_hash:
+                    rep.problems.append(Problem("error", f"ai/{adir.name}",
+                                                "menu_hash != MenuDef.content_hash"))
+            else:
+                # No local menu snapshot to cross-check against — a no-op,
+                # but flagged so a missing menu_def.json is never silent.
+                rep.problems.append(Problem("warn", f"ai/{adir.name}",
+                                            "no menu/menu_def.json — "
+                                            "menu_hash cross-check skipped"))
         tdir = adir / "transcripts"
         for tpath in sorted(tdir.glob("*.json")) if tdir.exists() else []:
             tr = _load(rep, tpath, TranscriptRecord)
