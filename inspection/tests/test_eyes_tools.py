@@ -88,15 +88,7 @@ def test_seeded_run_if_present():
     tools = ViewTools(Run.load(real))
     visited = {tuple(s.record.view.address) for s in tools._run.captured
               if s.id != 0}
-    # 25 captures total (24 non-survey), same as the deleted eyes/replay.py
-    # reported. `visited` is 23, not 24, though: this run's turn 3 failed
-    # (dir 003 missing) and turn 4 retried the SAME cell, and the legacy
-    # adapter's cell join is positional-by-DIRECTORY-FOUND (record/legacy.py
-    # module docstring), not by turn index like the deleted reader was — so
-    # every capture after the gap shifts one cell address off, landing two
-    # of them on the same address. Pre-existing in the (frozen) legacy
-    # adapter, not a regression from this port.
-    assert len(tools._run.captured) == 25 and len(visited) == 23
+    assert len(tools._run.captured) == 25 and len(visited) == 24
     cell = sorted(visited)[0]
     assert tools.get_view(cell).rgb.shape == (480, 848, 3)
     print(tools.coverage(cur=cell))

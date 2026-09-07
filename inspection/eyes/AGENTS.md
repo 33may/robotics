@@ -4,7 +4,7 @@
 The run structure and tool API an AI agent uses to navigate our geometric
 space, inspect captured views, and know what it has seen. Machinery, not a
 question-answerer: **the module owns no question** — the agent does. Design:
-`../2026-08-20-image-machinery-design.md`; plan:
+`../docs/2026-08-20-image-machinery-design.md`; plan:
 `docs/superpowers/plans/2026-08-24-image-machinery.md`.
 
 Two agent tiers. The **orchestrator** owns geometry, the run structure and
@@ -13,11 +13,16 @@ its own tools and returns text. That split is what keeps raw pixels from
 accumulating in the orchestrator's context over a 5–30 step run.
 
 ## Files
+- `agents/` — the VLM subagents: one loop (`vlm_agent.py`), one spec per
+  variant (inspect / survey / evidence). The recipe for adding a variant is
+  `agents/AGENTS.md`.
 - `store.py` — the run structure. `RunStore` (read API + flush to
   `<run>/eyes/store.json` on every write) and the three writers.
   `ViewRecord(cell, pose_id, cap_dir, t, T_base_cam)`.
-- `tools.py` — the verb surface: `ViewTools(store, writer=None)` with
-  `view_at` (newest view of a cell), `views_near` (4-connected; an uncaptured
+- `tools.py` — the verb surface: `ViewTools(run, writer=None)` — `run` a
+  `record/run.py:Run` (task-5, 2026-09-07: views come straight from `Run`
+  now, not a `RunStore` populated by a separate loader) — with `view_at`
+  (newest view of a cell), `views_near` (4-connected; an uncaptured
   neighbour returns None and is logged as a note), `get_view` → `ViewImage`
   (pixels **and** text), `crop` (clipped), `coverage` (ASCII + count), `note`.
   Debug CLI: `p inspection/eyes/tools.py inspection/data/runs/2408-seeded`.
@@ -29,12 +34,15 @@ accumulating in the orchestrator's context over a 5–30 step run.
   `p inspection/eyes/verbs_local.py <run_dir> <h> <v>`.
 - `env_check.py` — preflight for the model stack (sm_120, a real bf16 matmul,
   transformers ≥5, HF token, and a genuine gated-file fetch for `facebook/sam3`).
-- `replay.py` — `load_run(run_dir, v_elevs, h_bins) -> RunStore`: a captured
-  data-engine run becomes the store's substrate. Idempotent.
-  Debug CLI: `p inspection/eyes/replay.py inspection/data/runs/2108-d`.
+
+`replay.py` (`load_run(run_dir, v_elevs, h_bins) -> RunStore`) is deleted
+(task-5, 2026-09-07): a captured run's views are read straight off `Run`
+now (`record/run.py:Run.load`, `.captured`, `.at()`), legacy layouts
+included. Debug a run without writing code: `p -m inspection.record card
+<id>` (`record/__main__.py`), or `Run.load(run_dir)` from a REPL.
 
 Tests (no pytest): `p inspection/tests/test_eyes_store.py`,
-`p inspection/tests/test_eyes_replay.py`.
+`p inspection/tests/test_record_run_port.py`.
 
 ## Contracts & decisions
 - **Three trust levels, enforced by construction.** `FactWriter` is the only

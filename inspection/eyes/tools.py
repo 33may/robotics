@@ -121,15 +121,14 @@ class ViewTools:
         """Newest view of a cell, or None. A revisit supersedes the earlier
         look.
 
-        Matched on each step's own recorded address, defaulting to (0, 0)
-        when none was recorded — true only of the survey (always step 0,
-        never a real grid address); steps compare id-ascending, so a later
-        genuine capture of (0, 0) still wins over that default.
+        `Run.at()` matches on the EXACT recorded address — the survey's is
+        None, so it can never satisfy any cell tuple, (0, 0) included. It
+        must stay that way: the survey is off-grid (loop.py's prompt says
+        so explicitly), and a coalesced default would silently hand it back
+        for a real, merely-uncaptured cell (task-5 review, 2026-09-07).
         """
-        cell = tuple(cell)
-        hits = [s for s in self._run.captured
-                if tuple(s.record.view.address or (0, 0)) == cell]
-        return ViewRecord(hits[-1]) if hits else None
+        step = self._run.at(tuple(cell))
+        return None if step is None else ViewRecord(step)
 
     def views_near(self, cell):
         """[(neighbour, ViewRecord | None)] — 4-connected, h wraps, v clamps.

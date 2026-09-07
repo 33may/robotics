@@ -9,7 +9,15 @@ Old layout facts (docs/data-engine/loop-data-audit.md §4):
   <NNN>/meta.json = {pose_id, timestamp, joints_rad, T_base_flange, T_base_cam,
                      [rgb_rotation_deg], [mask{score,box,px}|null]}
   session.json (absent on FakeRig/mock runs), eyes/answer.json (if completed)
-The view<->cell join is positional: dir NNN's cell = N-th non-survey turn.
+The view<->cell join is by pose_id, not by directory position: dir NNN's
+cell is `cells[pose_id - 1]`, where cells is the turns list with "survey"
+filtered out. A turn that failed left no directory but is NOT removed from
+`cells` (disk is truth for WHICH captures exist, run.json's turn order is
+truth for WHAT each one was) — indexing by directory-found position instead
+of by the meta.json's own pose_id would shift every capture after a gap
+onto the wrong cell (found 2026-09-07, task-5 review: 2408-seeded is
+missing dir 003, and the position-indexed join silently misattributed
+everything from 004 on).
 """
 from __future__ import annotations
 
@@ -45,7 +53,6 @@ def adapt_run(run_dir: Path) -> AdaptedRun:
     view_dirs = sorted(d for d in run_dir.iterdir()
                        if d.is_dir() and d.name.isdigit())
     steps: dict[int, StepRecord] = {}
-    non_survey_i = 0
     for vdir in view_dirs:
         meta_path = vdir / "meta.json"
         if not meta_path.exists():
@@ -56,10 +63,10 @@ def adapt_run(run_dir: Path) -> AdaptedRun:
         if pose_id == 0:
             address = None
         else:
-            address = cells[non_survey_i] if non_survey_i < len(cells) else None
+            idx = pose_id - 1
+            address = cells[idx] if 0 <= idx < len(cells) else None
             if address is None:
                 synthesized.append("view.address")
-            non_survey_i += 1
         rot = meta.get("rgb_rotation_deg")
         if rot is None:
             rot = 0  # pre-2026-08-24 captures are raw on disk

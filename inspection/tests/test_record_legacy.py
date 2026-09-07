@@ -119,6 +119,37 @@ def test_legacy_verdict_surfaces_on_card(tmp_path):
     assert c.verdict == "yes"  # read from eyes/answer.json
 
 
+def test_gap_from_a_failed_capture_does_not_shift_later_cells(tmp_path):
+    """Ported from the deleted eyes/replay.py's test_load_synthetic_run
+    (task-5 review finding): turn 3 fails and leaves no dir 002, so dir 003
+    is the run's THIRD non-survey turn, not its second. The join must be by
+    the meta.json's own pose_id (`cells[pose_id - 1]`), not by directory-
+    found position — a positional join silently attributes dir 003 to the
+    failed turn's target ([4, 1]) instead of its own ([5, 2])."""
+    d = tmp_path / "2408-gap"
+    d.mkdir()
+    turns = [{"step": 1, "target": "survey", "t": 1.0, "result": "ok"},
+             {"step": 2, "target": [3, 1], "t": 2.0, "result": "+100 pts"},
+             {"step": 3, "target": [4, 1], "t": 3.0,
+              "result": "capture failed: no frames"},          # no dir 002
+             {"step": 4, "target": [5, 2], "t": 4.0, "result": "+90 pts"}]
+    (d / "run.json").write_text(json.dumps(
+        {"q_survey": [0.0] * 6, "r": 0.35, "turns": turns}))
+    for pose_id, name in [(0, "000"), (1, "001"), (3, "003")]:
+        vdir = d / name
+        vdir.mkdir()
+        (vdir / "meta.json").write_text(json.dumps(
+            {"pose_id": pose_id, "timestamp": 10.0 + pose_id,
+             "joints_rad": [0.0] * 6, "T_base_flange": T4, "T_base_cam": T4}))
+        (vdir / "rgb.png").write_bytes(b"png")
+
+    a = adapt_run(d)
+    assert set(a.steps) == {0, 1, 3}                    # no dir -> no step 2
+    assert a.steps[0].view.address is None               # survey
+    assert a.steps[1].view.address == [3, 1]              # 1st non-survey turn
+    assert a.steps[3].view.address == [5, 2]              # 3rd, NOT 2nd ([4, 1])
+
+
 def test_adapter_never_writes(tmp_path):
     d = _legacy_run(tmp_path)
     before = {p: p.stat().st_mtime_ns for p in d.rglob("*") if p.is_file()}
