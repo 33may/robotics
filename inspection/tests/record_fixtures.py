@@ -17,6 +17,15 @@ CONFIG = ConfigSnapshot(
 SESSION = SessionRecord(serial="123622270954", resolution=[848, 480],
                         depth_scale_m_per_unit=1e-4)
 
+
+def make_config():
+    """A fresh minimal valid ConfigSnapshot (extracted from CONFIG above)."""
+    return ConfigSnapshot(
+        git_sha="76fabc3",
+        cell_yaml={"sha256": "b" * 64, "content": "frames: {}\n"},
+        calib={"file": "T_flange_cam_2026-08-19.npy", "sha256": "c" * 64},
+    )
+
 GEO = dict(offered=100, kept=90, dropped=10, fused_points=90, source="mask")
 
 

@@ -1,11 +1,54 @@
 #!/usr/bin/env python3
 """Run — the one read door over a recorded run (flows-design.md §4)."""
+import json
+
 import numpy as np
 import pytest
 
 from inspection.record.run import Run
 from inspection.record.writer import RunWriter
 from inspection.tests.record_fixtures import CONFIG, SESSION, T4, make_run
+
+
+def _legacy_run(root, run_id="2408-cup9", *, with_answer=False,
+                with_session=True, old_meta_on_view=1):
+    """Mimic the 2408-era layout: run.json{q_survey,r,turns} + NNN/meta.json.
+
+    Copied from inspection/tests/test_record_legacy.py — kept standalone here
+    rather than imported, per the task-3 brief.
+    """
+    d = root / run_id
+    d.mkdir(parents=True)
+    turns = [
+        {"step": 1, "target": "survey", "t": 1.0, "result": "+100 pts, fused 90", "stopped": False},
+        {"step": 2, "target": [3, 0], "t": 2.0, "result": "+80 pts, fused 150", "stopped": False},
+    ]
+    (d / "run.json").write_text(json.dumps(
+        {"q_survey": [0.0] * 6, "r": 0.24, "turns": turns}))
+    if with_session:
+        (d / "session.json").write_text(json.dumps(
+            {"serial": "123622270954", "resolution": [848, 480],
+             "depth_scale_m_per_unit": 1e-4, "intrinsics": {},
+             "extrinsics_ir1_to_ir2": {"rotation": [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                                       "translation_m": [0.018, 0, 0]}}))
+    for pose_id in (0, 1):
+        vdir = d / f"{pose_id:03d}"
+        vdir.mkdir()
+        meta = {"pose_id": pose_id, "timestamp": 100.0 + pose_id,
+                "joints_rad": [0.1] * 6, "T_base_flange": T4, "T_base_cam": T4,
+                "mask": {"score": 0.9, "box": [1, 2, 3, 4], "px": 55}}
+        if pose_id >= old_meta_on_view:
+            pass  # old-era view: no rgb_rotation_deg
+        else:
+            meta["rgb_rotation_deg"] = 0
+        (vdir / "meta.json").write_text(json.dumps(meta))
+        (vdir / "rgb.png").write_bytes(b"\x89PNG x")
+    if with_answer:
+        (d / "eyes").mkdir()
+        (d / "eyes" / "answer.json").write_text(json.dumps(
+            {"verdict": "yes", "reasoning": "r", "evidence": [],
+             "coverage": "", "views_inspected": [[3, 0]]}))
+    return d
 
 
 def test_load_exposes_records(tmp_path):
@@ -134,6 +177,30 @@ def test_derived_probes_fits_then_flat_layout_then_none(tmp_path):
     assert run.derived("cyl") == dbase / "fits" / "cyl"
     assert run.derived("bytecount") == dbase / "bytecount"
     assert run.derived("nope") is None
+
+
+def test_legacy_run_loads_through_the_same_door(tmp_path):
+    d = _legacy_run(tmp_path, "2408-old")        # helper copied from test_record_legacy
+    run = Run.load(d)
+    assert run.provenance == "legacy"
+    assert run.survey is not None
+    assert run.at((3, 0)) is not None            # the turns-join address
+    assert run.captured[0].dir.name.isdigit()    # old layout: <run>/NNN/
+
+
+def test_refresh_picks_up_new_steps(tmp_path):
+    from inspection.record.writer import RunWriter
+    from inspection.tests.record_fixtures import make_config
+    w = RunWriter.create(tmp_path, run_id="0709-live", name="live",
+                         source="live", config=make_config())
+    run = Run.load(tmp_path / "0709-live")
+    assert run.steps == []
+    sid, sdir = w.begin_step({"method": "vs", "address": None})
+    w.write_capture(sid, t_captured=1.0, joints_rad=[0.0] * 6,
+                    T_base_flange=np.eye(4).tolist(),
+                    T_base_cam=np.eye(4).tolist(), rgb_rotation_deg=0)
+    run.refresh()
+    assert [s.id for s in run.steps] == [0]
 
 
 if __name__ == "__main__":

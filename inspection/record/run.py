@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 
 from inspection.cell.geometry import rotate180
+from inspection.record.legacy import adapt_run, is_legacy
 from inspection.record.schema import (ConfigSnapshot, OperatorEvent, RunRecord,
                                       SessionRecord, StepRecord, ViewState)
 from inspection.record.validate import Report, validate_run
@@ -82,6 +83,18 @@ class Run:
     @classmethod
     def load(cls, run_dir: Path) -> "Run":
         run_dir = Path(run_dir)
+        record, steps, provenance = cls._read(run_dir)
+        return cls(run_dir, record, steps, provenance=provenance)
+
+    @staticmethod
+    def _read(run_dir: Path) -> tuple[RunRecord, dict[int, "Step"], str]:
+        """Load body shared by `load` and `refresh` — one door, native or legacy."""
+        run_dir = Path(run_dir)
+        if is_legacy(run_dir):
+            a = adapt_run(run_dir)
+            steps = {sid: Step(rec, run_dir / f"{sid:03d}")
+                     for sid, rec in a.steps.items()}
+            return a.run, steps, "legacy"
         rp = run_dir / "run.json"
         if not rp.exists():
             raise FileNotFoundError(rp)
@@ -92,7 +105,16 @@ class Run:
             if sp.exists():
                 steps[sid] = Step(StepRecord.model_validate_json(sp.read_text()),
                                   sp.parent)
-        return cls(run_dir, record, steps)
+        return record, steps, "native"
+
+    def refresh(self) -> "Run":
+        """Re-read run.json + steps in place (mid-run readers); returns self.
+
+        No lazy caches to drop today: session/config/events/view_state are
+        all read fresh from disk on every call already.
+        """
+        self.record, self._steps, self.provenance = self._read(self.path)
+        return self
 
     # steps -----------------------------------------------------------------
     @property
