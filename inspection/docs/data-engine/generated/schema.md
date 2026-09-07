@@ -122,6 +122,7 @@ erDiagram
         float closed_at
         list steps
         list q_survey
+        list migrations
     }
     Intrinsics {
         int width
@@ -425,6 +426,7 @@ run.json — the datasheet: identity, motivation, status, view methods.
 | `steps` | `list[int]` | no | `list()` |
 | `q_survey` | `list[float] | None` | no | `None` |
 | `conventions` | `Conventions` | no | `Conventions()` |
+| `migrations` | `list[str]` | no | `list()` |
 
 ### Intrinsics
 

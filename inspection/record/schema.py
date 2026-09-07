@@ -279,6 +279,7 @@ class RunRecord(RecordModel):
     steps: list[int] = Field(default_factory=list)  # ordered step_ids
     q_survey: Joints6 | None = None
     conventions: Conventions = Field(default_factory=Conventions)
+    migrations: list[str] = Field(default_factory=list)  # applied migration ids
 
 
 class Intrinsics(BaseModel):
