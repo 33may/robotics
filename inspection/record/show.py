@@ -19,7 +19,7 @@ def show_run(run_dir: Path, out: Path) -> Path:
 
     run_dir, out = Path(run_dir), Path(out)
     a = load_any(run_dir)
-    rr.init(f"record/{a.run.id}", spawn=False)
+    rr.init(f"record-{a.run.id}", spawn=False)  # rerun 0.37: no '/' in app ids
     rr.save(str(out))
 
     intr = _color_intrinsics(run_dir)
