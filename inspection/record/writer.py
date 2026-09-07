@@ -48,6 +48,24 @@ def default_id(name: str, now: float | None = None) -> str:
     return f"{tm.tm_mday:02d}{tm.tm_mon:02d}-{name}"
 
 
+def git_sha() -> str:
+    """HEAD of this checkout, or "unknown" — code identity for a record.
+
+    Lives here because more than one record carries it (`ConfigSnapshot.git_sha`,
+    `MenuDef.code_sha`) and a second implementation would eventually disagree
+    with the first. Never raises: a run that cannot name its commit is worth
+    recording anyway.
+    """
+    import subprocess
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True,
+            timeout=5, cwd=Path(__file__).resolve().parents[2]
+        ).stdout.strip() or "unknown"
+    except Exception:  # noqa: BLE001 — no git, no repo, no time: all "unknown"
+        return "unknown"
+
+
 def _write_json(path: Path, model: RecordModel) -> None:
     """Atomic, write-strict JSON write: validate -> temp -> rename."""
     data = model.model_dump(mode="json")

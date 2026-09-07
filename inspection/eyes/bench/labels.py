@@ -26,11 +26,13 @@ _MARK = {"y": "y", "n": "n", "partial": "p", "?": "."}
 
 
 class LabelSet:
-    """`eyes/labels.json` — {capture dir: {cell, label, note}}."""
+    """`labels.json` — {capture dir: {cell, label, note}}."""
 
-    def __init__(self, run_dir, data):
-        self.run_dir = Path(run_dir)
-        self.path = self.run_dir / "eyes" / "labels.json"
+    def __init__(self, out_dir, data):
+        # Wherever the bench keeps its working set — the same directory the
+        # RunStore it was built from flushes to (`RunStore.path`).
+        self.dir = Path(out_dir)
+        self.path = self.dir / "labels.json"
         self._d = data
 
     # ------------------------------------------------------------- create
@@ -41,14 +43,14 @@ class LabelSet:
         for v in sorted(store.views(), key=lambda v: v.t):
             entries[v.cap_dir] = {"cell": list(v.cell) if v.cell else None,
                                   "label": "?", "note": ""}
-        labels = cls(store.run_dir, {"question": question, "entries": entries})
+        labels = cls(store.path, {"question": question, "entries": entries})
         labels._flush()
         return labels
 
     @classmethod
-    def load(cls, run_dir):
-        p = Path(run_dir) / "eyes" / "labels.json"
-        return cls(run_dir, json.loads(p.read_text()))
+    def load(cls, out_dir):
+        p = Path(out_dir) / "labels.json"
+        return cls(out_dir, json.loads(p.read_text()))
 
     def _flush(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -138,7 +140,8 @@ if __name__ == "__main__":
     # kind of ad-hoc, disk-backed view bag (LabelSet/contact_sheet/report all
     # key off `.views()`/`._d["grid"]`/`.path`).
     run = Run.load(run_dir)
-    store = RunStore.create(run_dir, h_bins=12, v_elevs=(10.0, 40.0, 70.0),
+    bench_dir = run_dir / "bench"
+    store = RunStore.create(bench_dir, h_bins=12, v_elevs=(10.0, 40.0, 70.0),
                             r=0.35)
     facts = FactWriter(store)
     for s in run.captured:
@@ -146,7 +149,7 @@ if __name__ == "__main__":
         facts.add_view(cell=cell, pose_id=s.id, cap_dir=s.dir.name,
                        T_base_cam=s.T_base_cam, t=s.record.t_captured)
     try:
-        labels = LabelSet.load(run_dir)
+        labels = LabelSet.load(bench_dir)
         print(f"loaded existing labels ({labels.pending()} unlabelled)")
     except FileNotFoundError:
         labels = LabelSet.template(store, question)

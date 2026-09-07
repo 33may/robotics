@@ -56,14 +56,18 @@ Tests (no pytest): `p inspection/tests/test_eyes_store.py`,
   does not move the robot, in any form. Asserted by a test, not by convention.
   Grid dimensions are passed in as parameters rather than imported from
   `view/viewsphere.py` (which pulls in the whole pinocchio/IK stack).
-- **Capture↔cell join** (`run/machine.py:516,570`): dir `000` = survey
-  (`cell is None`); dir `NNN` has `meta.json:pose_id == N`, whose cell is the
-  N-th **non-survey** turn of `run.json:turns[]`. Turn `step` and `pose_id`
-  are deliberately different namespaces — do not conflate. Failed captures
-  consume an ordinal but leave no dir; the loader walks dirs, so disk is truth.
+- **Capture↔cell join**: there is no join any more. A step IS the pair —
+  `steps/NNN/step.json` carries its own `view.address` (`null` for the
+  survey, which is always step 0), and `Run.at(cell)` is the only lookup.
+  Ids are dense over steps that HAPPENED: a rejected or failed capture keeps
+  its id and says why, a move that never captured has no step at all. The
+  old `run.json:turns[]` ↔ `meta.json:pose_id` join is dead, and with it the
+  two-namespaces trap (legacy runs still get it, below the read door, in
+  `record/legacy.py`).
 - **Verbatim on disk, distilled in context.** Full subagent transcripts land
-  in `<run>/eyes/transcripts/`; only summaries return to the orchestrator.
-  You can always drop detail later, never recover it.
+  in `<run>/ai/<seq>/transcripts/`, beside the trace and store of the session
+  that produced them; only summaries return to the orchestrator. You can
+  always drop detail later, never recover it.
 - **Never de-rotate a capture before detection** (measured 2026-08-24). SAM 3
   resizes inputs to a square 1008, so turning a landscape frame into a portrait
   one changes the object's rendered scale: losslessly straightening the ±90°

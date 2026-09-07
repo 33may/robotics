@@ -11,7 +11,7 @@ perception, cell, view, motion — and wire them together.
   (plan/preview/exec) talk back only via events on a queue. Commands:
   `view/request`, `view/confirm`, `run/stop`, `run/exit`, all validated
   backend-side (a stale button can never move the arm). Spec:
-  `inspection/2026-08-20-ui-driven-loop-design.md`.
+  `inspection/docs/2026-08-20-ui-driven-loop-design.md`.
 - `app.py` — composition root. `run` (bus + window + `Supervisor` +
   `RealRig`, SIGINT-safe shutdown) and `teach` (freedrive-then-save the
   survey pose). The native window is a child process (`inspection/ui/app.py
@@ -35,7 +35,7 @@ perception, cell, view, motion — and wire them together.
   run tier is the only one above both. Backend is injected, so tests use
   `StubBackend` and never touch a GPU. `p inspection/tests/test_segmenter.py`.
 - `decider.py` — parked for v2-AI; not wired into the run path since loop
-  v2 (see `inspection/2026-08-20-ui-driven-loop-design.md`). Still holds
+  v2 (see `inspection/docs/2026-08-20-ui-driven-loop-design.md`). Still holds
   the egocentric menu-gloss helpers (`gloss`, `build_menu`) and the v1
   terminal implementation (`Console`, `TerminalDecider`), kept for when
   an AI decider slots into the request/confirm seam.
@@ -59,10 +59,17 @@ perception, cell, view, motion — and wire them together.
   no extra inference, and is instance-level by construction — a text prompt
   would re-find *any* cup. Measured across a 180 deg roll and a ring change:
   scores 0.73-0.97, 5 calls, 0 misses.
-- Masks are written beside their capture (`mask.png` + `meta.json:mask`) in
-  the SAME orientation as `rgb.png`, so a run stays replayable offline and
-  the artifact that decided the geometry is on disk. Best-effort: a disk
-  error there must never fail a settle that otherwise succeeded.
+- Masks are written beside their capture (`mask.png`) in the SAME
+  orientation as `rgb.png`, so a run stays replayable offline and the
+  artifact that decided the geometry is on disk. Their score/box/px are a
+  RECORD and live in `steps/NNN/step.json:segmentation` — one writer, no
+  hand-rolled twin. Best-effort: a disk error there must never fail a settle
+  that otherwise succeeded.
+- **One writer.** The `Supervisor` is handed a `RunWriter` and has no other
+  path to disk: `begin_step` hands out the step dir the rig writes bytes
+  into, `write_capture`/`write_fused`/`mark_step`/`event` write every record.
+  The old `run.json:turns` ledger, the rigs' `meta.json`/`session.json`, and
+  the run-root `fused_cloud.npy` are gone — the layout is `record/schema.py`.
 - Orchestration only: sequencing, UI, logging, entry points. Any
   geometry, planning, or camera logic that accretes here gets moved to
   its pipeline stage.

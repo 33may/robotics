@@ -63,6 +63,11 @@ class SettleResult:
     seg: object | None     # segmenter result or None
     npts: int
     dropped: int
+    #: Why the mask path was abandoned, verbatim from `object_view`, or None
+    #: when it was never tried (no segmenter) or never left. `seg is None`
+    #: alone cannot tell those apart, and the record has a field for exactly
+    #: this question (schema.py:GeometryStats.fallback_reason).
+    fallback: str | None = None
 
 
 def settle_capture(cap, rig, segmenter, acc, is_survey: bool,
@@ -76,19 +81,28 @@ def settle_capture(cap, rig, segmenter, acc, is_survey: bool,
     through `on_warn` rather than a hardwired publisher, so this function has
     no dependency on the Supervisor or a live UI.
     """
+    fell_back = None
+
+    def _fallback(why):
+        nonlocal fell_back
+        fell_back = why
+        on_warn(why)
+
     view, seg = object_view(cap, rig.intr, rig.intr_color, rig.depth_scale,
-                            acc.points, segmenter, on_fallback=on_warn)
+                            acc.points, segmenter, on_fallback=_fallback)
     # The plane gate sits BEFORE anything from this view is kept: a rejected
     # view must not touch the accumulator, publish a capture, or mark the
     # cell visited.
     bad = _plane_error(view["plane"])
     if bad:
         return SettleResult(ok=False, detail=f"view rejected: {bad}",
-                            view=None, seg=None, npts=0, dropped=0)
+                            view=None, seg=None, npts=0, dropped=0,
+                            fallback=fell_back)
     npts = len(view["points"]) if view["points"] is not None else 0
     if is_survey and view["centroid"] is None:
         return SettleResult(ok=False, detail="NO OBJECT above the table",
-                            view=None, seg=None, npts=0, dropped=0)
+                            view=None, seg=None, npts=0, dropped=0,
+                            fallback=fell_back)
     dropped = acc.add(view["points"], view.get("colors")) if npts else 0
     if dropped:
         # Loud on purpose: a detached blob is a scene problem (a cable,
@@ -96,4 +110,4 @@ def settle_capture(cap, rig, segmenter, acc, is_survey: bool,
         on_warn(f"rejected {dropped} detached points "
                 f"(>{JUMP_GATE_M*100:.0f} cm from the object)")
     return SettleResult(ok=True, detail="", view=view, seg=seg,
-                        npts=npts, dropped=dropped)
+                        npts=npts, dropped=dropped, fallback=fell_back)

@@ -43,6 +43,7 @@ from inspection.eyes.agents.inspect_agent import inspect_view
 from inspection.eyes.agents.survey_agent import describe_survey
 from inspection.eyes.store import FindingWriter, PlanWriter, RunStore
 from inspection.eyes.tools import ViewTools
+from inspection.record.ai_writer import AIRunWriter, next_seq
 from inspection.record.run import Run
 from inspection.view.grid import DEFAULT_R, H_BINS, V_ELEVATIONS
 
@@ -139,19 +140,28 @@ class Brain:
 
     def __init__(self, run_dir, question, vlm, verbs,
                  model=DEFAULT_MODEL, max_turns=MAX_TURNS, adaptive_thinking=True,
-                 mover=None, trace=None):
+                 mover=None, trace=None, ai=None):
         self.run_dir = Path(run_dir)
         self.question = question
         self.run = Run.load(self.run_dir)
+        # ONE orchestrator session = one `ai/<seq>/` subtree, and this writer
+        # owns all of it (trace, store, transcripts, verdict). A caller that
+        # already opened one — the live handler, which surveys before the
+        # Brain exists — passes it in; the CLI opens the next free seq here.
+        self.ai = ai if ai is not None else AIRunWriter.create(
+            self.run_dir, seq=next_seq(self.run_dir), orchestrator_model=model,
+            menu_id=render.MENU_ID, menu_hash=render.menu_def().content_hash)
+        if ai is None:
+            self.ai.menu_def(render.menu_def())
         # RunStore SURVIVES here for its OTHER role — the brain's mutable AI
         # state (plan/hypothesis/findings, task-5 ruling); views live on
-        # `self.run` now. `open` preserves that state across a resumed run;
-        # the grid values below are vestigial once ViewTools reads geometry
-        # off `self.run` directly (eyes/tools.py:_grid_of) — they only need
-        # to satisfy `RunStore.create`'s signature.
-        store_path = self.run_dir / "eyes" / "store.json"
-        self.store = RunStore.open(self.run_dir) if store_path.exists() else \
-            RunStore.create(self.run_dir, h_bins=H_BINS, v_elevs=V_ELEVATIONS,
+        # `self.run` now. `open` preserves that state across a resumed
+        # session; the grid values below are vestigial once ViewTools reads
+        # geometry off `self.run` directly (eyes/tools.py:_grid_of) — they
+        # only need to satisfy `RunStore.create`'s signature.
+        store_path = self.ai.dir / "store.json"
+        self.store = RunStore.open(self.ai.dir) if store_path.exists() else \
+            RunStore.create(self.ai.dir, h_bins=H_BINS, v_elevs=V_ELEVATIONS,
                             r=DEFAULT_R)
         self.plan_writer = PlanWriter(self.store)
         self.tools = ViewTools(self.run, writer=self.plan_writer)
@@ -193,7 +203,7 @@ class Brain:
         # happens before the Brain exists) passes it in and has already
         # written the `run` event — appending a second one would give the
         # panel two headers for one run.
-        self.trace = trace or TraceWriter(self.run_dir)
+        self.trace = trace or TraceWriter(self.ai.dir)
         if trace is None:
             self.trace.event("run", question=question, model=model,
                              run_dir=str(self.run_dir),
@@ -355,6 +365,56 @@ class Brain:
                     f"same hunt to ship with the gap on record.", records)
         return None, records
 
+    def _answer_record(self, args, records):
+        """The verdict as `AnswerRecord` — the write boundary of the AI tier.
+
+        The loop's runtime answer and the schema's are NOT the same shape, and
+        this is where they meet:
+
+        - `evidence` is one prose blob from the model; the record is a LIST of
+          statements, so a single blob is a one-element list.
+        - an `evidence_images` entry is a raw hunt record
+          ({cell, find, found, report, crop, frame, transcript}). The schema
+          wants a citation: WHICH step, WHICH transcript, WHICH image. `cell`
+          resolves through `Run.at` to the step that holds that view, `crop`
+          (or the frame, when the hunt cited none) is the artifact, and the
+          hunt's own verdict text becomes the note.
+        - a hunt that produced no image at all cannot be cited as an image.
+          It is dropped HERE and only here: the full record is already in the
+          trace (`evidence` event) and in the transcript on disk, so nothing
+          is lost — the answer simply does not claim a picture it does not
+          have.
+        """
+        self.run.refresh()
+        images, step_ids, transcript_ids = [], [], []
+        for r in records:
+            artifact = r.get("crop") or r.get("frame")
+            step = self.run.at(r["cell"]) if r.get("cell") is not None else None
+            if artifact is None or step is None:
+                self.trace.event("text", text=(
+                    f"evidence at {r.get('cell')} not citable as an image "
+                    f"({'no artifact' if artifact is None else 'no step'}) — "
+                    f"it stays in the trace"))
+                continue
+            tid = Path(str(r.get("transcript") or "")).stem or "unknown"
+            images.append({
+                "step_id": step.id, "transcript_id": tid, "artifact": artifact,
+                "note": f"{r['find']} — {'found' if r['found'] else 'NOT found'}"
+                        f": {r['report']}"})
+            step_ids.append(step.id)
+            transcript_ids.append(tid)
+        evidence = args.get("evidence")
+        return {
+            "verdict": args["verdict"], "reasoning": args["reasoning"],
+            "evidence": [evidence] if isinstance(evidence, str) and evidence
+            else list(evidence or []),
+            "evidence_images": images,
+            "step_ids": sorted(set(step_ids)),
+            "transcript_ids": sorted(set(transcript_ids)),
+            "views_inspected": sorted(map(list, self.agent_seen)),
+            "coverage": self.tools.coverage(cur=self.cell),
+        }
+
     # ------------------------------------------------------------- verbs
     def _build_tools(self):
         def ok(text):
@@ -467,8 +527,11 @@ class Brain:
                            "evidence_images": records,
                            "views_inspected": sorted(map(list, self.agent_seen)),
                            "coverage": self.tools.coverage(cur=self.cell)}
-            (self.store.path / "answer.json").write_text(
-                json.dumps(self.answer, indent=1) + "\n")
+            self.ai.answer(self._answer_record(args, records))
+            # The trace keeps the RAW hunt records (cell/find/found/report/
+            # crop/frame/transcript) — `_answer_record` below narrows them to
+            # what the schema has a home for, and nothing may be lost between
+            # the two.
             self.trace.event("answer", **{k: v for k, v in self.answer.items()
                                           if k != "coverage"})
             self.trace.event("write", tier="plan", what="answer",

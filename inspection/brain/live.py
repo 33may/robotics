@@ -29,6 +29,7 @@ state machine is trustworthy.
 """
 import threading
 import time
+from pathlib import Path
 
 from inspection.record.run import Run
 
@@ -65,11 +66,18 @@ class SupervisorMover:
     60% AND cut retries).
     """
 
-    def __init__(self, sup, run_dir, on_event=None, plan_timeout=PLAN_TIMEOUT_S):
+    def __init__(self, sup, run_dir, on_event=None, plan_timeout=PLAN_TIMEOUT_S,
+                 decider: str = "ai"):
         self.sup = sup
         self.run_dir = run_dir
         self.on_event = on_event or (lambda *a, **k: None)
         self.plan_timeout = plan_timeout
+        #: Who the record will say chose these views. It rides every
+        #: `view/request` this mover sends and lands in the step's
+        #: `ViewState.decider` — the difference between a run the orchestrator
+        #: drove and one a human clicked through is otherwise invisible on
+        #: disk. A sweep passes its own id (task 9).
+        self.decider = decider
 
     # ------------------------------------------------------------ helpers
     def _wait(self, predicate, timeout=None):
@@ -126,9 +134,10 @@ class SupervisorMover:
 
         before = self._captures()
         self.on_event("requested", cell=_json(cell))
-        # Exactly the message the browser's button sends. No private API, no
-        # second path into the robot.
-        self.sup.events.put({"cmd": "view/request", "target": _json(cell)})
+        # Exactly the message the browser's button sends, plus a signature.
+        # No private API, no second path into the robot.
+        self.sup.events.put({"cmd": "view/request", "target": _json(cell),
+                             "decider": self.decider})
 
         # 1a. Wait for the dispatcher to ACK by leaving idle. Silence for the
         #     whole grace means the request was dropped on the floor (bad
@@ -184,16 +193,22 @@ class SupervisorMover:
         return True, "reached and captured"
 
 
-def make_ask_handler(sup, pub, run_dir, cognition):
+def make_ask_handler(sup, pub, run_dir, cognition, writer):
     """Build the `brain/ask` handler shared by the real run and the mock.
 
     One implementation on purpose: the mock is how the approval gate gets
     rehearsed without hardware, and a rehearsal against different wiring
     rehearses nothing. `cognition` is therefore the ONLY thing that differs
-    between the two — `real_cognition()` at `run/app.py:107`, `stub_cognition()`
-    at `ui/mock.py:93` — and this handler chooses no model of its own. Until
+    between the two — `real_cognition()` at `run/app.py`, `stub_cognition()`
+    at `ui/mock.py` — and this handler chooses no model of its own. Until
     2026-08-26 it picked one from `GEMINI_API_KEY`, so an unset key turned the
     demo into a stub run that was indistinguishable from the real thing.
+
+    `writer` is the run's `RunWriter`: the question belongs to the RUN (it is
+    what the run is for), while everything the thinking produces belongs to
+    ONE orchestrator session — so each ask opens its own `AIRunWriter` at the
+    next free `ai/<seq>/`, and a second question never overwrites the first
+    one's trace, store, transcripts or verdict.
     """
     import asyncio
     import threading
@@ -217,9 +232,18 @@ def make_ask_handler(sup, pub, run_dir, cognition):
         # appears in the panel the moment it is asked, and the survey's
         # approval beats land under it. Brain appends to this same writer.
         from inspection.brain.loop import DEFAULT_MODEL
+        from inspection.brain.render import menu_def
         from inspection.brain.trace import TraceWriter
+        from inspection.record.ai_writer import AIRunWriter, next_seq
 
-        trace = TraceWriter(run_dir)
+        menu = menu_def()
+        ai = AIRunWriter.create(run_dir, seq=next_seq(run_dir),
+                                orchestrator_model=DEFAULT_MODEL,
+                                menu_id=menu.menu_id, menu_hash=menu.content_hash)
+        ai.menu_def(menu)
+        writer.set_question(question)
+
+        trace = TraceWriter(ai.dir)
         # `cognition` is on the header event because a mock run writes a trace
         # of exactly the same shape as a real one — same wiring, by design —
         # so without the label a screenshot of one is a screenshot of either.
@@ -232,7 +256,7 @@ def make_ask_handler(sup, pub, run_dir, cognition):
             pub.log("info", f"brain: {state} {kw.get('cell', '')}")
 
         mover = SupervisorMover(sup, run_dir, on_event=on_event)
-        TraceWatcher(pub, run_dir).start()
+        TraceWatcher(pub, ai.dir).start()
 
         def go():
             try:
@@ -248,7 +272,8 @@ def make_ask_handler(sup, pub, run_dir, cognition):
                         pub.log("warn", f"survey not completed: {reason}")
                         return
                 brain = Brain(run_dir, question, vlm=cognition.vlm,
-                              verbs=cognition.verbs, mover=mover, trace=trace)
+                              verbs=cognition.verbs, mover=mover, trace=trace,
+                              ai=ai)
                 asyncio.run(brain.run())
             except Exception:                        # noqa: BLE001
                 import logging
@@ -268,20 +293,20 @@ def make_ask_handler(sup, pub, run_dir, cognition):
 
 
 class TraceWatcher(threading.Thread):
-    """Republish `<run>/eyes/trace.jsonl` whenever it grows.
+    """Republish `<run>/ai/<seq>/trace.jsonl` whenever it grows.
 
     The same mechanism `ui/app.py trace` uses, so a live run and a replayed
     one reach the panel by exactly one path: the file is the interface.
     """
 
-    def __init__(self, pub, run_dir, poll=0.4):
+    def __init__(self, pub, ai_dir, poll=0.4):
         super().__init__(name="trace-watch", daemon=True)
-        self.pub, self.run_dir, self.poll = pub, run_dir, poll
+        self.pub, self.ai_dir, self.poll = pub, Path(ai_dir), poll
         self.stop = threading.Event()
 
     def run(self):
         from inspection.brain.trace import TRACE_NAME, read_trace
-        path = self.run_dir / "eyes" / TRACE_NAME
+        path = self.ai_dir / TRACE_NAME
         stamp = None
         while not self.stop.wait(self.poll):
             try:
@@ -290,7 +315,7 @@ class TraceWatcher(threading.Thread):
                 now = path.stat().st_mtime_ns
                 if now != stamp:
                     stamp = now
-                    self.pub.publish_trace(read_trace(self.run_dir))
+                    self.pub.publish_trace(read_trace(self.ai_dir))
             except Exception:                       # noqa: BLE001
                 pass          # a broken trace must never disturb a live run
 

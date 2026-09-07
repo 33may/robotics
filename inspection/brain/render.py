@@ -8,27 +8,30 @@ same mechanism:
 - **Content accumulates.** View descriptions and the model's own reasoning live
   in the append-only transcript. The SDK carries them for free, and re-reading
   them costs nothing — the store is our filesystem.
-- **State is recomputed.** Position, coverage and the action menu are derived
+- **State is recomputed.** Position, coverage and the move menu are derived
   from the RunStore and the Supervisor by deterministic code on every turn. No
   model ever authors them (the three-trust-levels rule: `eyes/AGENTS.md`).
 
-State is emitted as a **delta, never a snapshot**. An append-only transcript
-keeps everything you put in it, so a coverage table stops being true the moment
-the next view lands — after 20 views the model carries 20 tables, 19 of them
-false. "4/12 -> 5/12" stays true forever.
+State is re-rendered EVERY turn and stamped `· turn N ·`. An append-only
+transcript keeps every block ever sent, so an old one cannot be retracted —
+only dated. On `2508-aiduck2` menu 1 said "[9,0] — opposite side" and menu 6
+said "[9,0] — 30 deg right"; both were true when sent, both stayed in context,
+and nothing marked which was current. The stamp is that mark.
 
-Two numbers that shaped this file:
-- the action menu is capped (AgentOccam `2410.13825`: removing distractor
-  actions ALONE lifted WebArena 16.5 -> 25.8%, the single biggest lever
-  measured on agent loops);
-- bearings are RELATIVE and egocentric ("30 deg right", "opposite"), while the
-  address stays absolute. Absolute for the system, egocentric for the model
-  (Anton 2026-08-12, reaffirmed 2026-08-25 after the first live run) — picking
-  from a labelled list is not the 2%-accuracy allocentric regime, but the model
-  must never have to COMPUTE the address itself.
+The menu is COMPLETE at the current elevation — no cap. The old 8-row cap was
+measured doing harm on `2508-aiduck2`: 6 of its 7 menus offered only 4
+distinct azimuths, spending half the budget on elevation variants of the cell
+the arm stood on, and [9, 0] — the cell that held the answer — appeared in 2
+of 7. A full ring is bounded by construction (h_bins - 1 rows plus visited
+cells at other levels), so the AgentOccam distractor-pruning lever
+(`2410.13825`, WebArena 16.5 -> 25.8%) is served by having only four VERBS,
+not by hiding viewpoints.
+
+Bearings are RELATIVE and egocentric ("30° right", "opposite"), the address
+absolute. Absolute for the system, egocentric for the model (Anton 2026-08-12,
+reaffirmed 2026-08-25 after the first live run): the model picks from a
+labelled list and never has to COMPUTE an azimuth address itself.
 """
-
-MENU_CAP = 8
 
 #: Which way `h` counts. The orchestrator is blind, so this is pure convention
 #: — but it has to be stated once and used everywhere, including the prompt,
@@ -41,7 +44,8 @@ _RIGHT_IS_INCREASING_H = True
 #: +1.00`, including the `rgb_rotation_deg = 180` captures whose raw camera x
 #: is flipped. Combined with `_RIGHT_IS_INCREASING_H`, the vision tier's
 #: camera-centric "left"/"right" and this menu's "left"/"right" are THE SAME
-#: WORD, and the conversion between them is the identity.
+#: WORD, and the conversion between them is the identity — which is what lets
+#: a `recommendation` phrase cross from the subagent to this menu verbatim.
 #:
 #: That is a fact about our rig, not about cameras. It holds because the
 #: upright step removes the roll; a rig that mounted the wrist camera mirrored,
@@ -52,9 +56,9 @@ _RIGHT_IS_INCREASING_H = True
 #: tangent `(-y, x, 0)` about the target centre, and confirm the sign.
 _IMAGE_RIGHT_IS_INCREASING_AZIMUTH = True
 
-#: Menu rows carry a clause of what was seen from each visited cell. Long
-#: enough to distinguish "logo face-on" from "logo edge-on", short enough that
-#: eight of them do not bury the addresses they annotate.
+#: Visited menu rows carry the subagent's `saw` clause. Long enough to
+#: distinguish "logo face-on" from "logo edge-on", short enough that a ring of
+#: them does not bury the addresses they annotate.
 NOTE_CAP = 72
 
 
@@ -71,75 +75,60 @@ def gloss(cell, h_bins, v_elevs):
             f"elevation {v_elevs[v]:.0f} deg")
 
 
-def bearing(cur, nb, h_bins, v_elevs):
-    """How to get from here to there, said the way a person would say it.
+def _offset(cur_h, h, h_bins):
+    """Azimuth offset as (degrees, word) — how a person would say the turn.
 
-    "90 deg right", "opposite side", "one step up". The first live run showed
-    why this matters: the menu spoke in absolute azimuths and the model chose
-    cells it could not reach, because nothing in the text told it where it was
-    standing relative to them.
+    The first live run showed why relative wording matters: the menu spoke in
+    absolute azimuths and the model chose cells it could not reach, because
+    nothing in the text told it where it was standing relative to them.
     """
-    if cur is None or cur == "survey":
-        return gloss(nb, h_bins, v_elevs)
-    dh = (nb[0] - cur[0]) % h_bins
+    dh = (h - cur_h) % h_bins
     if dh > h_bins // 2:
         dh -= h_bins
-    dv = nb[1] - cur[1]
-
     deg = abs(dh) * 360.0 / h_bins
     if dh == 0:
-        turn = "same side"
-    elif abs(dh) * 2 == h_bins:
-        turn = "opposite side"
-    else:
-        side = "right" if (dh > 0) == _RIGHT_IS_INCREASING_H else "left"
-        turn = f"{deg:.0f} deg {side}"
-
-    if dv == 0:
-        return turn
-    updown = "up" if dv > 0 else "down"
-    step = f"{abs(dv)} step{'s' if abs(dv) > 1 else ''} {updown}"
-    step += f" (elevation {v_elevs[nb[1]]:.0f} deg)"
-    return f"{turn}, {step}" if dh else step
+        return 0.0, "same azimuth"
+    if abs(dh) * 2 == h_bins:
+        return deg, "opposite"
+    side = "right" if (dh > 0) == _RIGHT_IS_INCREASING_H else "left"
+    return deg, side
 
 
-def framing_line(framing):
-    """The vision tier's viewing-geometry readout, as one line of prose.
-
-    Travels with the finding, inside the tool result. This is the channel that
-    was missing in `2508-aiduck`: at [9, 0] the subagent read the mark as "M>"
-    and said nothing about the surface being oblique, so the planner had no
-    signal for which way to orbit, guessed, and spent an approved move going
-    the wrong way ([10, 0]) before correcting through [8, 0] to [7, 0].
-    """
-    if not framing:
+def saw_note(view, cap=NOTE_CAP):
+    """The visited-row clause: what that viewpoint showed, in one clipped line."""
+    if not view or not view.get("saw"):
         return ""
-    bits = [f"{k}: {framing[k]}" for k in ("target", "facing", "better")
-            if framing.get(k)]
-    return "framing — " + "; ".join(bits) if bits else ""
-
-
-def framing_note(framing, cap=NOTE_CAP):
-    """The menu-row version: what this cell showed, in one clipped clause."""
-    if not framing:
-        return ""
-    parts = [framing.get("target"), framing.get("facing")]
-    text = ", ".join(p for p in parts if p)
-    if not text:
-        return ""
-    text = " ".join(text.split())
+    text = " ".join(str(view["saw"]).split())
     return text if len(text) <= cap else text[:cap - 1].rstrip(" ,;") + "…"
 
 
-def snapshot(cur_cell, agent_seen, n_findings, n_reachable, n_visited):
-    """The state a delta is computed against."""
-    return {"cell": tuple(cur_cell) if isinstance(cur_cell, (tuple, list)) else cur_cell,
-            "seen": len(agent_seen), "findings": n_findings,
-            "reachable": n_reachable, "visited": n_visited}
+def survey_bearing_line(az_deg, h_float, h_bins):
+    """Where the hand-taught survey pose sits on the ring — code-computed
+    (`ViewTools.survey_bearing`), so the planner can anchor the survey
+    declaration's frame-relative words to addresses. Nearest cell plus the
+    signed offset, because "between [1] and [2]" for a pose 0.2° past cell
+    [1] reads as halfway."""
+    near = round(h_float) % h_bins
+    delta = az_deg - (round(h_float) * 360.0 / h_bins)
+    return (f"seen from azimuth {az_deg:.0f}° ≈ azimuth cell [{near}] "
+            f"({delta:+.0f}°); image-right is increasing azimuth")
 
 
-def state_delta(prev, cur, h_bins, v_elevs):
-    """What CHANGED. Empty string when nothing did — silence is cheaper.
+def _levels_line(v_elevs):
+    """The elevation scale, stated once — never repeated per row."""
+    names = {0: "lowest", len(v_elevs) - 1: "top"}
+    if len(v_elevs) == 3:
+        names[1] = "middle"
+    bits = []
+    for i, e in enumerate(v_elevs):
+        name = names.get(i)
+        bits.append(f"{i} {name} ({e:.0f}°)" if name else f"{i} ({e:.0f}°)")
+    return "elevation levels: " + ", ".join(bits)
+
+
+def state_block(turn, cell, h_bins, v_elevs, n_visited, n_reachable,
+                n_findings):
+    """Where the arm is, the elevation scale, and the two counts.
 
     Coverage is reported against the REACHABLE SPHERE, not against how many
     frames happen to exist. In a live run every move captures and then
@@ -147,107 +136,156 @@ def state_delta(prev, cur, h_bins, v_elevs):
     nothing; the fraction that supports a negative answer is the one over the
     sphere.
     """
-    if prev == cur:
-        return ""
-    lines = []
-    if prev["cell"] != cur["cell"]:
-        lines.append(f"now at {gloss(cur['cell'], h_bins, v_elevs)}")
-    if prev["visited"] != cur["visited"] or prev["seen"] != cur["seen"]:
-        lines.append(f"visited {cur['visited']}/{cur['reachable']} reachable "
-                     f"viewpoints")
-    if prev["findings"] != cur["findings"]:
-        lines.append(f"findings on record: {cur['findings']}")
-    return "STATE · " + " · ".join(lines) if lines else ""
+    if cell is None or cell == "survey":
+        at = "at the survey pose (off-grid)"
+    else:
+        h, v = cell
+        at = (f"at [{h}, {v}] — azimuth {azimuth_deg(h, h_bins):.0f}°, "
+              f"elevation level {v}")
+    return (f"STATE · turn {turn} · {at}\n"
+            f"        {_levels_line(v_elevs)}\n"
+            f"        visited {n_visited} of {n_reachable} reachable · "
+            f"findings {n_findings}")
 
 
-def _ring(cur, h_bins, n_v):
-    """Candidate cells, nearest-first, with the opposite side always offered.
+def moves_block(turn, tools, cur_cell, agent_seen, nav=None, seen=None):
+    """Where the arm may go next, and what the visited viewpoints showed.
 
-    Nearest-first because refinement is the common move; the opposite side is
-    forced in because for a question about a CUP the far face is the single
-    most informative viewpoint and it would otherwise never make the cap.
-    """
-    if cur is None or cur == "survey":
-        return [(h, v) for v in range(n_v) for h in range(h_bins)]
-    ch, cv = cur
-    cells = [(h, v) for v in range(n_v) for h in range(h_bins) if (h, v) != cur]
-
-    def dist(c):
-        dh = min((c[0] - ch) % h_bins, (ch - c[0]) % h_bins)
-        return (dh, abs(c[1] - cv))
-
-    cells.sort(key=dist)
-    opposite = ((ch + h_bins // 2) % h_bins, cv)
-    if opposite in cells:
-        cells.remove(opposite)
-        cells.insert(min(3, len(cells)), opposite)
-    return cells
-
-
-def action_menu(tools, cur_cell, agent_seen, nav=None, cap=MENU_CAP, seen=None):
-    """Where the arm may go next, and what the visited ones showed.
+    One blended list: the COMPLETE azimuth ring at the current elevation, plus
+    every visited cell at the other elevations slotted beside its azimuth
+    sibling — without those, the model loses all memory of level 0 the moment
+    it moves to level 1. The address itself carries the level.
 
     `nav` is the Supervisor's live picture — reachable / visited / blocked
     (`SupervisorMover.nav`). Without it (replay) the only truth available is
-    which cells a sweep already captured, and the menu says so. Getting this
-    distinction wrong is what made the first live run offer
-    "[1, 0] — no capture here" for the only cells worth moving to.
+    which cells a sweep already captured, and uncaptured cells are simply not
+    options. Getting this distinction wrong is what made the first live run
+    offer "[1, 0] — no capture here" for the only cells worth moving to.
 
-    `seen` maps an already-read cell to its `framing_note`. This is the run's
-    view ledger, and the menu is the right place for it precisely BECAUSE the
-    menu is re-rendered from scratch on every move: a coverage table pasted
-    into an append-only transcript rots on the next capture (see the module
-    docstring), but a table rebuilt at the moment of each decision cannot. It
-    puts "what did I get from over there" directly beside "here is how to go
-    there", which is the comparison the planner is actually making.
+    `seen` maps a visited cell to its `view` block. `saw` renders on the row;
+    `recommendation` hangs UNDER the row as its own line, so the origin of the
+    recommendation is structural — every one-slot representation of it has
+    produced the same bug (a direction with no "from where"). The phrase is
+    rendered verbatim: the orchestrator, not this code, turns it into an
+    address (Anton 2026-08-26 — the whole contract is prompt text).
     """
     h_bins, v_elevs = tools._h_bins, tools._v_elevs
     n_v = len(v_elevs)
-    rows, dropped = [], 0
     seen = seen or {}
 
-    for c in _ring(cur_cell, h_bins, n_v):
-        if len(rows) >= cap:
-            dropped += 1
-            continue
-        note = bearing(cur_cell, c, h_bins, v_elevs)
+    def status(c):
+        """(is this cell an option, how to mark it)."""
         if nav is None:
             # Replay: the sweep is the world. A cell without a capture is not
             # somewhere to go, it is somewhere with nothing to read.
             if tools.view_at(c) is None:
-                continue
-            mark = "already inspected" if c in agent_seen else "not yet inspected"
-        else:
-            if c not in nav["reachable"]:
-                continue                      # unreachable: not an option at all
-            if c in nav["blocked"]:
-                # Soft: the planner refused it from HERE. It may open up after
-                # the next move, so it is named rather than hidden.
-                mark = "no path from here right now"
-            elif c in nav["visited"] or c in agent_seen:
-                mark = "already visited"
-            else:
-                mark = "not yet visited"
-        row = f"  move({list(c)}) — {note}, {mark}"
-        got = framing_note(seen.get(c))
-        if got:
-            row += f"\n      seen from there: {got}"
-        rows.append(row)
+                return False, ""
+            return True, "visited" if c in agent_seen else "not visited"
+        if c not in nav["reachable"]:
+            return False, ""                  # unreachable: not an option at all
+        if c in nav["blocked"]:
+            # Soft: the planner refused it from HERE. It may open up after
+            # the next move, so it is named rather than hidden.
+            return True, "no path from here right now"
+        if c in nav["visited"] or c in agent_seen:
+            return True, "visited"
+        return True, "not visited"
+
+    def fmt(c, note, mark):
+        row = f"  move({list(c)})".ljust(17) + f"{note:<15}" + f"· {mark}"
+        view = seen.get(c)
+        got = saw_note(view)
+        if got and mark.startswith("visited"):
+            row += f" · {got}"
+        rec = (view or {}).get("recommendation")
+        if rec and mark.startswith("visited"):
+            row += f"\n      recommends: {rec}"
+        return row
+
+    if cur_cell is None or cur_cell == "survey":
+        # Off-grid: no origin to be relative to, so rows carry the absolute
+        # geometry instead of a bearing.
+        rows = []
+        for c in [(h, v) for v in range(n_v) for h in range(h_bins)]:
+            ok, mark = status(c)
+            if ok:
+                rows.append(fmt(c, f"az {azimuth_deg(c[0], h_bins):.0f}° "
+                                   f"lvl {c[1]}", mark))
+        header = f"MOVES · turn {turn} · you are at the survey pose (off-grid)"
+    else:
+        ch, cv = cur_cell
+        ring = [(h, cv) for h in range(h_bins) if h != ch]
+        # Visited cells at OTHER elevations still render. `agent_seen` is what
+        # this agent has read; nav's visited adds cells the arm reached in a
+        # live run even if a read there failed.
+        elsewhere = {tuple(c) for c in agent_seen}
+        if nav is not None:
+            elsewhere |= {tuple(c) for c in nav["visited"]}
+        elsewhere = sorted(c for c in elsewhere
+                           if c[1] != cv and 0 <= c[0] < h_bins)
+
+        def key(c):
+            deg, word = _offset(ch, c[0], h_bins)
+            # Right before left at the same offset, current elevation before
+            # its visited siblings — matches how the ring reads outward.
+            return (deg, 0 if word != "left" else 1, abs(c[1] - cv))
+
+        rows = []
+        for c in sorted(ring + elsewhere, key=key):
+            ok, mark = status(c)
+            if ok:
+                deg, word = _offset(ch, c[0], h_bins)
+                rows.append(fmt(c, f"{deg:>3.0f}° {word}", mark))
+        levels = "/".join(str(i) for i in range(n_v))
+        header = (f"MOVES · turn {turn} · you are at [{ch}, {cv}] — "
+                  f"elevation level {cv} of {levels}")
 
     if not rows:
         return "MOVES · none available"
-    out = "MOVES · absolute addresses, bearings relative to where you are now\n"
-    out += "\n".join(rows)
-    if dropped:
-        # Never let a cap read as "that was everything".
-        out += f"\n  (+{dropped} more reachable viewpoints — ask if you need one)"
-    return out
+    return header + "\n" + "\n".join(rows)
 
 
 def opening(question, survey_text, tools, agent_seen, nav=None):
     """The first turn: the question, what the survey showed, where we can go."""
     return (f"QUESTION · {question}\n\n"
             f"SURVEY VIEW · {survey_text}\n\n"
-            f"{action_menu(tools, None, agent_seen, nav=nav)}\n\n"
-            "Decompose the question into measurable criteria and record them "
-            "with plan(), then inspect and move until you can answer.")
+            f"{moves_block(0, tools, None, agent_seen, nav=nav)}\n\n"
+            "Plan first: decompose the question into measurable criteria and "
+            "derive the visit order from the survey geometry, then inspect "
+            "and move until you can answer.")
+
+
+#: Menu identity. THIS MODULE IS THE MENU: `state_block` + `moves_block` are
+#: the pure function (ViewState, MenuInput) -> the text the planner reads, so
+#: the menu's content hash is this file's source hash. Coarse but honest —
+#: v1 snapshots the renderer wholesale rather than the template it does not
+#: yet have; when the blocks become data, `template` fills in and the hash
+#: narrows to it (schema.py:MenuDef).
+MENU_ID = "brain-render"
+MENU_VERSION = "1.0.0"
+
+#: The tool surface offered alongside the menu — `brain/loop.py:_build_tools`.
+#: Named here rather than imported: `loop` imports this module, and the menu
+#: definition must not depend on the loop that renders with it.
+MENU_VERBS = ("plan", "inspect", "move", "answer")
+
+
+def menu_def():
+    """This renderer as a `MenuDef` record — snapshot written per AI session.
+
+    `content_hash` is the sha256 of this source file, `code_sha` the repo's
+    HEAD: version alone binds nothing (a semver says what we intended, the
+    hashes say what actually ran), which is the scores.jsonl provenance
+    pattern applied to the menu.
+    """
+    import hashlib
+    from pathlib import Path
+
+    from inspection.record.schema import MenuDef
+    from inspection.record.writer import git_sha
+
+    src = Path(__file__).resolve().read_bytes()
+    return MenuDef(menu_id=MENU_ID, version=MENU_VERSION,
+                   content_hash=hashlib.sha256(src).hexdigest(),
+                   code_sha=git_sha(), verbs=list(MENU_VERBS),
+                   renders_kinds=["viewsphere"])

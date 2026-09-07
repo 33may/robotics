@@ -36,7 +36,7 @@ def test_roundtrip_and_partial_credit_vocabulary():
         labels = LabelSet.template(store, question="is there a logo?")
         labels.set("001", "y", note="logo centred")
         labels.set("002", "partial", note="fragment at right edge")
-        again = LabelSet.load(store.run_dir)
+        again = LabelSet.load(store.path)
         assert again.question == "is there a logo?"
         assert again.entries["001"]["label"] == "y"
         assert again.entries["002"]["note"] == "fragment at right edge"

@@ -10,8 +10,9 @@ from inspection.run.settle import SettleResult, settle_capture
 
 def _fake_cap(tmp_path):
     from inspection.run.rigs import FakeRig
-    rig = FakeRig(None, threading.Event(), outdir=tmp_path)
-    return rig, rig.capture(0)
+    rig = FakeRig(None, threading.Event())
+    # `tmp_path` stands in for the step dir a `RunWriter.begin_step` hands out.
+    return rig, rig.capture(0, tmp_path)
 
 
 def test_settle_accepts_a_good_capture(tmp_path):

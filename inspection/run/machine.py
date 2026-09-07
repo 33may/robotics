@@ -1,6 +1,6 @@
 """Supervisor: the command-driven state machine for loop v2.
 
-Spec: inspection/2026-08-20-ui-driven-loop-design.md ("State machine &
+Spec: inspection/docs/2026-08-20-ui-driven-loop-design.md ("State machine &
 commands", "Architecture"). One dispatcher thread (`run()`) owns every bit
 of run state; named worker threads (plan/preview/exec) talk back only by
 putting events on `self.events`. A generation counter makes "a stale button
@@ -34,10 +34,16 @@ queued) and then for `pose_quiesce()` (proof that no publish is still in
 flight inside the publisher's cached geom_data). Both waits are bounded:
 a missed handoff degrades to the old timing-based behaviour and logs,
 rather than wedging a run with a robot in it.
+
+RECORDING (task-8). Every byte this machine puts on disk goes through the
+injected `RunWriter` — there is no second write path any more. The two
+threads that touch it are ordered by the same queue that orders everything
+else: the exec worker allocates the step and writes its capture BEFORE it
+queues `settle_done`, and the dispatcher writes the fused half only when
+that event comes back. Nothing writes concurrently with anything else.
 """
 from __future__ import annotations
 
-import json
 import logging
 import queue
 import re
@@ -51,6 +57,7 @@ from inspection.cell.geometry import BOX_PCT, CloudAccumulator
 from inspection.cell.world import DEFAULT_STEP, RobotCell
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
+from inspection.record.schema import ViewCandidate, ViewState
 from inspection.run.settle import _plane_error, settle_capture
 from inspection.view.grid import object_extent, radius_for_extent
 from inspection.view.viewsphere import ViewSphere
@@ -61,21 +68,31 @@ log = logging.getLogger(__name__)
 # action at the pendant — no new request may be accepted while in one of these.
 _BUSY_PHASES = ("executing", "capturing", "fusing", "fault")
 
+#: The id of the view method this machine addresses cells with, as declared in
+#: the run's `view_methods` (`RunWriter.create`). Every step's `view.method`
+#: carries it, and `validate_run` refuses a step whose method the run never
+#: declared — so the two must be written from one constant.
+VIEW_METHOD = "vs"
+
 # `_plane_error` now lives in `run/settle.py` (the plane gate is part of the
 # extracted settle pipeline); re-exported here so any external reference to
 # `machine._plane_error` keeps working.
 
 
 class Supervisor:
-    def __init__(self, rig, pub, outdir, q_survey, world=None, ik=None,
+    def __init__(self, rig, pub, writer, q_survey, world=None, ik=None,
                  r=None, seed=0, segmenter=None):
         self.rig, self.pub = rig, pub
+        #: The run's ONE writer (`record/writer.py`). The machine owns no
+        #: other path to disk: capture bytes go into the dir `begin_step`
+        #: hands out, every JSON record goes through these verbs.
+        self.writer = writer
         #: Optional `run.segmenter.ObjectSegmenter`. None keeps the pure
         #: depth pipeline, which is what the fake rig and most tests want;
         #: the composition root injects a real one. Never constructed here —
         #: that would drag SAM 3 weights into every unit test.
         self.segmenter = segmenter
-        self.outdir = Path(outdir); self.q_survey = np.asarray(q_survey, float)
+        self.outdir = Path(writer.dir); self.q_survey = np.asarray(q_survey, float)
         self.world = world if world is not None else RobotCell()
         self.ik = ik if ik is not None else UR5eIK()
         self.r, self.seed = r, seed
@@ -93,7 +110,6 @@ class Supervisor:
         self.acc = CloudAccumulator()
         self.captures = {}          # cell -> {"step", "dir"}
         self.survey_state = "available"
-        self.turns, self.t0 = [], time.time()
         self._preview_cancel = None
         self._preview_thread = None  # joined before any new worker spawns
         self._action_thread = None   # the one live plan/exec worker, for join_workers
@@ -104,6 +120,12 @@ class Supervisor:
         self._last_cap_dir = None   # capture dir of the most recent capture()
         self._pending_request = None  # target deferred while a plan is in flight
         self._pose_ack = threading.Event()  # dispatcher -> exec worker: pose_active clear
+        #: Who asked for the view now being planned/executed — it rides the
+        #: `view/request` command ("operator" from a button, "ai" from the
+        #: orchestrator's mover) and lands in the step's `ViewState.decider`,
+        #: which is the only place the record says who chose.
+        self._decider = "operator"
+        self._pending_decider = "operator"
 
     # ----------------------------------------------------------------- run
     def run(self):
@@ -118,7 +140,6 @@ class Supervisor:
                 self.handle(ev)
             except Exception:
                 log.exception("dispatcher error on %s", ev)
-        self._save()
 
     def request_shutdown(self):
         """Thread-safe, SIGINT-safe: stop the arm, ask the dispatcher to exit.
@@ -217,6 +238,10 @@ class Supervisor:
     # ------------------------------------------------------------ commands
     def _on_view_request(self, ev):
         target = self._normalize_target(ev.get("target"))
+        # Untrusted, like the target: anything that reaches this queue may say
+        # who it is, and "operator" is the honest default for a bare command
+        # (that is what the browser's buttons send).
+        decider = str(ev.get("decider", "operator"))
         if target is None:
             log.warning("view/request with malformed target: %r", ev.get("target"))
             self.pub.log("warn", f"view/request ignored: bad target "
@@ -254,16 +279,18 @@ class Supervisor:
                 log.info("request for %s already in flight — ignored", target)
                 return
             self._pending_request = target
+            self._pending_decider = decider
             log.info("view/request %s deferred: still planning %s",
                      target, self.target)
             self.pub.log("info", f"{target} queued — still planning "
                           f"{self.target}")
             return
-        self._start_planning(target)
+        self._start_planning(target, decider)
 
-    def _start_planning(self, target):
+    def _start_planning(self, target, decider="operator"):
         self._cancel_preview()
         self.gen += 1
+        self._decider = decider
         self._set_phase("planning", target)
         self._publish_views()
         self._action_thread = threading.Thread(
@@ -332,7 +359,7 @@ class Supervisor:
             pending, self._pending_request = self._pending_request, None
             log.info("plan_done for %s discarded: %s was queued", target,
                      pending)
-            self._start_planning(pending)
+            self._start_planning(pending, self._pending_decider)
             return
         if path is None:
             if target == "survey":
@@ -368,8 +395,12 @@ class Supervisor:
         self._pose_ack.set()
         target, outcome = ev["target"], ev["outcome"]
         if outcome == "stopped":
-            self._record_turn(target, "software stop — arm halted mid-move",
-                              stopped=True)
+            # No step exists yet: the arm is stopped BEFORE `begin_step`, so
+            # this turn leaves a run-level event and no step directory —
+            # which is the truth (nothing was captured anywhere).
+            self._write("stopped event", self.writer.event, "stopped",
+                        detail=f"{self._target_json(target)}: software stop "
+                               f"— arm halted mid-move")
             self.current = None
             self.blocked.clear()
             self.stop_event.clear()   # cleared only here, between actions
@@ -378,8 +409,9 @@ class Supervisor:
             if self._exit_after:
                 self._shutdown()
         elif outcome == "fault":
-            self._record_turn(target,
-                              f"executor halted/refused: {ev.get('detail', '')}")
+            self._write("fault event", self.writer.event, "fault",
+                        detail=f"{self._target_json(target)}: executor "
+                               f"halted/refused: {ev.get('detail', '')}")
             self._set_phase("fault", None)
             self.pub.log("error",
                          "executor halted/refused — check pendant; Exit only")
@@ -391,17 +423,24 @@ class Supervisor:
 
     def _on_settle_done(self, ev):
         target = ev["target"]
+        sid = ev.get("step_id")
         if ev["ok"]:
             if target == "survey":
                 self.survey_state = "visited"
             else:
                 self.visited.add(target)
-                self.captures[target] = {"step": self._next_cell_step(),
+                self.captures[target] = {"step": sid,
                                          "dir": self._last_cap_dir}
                 self.current = target
             self.blocked.clear()
-            self._record_turn(target, f"+{ev.get('npts', 0)} pts, "
-                              f"fused {len(self.acc.points)}")
+            # The fused half of the step, written from the dispatcher and only
+            # here: `visited`/`current`/`blocked` have just been updated, so
+            # the ViewState this attaches is the candidate set as it stands
+            # after the fuse — which is what the next choice was made from.
+            self._write("fused step", self.writer.write_fused, sid,
+                        ev["geometry"], self._view_state(sid, target))
+            self._write("captured event", self.writer.event, "captured",
+                        step_id=sid)
             self._publish_object()
         else:
             # The move DID happen — only the capture/fuse failed (M3). So the
@@ -411,7 +450,8 @@ class Supervisor:
             self.blocked.clear()
             self.current = None
             self.pub.log("error", ev.get("detail", ""))
-            self._record_turn(target, ev.get("detail", ""))
+            # The step itself was already marked (rejected/failed) by the
+            # worker that owns it — nothing to write here.
         if self._exit_after:
             self._shutdown()
         else:
@@ -497,19 +537,20 @@ class Supervisor:
             log.exception("chain publish failed for %s", d)
 
     def _save_mask(self, cap, seg):
-        """Persist the mask beside its capture; never fail the run over it.
+        """Persist the mask bitmap in the step dir; never fail the run over it.
 
         Best-effort by design: the mask is a debugging and replay artifact,
         and the points it produced are already fused. A disk error here must
-        not abort a settle that otherwise succeeded.
+        not abort a settle that otherwise succeeded. Its score/box/px are NOT
+        written here — they ride the step record (`write_capture`'s
+        `segmentation`), which is the one place the schema keeps them.
         """
         d = cap.get("dir")
         if not d:
             return
         try:
             from inspection.perception.capture import save_mask
-            save_mask(d, seg.mask, seg.score, seg.box,
-                      {"T_base_cam": cap["T_base_cam"]})
+            save_mask(d, seg.mask, {"T_base_cam": cap["T_base_cam"]})
         except Exception:
             log.exception("could not save object mask to %s", d)
 
@@ -543,9 +584,15 @@ class Supervisor:
             log.warning("pose streamer did not quiesce in 1 s")
             self.pub.log("warn", "pose stream did not quiesce — continuing")
         self.events.put({"ev": "phase", "gen": gen, "phase": "capturing"})
+        # The step is allocated HERE, after the move: a step directory means
+        # "the arm stood somewhere and a camera was pointed at it". A move
+        # that stopped or faulted never gets one (`_on_exec_done` logs the
+        # event instead) — the id space stays dense over things that happened.
+        sid, sdir = self.writer.begin_step(
+            {"method": VIEW_METHOD,
+             "address": None if target == "survey" else list(target)})
         try:
-            step = self._next_cell_step() if target != "survey" else 0
-            cap = self.rig.capture(step)
+            cap = self.rig.capture(sid, sdir)
             # `settle_capture` (run/settle.py) is the object-identity + plane-
             # gate + fuse pipeline, verbatim out of this worker: it rejects a
             # bad view BEFORE anything from it is kept (no accumulator touch,
@@ -556,10 +603,19 @@ class Supervisor:
                                  is_survey=(target == "survey"),
                                  on_warn=lambda msg: self.pub.log("warn", msg))
             if not res.ok:
+                # An explicit entry, never a silent gap: the bytes are on disk
+                # and the record says why they were refused.
+                self.writer.mark_step(sid, outcome="rejected", detail=res.detail)
                 self.events.put({"ev": "settle_done", "gen": gen,
                                  "target": target, "ok": False, "npts": 0,
-                                 "detail": res.detail})
+                                 "step_id": sid, "detail": res.detail})
                 return
+            self.writer.write_capture(
+                sid, t_captured=cap["t"], joints_rad=_floats(cap["q"]),
+                T_base_flange=_mat(self.ik.fk(cap["q"])),
+                T_base_cam=_mat(cap["T_base_cam"]),
+                rgb_rotation_deg=int(cap["rgb_rotation_deg"]),
+                segmentation=_segmentation(res.seg))
             self.events.put({"ev": "phase", "gen": gen, "phase": "fusing"})
             if res.seg is not None:
                 self._save_mask(cap, res.seg)
@@ -570,10 +626,21 @@ class Supervisor:
             self.pub.publish_capture(cap)
             self._last_cap_dir = cap.get("dir")
             self.events.put({"ev": "settle_done", "gen": gen, "target": target,
-                             "ok": True, "npts": res.npts, "detail": ""})
+                             "ok": True, "npts": res.npts, "step_id": sid,
+                             "geometry": self._geometry(res), "detail": ""})
         except Exception as e:
+            log.exception("capture/settle failed for step %s", sid)
+            try:
+                self.writer.mark_step(sid, outcome="failed",
+                                      detail=f"capture failed: {e}")
+            except Exception:
+                # The dispatcher MUST get its terminal event even if the
+                # record cannot be written — a wedged run is worse than a
+                # gap in the roster, and both are logged.
+                log.exception("could not mark step %s failed", sid)
             self.events.put({"ev": "settle_done", "gen": gen, "target": target,
-                             "ok": False, "npts": 0, "detail": f"capture failed: {e}"})
+                             "ok": False, "npts": 0, "step_id": sid,
+                             "detail": f"capture failed: {e}"})
 
     # ------------------------------------------------------------- helpers
     def _recenter(self):
@@ -595,45 +662,88 @@ class Supervisor:
                                        self.rig.intr["height"])
             self.pub.log("info", f"shell r={self.r:.3f} m derived from a "
                                  f"{extent * 1000:.0f} mm object")
+            # The shell radius is a property of the RUN's view method, and it
+            # only exists once the survey has seen the object — so the method
+            # params are completed here, where it is derived, rather than
+            # guessed at run creation.
+            self.writer.set_view_method_params(VIEW_METHOD, r=float(self.r))
         self.sphere = ViewSphere(center, r=self.r)
         dims = np.maximum(mx - mn + 0.04, 0.05)         # 2 cm margin each side
         mid = (mn + mx) / 2
         self.world.set_object("object", dims.tolist(),
                               [*mid.tolist(), 0.0, 0.0, 0.0], parent="base")
 
-    def _save(self):
-        self.outdir.mkdir(parents=True, exist_ok=True)
-        (self.outdir / "run.json").write_text(json.dumps(
-            {"q_survey": self.q_survey.tolist(), "r": self.r,
-             "turns": self.turns}, indent=2) + "\n")
+    def _write(self, what, fn, *a, **kw):
+        """Run one writer verb from the DISPATCHER; log and carry on if it
+        raises.
 
-    # `turns[].step` (below, in `_record_turn`) and capture pose_id/step (here)
-    # are intentionally different namespaces: the former counts every turn
-    # including survey, the latter counts cell captures only. Conflating them
-    # would shift every cell's capture id whenever the survey turn replays.
-    def _next_cell_step(self):
-        """1-indexed ordinal for the next non-survey capture: counts prior
-        *cell* turns only, so the survey's own boot turn doesn't shift
-        every cell's pose id/display step by one."""
-        return sum(1 for t in self.turns if t["target"] != "survey") + 1
-
-    def _record_turn(self, target, result, stopped=False):
-        """Append a turn AND flush the record.
-
-        The save is here rather than at the four call sites so the design's
-        "`run.json` written on every state change, not at run end" cannot be
-        half-true again: before this, a stopped or faulted turn lived only in
-        memory until the next settle or the run's end, so a crash between the
-        two lost it (I5).
+        Best effort by design, and only on this thread: a run that loses a
+        line of its record is bad, a dispatcher that aborts mid-handler and
+        leaves the machine stuck in `fusing` with a robot on the table is
+        worse. The worker side is deliberately not like this — there a failed
+        write marks the step `failed` and the terminal event still goes out.
         """
-        self.turns.append({
-            "step": len(self.turns) + 1,
-            "target": self._target_json(target),
-            "t": time.time() - self.t0,
-            "result": result,
-            "stopped": stopped,
-        })
-        self._save()
+        try:
+            fn(*a, **kw)
+        except Exception:
+            log.exception("record write failed (%s)", what)
+
+    def _geometry(self, res):
+        """This step's fusion accounting, as `GeometryStats` (worker side).
+
+        Built where the numbers are — `res` and the accumulator are both the
+        exec worker's — and carried to the dispatcher on `settle_done`, so
+        the fused record is written by the one thread that owns run state.
+        """
+        mn_mx = self.acc.aabb(pct=BOX_PCT)
+        return {
+            "offered": int(res.npts),
+            "kept": int(len(self.acc.last_kept)),
+            "dropped": int(res.dropped),
+            "fused_points": int(len(self.acc.points)),
+            "source": "mask" if res.seg is not None else "depth",
+            "fallback_reason": res.fallback,
+            "extent_mm": None if mn_mx is None else
+            [round(float(v) * 1000, 1) for v in (mn_mx[1] - mn_mx[0])],
+            "plane": _floats(res.view["plane"]) if res.view is not None
+            and res.view.get("plane") is not None else None,
+        }
+
+    def _view_state(self, step_id, target):
+        """The candidate view set as it stands at the end of this step.
+
+        PHYSICAL truth only (schema.py:ViewState): every cell of the shell
+        with the status the loop would colour it, its camera pose, and the
+        roll that made it reachable. `chosen`/`decider` say which of them this
+        step went to and who picked it — the operator's button, the
+        orchestrator, or a sweep.
+        """
+        cands = []
+        if self.sphere is not None:
+            for cell in self.sphere.cells():
+                roll = self._reach.get(cell)
+                if roll is None:
+                    status = "unreachable"
+                elif cell == self.current:
+                    status = "current"
+                elif cell in self.visited:
+                    status = "visited"
+                elif cell in self.blocked:
+                    status = "blocked"
+                else:
+                    status = "available"
+                cands.append(ViewCandidate(
+                    address=list(cell), status=status,
+                    pose=_mat(self.sphere.cam_pose(*cell, roll or 0.0)),
+                    roll=None if roll is None else float(roll)))
+        mn_mx = self.acc.aabb(pct=BOX_PCT)
+        centroid = self.acc.centroid
+        return ViewState(
+            step_id=step_id, t=time.time(), candidates=cands,
+            centroid=None if centroid is None else _floats(centroid),
+            extent=None if mn_mx is None else _floats(mn_mx[1] - mn_mx[0]),
+            r=None if self.r is None else float(self.r),
+            chosen=self._target_json(target), decider=self._decider)
 
     def _set_phase(self, phase, target=None):
         self.phase, self.target = phase, target
@@ -770,3 +880,28 @@ class Supervisor:
     @staticmethod
     def _target_json(target):
         return list(target) if isinstance(target, tuple) else target
+
+
+# --- record shaping ---------------------------------------------------------
+# numpy is what the loop computes in; JSON is what the record is. These three
+# are the whole conversion, in one place, so no write site does it by hand.
+
+def _floats(v) -> list[float]:
+    return [float(x) for x in np.asarray(v, float).ravel()]
+
+
+def _mat(T) -> list[list[float]]:
+    return [[float(x) for x in row] for row in np.asarray(T, float)]
+
+
+def _segmentation(seg) -> dict | None:
+    """`run.segmenter.Segmentation` -> the schema's trimmed record.
+
+    `box` is the PROMPT box in the raw image frame (schema.py:Conventions),
+    `px` the mask the model actually returned — score/box/px only, by the
+    schema review's decision; the mask itself stays a binary on disk.
+    """
+    if seg is None:
+        return None
+    return {"score": float(seg.score), "box": [int(v) for v in seg.box],
+            "px": int(np.asarray(seg.mask).sum())}

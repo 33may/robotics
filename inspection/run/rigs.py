@@ -1,5 +1,10 @@
-"""Rig implementations behind the rig contract: q/move/capture/frame/close."""
-import json
+"""Rig implementations behind the rig contract: q/move/capture/frame/close.
+
+`capture(pose_id, out_dir)` writes BYTES ONLY, into the step directory the
+run's `RunWriter` allocated. Nothing here writes a record any more: the
+session identity (`RealRig.session`) is handed to the writer by the
+composition root, and the per-capture facts go into `steps/NNN/step.json`.
+"""
 import logging
 import threading
 import time
@@ -7,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
+from inspection.cell.geometry import is_half_turn, rotate180
 from inspection.motion.ik import UR5eIK
 
 log = logging.getLogger(__name__)
@@ -17,16 +23,10 @@ ROBOT_IP = "192.168.2.50"
 class FakeRig:
     """Fake rig for testing: stoppable interpolating moves, synthetic captures."""
 
-    def __init__(self, q0, stop_event=None, dt=0.01, speed=3.0, outdir=None):
+    def __init__(self, q0, stop_event=None, dt=0.01, speed=3.0):
         self._q = np.asarray(q0, dtype=float)
         self.stop_event = stop_event or threading.Event()
         self.dt, self.speed = dt, speed
-        #: When set, captures are WRITTEN like the real rig's. Without it a
-        #: capture reports a dir that does not exist, so everything keyed on
-        #: capture files — view images, the chain overlays — is silently
-        #: absent and cannot be exercised without hardware. Tests leave it
-        #: None; the mock backend sets it.
-        self.outdir = Path(outdir) if outdir else None
         from inspection.tests.synth import synth_capture
         depth, intr, scale, T_bc, _ = synth_capture()
         self._depth, self._T_bc = depth, T_bc
@@ -70,10 +70,18 @@ class FakeRig:
         rgb[:, :, 0] = np.linspace(0, 255, 64, dtype=np.uint8)[None, :]
         return rgb
 
-    def capture(self, pose_id):
+    def capture(self, pose_id, out_dir=None):
         """Capture synthetic observation at current pose.
 
-        Returns: {"dir", "rgb", "depth_raw", "depth_aligned", "T_base_cam", "q"}
+        `out_dir` is the step directory the run's writer handed out. With one,
+        the bytes are written exactly as the real rig writes them (rotation
+        policy included) so the mock exercises every reader keyed on capture
+        files — view images, chain overlays, the image tier. Without one
+        (unit tests), the capture is memory-only and reports a dir that says
+        so. No meta.json either way: the record is the writer's job.
+
+        Returns the rig capture contract: {"dir", "rgb", "pose_id", "t",
+        "depth_raw", "depth_aligned", "T_base_cam", "q", "rgb_rotation_deg"}.
         """
         # rgb must be frame-sized here, not the 64x64 preview `frame()`
         # returns: the settle leg segments it against `depth_aligned`, and a
@@ -81,27 +89,22 @@ class FakeRig:
         h, w = self._depth.shape
         rgb = np.zeros((h, w, 3), np.uint8)
         rgb[:, :, 1] = np.linspace(0, 255, w, dtype=np.uint8)[None, :]
+        rot = 180 if is_half_turn(self._T_bc) else 0
         d = f"(fake {pose_id:03d})"
-        if self.outdir is not None:
+        if out_dir is not None:
             import cv2
-            real = self.outdir / f"{pose_id:03d}"
+            real = Path(out_dir)
             real.mkdir(parents=True, exist_ok=True)
-            cv2.imwrite(str(real / "rgb.png"), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
-            # `T_base_cam` and `timestamp` are not decoration: the legacy
-            # adapter (`record/legacy.py:adapt_run`) requires both to join a
-            # capture dir to its viewsphere cell, so a meta.json without them
-            # makes the mock's captures unloadable by the image tier — the
-            # mock stops being a rehearsal exactly where the orchestrator
-            # starts. Match the real writer (perception/capture.py:67).
-            (real / "meta.json").write_text(json.dumps(
-                {"pose_id": pose_id, "rgb_rotation_deg": 0,
-                 "timestamp": time.time(),
-                 "T_base_cam": np.asarray(self._T_bc, float).tolist()},
-                indent=2) + "\n")
+            stored = rotate180(rgb) if rot else rgb
+            cv2.imwrite(str(real / "rgb.png"),
+                        cv2.cvtColor(stored, cv2.COLOR_RGB2BGR))
+            np.save(real / "depth_aligned.npy",
+                    rotate180(self._depth) if rot else self._depth)
             d = str(real)
-        return {"dir": d, "rgb": rgb, "pose_id": pose_id,
+        return {"dir": d, "rgb": rgb, "pose_id": pose_id, "t": time.time(),
                 "depth_raw": self._depth, "depth_aligned": self._depth,
-                "T_base_cam": self._T_bc, "q": self._q.copy()}
+                "T_base_cam": self._T_bc, "q": self._q.copy(),
+                "rgb_rotation_deg": rot}
 
     def close(self):
         """Close rig (no-op for fake)."""
@@ -201,6 +204,7 @@ class RealRig:
         from inspection.perception.camera import (
             WRIST_SERIAL, grab_aligned, open_camera, session_metadata,
             t_flange_cam)
+        from inspection.record.schema import SessionRecord
         self.world, self.stop_event = world, stop_event
         self.outdir = Path(outdir)
         self.arm = UR5eArm(ip)
@@ -216,8 +220,12 @@ class RealRig:
         try:
             self.pipe, profile, self.align, self.depth_scale = open_camera()
             meta = session_metadata(profile, self.depth_scale, WRIST_SERIAL)
-            self.outdir.mkdir(parents=True, exist_ok=True)
-            (self.outdir / "session.json").write_text(json.dumps(meta, indent=2) + "\n")
+            #: Camera identity for the record. Built here — this is where the
+            #: camera is opened and the only place the numbers exist — but
+            #: NOT written here: the composition root hands it to the run's
+            #: writer (`RunWriter.write_session`), which owns every JSON in a
+            #: run directory.
+            self.session = SessionRecord.model_validate(meta)
             self.intr = meta["intrinsics"]["ir_left"]
             # `depth_aligned` is warped into the COLOUR viewport, which is the
             # frame the rgb mask is computed in — so the masked lift uses this
@@ -250,7 +258,12 @@ class RealRig:
     def move(self, path):
         return self.arm.execute(path, world=self.world, stop_event=self.stop_event)
 
-    def capture(self, pose_id):
+    def capture(self, pose_id, out_dir=None):
+        """Grab a bundle and write its bytes into `out_dir` (the step dir).
+
+        Falls back to `{outdir}/{pose_id:03d}` only for a rig driven outside
+        a recorded run; no meta.json is written either way.
+        """
         from inspection.perception.capture import save_bundle
         bundle = self.camera.fresh_bundle(min_new=3) if self.camera \
             else self._grab()
@@ -258,13 +271,19 @@ class RealRig:
         T_bf = self._ik.fk(q)
         pose = {"joints_rad": q, "T_base_flange": T_bf,
                 "T_base_cam": T_bf @ self._T_fc}
-        d = save_bundle(self.outdir, pose_id, bundle, pose)
+        d = save_bundle(self.outdir, pose_id, bundle, pose,
+                        write_meta=False, dest=out_dir)
         return {"dir": str(d), "rgb": bundle["rgb"], "pose_id": pose_id,
+                "t": bundle["timestamp"],
                 "depth_raw": bundle["depth_raw"],
                 # RAW orientation, like everything else returned here:
                 # `save_bundle` rotates only what it writes to disk.
                 "depth_aligned": bundle["depth_aligned"],
-                "T_base_cam": pose["T_base_cam"], "q": q}
+                "T_base_cam": pose["T_base_cam"], "q": q,
+                # What `save_bundle` just did to rgb.png/depth_aligned.npy —
+                # same rule, one decision, so the record cannot disagree with
+                # the pixels.
+                "rgb_rotation_deg": 180 if is_half_turn(pose["T_base_cam"]) else 0}
 
     def close(self):
         if self.camera: self.camera.stop()

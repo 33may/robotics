@@ -94,8 +94,9 @@ def mock(port: int = 8767, bus_port: int = 8765, seed: int = 0,
     # The mock writes real capture files now, so give the publisher its run
     # dir and MOUNT it: without both, every capture-image URL is dropped and
     # the cloud/chain panels are blank in a way no check would notice.
+    # NOT created here: `start_mock`'s RunWriter creates the run directory,
+    # and it refuses one that already exists (evidence is never overwritten).
     mock_run = Path(tempfile.mkdtemp()) / "mock-run"
-    mock_run.mkdir(parents=True, exist_ok=True)
     pub = InspectionPublisher(bus, run_dir=mock_run)
     print(f"bus  ws://127.0.0.1:{bus.port}", flush=True)
 
@@ -136,23 +137,25 @@ def trace(run_dir: str, port: int = 8767, bus_port: int = 8765,
 
         p inspection/ui/app.py trace --run_dir=inspection/data/runs/2408-cup1
 
-    Owns a bus, but drives no robot and plans nothing — it reads
-    `<run>/eyes/trace.jsonl` and republishes it whenever the file changes. That
-    is the whole live story too: a run in progress is just a file still being
-    appended to, so watching one and re-opening a finished one are the same
-    code path (see `brain/trace.py`).
+    Owns a bus, but drives no robot and plans nothing — it reads the newest
+    `<run>/ai/<seq>/trace.jsonl` and republishes it whenever the file changes.
+    That is the whole live story too: a run in progress is just a file still
+    being appended to, so watching one and re-opening a finished one are the
+    same code path (see `brain/trace.py`).
     """
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     if not _require_build():
         return 1
 
-    from inspection.brain.trace import TRACE_NAME, read_trace
+    from inspection.brain.trace import TRACE_NAME, latest_trace_dir, read_trace
 
     run_path = Path(run_dir).expanduser().resolve()
-    trace_file = run_path / "eyes" / TRACE_NAME
-    if not trace_file.exists():
-        print(f"no trace at {trace_file} — run inspection/brain/loop.py first")
+    ai_dir = latest_trace_dir(run_path)
+    if ai_dir is None:
+        print(f"no trace under {run_path}/ai/*/{TRACE_NAME} — "
+              f"run inspection/brain/loop.py first")
         return 1
+    trace_file = ai_dir / TRACE_NAME
 
     bus = PortholeBus(app="inspection", port=bus_port).start()
     pub = InspectionPublisher(bus, run_dir=run_path)
@@ -165,7 +168,7 @@ def trace(run_dir: str, port: int = 8767, bus_port: int = 8765,
                 now = trace_file.stat().st_mtime_ns
                 if now != stamp:
                     stamp = now
-                    events = read_trace(run_path)
+                    events = read_trace(ai_dir)
                     pub.publish_trace(events)
                     pub.log("info", f"trace: {len(events)} events")
             except Exception:

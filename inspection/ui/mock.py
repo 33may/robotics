@@ -18,6 +18,8 @@ import time
 import numpy as np
 
 from inspection.motion.plan import DEMO_PARK
+from inspection.record.writer import RunWriter
+from inspection.run.app import config_snapshot, finish_run, viewsphere_method
 from inspection.run.machine import Supervisor
 from inspection.run.rigs import CameraWorker, FakeRig, PoseStreamer
 
@@ -58,15 +60,26 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     The rig starts off the survey pose (a small wrist offset) so the boot
     turn is an actual move, not a no-op; `speed=0.6` keeps that move — and
     every move after it — slow enough to watch and to stop mid-flight.
+
+    `outdir` is `<root>/<run id>` and must NOT exist: the run's `RunWriter`
+    creates it, the same way a real run's is created, because a mock run is a
+    real recording of a fake robot (`rig="fake"` says so in run.json) and the
+    e2e checks read it back through the same door.
     """
     q_survey = DEMO_PARK.copy()
-    rig = FakeRig(q_survey + np.radians([0, 0, 0, 0, 0, 8]), speed=0.6,
-                  outdir=outdir)
+    outdir = Path(outdir)
+    rig = FakeRig(q_survey + np.radians([0, 0, 0, 0, 0, 8]), speed=0.6)
+    writer = RunWriter.create(
+        outdir.parent, run_id=outdir.name, name=outdir.name,
+        source="live", rig="fake", question=None,
+        config=config_snapshot({"vlm": "stub", "segmenter": "stub"}),
+        view_methods=[viewsphere_method()],
+        q_survey=[float(v) for v in q_survey], tags=["mock"])
     # A STUB segmenter, not a real one: the mock must stay GPU-free and
     # offline, but the identity path — prompt box, mask, masked lift, chain
     # overlays — is then the same code a real run takes, so the frontend has
     # something real to render and the checks can assert on it.
-    sup = Supervisor(rig, pub, outdir, q_survey=q_survey, seed=seed,
+    sup = Supervisor(rig, pub, writer, q_survey=q_survey, seed=seed,
                      segmenter=_stub_segmenter())
     pub.publish_world(sup.world)
 
@@ -84,9 +97,13 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
 
     # Same handler the real run uses: the mock is how the approval gate gets
     # rehearsed without hardware, and rehearsing against different wiring
-    # rehearses nothing.
+    # rehearses nothing. The stubs are INJECTED, the same way the segmenter
+    # above is — they are no longer what the handler falls back to when a key
+    # is missing (Anton 2026-08-26), so a stub can only be reached by asking
+    # for one, and `stub_cognition().label` marks the run's trace as one.
     from inspection.brain.live import make_ask_handler
-    ask = make_ask_handler(sup, pub, Path(outdir))
+    from inspection.eyes.cognition import stub_cognition
+    ask = make_ask_handler(sup, pub, outdir, stub_cognition(), writer)
 
     def pump():
         for c in bus.commands():
@@ -96,5 +113,15 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
                 sup.events.put(c)
     threading.Thread(target=pump, name="mock-cmd-pump", daemon=True).start()
 
-    threading.Thread(target=sup.run, daemon=True).start()
+    def run_and_close():
+        # A mock run ENDS like a real one (`run/app.py`'s teardown): the fused
+        # cloud beside the steps, then a closed run.json with a manifest. A
+        # recording that is never closed is the one thing the e2e check could
+        # not tell apart from a crash.
+        try:
+            sup.run()
+        finally:
+            finish_run(writer, sup.acc)
+
+    threading.Thread(target=run_and_close, daemon=True).start()
     return sup

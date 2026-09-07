@@ -181,32 +181,29 @@ def test_chain_never_raises_on_a_missing_dir_or_no_rgb():
 # ── persistence ─────────────────────────────────────────────────────────────
 
 def _capture_dir(tmp, pose):
-    """A minimal already-written capture, as save_bundle would leave it."""
-    import json
+    """A step directory with a capture already written into it, the way
+    `RunWriter.begin_step` + `rig.capture` leave one."""
     from pathlib import Path
-    d = Path(tmp) / "000"
+    d = Path(tmp) / "steps" / "000"
     d.mkdir(parents=True)
-    (d / "meta.json").write_text(json.dumps(
-        {"pose_id": 0, "rgb_rotation_deg": 180 if pose is _HALF_TURN else 0}))
+    (d / "rgb.png").write_bytes(b"")
     return d
 
 
-def test_save_mask_is_additive_and_records_provenance():
-    import json
+def test_save_mask_is_additive_and_writes_only_the_bitmap():
+    """The mask is a BINARY beside the capture; its score/box/px are a record
+    and live in the step (`schema.py:Segmentation`), written by the run's
+    writer — never a second copy in a hand-rolled meta.json."""
     import tempfile
     from inspection.perception.capture import save_mask
     with tempfile.TemporaryDirectory() as tmp:
         d = _capture_dir(tmp, _UPRIGHT)
         mask = np.zeros((480, 848), dtype=bool)
         mask[150:350, 300:500] = True
-        save_mask(d, mask, 0.93, (300, 150, 500, 350), {"T_base_cam": _UPRIGHT})
-        meta = json.loads((d / "meta.json").read_text())
-        assert meta["pose_id"] == 0                     # existing keys survive
-        assert meta["rgb_rotation_deg"] == 0
-        assert meta["mask"]["score"] == 0.93
-        assert meta["mask"]["px"] == 200 * 200
-        assert meta["mask"]["box"] == [300, 150, 500, 350]
+        save_mask(d, mask, {"T_base_cam": _UPRIGHT})
         assert (d / "mask.png").exists()
+        assert not (d / "meta.json").exists()
+        assert sorted(p.name for p in d.iterdir()) == ["mask.png", "rgb.png"]
 
 
 def test_saved_mask_matches_the_stored_rgb_orientation():
@@ -220,7 +217,7 @@ def test_saved_mask_matches_the_stored_rgb_orientation():
         d = _capture_dir(tmp, _HALF_TURN)
         mask = np.zeros((480, 848), dtype=bool)
         mask[60:130, 100:240] = True                    # off-centre in BOTH axes
-        save_mask(d, mask, 0.9, (100, 60, 240, 130), {"T_base_cam": _HALF_TURN})
+        save_mask(d, mask, {"T_base_cam": _HALF_TURN})
         on_disk = cv2.imread(str(d / "mask.png"), cv2.IMREAD_GRAYSCALE) > 0
         ys, xs = np.nonzero(on_disk)
         assert (xs.min(), xs.max() + 1) == (848 - 240, 848 - 100)
@@ -231,7 +228,7 @@ def test_save_mask_ignores_a_capture_dir_that_does_not_exist():
     """The fake rig reports a dir like "(fake 000)" — persisting must be a
     no-op there, not an exception in the settle leg."""
     from inspection.perception.capture import save_mask
-    save_mask("(fake 000)", np.zeros((4, 4), bool), 1.0, (0, 0, 1, 1), None)
+    save_mask("(fake 000)", np.zeros((4, 4), bool), None)
 
 
 def main():

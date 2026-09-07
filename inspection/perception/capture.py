@@ -5,7 +5,9 @@ Owns the on-disk bundle format and the arm/camera glue. Camera layer in
 ``camera.py``; pose from RTDE joints -> UR5eIK flange FK -> calibrated
 T_flange_cam (left-eye frame). Every bundle is base-frame placeable.
 
-Bundle layout:
+Bundle layout (standalone `snap`; inside a recorded run the step directory
+comes from `RunWriter.begin_step` and the facts from `steps/NNN/step.json`,
+not from a meta.json):
     {outdir}/session.json            intrinsics, IR baseline, depth scale
     {outdir}/{pose_id:03d}/
         rgb.png, ir_left.png, ir_right.png
@@ -33,13 +35,22 @@ ROBOT_IP = "192.168.2.50"
 
 
 def save_bundle(outdir: Path, pose_id: int, bundle: dict,
-                pose: dict | None) -> Path:
-    """Write one frame bundle to {outdir}/{pose_id:03d}/.
+                pose: dict | None, write_meta: bool = True,
+                dest: Path | None = None) -> Path:
+    """Write one frame bundle to `dest`, or to {outdir}/{pose_id:03d}/.
 
     pose: {"joints_rad": [...], "T_base_flange": 4x4, "T_base_cam": 4x4}
     or None for camera-only captures.
+
+    `dest` is the step directory a `RunWriter.begin_step` handed out: a
+    recorded run numbers its own steps, so the caller says WHERE and this
+    writes only bytes. `write_meta=False` goes with it — inside a run, the
+    pose/rotation facts belong to `steps/NNN/step.json` and a second
+    hand-written copy beside it is exactly the drift the record layer exists
+    to end. The camera-only `snap` below still writes its meta.json: it makes
+    bundles, not runs.
     """
-    d = Path(outdir) / f"{pose_id:03d}"
+    d = Path(dest) if dest is not None else Path(outdir) / f"{pose_id:03d}"
     d.mkdir(parents=True, exist_ok=True)
 
     # ---- ORIENTATION (Anton 2026-08-24): the COLOUR frame is stored UPRIGHT.
@@ -64,20 +75,20 @@ def save_bundle(outdir: Path, pose_id: int, bundle: dict,
     np.save(d / "depth_raw.npy", bundle["depth_raw"])
     np.save(d / "depth_aligned.npy", depth_aligned)
 
-    meta = {"pose_id": pose_id, "timestamp": bundle["timestamp"],
-            # 0 or 180: how much rgb.png / depth_aligned.npy were rotated
-            # relative to depth_raw and T_base_cam. Absent on runs captured
-            # before 2026-08-24 — treat a missing key as "raw on disk".
-            "rgb_rotation_deg": rot}
-    if pose is not None:
-        meta.update({k: np.asarray(v).tolist() for k, v in pose.items()})
-    (d / "meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+    if write_meta:
+        meta = {"pose_id": pose_id, "timestamp": bundle["timestamp"],
+                # 0 or 180: how much rgb.png / depth_aligned.npy were rotated
+                # relative to depth_raw and T_base_cam. Absent on runs captured
+                # before 2026-08-24 — treat a missing key as "raw on disk".
+                "rgb_rotation_deg": rot}
+        if pose is not None:
+            meta.update({k: np.asarray(v).tolist() for k, v in pose.items()})
+        (d / "meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     return d
 
 
-def save_mask(capture_dir, mask: np.ndarray, score: float,
-              box, pose: dict | None) -> None:
-    """Add the object mask to an already-written capture dir.
+def save_mask(capture_dir, mask: np.ndarray, pose: dict | None) -> None:
+    """Add the object mask bitmap to an already-written capture dir.
 
     Segmentation happens after `save_bundle` (it needs the cloud accumulated
     so far to build its prompt), so the mask is a second, additive write
@@ -87,6 +98,9 @@ def save_mask(capture_dir, mask: np.ndarray, score: float,
     Stored in the SAME orientation as `rgb.png` so the two overlay directly —
     callers hold masks in raw orientation, and the half-turn correction is
     applied here exactly as `save_bundle` applies it to rgb.
+
+    Bytes only: the mask's score/box/px are a RECORD, and they live in the
+    step (`schema.py:Segmentation`), written once by the run's writer.
     """
     d = Path(capture_dir)
     if not d.is_dir():
@@ -95,12 +109,6 @@ def save_mask(capture_dir, mask: np.ndarray, score: float,
     if pose is not None and is_half_turn(pose["T_base_cam"]):
         mask = rotate180(mask)
     cv2.imwrite(str(d / "mask.png"), mask.astype(np.uint8) * 255)
-    meta_path = d / "meta.json"
-    meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
-    meta["mask"] = {"score": round(float(score), 4),
-                    "box": [int(v) for v in box],   # prompt box, RAW frame
-                    "px": int(mask.sum())}
-    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
 
 
 def read_pose(robot_ip: str = ROBOT_IP) -> dict:

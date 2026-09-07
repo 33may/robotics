@@ -3,8 +3,14 @@
 
 Three trust levels (design 2026-08-20): deterministic code writes geometry
 facts via FactWriter; agents get their own writers (Task 2) that CANNOT
-touch views/visited/coverage. Flushed to eyes/store.json on every write.
+touch views/visited/coverage. Flushed to `store.json` on every write.
 Never imports motion/run — the image tier does not move the robot.
+
+WHERE it flushes is the caller's to say, and in a recorded run that is the
+orchestrator session's own directory (`ai/<seq>/`, from `AIRunWriter.dir`):
+this is the AI tier's mutable state — plan, hypothesis, findings — and it
+belongs to the session that produced it, not to the run. Views are no longer
+here at all; they are steps (`record/run.py`).
 """
 import json
 import time
@@ -26,24 +32,23 @@ class ViewRecord:
 class RunStore:
     """Owns the dict + disk flush. Read API only — writes go through writers."""
 
-    def __init__(self, run_dir: Path, data: dict):
-        self.run_dir = Path(run_dir)
-        self.path = self.run_dir / "eyes"
+    def __init__(self, store_dir: Path, data: dict):
+        self.path = Path(store_dir)
         self._d = data
 
     @classmethod
-    def create(cls, run_dir, h_bins, v_elevs, r):
+    def create(cls, store_dir, h_bins, v_elevs, r):
         d = {"grid": {"h_bins": h_bins, "v_elevs": list(v_elevs), "r": r},
              "views": [], "notes": [], "hypothesis": None, "plan": None,
              "findings": []}
-        store = cls(run_dir, d)
+        store = cls(store_dir, d)
         store._flush()
         return store
 
     @classmethod
-    def open(cls, run_dir):
-        p = Path(run_dir) / "eyes" / "store.json"
-        return cls(run_dir, json.loads(p.read_text()))
+    def open(cls, store_dir):
+        p = Path(store_dir) / "store.json"
+        return cls(store_dir, json.loads(p.read_text()))
 
     def _flush(self):
         self.path.mkdir(parents=True, exist_ok=True)
@@ -127,7 +132,10 @@ class FindingWriter:
         rel = f"transcripts/f{len(self._s._d['findings']):03d}.json"
         (self._s.path / rel).write_text(transcript_text)
         self._s._d["findings"].append(
-            {"cell": list(cell), "summary": str(summary), "transcript": rel,
+            # None is the survey: its declaration is a finding like any other,
+            # it just has no cell address (eyes/agents/survey_agent.py).
+            {"cell": None if cell is None else list(cell),
+             "summary": str(summary), "transcript": rel,
              "t": time.time()})
         self._s._flush()
         return rel

@@ -23,12 +23,28 @@ def wait_for(cond, timeout=30.0, msg=""):
         time.sleep(0.01)
 
 
+def make_writer(q_survey=None):
+    """A real `RunWriter` over a throwaway directory.
+
+    The Supervisor has no other way to write, so every one of these tests
+    exercises the record layer whether it asserts on it or not — which is the
+    point: a machine that cannot record is not the machine we ship.
+    """
+    from inspection.record.writer import RunWriter
+    from inspection.run.app import config_snapshot, viewsphere_method
+    q = DEMO_PARK.copy() if q_survey is None else q_survey
+    return RunWriter.create(
+        Path(tempfile.mkdtemp()), run_id="run", name="run", source="live",
+        rig="fake", config=config_snapshot(), tags=["test"],
+        view_methods=[viewsphere_method()], q_survey=[float(v) for v in q])
+
+
 def make_sup(q_start=None, **kw):
     q_survey = DEMO_PARK.copy()
     rig = FakeRig(q_start if q_start is not None else q_survey.copy())
     bus = BusSpy()
-    sup = Supervisor(rig, InspectionPublisher(bus),
-                     Path(tempfile.mkdtemp()) / "run", q_survey, **kw)
+    sup = Supervisor(rig, InspectionPublisher(bus), make_writer(q_survey),
+                     q_survey, **kw)
     th = threading.Thread(target=sup.run, daemon=True)
     th.start()
     return sup, rig, bus, th
@@ -142,7 +158,7 @@ def test_supersede_during_planning_defers():
     rig = FakeRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 8]))
     bus = BusSpy()
     sup = SlowPlanSupervisor(rig, InspectionPublisher(bus),
-                             Path(tempfile.mkdtemp()) / "run", q_survey)
+                             make_writer(q_survey), q_survey)
     th = threading.Thread(target=sup.run, daemon=True)
     th.start()
 
@@ -192,7 +208,7 @@ def test_duplicate_view_request_while_planning_is_ignored():
     rig = FakeRig(q_survey.copy())
     bus = BusSpy()
     sup = SlowPlanSupervisor(rig, InspectionPublisher(bus),
-                             Path(tempfile.mkdtemp()) / "run", q_survey)
+                             make_writer(q_survey), q_survey)
     th = threading.Thread(target=sup.run, daemon=True)
     th.start()
 
@@ -222,7 +238,7 @@ def test_blocked_plan_returns_to_idle():
     rig = FakeRig(q_survey.copy())
     bus = BusSpy()
     sup = RefusingPlanSupervisor(rig, InspectionPublisher(bus),
-                                 Path(tempfile.mkdtemp()) / "run", q_survey)
+                                 make_writer(q_survey), q_survey)
     th = threading.Thread(target=sup.run, daemon=True)
     th.start()
 
@@ -348,7 +364,7 @@ def test_bad_plane_view_rejected():
     2108-ui: a frozen RTDE q did exactly this to five views in a row). Such a
     view must not enter the accumulator, and the run must carry on.
     """
-    import inspection.run.machine as machine_mod
+    import inspection.run.settle as settle_mod
 
     sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
         [0, 0, 0, 0, 0, 8]))
@@ -364,9 +380,11 @@ def test_bad_plane_view_rejected():
         "n_scene": 200,
     }
     # Patch the seam the settle leg actually calls: identity resolution moved
-    # into `run.segmenter.object_view`, which returns (view, segmentation).
-    real = machine_mod.object_view
-    machine_mod.object_view = lambda *a, **k: (poisoned, None)
+    # into `run.segmenter.object_view`, imported by `run.settle` — which is
+    # where the settle pipeline itself now lives (task 6). Returns
+    # (view, segmentation).
+    real = settle_mod.object_view
+    settle_mod.object_view = lambda *a, **k: (poisoned, None)
     try:
         views = bus.last("views/state")
         target = [[c["h"], c["v"]] for c in views["cells"]
@@ -376,7 +394,7 @@ def test_bad_plane_view_rejected():
         sup.events.put({"cmd": "view/confirm", "target": target})
         wait_for(lambda: sup.phase == "idle", timeout=60, msg="settle")
     finally:
-        machine_mod.object_view = real
+        settle_mod.object_view = real
 
     assert tuple(target) not in sup.visited, "poisoned view marked visited"
     assert len(sup.acc.points) == n_boot, "poisoned points entered the fusion"
@@ -388,8 +406,8 @@ def test_capture_fail_not_visited():
     q_survey = DEMO_PARK.copy()
     rig = CaptureFailRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 8]))
     bus = BusSpy()
-    sup = Supervisor(rig, InspectionPublisher(bus),
-                     Path(tempfile.mkdtemp()) / "run", q_survey)
+    sup = Supervisor(rig, InspectionPublisher(bus), make_writer(q_survey),
+                     q_survey)
     th = threading.Thread(target=sup.run, daemon=True); th.start()
     full_boot(sup)
     views = bus.last("views/state")
@@ -415,8 +433,8 @@ def test_executor_fault_enters_fault_and_exit_works():
     q_survey = DEMO_PARK.copy()
     rig = FaultRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 8]))
     bus = BusSpy()
-    sup = Supervisor(rig, InspectionPublisher(bus),
-                     Path(tempfile.mkdtemp()) / "run", q_survey)
+    sup = Supervisor(rig, InspectionPublisher(bus), make_writer(q_survey),
+                     q_survey)
     th = threading.Thread(target=sup.run, daemon=True); th.start()
     full_boot(sup)
     views = bus.last("views/state")
@@ -444,7 +462,7 @@ def test_exit_during_planning_defers_until_plan_done():
     rig = FakeRig(q_survey.copy())
     bus = BusSpy()
     sup = SlowPlanSupervisor(rig, InspectionPublisher(bus),
-                             Path(tempfile.mkdtemp()) / "run", q_survey)
+                             make_writer(q_survey), q_survey)
     th = threading.Thread(target=sup.run, daemon=True); th.start()
 
     sup.events.put({"cmd": "view/request", "target": "survey"})
@@ -492,7 +510,7 @@ def test_queued_confirm_cannot_undo_a_ctrl_c():
     rig = FakeRig(q_survey.copy() + np.radians([0, 0, 0, 0, 0, 30]), speed=0.05)
     bus = BusSpy()
     sup = GatedSupervisor(rig, InspectionPublisher(bus),
-                          Path(tempfile.mkdtemp()) / "run", q_survey)
+                          make_writer(q_survey), q_survey)
     th = threading.Thread(target=sup.run, daemon=True); th.start()
     sup.events.put({"cmd": "view/request", "target": "survey"})
     wait_for(lambda: sup.phase == "previewing", msg="previewing")
@@ -514,10 +532,11 @@ def test_queued_confirm_cannot_undo_a_ctrl_c():
     assert (sup.outdir / "run.json").exists()
 
 
-def test_stop_mid_execute_saves_the_turn_before_exit():
-    """I5: `run.json` used to be written only on settle and at run end, so a
-    stopped or faulted turn lived in memory until something else saved. Prove
-    the stopped turn is on disk BEFORE any shutdown is requested."""
+def test_stop_mid_execute_records_the_event_before_exit():
+    """I5, in the record layer's terms: a stopped turn is on disk BEFORE any
+    shutdown is requested, and it is an EVENT, not a step — the arm halted
+    mid-move, so no camera was ever pointed anywhere and there is nothing for
+    a step directory to hold."""
     sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
         [0, 0, 0, 0, 0, 30]))
     rig.speed = 0.05
@@ -528,11 +547,12 @@ def test_stop_mid_execute_saves_the_turn_before_exit():
     sup.events.put({"cmd": "run/stop"})
     wait_for(lambda: sup.phase == "idle", msg="stopped -> idle")
 
-    record = sup.outdir / "run.json"
-    assert record.exists(), "run.json not written on the stop turn"
-    turns = json.loads(record.read_text())["turns"]
-    assert turns and turns[-1]["stopped"] is True, turns
-    assert turns[-1]["target"] == "survey"
+    events = sup.outdir / "events.jsonl"
+    assert events.exists(), "the stop was not recorded"
+    last = json.loads(events.read_text().splitlines()[-1])
+    assert last["kind"] == "stopped", last
+    assert "survey" in last["detail"]
+    assert not (sup.outdir / "steps").exists(), "a halted move left a step"
 
     sup.request_shutdown(); th.join(10)
     assert not th.is_alive()
@@ -647,7 +667,7 @@ def main():
     test_bad_plane_view_rejected()
     test_exit_during_planning_fires_on_stale_plan_done()
     test_queued_confirm_cannot_undo_a_ctrl_c()
-    test_stop_mid_execute_saves_the_turn_before_exit()
+    test_stop_mid_execute_records_the_event_before_exit()
     test_join_workers_after_full_boot()
     test_malformed_target_is_rejected_not_raised()
     test_marker_id_target_from_a_3d_click()

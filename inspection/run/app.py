@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Loop v2 composition root. Design: inspection/2026-08-20-ui-driven-loop-design.md.
+"""Loop v2 composition root. Design: inspection/docs/2026-08-20-ui-driven-loop-design.md.
 
     p inspection/run/app.py run --outdir=data/runs/r1     # the real thing
     p inspection/run/app.py teach                         # save survey pose
@@ -71,6 +71,90 @@ def _close_ui(child):
         log.exception("closing the ui window failed")
 
 
+def _hashed(path: Path, embed: bool = False):
+    """A `HashedFile` for a calib/config artifact — identity, not "latest"."""
+    import hashlib
+    p = Path(path)
+    data = p.read_bytes()
+    out = {"file": p.name, "sha256": hashlib.sha256(data).hexdigest()}
+    if embed:
+        out["content"] = data.decode()
+    return out
+
+
+def config_snapshot(models: dict[str, str] | None = None):
+    """The world-in-effect at run start: code, cell, calib, tuning constants.
+
+    Everything here is what makes a recorded run re-checkable after cell.yaml
+    or the hand-eye artifact is edited — the questions "was this safe" and
+    "why is that cloud shaped like that" are answered from this file plus the
+    steps, never from today's source tree.
+    """
+    from inspection.cell import geometry as geo
+    from inspection.cell.world import CELL_YAML, DEFAULT_PADDING
+    from inspection.record.schema import ConfigSnapshot
+    from inspection.record.writer import git_sha
+    from inspection.run import settle
+    from inspection.run.segmenter import MIN_MASK_PX, MIN_MASK_SCORE
+    from inspection.view.grid import H_BINS, V_ELEVATIONS
+
+    calib = sorted((Path(geo.__file__).resolve().parents[1] / "calib")
+                   .glob("T_flange_cam_*.npy"))[-1]
+    return ConfigSnapshot(
+        git_sha=git_sha(),
+        cell_yaml=_hashed(CELL_YAML, embed=True),
+        calib=_hashed(calib),
+        constants={
+            "padding_m": DEFAULT_PADDING,
+            "voxel_m": geo.VOXEL_M, "jump_gate_m": geo.JUMP_GATE_M,
+            "box_pct": geo.BOX_PCT, "grow_eps_m": geo.GROW_EPS_M,
+            "range_m": [geo.MIN_RANGE_M, geo.MAX_RANGE_M],
+            "workspace": geo.WORKSPACE,
+            "plane_z_tol_m": settle.PLANE_Z_TOL_M,
+            "plane_tilt_tol_deg": settle.PLANE_TILT_TOL_DEG,
+            "min_mask_score": MIN_MASK_SCORE, "min_mask_px": MIN_MASK_PX,
+            "h_bins": H_BINS, "v_elevs": list(V_ELEVATIONS),
+        },
+        models=dict(models or {}),
+    )
+
+
+def viewsphere_method(r: float | None = None) -> dict:
+    """The run's one view method, as `run.json` declares it.
+
+    `r` is left open here and filled in by the Supervisor the moment the
+    survey derives it (`machine.py:_recenter` -> `set_view_method_params`).
+    """
+    from inspection.run.machine import VIEW_METHOD
+    from inspection.view.grid import H_BINS, V_ELEVATIONS
+    return {"id": VIEW_METHOD, "kind": "viewsphere",
+            "params": {"h_bins": H_BINS, "v_elevs": list(V_ELEVATIONS), "r": r}}
+
+
+def finish_run(writer, acc) -> None:
+    """Close a run: the fused cloud beside the steps, then the final run.json.
+
+    Shared by both composition roots (`run/app.py` and `ui/mock.py`) so a mock
+    run ends exactly the way a real one does. `fused/` is a directory because
+    the cloud is derived from the steps, not one of them; `record/run.py`
+    reads it there first. Status is read off the disk, not off a flag: a run
+    is completed iff some AI session actually answered.
+
+    `acc` may be None — a run whose setup died before the Supervisor existed
+    still gets closed, because "created but never closed" is the signature of
+    a crash and this one was not.
+    """
+    if acc is not None and len(acc.points):
+        d = writer.dir / "fused"
+        d.mkdir(parents=True, exist_ok=True)
+        np.save(d / "cloud.npy", acc.points)
+        # Row-aligned with cloud.npy — uint8, mid-grey where a view
+        # contributed points without a usable colour frame.
+        np.save(d / "colors.npy", acc.colors)
+    answered = any((writer.dir / "ai").glob("*/answer.json"))
+    writer.close("completed" if answered else "aborted")
+
+
 def teach(ip: str = ROBOT_IP):
     # unchanged from v1 (loop.py, retired — see the 2026-08-20 design doc)
     from rtde_receive import RTDEReceiveInterface
@@ -83,15 +167,32 @@ def teach(ip: str = ROBOT_IP):
 
 def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
         port: int = 8767, bus_port: int = 8765, no_window: bool = False,
-        seed: int = 0, gui: str = "qt"):
+        seed: int = 0, gui: str = "qt", name: str | None = None,
+        object: str | None = None):
+    """One live run. `outdir` is `<runs root>/<run id>`; `name` defaults to
+    the id's leaf and `object` is the free tag the archive is queried by."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     from porthole import PortholeBus
+    from inspection.eyes.cognition import real_cognition
+    from inspection.eyes.verbs_local import Sam3Backend
     from inspection.motion.execute import preflight
     from inspection.run.machine import Supervisor
     from inspection.run.rigs import PoseStreamer, RealRig
     from inspection.run.segmenter import ObjectSegmenter
+    from inspection.record.writer import RunWriter
     from inspection.ui.app import _require_build
     from inspection.ui.publisher import InspectionPublisher
+
+    # FIRST, before the arm: `real_cognition()` raises if GEMINI_API_KEY is
+    # unset, and there is no stub fallback any more (Anton 2026-08-26). A key
+    # discovered missing at the first `brain/ask` is a key discovered with the
+    # robot powered, the bus up and an operator waiting. Nothing loads here —
+    # SAM 3, OCR and the Gemini client are all lazy.
+    # ONE SAM 3 on the GPU: this same instance goes to the segmenter below, so
+    # the checkpoint is loaded once for both the subagent's detect/segment and
+    # the identity mask, instead of twice (`run/segmenter.py:77`).
+    sam3 = Sam3Backend()
+    cognition = real_cognition(sam3=sam3)
 
     pf = preflight(ip)
     if not pf["go"]:
@@ -108,17 +209,32 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
     # try, so a failure part-way through setup still runs the teardown below
     # instead of leaking a listening bus, an open RTDE interface and a running
     # camera pipe.
-    bus = rig = sup = poses = child = None
+    bus = rig = sup = poses = child = writer = None
     try:
         bus = PortholeBus(app="inspection", port=bus_port).start()
         pub = InspectionPublisher(bus, run_dir=outdir)
         pub.declare()
+        # The run directory is CREATED here, by the one writer that owns it —
+        # `create` refuses an existing id, because evidence is never
+        # overwritten. Everything downstream gets its paths from `writer.dir`.
+        writer = RunWriter.create(
+            outdir.parent, run_id=outdir.name, name=name or outdir.name,
+            source="live", rig="real", object=object, question=None,
+            config=config_snapshot({"vlm": cognition.label,
+                                    "segmenter": "sam3"}),
+            view_methods=[viewsphere_method(r)],
+            q_survey=[float(v) for v in q_survey])
         rig = RealRig(None, stop_event, outdir, ip)   # world set below
+        # Built by the rig (it opens the camera), written by the writer (it
+        # owns every JSON in the run) — the split that ended the two-writers
+        # problem for session.json.
+        writer.write_session(rig.session)
         # Object identity is settled in image space (run 2408-cup2): a cable
         # 20 mm from the cup is adjacent, so no distance rule can refuse it.
-        # Weights load lazily on the first capture, not here.
-        sup = Supervisor(rig, pub, outdir, q_survey, seed=seed, r=r,
-                         segmenter=ObjectSegmenter())
+        # Weights load lazily on the first capture or the first detect,
+        # whichever comes first — never here.
+        sup = Supervisor(rig, pub, writer, q_survey, seed=seed, r=r,
+                         segmenter=ObjectSegmenter(backend=sam3))
         install_sigint(sup)                          # earliest safe Ctrl-C
         rig.world = sup.world
         rig.start_camera(pub)
@@ -128,7 +244,7 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
         poses.start()
 
         from inspection.brain.live import make_ask_handler
-        start_brain = make_ask_handler(sup, pub, outdir)
+        start_brain = make_ask_handler(sup, pub, outdir, cognition, writer)
 
         def pump():
             for c in bus.commands():
@@ -165,8 +281,8 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
                 rig.arm.stop()
             except Exception:
                 pass
-        if sup is not None and len(sup.acc.points):
-            np.save(outdir / "fused_cloud.npy", sup.acc.points)
+        if writer is not None:
+            finish_run(writer, sup.acc if sup is not None else None)
         if rig is not None:
             rig.close()
         _close_ui(child)

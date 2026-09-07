@@ -12,6 +12,8 @@ T = np.eye(4); T[:3, 3] = [0.1, 0.2, 0.3]
 
 
 def _fresh(tmp):
+    """`tmp` IS the store directory — in a run that is the orchestrator
+    session's own `ai/<seq>/`, handed in by whoever opened it."""
     return RunStore.create(Path(tmp), h_bins=12, v_elevs=(10.0, 40.0, 70.0), r=0.35)
 
 
@@ -38,7 +40,7 @@ def test_flush_and_reopen():
         again = RunStore.open(Path(tmp))            # fresh object, disk only
         assert again.visited() == {(0, 2)}
         assert np.allclose(again.views()[0].T_base_cam, T)
-        assert (Path(tmp) / "eyes" / "store.json").exists()
+        assert (Path(tmp) / "store.json").exists()
 
 
 def test_no_motion_imports():
@@ -62,7 +64,7 @@ def test_agent_writers():
         assert again.plan.startswith("sweep")
         assert [n["who"] for n in again.notes()] == ["plan", "finding"]
         f = again.findings()[0]
-        assert f["cell"] == [3, 1] and (Path(tmp) / "eyes" / rel).exists()
+        assert f["cell"] == [3, 1] and (Path(tmp) / rel).exists()
 
 
 def test_trust_levels_by_construction():

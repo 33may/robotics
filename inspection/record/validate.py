@@ -114,12 +114,18 @@ def validate_run(run_dir: Path, deep: bool = False,
                                     f"roster step {missing} has no directory"))
 
     # --- answer ---------------------------------------------------------------
-    ans_path = run_dir / "answer.json"
-    ans = _load(rep, ans_path, AnswerRecord) if ans_path.exists() else None
-    if run.status == "completed" and ans is None:
+    # Two legal homes, one meaning: a data-engine run answers at the root, a
+    # live run answers inside the AI session that reached the verdict
+    # (`ai/<seq>/answer.json`, which is what `AIRunWriter` writes and what
+    # `Run.ai[].answer` reads). Either satisfies "a completed run answered".
+    answers = [p for p in [run_dir / "answer.json"] if p.exists()]
+    answers += sorted((run_dir / "ai").glob("*/answer.json"))
+    ans_records = [a for a in (_load(rep, p, AnswerRecord) for p in answers)
+                   if a is not None]
+    if run.status == "completed" and not ans_records:
         rep.problems.append(Problem("error", "answer.json",
                                     "completed run requires an answer"))
-    if ans is not None:
+    for ans in ans_records:
         for sid in ans.step_ids:
             if sid not in roster:
                 rep.problems.append(Problem("error", "answer.json",
@@ -142,8 +148,11 @@ def validate_run(run_dir: Path, deep: bool = False,
                 rep.problems.append(Problem("warn", f"ai/{adir.name}",
                                             "no menu/menu_def.json — "
                                             "menu_hash cross-check skipped"))
+        # `t*.json` is the TranscriptRecord naming (`AIRunWriter.transcript`,
+        # `Run.ai[].transcripts`) — the same glob the read door uses, so a
+        # file the reader ignores is not a file the validator rejects.
         tdir = adir / "transcripts"
-        for tpath in sorted(tdir.glob("*.json")) if tdir.exists() else []:
+        for tpath in sorted(tdir.glob("t*.json")) if tdir.exists() else []:
             tr = _load(rep, tpath, TranscriptRecord)
             if tr and tr.step_id not in roster:
                 rep.problems.append(Problem(
