@@ -456,7 +456,9 @@ def test_settle_rejects_bad_plane(tmp_path, monkeypatch):
 - [ ] **Step 4: Run — pass; whole suite green** (any existing machine tests must pass unchanged — behavior parity is the point).
 - [ ] **Step 5: Commit** `run: extract the settle pipeline from _exec_worker — no behavior change`.
 
----### Task 7: writer verbs — schema additions + `AIRunWriter`
+---
+
+### Task 7: writer verbs — schema additions + `AIRunWriter`
 
 **Files:**
 - Modify: `inspection/record/writer.py`, `inspection/record/schema.py` (only if a field is missing — RED test first)
