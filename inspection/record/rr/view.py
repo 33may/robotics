@@ -84,7 +84,17 @@ def show(episode: str) -> None:
     if path is None:
         names = ", ".join(eps) or "none"
         raise SystemExit(f"no workspace named {name!r} — have: {names}")
-    print(f"opening {path}")
+    # The sidecar blueprint, when the workspace shipped one. The viewer
+    # persists the ACTIVE blueprint per app-id and the rrd's baked-in
+    # blueprint is only the DEFAULT, which never overrides an active one —
+    # so an app-id reviewed days ago opens with the days-old layout unless
+    # the .rbl is loaded too, which ACTIVATES the designed layout
+    # (rr/log.py:save, verified against rerun 0.37).
+    files = [str(path)]
+    rbl = path.with_suffix(".rbl")
+    if rbl.exists():
+        files.append(str(rbl))
+    print(f"opening {' '.join(files)}")
     if _hypr():
         # TILED, explicitly (Anton 2026-09-03). The viewer was coming up
         # floating and needing a MainMod+O before it was usable — a review
@@ -93,11 +103,11 @@ def show(episode: str) -> None:
         # state at map time, so there is no float-then-snap flicker either.
         # `hyprctl dispatch exec` also detaches for us.
         subprocess.run(["hyprctl", "dispatch", "exec",
-                        f"[tile] {_viewer()} {path}"],
+                        f"[tile] {_viewer()} {' '.join(files)}"],
                        stdout=subprocess.DEVNULL, check=False)
         return
     # Detached on purpose: the CLI returns, the viewer window stays yours.
-    subprocess.Popen([_viewer(), str(path)], start_new_session=True,
+    subprocess.Popen([_viewer(), *files], start_new_session=True,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 

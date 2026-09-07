@@ -159,11 +159,28 @@ def at(step: int) -> None:
     rr.set_time(TIMELINE, sequence=int(step))
 
 
-def save(path: str | Path, blueprint: rrb.Blueprint) -> Path:
-    """Write the complete `.rrd`, blueprint baked in (story 1: zero clicks)."""
+def save(path: str | Path, blueprint: rrb.Blueprint, app_id: str) -> Path:
+    """Write the complete `.rrd`, blueprint baked in (story 1: zero clicks).
+
+    Two artefacts, one design. The `.rrd` carries the blueprint as its
+    DEFAULT — enough for a viewer that has never seen this app-id. But the
+    native viewer persists the ACTIVE blueprint per app-id on exit
+    (`~/.local/share/rerun/blueprints/<app_id>.rbl`), and a default never
+    overrides an active one: "the standard behavior is to only update the
+    default blueprint … you need to click the reset button" (rerun docs,
+    Configure the Viewer through code). An app-id that was reviewed days
+    ago would therefore open with the days-old layout, silently.
+
+    So the same blueprint is ALSO written as a sidecar `.rbl`. Loading an
+    .rbl activates it, so a viewer launched with both files shows this
+    design regardless of what its cache remembers — verified against
+    rerun 0.37 with a deliberately stale persisted blueprint. `view.py`
+    passes the sidecar whenever it sits next to the rrd.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     rr.save(path, default_blueprint=blueprint)
+    blueprint.save(app_id, str(path.with_suffix(".rbl")))
     return path
 
 

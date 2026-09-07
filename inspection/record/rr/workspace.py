@@ -222,7 +222,8 @@ def build(run: str, out_dir: Path | None = None, overlay: bool = False) -> Path:
     # Dash, not slash: 0.37 treats the application id as an entry name and
     # silently migrates anything with a `/` in it to a hashed name, so the
     # viewer's title bar would read "review-2408-cup38a8a".
-    rr_log.begin(f"review-{run}")
+    app_id = f"review-{run}"
+    rr_log.begin(app_id)
     rr_log.log_world()
 
     plane, n_scene = _table_plane(run_dir, session)
@@ -273,7 +274,7 @@ def build(run: str, out_dir: Path | None = None, overlay: bool = False) -> Path:
     bp = rr_log.blueprint(run, list(slots),
                           hidden=(rr_log.CLOUD_RGB,) if overlay
                           else (rr_log.OVERLAY, rr_log.CLOUD_RGB))
-    path = rr_log.save(out_dir / f"{run}.rrd", bp)
+    path = rr_log.save(out_dir / f"{run}.rrd", bp, app_id)
     v = summary["verification"]
     print(f"{run}: {k + 1} steps, chain slots {list(slots)}, fits "
           f"{ {m: drawn[m] for m in fits} }, replay verdict "
