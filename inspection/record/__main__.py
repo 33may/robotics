@@ -31,6 +31,8 @@ def main(argv: list[str] | None = None) -> int:
     p_show = sub.add_parser("show")
     p_show.add_argument("id")
     p_show.add_argument("--out")
+    p_show.add_argument("--no-open", action="store_true",
+                        help="write the rrd only, don't launch the viewer")
     p_story = sub.add_parser("story")
     p_story.add_argument("id")
     for p in (p_ls, p_card, p_val, p_show, p_story):
@@ -61,9 +63,15 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"    [{p.severity}] {p.where}: {p.what}")
         return 0 if all(r.ok for r in reports) else 1
     elif a.cmd == "show":
+        import subprocess
         from inspection.record.show import show_run
         out = show_run(root / a.id, Path(a.out or f"/tmp/{a.id}.rrd"))
         print(f"wrote {out}")
+        if not a.no_open:
+            viewer = Path(sys.executable).parent / "rerun"
+            subprocess.Popen([str(viewer if viewer.exists() else "rerun"),
+                              str(out)], start_new_session=True)
+            print("viewer launched")
     elif a.cmd == "story":
         from inspection.record.story import story
         print(story(root / a.id))
