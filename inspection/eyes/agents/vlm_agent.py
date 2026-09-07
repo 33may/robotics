@@ -175,7 +175,7 @@ def _save_seen(tools, img, tag, kind="crops"):
     """
     try:
         import cv2
-        d = tools._store.path / kind
+        d = tools._run.path / "eyes" / kind
         d.mkdir(parents=True, exist_ok=True)
         name = f"{tag}.png"
         cv2.imwrite(str(d / name), cv2.cvtColor(img.rgb, cv2.COLOR_RGB2BGR))

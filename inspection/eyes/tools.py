@@ -1,25 +1,36 @@
 #!/usr/bin/env python3
 """The verb surface — what an agent may ask of a run.
 
-Three things meet here: `view/grid.py` (how cells are named), `RunStore`
-(what has actually been seen) and the capture dirs (the pixels). Every
-return carries BOTH pixels and text, because which one a VLM reads better is
-an empirical question the design leaves to measurement.
+Three things meet here: `view/grid.py` (how cells are named), `Run`
+(record/run.py — what has actually been seen) and the capture dirs (the
+pixels). Every return carries BOTH pixels and text, because which one a VLM
+reads better is an empirical question the design leaves to measurement.
 
 The text is deterministic provenance built from geometry — never a model's
 words. Nothing in this module can move the robot: it reads captured views
 and, at most, records that a view it wanted does not exist.
+
+Port note (task-5, flows-design §4 "consumers ported"): this used to run
+over `eyes/store.py`'s `RunStore`, which held views written by
+`eyes/replay.py` (deleted). `RunStore` survives only for the brain's OTHER
+role — mutable plan/hypothesis/finding state — so `writer=` here still binds
+to it (a `PlanWriter`/`FindingWriter`), but views now come straight from
+`Run`. Semantic mapping (binding, from the plan): old `RunStore` views were
+`{cell: None|tuple, pose_id, cap_dir, T_base_cam, t}`; the `ViewRecord`
+below adapts a `Step` to the same shape: `cell` is `None` for step 0 (the
+survey) else its recorded grid address; `pose_id` is `step.id`; `cap_dir` is
+`step.dir` — a FULL Path now, so the old `run_dir / cap_dir` join sites
+below read `rec.cap_dir` directly; `t` is `step.record.t_captured`.
 """
-import json
 from dataclasses import dataclass, replace
-from pathlib import Path
 
 import numpy as np
 
 from inspection.cell.geometry import (UPRIGHT_TOL_DEG, image_tilt_deg,
                                      rotate180)
-from inspection.eyes.store import RunStore
-from inspection.view.grid import coverage_map, neighbors
+from inspection.record.run import Run
+from inspection.view.grid import (DEFAULT_R, H_BINS, V_ELEVATIONS,
+                                  coverage_map, neighbors)
 
 
 def upright(rgb, T_base_cam, stored_rotation_deg=None):
@@ -60,21 +71,65 @@ class ViewImage:
     box: tuple | None = None
 
 
+class ViewRecord:
+    """Adapts a `Step` to the old RunStore view-row shape (module docstring:
+    semantic mapping). `.step` rides along for fields the old row never
+    carried, e.g. `rgb_rotation_deg` (`get_view` below)."""
+
+    def __init__(self, step):
+        self.step = step
+        self.cell = None if step.id == 0 else tuple(step.record.view.address)
+        self.pose_id = step.id
+        self.cap_dir = step.dir
+        self.t = step.record.t_captured
+        self.T_base_cam = step.T_base_cam
+
+
+def _grid_of(run: Run):
+    """(h_bins, v_elevs, r) for this run's viewsphere.
+
+    Native runs carry them on the `viewsphere` view_method's params
+    (`record/writer.py` callers). Legacy `run.json` never did — the deleted
+    `eyes/replay.py` handed every legacy run the same defaults, preserved
+    here (view/grid.py: H_BINS, V_ELEVATIONS); its `r` alone survives the
+    legacy adapter (`record/legacy.py:adapt_run`), as `view_methods[0].params`.
+    """
+    r = None
+    for vm in run.record.view_methods:
+        r = vm.params.get("r") or r
+        if "h_bins" in vm.params and "v_elevs" in vm.params:
+            return vm.params["h_bins"], tuple(vm.params["v_elevs"]), r or DEFAULT_R
+    return H_BINS, V_ELEVATIONS, r or DEFAULT_R
+
+
 class ViewTools:
     """Verbs over one run. `writer` (optional) receives miss notes."""
 
-    def __init__(self, store: RunStore, writer=None):
-        self._store = store
+    def __init__(self, run: Run, writer=None):
+        self._run = run
         self._writer = writer
-        g = store._d["grid"]
-        self._h_bins, self._v_elevs = g["h_bins"], tuple(g["v_elevs"])
-        self._r = g["r"]
+        self._h_bins, self._v_elevs, self._r = _grid_of(run)
 
     # ----------------------------------------------------------- geometry
+    def _views(self):
+        """Every captured view, survey included — mirrors the old
+        `RunStore.views()` with no cell filter (used by `run()`'s opening
+        survey pick and the survey/vlm agents' own survey lookup)."""
+        return [ViewRecord(s) for s in self._run.captured]
+
     def view_at(self, cell):
-        """Newest view of a cell, or None. A revisit supersedes the earlier look."""
-        vs = self._store.views(cell=cell)
-        return max(vs, key=lambda v: v.t) if vs else None
+        """Newest view of a cell, or None. A revisit supersedes the earlier
+        look.
+
+        Matched on each step's own recorded address, defaulting to (0, 0)
+        when none was recorded — true only of the survey (always step 0,
+        never a real grid address); steps compare id-ascending, so a later
+        genuine capture of (0, 0) still wins over that default.
+        """
+        cell = tuple(cell)
+        hits = [s for s in self._run.captured
+                if tuple(s.record.view.address or (0, 0)) == cell]
+        return ViewRecord(hits[-1]) if hits else None
 
     def views_near(self, cell):
         """[(neighbour, ViewRecord | None)] — 4-connected, h wraps, v clamps.
@@ -94,7 +149,11 @@ class ViewTools:
 
     def coverage(self, cur=None):
         """ASCII map of what has been seen, plus the count and a legend."""
-        cov = self._store.coverage()
+        visited = {tuple(s.record.view.address) for s in self._run.captured
+                  if s.id != 0}
+        cov = np.zeros((len(self._v_elevs), self._h_bins), dtype=bool)
+        for h, v in visited:
+            cov[v, h] = True
         n_cells = cov.shape[0] * cov.shape[1]
         return (f"{int(cov.sum())}/{n_cells} cells seen  "
                 f"(# seen · . unseen · @ current)\n"
@@ -107,7 +166,7 @@ class ViewTools:
             else target
         if rec is None:
             raise KeyError(f"no captured view at cell {target}")
-        path = self._store.run_dir / rec.cap_dir / "rgb.png"
+        path = rec.cap_dir / "rgb.png"
         import cv2                       # local: keeps pixel-free callers cheap
         bgr = cv2.imread(str(path), cv2.IMREAD_COLOR)
         if bgr is None:
@@ -118,13 +177,12 @@ class ViewTools:
         # Orientation is corrected HERE and nowhere earlier: the geometry path
         # (`cell.geometry.object_in_base`) deprojects the raw depth against
         # this same T_base_cam, so flipping pixels upstream would silently
-        # mirror the point cloud. Raw on disk stays raw.
-        meta_path = self._store.run_dir / rec.cap_dir / "meta.json"
-        stored = None
-        if meta_path.exists():
-            stored = json.loads(meta_path.read_text()).get("rgb_rotation_deg")
-        rgb, note = upright(rgb, rec.T_base_cam, stored)
-        return ViewImage(rec.cell, rec.cap_dir, rgb, self._gloss(rec) + note)
+        # mirror the point cloud. Raw on disk stays raw. `rgb_rotation_deg`
+        # comes straight off the step record now (always an int — the legacy
+        # adapter synthesizes 0 when a run predates the field), no more
+        # separate meta.json probe.
+        rgb, note = upright(rgb, rec.T_base_cam, rec.step.record.rgb_rotation_deg)
+        return ViewImage(rec.cell, rec.cap_dir.name, rgb, self._gloss(rec) + note)
 
     def crop(self, img: ViewImage, box):
         """Sub-image; box (x0, y0, x1, y1) is clipped to the frame."""
@@ -144,22 +202,58 @@ class ViewTools:
             raise RuntimeError("no writer bound — this tier may not write")
         self._writer.note(text, cell=cell)
 
+    # ----------------------------------------------------------- survey
+    def survey_bearing(self, rec, centre=None):
+        """Where the survey pose sits on the azimuth ring: `(az_deg, h_float)`.
+
+        The hand-taught survey is off-grid (measured -16 deg on 2408-seeded),
+        so the planner cannot look its azimuth up — but it needs one to anchor
+        the survey declaration's frame-relative words to addresses. This is
+        deterministic geometry, code-computed, never model-authored.
+
+        The centre is the object reconstruction, not a guess (Anton
+        2026-08-27): live callers pass the Supervisor's `sup.sphere.center`,
+        which the survey's own recon seeded; in replay the same recon is on
+        disk as `fused_cloud.npy` and its centroid is used. Only the camera
+        POSITION enters — no boresight, so no axis-convention risk.
+        MEASURED (2026-08-27, 2608-aicam): the cloud centroid reproduces the
+        six on-grid cells' own azimuths to ≤4.3°, mean 1.9°. No cloud and no
+        centre -> None; a missing bearing must not stop a run.
+
+        h = 0 faces the base: the reference direction is -centre_xy
+        (view/viewsphere.py:68-69).
+        """
+        if centre is None:
+            fused = self._run.fused()
+            if fused is None:
+                return None
+            cloud = fused[0]
+            if cloud.size == 0:
+                return None
+            centre = cloud[:, :3].mean(axis=0)
+        centre = np.asarray(centre, float)
+        ref = np.arctan2(-centre[1], -centre[0])
+        p = rec.T_base_cam[:3, 3] - centre
+        az = float(np.degrees(np.arctan2(p[1], p[0]) - ref)) % 360.0
+        return az, az / (360.0 / self._h_bins)
+
     # ------------------------------------------------------------ helpers
     def _gloss(self, rec):
         """Deterministic provenance for a view — geometry, never opinion."""
         if rec.cell is None:
-            return f"survey view · dir {rec.cap_dir}"
+            return f"survey view · dir {rec.cap_dir.name}"
         h, v = rec.cell
         return (f"cell [{h}, {v}] · azimuth {h * 360 / self._h_bins:.0f} deg "
                 f"(h{h} of {self._h_bins}) · elevation {self._v_elevs[v]:.0f} deg "
-                f"· r {self._r:.2f} m · dir {rec.cap_dir}")
+                f"· r {self._r:.2f} m · dir {rec.cap_dir.name}")
 
 
 if __name__ == "__main__":
     import sys
 
-    from inspection.eyes.replay import load_run
-    t = ViewTools(load_run(sys.argv[1]))
+    t = ViewTools(Run.load(sys.argv[1]))
     print(t.coverage())
-    for cell in sorted(t._store.visited())[:3]:
+    visited = sorted({tuple(s.record.view.address)
+                      for s in t._run.captured if s.id != 0})
+    for cell in visited[:3]:
         print(" ", t._gloss(t.view_at(cell)))

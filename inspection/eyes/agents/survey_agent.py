@@ -73,7 +73,7 @@ def describe_survey(tools, verbs, writer, model, on_turn=None,
     live run that skipped the survey. The caller falls back to the geometry
     gloss; a missing declaration must not stop an inspection.
     """
-    recs = [v for v in tools._store.views() if v.cell is None]
+    recs = [v for v in tools._views() if v.cell is None]
     if not recs:
         return None
     return SURVEY.run(tools, verbs, writer, model, task=SURVEY_TASK,

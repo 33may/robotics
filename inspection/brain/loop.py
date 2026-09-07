@@ -37,13 +37,14 @@ from claude_agent_sdk import (AssistantMessage, ClaudeAgentOptions, HookMatcher,
                               ThinkingBlock, create_sdk_mcp_server, query, tool)
 
 from inspection.brain import render
-from inspection.brain.live import refresh_views
 from inspection.brain.trace import TraceWriter
-from inspection.eyes.inspect_agent import inspect_view
-from inspection.eyes.replay import load_run
-from inspection.eyes.store import FindingWriter, PlanWriter
+from inspection.eyes.agents.evidence_agent import hunt_evidence
+from inspection.eyes.agents.inspect_agent import inspect_view
+from inspection.eyes.agents.survey_agent import describe_survey
+from inspection.eyes.store import FindingWriter, PlanWriter, RunStore
 from inspection.eyes.tools import ViewTools
-from inspection.eyes.verbs_local import LocalVerbs, StubBackend
+from inspection.record.run import Run
+from inspection.view.grid import DEFAULT_R, H_BINS, V_ELEVATIONS
 
 DEFAULT_MODEL = "claude-opus-5"
 MAX_TURNS = 40                 # budget, not a plan: the loop must be able to
@@ -57,8 +58,18 @@ You cannot see. A vision subagent looks at frames for you and reports in text;
 you own the geometry, the plan, and the answer.
 
 Verbs:
-- plan(criteria) — once, first: the question broken into things that can be
-  checked by looking. Nothing else may be called before this.
+- plan(criteria) — once, first. Nothing else may be called before this. The
+  SURVEY VIEW is the vision tier's declaration of the object: what it is, its
+  geometric primitive, how each surface is oriented in the survey frame, and
+  which features are visible. Build the plan FROM that geometry:
+  (1) the question broken into things that can be checked by looking;
+  (2) where the asked-about feature most likely sits on that primitive — the
+      declaration never guesses about unseen surfaces, that inference is
+      YOURS, from what such objects are like;
+  (3) the declared orientations turned into cells: the orientation words map
+      to degrees (table below), counted from the survey bearing line, and
+      image-right in the survey frame is increasing azimuth;
+  (4) the first moves, likeliest surface first — never a blind orbit.
 - move(cell) — go to a cell, capture it, and inspect what is there against the
   question. One deterministic step; you get the new view's report back.
 - inspect(question, cell, answer_schema) — run the inspection model again on a
@@ -68,35 +79,46 @@ Verbs:
   need the readout in a particular shape — "yes|no", "the text, verbatim", "a
   count" — so the result can be checked against your criteria rather than read
   as prose.
-- answer(reasoning, verdict, evidence) — ends the run. Once it returns, the
-  run is over: say nothing further and call nothing further.
+- answer(reasoning, verdict, evidence, evidence_cells) — ends the run.
+  evidence_cells names where the PROOF is: up to three {cell, find} entries,
+  each a view you hold and EXACTLY what a picture from it must show, stated
+  so it can be verified in pixels ("the ILFORD wordmark", "the barcode on
+  the top flap"). For a YES cite the feature itself; for a NO cite the
+  surfaces that would have shown it, so the record proves you looked. An
+  evidence hunt that finds nothing bounces the answer back to you — move
+  somewhere better, cite a different view, or re-answer citing the same
+  hunt to ship with the gap on record. Once "run complete" returns, the run
+  is over: say nothing further and call nothing further.
 
 YOU START WITH NO IMAGES. The survey frame is not on the viewsphere and
 cannot be inspected, so at the beginning there is nothing for inspect() to
 read — your first action after plan() must be a move(). inspect() only works
 on a viewpoint you have already moved to and captured.
 
-Addresses are absolute; the bearings beside them are relative to where you
-are standing. `right` means increasing azimuth. Move by address, never by
-computing one yourself — the menu tells you which viewpoints are reachable
-from where you are, and cells that are not listed cannot be reached.
+Addresses are [azimuth, elevation]. The MOVES block lists every azimuth at
+your current elevation level, plus every viewpoint already visited at the
+other levels; the bearings beside them are relative to where you stand, and
+`right` means increasing azimuth. One azimuth step is 30°. To change
+elevation, take an address and change its second number — the STATE block
+names the levels and their heights. Prefer moving by a listed address.
 
-WHICH WAY TO GO. Every view report ends with a `framing` line: where the
-target sat in that frame, how square-on its surface was, and which way the
-camera would have to shift to frame it better. Those are FRAME directions,
-and the camera is mounted so that the right of the image is the same right
-this menu uses. `better: left` means take a move the menu calls "left" — no
-conversion, no arithmetic.
-- To bring a surface square-on, orbit TOWARD the side it is turning toward.
-  A mark "turning away to the left" is fixed by moving left and destroyed by
-  moving right; one step the wrong way can rotate it out of sight entirely.
+WHICH WAY TO GO. Each visited row carries what the vision subagent saw from
+there, and sometimes a line `recommends: <phrase>`. The phrase says how far
+to orbit and which way, judged in that view's frame — and the camera is
+mounted so the frame's left/right and this menu's left/right are the same
+words. The words map to degrees:
+
+  slightly = 30°    half = 60°    far = 90°    around = 150°
+
+Count from the cell the recommendation hangs under, NOT from where you
+stand: "half right" under move([3, 0]) means the address 60° — two azimuth
+steps — to the right of [3, 0]. Resolve the phrase to an address and move
+there directly instead of stepping one cell at a time.
 - Ask when you do not know. inspect() costs no motion, so a turn spent on
-  "which way is this surface turning, and would shifting left or right frame
-  it more squarely?" is far cheaper than a move spent guessing.
-- The menu repeats what each visited cell showed, under "seen from there".
-  Use it: a viewpoint that showed the target edge-on is not worth returning
-  to, one that showed it clipped at an edge usually is, and the direction
-  that improved things once will usually keep improving them.
+  "which way would frame this better?" is far cheaper than a move spent
+  guessing.
+- A viewpoint that showed the target edge-on is not worth returning to; one
+  that showed it clipped at an edge usually is.
 
 How to answer:
 - One view that clearly shows the feature settles a YES. You do not need
@@ -115,17 +137,32 @@ How to answer:
 class Brain:
     """One inspection run. Holds the state the render turns into text."""
 
-    def __init__(self, run_dir, question, vlm, verbs=None,
+    def __init__(self, run_dir, question, vlm, verbs,
                  model=DEFAULT_MODEL, max_turns=MAX_TURNS, adaptive_thinking=True,
                  mover=None, trace=None):
         self.run_dir = Path(run_dir)
         self.question = question
-        self.store = load_run(self.run_dir)
+        self.run = Run.load(self.run_dir)
+        # RunStore SURVIVES here for its OTHER role — the brain's mutable AI
+        # state (plan/hypothesis/findings, task-5 ruling); views live on
+        # `self.run` now. `open` preserves that state across a resumed run;
+        # the grid values below are vestigial once ViewTools reads geometry
+        # off `self.run` directly (eyes/tools.py:_grid_of) — they only need
+        # to satisfy `RunStore.create`'s signature.
+        store_path = self.run_dir / "eyes" / "store.json"
+        self.store = RunStore.open(self.run_dir) if store_path.exists() else \
+            RunStore.create(self.run_dir, h_bins=H_BINS, v_elevs=V_ELEVATIONS,
+                            r=DEFAULT_R)
         self.plan_writer = PlanWriter(self.store)
-        self.tools = ViewTools(self.store, writer=self.plan_writer)
+        self.tools = ViewTools(self.run, writer=self.plan_writer)
         self.finding_writer = FindingWriter(self.store)
         self.vlm = vlm
-        self.verbs = verbs or LocalVerbs(StubBackend())
+        # Both models are given, never defaulted. Until 2026-08-26 `verbs`
+        # fell back to `LocalVerbs(StubBackend())`, so every live run so far
+        # detected the same fixed box (10, 10, 100, 100) for every phrase and
+        # the trace looked exactly like a real one. Cognition is assembled by
+        # the caller (`eyes/cognition.py`) and labelled in the `run` event.
+        self.verbs = verbs
         self.model = model
         self.max_turns = max_turns
         self.adaptive_thinking = adaptive_thinking
@@ -138,15 +175,20 @@ class Brain:
         # captured everything, so `store.visited()` is full from turn one; what
         # matters is which cells this agent has actually read.
         self.agent_seen = set()
-        # cell -> the vision tier's framing block for it. The run's view
-        # ledger: what the target looked like from each place we have stood.
-        # Re-rendered into the action menu on every move, never pasted as a
-        # standing table (brain/render.py: deltas, not snapshots).
+        # cell -> the vision tier's `view` block for it. The run's view
+        # ledger: what each viewpoint offered and where it recommends going.
+        # Re-rendered into the move menu every turn, never pasted as a
+        # standing table (brain/render.py: stamped blocks, not snapshots).
         self.view_notes = {}
         self.cell = None                     # survey pose, off-grid
         self.planned = False
         self.answer = None
-        self._prev = self._snapshot()
+        self.turn = 0                        # stamps the state/moves blocks
+        # (cell, find) -> resolved evidence record. The hunt cache: mirrors
+        # the subagent's own repeated-call refusal, and it is what turns
+        # "re-cite the same failed hunt" into an explicit acknowledgment
+        # instead of an infinite bounce (each hunt costs tens of seconds).
+        self._hunts = {}
         # A caller that already opened the trace (live runs, where the survey
         # happens before the Brain exists) passes it in and has already
         # written the `run` event — appending a second one would give the
@@ -156,30 +198,26 @@ class Brain:
             self.trace.event("run", question=question, model=model,
                              run_dir=str(self.run_dir),
                              live=mover is not None,
-                             captured=len(self.store.visited()))
+                             captured=len(self._visited()))
 
     # ------------------------------------------------------------- state
     def _nav(self):
         """The Supervisor's reachability picture, or None in replay."""
         return self.mover.nav() if self.mover is not None else None
 
-    def _snapshot(self):
+    def _visited(self):
+        """Distinct grid cells captured so far — the survey (step 0)
+        excluded, since it sits off-grid and was never a cell to visit."""
+        return {tuple(s.record.view.address) for s in self.run.captured
+                if s.id != 0}
+
+    def _counts(self):
+        """(visited, reachable) over the sphere — see render.state_block."""
         nav = self._nav()
         if nav is None:
             # Replay: the sweep IS the reachable world.
-            reachable, visited = len(self.store.visited()), len(self.agent_seen)
-        else:
-            reachable, visited = len(nav["reachable"]), len(nav["visited"])
-        return render.snapshot(self.cell, self.agent_seen,
-                               len(self.store.findings()),
-                               reachable, visited)
-
-    def _delta(self):
-        cur = self._snapshot()
-        out = render.state_delta(self._prev, cur, self.tools._h_bins,
-                                 self.tools._v_elevs)
-        self._prev = cur
-        return out
+            return len(self.agent_seen), len(self._visited())
+        return len(nav["visited"]), len(nav["reachable"])
 
     @staticmethod
     def _finding_text(f):
@@ -189,14 +227,15 @@ class Brain:
         the tokens, and OpenEQA is the one summarise-vs-raw datapoint we have
         (scene-graph captions 36.5 < per-frame captions 43.6 < raw 49.6). The
         transcript still stays on disk — evidence order is kept as the vision
-        tier produced it, evidence before reasoning before answer, framing
-        after (it is an appendix about the VIEW, not part of the chain).
+        tier produced it, evidence before reasoning before answer.
+
+        The `view` block does NOT ride along: it re-renders in the move menu
+        on every turn (the state hook), and a copy here would only be the
+        stale twin of that row.
         """
         ev = "\n".join(f"  - {e}" for e in f.evidence) or "  (none given)"
-        out = (f"evidence:\n{ev}\nreasoning: {f.reasoning}\n"
-               f"answer: {f.answer}")
-        line = render.framing_line(getattr(f, "framing", None))
-        return f"{out}\n{line}" if line else out
+        return (f"evidence:\n{ev}\nreasoning: {f.reasoning}\n"
+                f"answer: {f.answer}")
 
     def _inspect_cell(self, cell, question, answer_schema=None):
         """Run the vision subagent on one captured view and record it.
@@ -221,9 +260,39 @@ class Brain:
         # Last read wins. A later, sharper look at the same cell supersedes an
         # earlier one — the ledger is a current picture of what each viewpoint
         # offers, not a history of every time we looked.
-        if finding.framing:
-            self.view_notes[cell] = finding.framing
+        if finding.view:
+            self.view_notes[cell] = finding.view
         return finding
+
+    def _survey_text(self, surveys, gloss):
+        """What `SURVEY VIEW ·` carries: the declaration, anchored to the grid.
+
+        The vision tier declares the object — identity, primitive, surface
+        orientations, visible features (`eyes/survey_agent.py`); the harness
+        appends the code-computed bearing that anchors the declaration's
+        frame-relative words to addresses. Until 2026-08-27 this was only the
+        metadata gloss, and plan() was written knowing nothing about the
+        object — 2608-aicam's plan asked "what kind of product is it?".
+        Falls back to the gloss: a failed declaration must not stop the run.
+        """
+        if not surveys:
+            return gloss
+        def on_turn(n, total, event, **fields):
+            self.trace.event("sub_step", cell=None, n=n, of=total,
+                             event=event, **fields)
+        f = describe_survey(self.tools, self.verbs, self.finding_writer,
+                            self.vlm, on_turn=on_turn)
+        text = gloss if f is None or f.answer in (None, "", "unknown") \
+            else str(f.answer)
+        # Exact centre from the live Supervisor when there is one; recovered
+        # from the capture rays in replay (`ViewTools.survey_bearing`).
+        sphere = getattr(getattr(self.mover, "sup", None), "sphere", None)
+        bearing = self.tools.survey_bearing(
+            surveys[0], centre=getattr(sphere, "center", None))
+        if bearing is not None:
+            text += "\n" + render.survey_bearing_line(*bearing,
+                                                      self.tools._h_bins)
+        return text
 
     @staticmethod
     def _images_of(finding):
@@ -235,6 +304,56 @@ class Brain:
         out += [turn["image"] for turn in t.get("turns", [])
                 if turn.get("image")]
         return out
+
+    def _collect_evidence(self, entries):
+        """Run the cited evidence hunts. Returns (bounce_text | None, records).
+
+        The planner names WHERE the proof is and WHAT a picture must show;
+        the hunt (`eyes/evidence_agent.py`) does the pixels; this resolves
+        cells and paths deterministically. A FRESH miss bounces the whole
+        answer — the run is not over, the planner can move somewhere better —
+        while re-citing an already-missed hunt is the explicit "ship with the
+        gap on record". All hunts run before any bounce, so a re-answer pays
+        only for what it newly cites.
+        """
+        records, fresh_misses = [], []
+        for e in entries or []:
+            if not isinstance(e, dict) or "cell" not in e:
+                self.trace.event("text", text=f"dropped evidence entry {e!r}")
+                continue
+            try:
+                cell = tuple(int(c) for c in e["cell"])
+            except (TypeError, ValueError):
+                self.trace.event("text", text=f"dropped evidence entry {e!r}")
+                continue
+            find = str(e.get("find") or "").strip() or self.question
+            key = (cell, find.casefold())
+            if key in self._hunts:
+                records.append(self._hunts[key])
+                continue
+            if self.tools.view_at(cell) is None:
+                return (f"cannot hunt {list(cell)}: no capture at that cell. "
+                        f"Cite views you hold.", records)
+
+            def on_turn(n, total, event, **fields):
+                self.trace.event("sub_step", cell=list(cell), n=n, of=total,
+                                 event=event, hunt=find, **fields)
+
+            rec = hunt_evidence(self.tools, self.verbs, self.finding_writer,
+                                self.vlm, cell, find, on_turn=on_turn)
+            self._hunts[key] = rec
+            self.trace.event("evidence", **rec)
+            records.append(rec)
+            if not rec["found"]:
+                fresh_misses.append(rec)
+        if fresh_misses:
+            gaps = "; ".join(f"hunt at {r['cell']} found no {r['find']!r} — "
+                             f"it reported: {r['report']}"
+                             for r in fresh_misses)
+            return (f"{gaps}. The run is not over: move to a view that shows "
+                    f"it, cite a different view, or answer again citing the "
+                    f"same hunt to ship with the gap on record.", records)
+        return None, records
 
     # ------------------------------------------------------------- verbs
     def _build_tools(self):
@@ -301,7 +420,7 @@ class Brain:
                 ok, reason = await asyncio.to_thread(self.mover.request, cell)
                 if not ok:
                     return done("move", reason, cell=list(cell), failed=True)
-                refresh_views(self.store, self.run_dir)
+                self.run.refresh()
                 self.cell = cell
                 f = self._inspect_cell(cell, self.question)
                 return done("move",
@@ -327,13 +446,25 @@ class Brain:
                         cell=list(cell), images=self._images_of(f),
                         sub=f.transcript)
 
-        @tool("answer", "End the run with a verdict. Reasoning first.",
-              {"reasoning": str, "verdict": str, "evidence": str})
+        @tool("answer", "End the run with a verdict. Reasoning first. "
+                        "evidence_cells names where the proof is.",
+              {"reasoning": str, "verdict": str, "evidence": str,
+               "evidence_cells": list})
         async def _answer(args):
             called("answer", args)
+            # The hunts run INSIDE the answer: the planner cites where the
+            # proof is and what a picture must show, the evidence agent does
+            # the pixels, and a fresh miss bounces the whole answer back as a
+            # failed tool call (Anton 2026-08-27) — code-level enforcement of
+            # "answer from your best view, not your first".
+            bounce, records = await asyncio.to_thread(
+                self._collect_evidence, args.get("evidence_cells"))
+            if bounce:
+                return done("answer", bounce, failed=True)
             self.answer = {"reasoning": args["reasoning"],
                            "verdict": args["verdict"],
                            "evidence": args["evidence"],
+                           "evidence_images": records,
                            "views_inspected": sorted(map(list, self.agent_seen)),
                            "coverage": self.tools.coverage(cur=self.cell)}
             (self.store.path / "answer.json").write_text(
@@ -342,7 +473,8 @@ class Brain:
                                           if k != "coverage"})
             self.trace.event("write", tier="plan", what="answer",
                              text=args["verdict"])
-            return done("answer", "run complete")
+            return done("answer", "run complete",
+                        images=[r["crop"] for r in records if r.get("crop")])
 
         return [_plan, _inspect, _move, _answer]
 
@@ -350,21 +482,24 @@ class Brain:
     async def _staple_state(self, input_data, tool_use_id, context):
         """Push state onto every tool result — the model cannot forget to look.
 
-        A pull costs a turn and can be skipped; a push cannot. Empty deltas
-        emit nothing, so a no-op inspect adds no noise.
+        A pull costs a turn and can be skipped; a push cannot. EVERY turn,
+        not only on moves: until 2026-08-26 the menu rode only the move
+        results, and on `2608-aicam` four consecutive inspects on held views
+        each received nothing but a findings counter — the planner chained
+        decisions with no menu in sight. Re-stating is safe because every
+        block is stamped `· turn N ·` (render.py module docstring).
         """
-        moved = self._prev["cell"] != self._snapshot()["cell"]
-        blocks = [self._delta()]
-        if moved:
-            # The menu only changes when the arm does, so it rides the move
-            # rather than repeating every turn — a menu re-stated unchanged is
-            # just another snapshot rotting in an append-only log.
-            blocks.append(render.action_menu(self.tools, self.cell,
-                                             self.agent_seen, nav=self._nav(),
-                                             seen=self.view_notes))
-        text = "\n".join(b for b in blocks if b)
-        if not text:
-            return {}
+        if self.answer is not None:
+            return {}       # the run is over; there is nothing left to decide
+        self.turn += 1
+        visited, reachable = self._counts()
+        text = (render.state_block(self.turn, self.cell, self.tools._h_bins,
+                                   self.tools._v_elevs, visited, reachable,
+                                   len(self.store.findings()))
+                + "\n\n"
+                + render.moves_block(self.turn, self.tools, self.cell,
+                                     self.agent_seen, nav=self._nav(),
+                                     seen=self.view_notes))
         # Traced as its own kind: this is context the model was GIVEN, not text
         # it wrote. Telling those apart is the whole point of watching a run.
         self.trace.event("state", text=text)
@@ -378,7 +513,8 @@ class Brain:
         lives in code between the tool call and the actuator, not in the
         system prompt. In replay there is no actuator: the only invariant that
         exists is the grid itself. When `move` drives a real arm, this is
-        where `inspection.safety.config_is_safe` / `path_is_safe` run, and a
+        where the motion tier's checks run (`motion/execute.py` refuses on
+        world-invalidated paths and non-NORMAL safety mode), and a
         refusal returns here as a denial the model cannot talk its way past.
         """
         cell = (input_data.get("tool_input") or {}).get("cell")
@@ -428,14 +564,15 @@ class Brain:
                 "PostToolUse": [HookMatcher(hooks=[self._staple_state])],
             },
         )
-        # NOT `view_at(None)`: `store.views(cell=None)` means "every view",
-        # so that would hand back the newest capture of the whole run. The
-        # survey is the record whose cell IS None (replay.py: pose_id 0).
-        surveys = [v for v in self.store.views() if v.cell is None]
-        survey = self.tools.get_view(surveys[0] if surveys
-                                     else self.store.views()[0])
-        prompt = render.opening(self.question, survey.text, self.tools,
-                                self.agent_seen, nav=self._nav())
+        # NOT `view_at(None)`: `tools._views()` means "every view", so that
+        # would hand back the newest capture of the whole run. The survey is
+        # the record whose cell IS None (record/run.py: step id 0).
+        records = self.tools._views()
+        surveys = [v for v in records if v.cell is None]
+        survey = self.tools.get_view(surveys[0] if surveys else records[0])
+        prompt = render.opening(self.question, self._survey_text(surveys,
+                                                                 survey.text),
+                                self.tools, self.agent_seen, nav=self._nav())
 
         result = None
         thinking, from_stream = [], False
@@ -490,18 +627,15 @@ class Brain:
 
 
 def main(run_dir, question, model=DEFAULT_MODEL):
-    from inspection.eyes.models import StubVlm
-    import os
-    if os.environ.get("GEMINI_API_KEY"):
-        from inspection.eyes.models import GeminiVlm
-        vlm = GeminiVlm()
-    else:
-        # Runs the whole loop with no vision stack: the shape is testable
-        # before the API keys are.
-        print("[brain] GEMINI_API_KEY unset — vision subagent is a stub")
-        vlm = StubVlm([{"evidence": ["stub: no vision backend"],
-                        "reasoning": "stub", "answer": "unknown"}] * 50)
-    brain = Brain(run_dir, question, vlm=vlm, model=model)
+    from inspection.eyes.cognition import real_cognition
+
+    # No stub fallback (Anton 2026-08-26). Replay is cheap in motion, not in
+    # vision: a missing GEMINI_API_KEY used to silently swap the whole eyes
+    # tier for scripted text over a fixed box, and the run still printed a
+    # verdict. `real_cognition()` raises here instead. Tests and the mock
+    # reach the stubs by injecting `stub_cognition()`, never by omission.
+    cog = real_cognition()
+    brain = Brain(run_dir, question, vlm=cog.vlm, verbs=cog.verbs, model=model)
     answer, result = asyncio.run(brain.run())
     print("\n=== ANSWER ===")
     print(json.dumps({k: v for k, v in answer.items() if k != "coverage"},

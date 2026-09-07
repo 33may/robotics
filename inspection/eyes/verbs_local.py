@@ -232,15 +232,49 @@ class PaddleOcrBackend:
                 for pts, o in zip(keep, out)]
 
 
+class SamOcrBackend:
+    """SAM 3 for detect/segment, PP-OCRv6 for read_text — the whole surface.
+
+    The inspection subagent calls all three verbs on ONE backend object
+    (`inspect_agent.py:167,171,175`) and neither model class covers more than
+    its own half, so `StubBackend` was the only backend that satisfied the
+    surface. That is the actual reason a live run could still be answering from
+    a fixed box at (10, 10, 100, 100) — see the budget note at
+    `inspect_agent.py:46`. Pure delegation: policy stays in `LocalVerbs`.
+
+    Both halves are injectable because `run/app.py` builds an `ObjectSegmenter`
+    that lazily loads its own SAM 3 (`run/segmenter.py:77`). Hand that same
+    `Sam3Backend` in here and one checkpoint serves both; `sam3` is public for
+    the reverse direction, where this is built first and the segmenter gets
+    `.sam3`.
+    """
+
+    def __init__(self, sam3=None, ocr=None):
+        # Constructed, not loaded: both halves defer their weights to the first
+        # call (`Sam3Backend._load_detector`, `PaddleOcrBackend._load`), so a
+        # caller that never reaches a verb pays nothing for holding this.
+        self.sam3 = Sam3Backend() if sam3 is None else sam3
+        self.ocr = PaddleOcrBackend() if ocr is None else ocr
+
+    def detect(self, rgb, phrase):
+        return self.sam3.detect(rgb, phrase)
+
+    def segment(self, rgb, box):
+        return self.sam3.segment(rgb, box)
+
+    def read_text(self, rgb):
+        return self.ocr.read_text(rgb)
+
+
 if __name__ == "__main__":
     import sys
     import time
 
-    from inspection.eyes.replay import load_run
     from inspection.eyes.tools import ViewTools
+    from inspection.record.run import Run
 
     run_dir, h, v = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
-    tools = ViewTools(load_run(run_dir))
+    tools = ViewTools(Run.load(run_dir))
     img = tools.get_view((h, v))
     verbs = LocalVerbs(Sam3Backend())
 

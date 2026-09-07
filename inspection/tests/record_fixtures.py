@@ -1,5 +1,6 @@
 """Shared fixture: build a schema-valid run via RunWriter for record-layer tests."""
 import json
+from pathlib import Path
 
 import numpy as np
 
@@ -64,3 +65,44 @@ def _vstate(step_id):
     from inspection.record.schema import ViewState
     return ViewState(step_id=step_id, candidates=[
         {"address": [3, 0], "pose": T4, "status": "current"}])
+
+
+def make_legacy_run(root, views, *, r=0.35):
+    """A pre-schema run dir (run.json turns + NNN/meta.json), loadable
+    through `Run.load`'s legacy branch (task-5 port: eyes-tier tests used to
+    build these by hand through `RunStore.create` + `FactWriter.add_view`;
+    now they need a real run directory `Run.load` can adapt).
+
+    `views` is a list of dicts, one per pose_id in capture order:
+      {"cell": (h, v) | None, "pose_id": int (default: list index),
+       "t": float (default: pose_id), "T_base_cam": 4x4 (default: identity),
+       "rgb": HxWx3 uint8 (default: not written)}
+    `cell=None` marks the survey turn; `record/legacy.py:adapt_run` also
+    hard-codes pose_id 0 to address=None regardless, so a genuine "no
+    survey" run is built by giving every view an explicit non-zero pose_id.
+    Returns `root`.
+    """
+    import cv2
+
+    root = Path(root)
+    root.mkdir(parents=True, exist_ok=True)
+    turns = [{"target": "survey" if v.get("cell") is None else list(v["cell"]),
+              "t": v.get("t", float(i))} for i, v in enumerate(views)]
+    (root / "run.json").write_text(json.dumps(
+        {"q_survey": [0.0] * 6, "r": r, "turns": turns}))
+    ident = np.eye(4).tolist()
+    for i, v in enumerate(views):
+        pid = v.get("pose_id", i)
+        d = root / f"{pid:03d}"
+        d.mkdir()
+        T_base_cam = v.get("T_base_cam")
+        T_base_cam = ident if T_base_cam is None \
+            else np.asarray(T_base_cam, float).tolist()
+        (d / "meta.json").write_text(json.dumps(
+            {"pose_id": pid, "timestamp": v.get("t", float(i)),
+             "joints_rad": [0.0] * 6, "T_base_flange": ident,
+             "T_base_cam": T_base_cam}))
+        if v.get("rgb") is not None:
+            cv2.imwrite(str(d / "rgb.png"),
+                       cv2.cvtColor(v["rgb"], cv2.COLOR_RGB2BGR))
+    return root

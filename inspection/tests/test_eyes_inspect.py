@@ -6,30 +6,30 @@ from pathlib import Path
 
 import numpy as np
 
-from inspection.eyes.inspect_agent import SCHEMA_ORDER, inspect_view
+from inspection.eyes.agents.inspect_agent import SCHEMA_ORDER, inspect_view
 from inspection.eyes.models import StubVlm
-from inspection.eyes.store import FactWriter, FindingWriter, RunStore
+from inspection.eyes.store import FindingWriter, RunStore
 from inspection.eyes.tools import ViewTools
 from inspection.eyes.verbs_local import LocalVerbs, StubBackend
+from inspection.record.run import Run
+from inspection.tests.record_fixtures import make_legacy_run
 
 T = np.eye(4)
 
 
 def _rig(tmp):
-    root = Path(tmp)
-    store = RunStore.create(root, h_bins=12, v_elevs=(10.0, 40.0, 70.0), r=0.35)
-    d = root / "001"; d.mkdir()
-    import cv2
+    root = Path(tmp) / "run"
     img = np.zeros((480, 848, 3), np.uint8); img[:, :, 1] = 90
-    cv2.imwrite(str(d / "rgb.png"), img)
-    FactWriter(store).add_view(cell=(3, 1), pose_id=1, cap_dir="001",
-                               T_base_cam=T, t=1.0)
-    return store
+    make_legacy_run(root, [{"cell": (3, 1), "pose_id": 1, "t": 1.0,
+                           "rgb": img, "T_base_cam": T}])
+    return Run.load(root)
 
 
 def _run(tmp, script):
-    store = _rig(tmp)
-    tools = ViewTools(store, writer=FindingWriter(store))
+    run = _rig(tmp)
+    store = RunStore.create(Path(tmp) / "notes", h_bins=12,
+                            v_elevs=(10.0, 40.0, 70.0), r=0.35)
+    tools = ViewTools(run, writer=FindingWriter(store))
     verbs = LocalVerbs(StubBackend(boxes=[((100, 100, 300, 300), 0.9, "cup")],
                                    lines=[([[110, 110], [200, 110], [200, 140],
                                             [110, 140]], "ACME", 0.92)]))
@@ -90,11 +90,48 @@ def test_schema_puts_reasoning_before_answer():
     # before `reason`. Field ORDER is the contract, not decoration.
     assert SCHEMA_ORDER.index("reasoning") < SCHEMA_ORDER.index("answer")
     assert SCHEMA_ORDER.index("evidence") < SCHEMA_ORDER.index("reasoning")
+    assert SCHEMA_ORDER.index("answer") < SCHEMA_ORDER.index("view")
     assert "confidence" not in SCHEMA_ORDER      # verbalized confidence ~ chance
 
 
+def test_view_block_is_normalised_and_kept():
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, [
+            {"evidence": ["e"], "reasoning": "r", "answer": "no",
+             "view": {"saw": "plain green side, the mark turned away right",
+                      "recommendation": "around right"}}])
+        assert f.view == {"saw": "plain green side, the mark turned away right",
+                          "recommendation": "around right"}
+        rel = store.findings()[0]["transcript"]
+        disk = json.loads((store.path / rel).read_text())
+        assert disk["view"] == f.view
+
+
+def test_view_none_recommendation_is_dropped_saw_survives():
+    # "none" means nothing to recommend: absence, not a row saying "none".
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, [
+            {"evidence": ["e"], "reasoning": "r", "answer": "yes",
+             "view": {"saw": "logo square to the camera",
+                      "recommendation": "none"}}])
+        assert f.view == {"saw": "logo square to the camera"}
+
+
+def test_view_survives_malformed_shapes():
+    # A bare string becomes `saw`; garbage becomes an empty dict. An inspection
+    # that saw the object clearly must not die over its appendix.
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, [{"evidence": ["e"], "reasoning": "r",
+                               "answer": "no", "view": "only the rim shows"}])
+        assert f.view == {"saw": "only the rim shows"}
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, [{"evidence": ["e"], "reasoning": "r",
+                               "answer": "no", "view": 42}])
+        assert f.view == {}
+
+
 def test_the_subagent_is_never_given_a_way_to_move():
-    from inspection.eyes import inspect_agent
+    from inspection.eyes.agents import inspect_agent
     src = Path(inspect_agent.__file__).read_text()
     assert "inspection.motion" not in src and "inspection.run" not in src
     for verb in ("view_at", "views_near"):
@@ -109,6 +146,9 @@ def main():
     test_transcript_is_written_verbatim_but_only_the_summary_returns()
     test_uncaptured_neighbour_becomes_a_note_not_a_move()
     test_schema_puts_reasoning_before_answer()
+    test_view_block_is_normalised_and_kept()
+    test_view_none_recommendation_is_dropped_saw_survives()
+    test_view_survives_malformed_shapes()
     test_the_subagent_is_never_given_a_way_to_move()
     print("OK test_eyes_inspect")
 

@@ -41,10 +41,10 @@ def draw(img, dets, seg=None, lines=(), phrase="cup"):
 def main():
     import cv2
 
-    from inspection.eyes.replay import load_run
     from inspection.eyes.tools import ViewTools
     from inspection.eyes.verbs_local import (LocalVerbs, PaddleOcrBackend,
                                              Sam3Backend)
+    from inspection.record.run import Run
 
     ap = argparse.ArgumentParser()
     ap.add_argument("run_dir")
@@ -55,13 +55,15 @@ def main():
     ap.add_argument("--ocr", action="store_true", help="also run read_text")
     args = ap.parse_args()
 
-    tools = ViewTools(load_run(args.run_dir))
+    tools = ViewTools(Run.load(args.run_dir))
     detector = LocalVerbs(Sam3Backend())
     reader = LocalVerbs(PaddleOcrBackend()) if args.ocr else None
 
+    visited = sorted({tuple(s.record.view.address)
+                      for s in tools._run.captured if s.id != 0})
     cells = ([tuple(int(v) for v in c.split(",")) for c in args.cells]
-             if args.cells else sorted(tools._store.visited())[:6])
-    outdir = tools._store.path / "preview"
+             if args.cells else visited[:6])
+    outdir = tools._run.path / "eyes" / "preview"
     outdir.mkdir(parents=True, exist_ok=True)
 
     for cell in cells:

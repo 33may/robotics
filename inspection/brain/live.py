@@ -30,7 +30,7 @@ state machine is trustworthy.
 import threading
 import time
 
-from inspection.eyes.replay import load_run
+from inspection.record.run import Run
 
 POLL_S = 0.05
 #: How long to wait for the planner before giving up on a request. Approval
@@ -105,12 +105,12 @@ class SupervisorMover:
     def _captures(self):
         """How many frames exist on disk. Zero before the first one.
 
-        Deliberately tolerant: `load_run` needs `run.json`, which does not
+        Deliberately tolerant: `Run.load` needs `run.json`, which does not
         exist until the survey has been captured — and the survey is now the
         first thing this class is asked to do.
         """
         try:
-            return len(load_run(self.run_dir).views())
+            return len(Run.load(self.run_dir).captured)
         except Exception:                            # noqa: BLE001
             return 0
 
@@ -184,22 +184,24 @@ class SupervisorMover:
         return True, "reached and captured"
 
 
-def make_ask_handler(sup, pub, run_dir):
+def make_ask_handler(sup, pub, run_dir, cognition):
     """Build the `brain/ask` handler shared by the real run and the mock.
 
     One implementation on purpose: the mock is how the approval gate gets
     rehearsed without hardware, and a rehearsal against different wiring
-    rehearses nothing.
+    rehearses nothing. `cognition` is therefore the ONLY thing that differs
+    between the two — `real_cognition()` at `run/app.py:107`, `stub_cognition()`
+    at `ui/mock.py:93` — and this handler chooses no model of its own. Until
+    2026-08-26 it picked one from `GEMINI_API_KEY`, so an unset key turned the
+    demo into a stub run that was indistinguishable from the real thing.
     """
     import asyncio
-    import os
     import threading
 
     running = threading.Event()
 
     def ask(question):
         from inspection.brain.loop import Brain
-        from inspection.eyes.models import StubVlm
 
         question = str(question or "").strip()
         if not question:
@@ -210,14 +212,6 @@ def make_ask_handler(sup, pub, run_dir):
             return
         running.set()
 
-        if os.environ.get("GEMINI_API_KEY"):
-            from inspection.eyes.models import GeminiVlm
-            vlm = GeminiVlm()
-        else:
-            pub.log("warn", "GEMINI_API_KEY unset — vision is a stub")
-            vlm = StubVlm([{"evidence": ["stub: no vision backend"],
-                            "reasoning": "stub", "answer": "unknown"}] * 80)
-
         # The trace is opened HERE, not inside Brain, because the survey is
         # part of the run and has to be visible while it happens: the question
         # appears in the panel the moment it is asked, and the survey's
@@ -226,8 +220,12 @@ def make_ask_handler(sup, pub, run_dir):
         from inspection.brain.trace import TraceWriter
 
         trace = TraceWriter(run_dir)
+        # `cognition` is on the header event because a mock run writes a trace
+        # of exactly the same shape as a real one — same wiring, by design —
+        # so without the label a screenshot of one is a screenshot of either.
         trace.event("run", question=question, model=DEFAULT_MODEL,
-                    run_dir=str(run_dir), live=True, captured=0)
+                    cognition=cognition.label, run_dir=str(run_dir),
+                    live=True, captured=0)
 
         def on_event(state, **kw):
             trace.event("approval", state=state, **kw)
@@ -249,8 +247,8 @@ def make_ask_handler(sup, pub, run_dir):
                         trace.event("text", text=f"no survey: {reason}")
                         pub.log("warn", f"survey not completed: {reason}")
                         return
-                brain = Brain(run_dir, question, vlm=vlm, mover=mover,
-                              trace=trace)
+                brain = Brain(run_dir, question, vlm=cognition.vlm,
+                              verbs=cognition.verbs, mover=mover, trace=trace)
                 asyncio.run(brain.run())
             except Exception:                        # noqa: BLE001
                 import logging
@@ -261,24 +259,12 @@ def make_ask_handler(sup, pub, run_dir):
                 running.clear()
 
         threading.Thread(target=go, name="brain", daemon=True).start()
-        pub.log("info", f"brain: {question}")
+        # Labelled here too: the trace header renders question/model/captured
+        # only (`ui/src/panels/TracePanel.tsx:768`), so the log line is the one
+        # place the operator can see WHICH eyes this run is using today.
+        pub.log("info", f"brain[{cognition.label}]: {question}")
 
     return ask
-
-
-def refresh_views(store, run_dir):
-    """Pull captures written since the store was built.
-
-    A live run appends capture directories while the brain holds an already
-    loaded store, so without this the orchestrator inspects a world that
-    stopped updating at boot. `load_run` is idempotent and rebuilds views from
-    disk — disk is the truth — so this reuses its capture<->cell join rather
-    than restating the rule and letting the two drift.
-    """
-    fresh = load_run(run_dir)
-    store._d["views"] = fresh._d["views"]
-    store._flush()
-    return store
 
 
 class TraceWatcher(threading.Thread):
@@ -319,9 +305,7 @@ def has_survey(run_dir):
     The survey is the brain's opening view — it is what the first prompt
     describes — so a run without one has nothing to reason from.
     """
-    if not (run_dir / "run.json").exists():
-        return False
     try:
-        return any(v.cell is None for v in load_run(run_dir).views())
-    except Exception:                                # noqa: BLE001
+        return Run.load(run_dir).survey is not None
+    except FileNotFoundError:
         return False

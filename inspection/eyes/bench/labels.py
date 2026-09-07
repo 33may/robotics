@@ -127,11 +127,24 @@ def contact_sheet(store, labels):
 if __name__ == "__main__":
     import sys
 
-    from inspection.eyes.replay import load_run
+    from inspection.eyes.store import FactWriter, RunStore
+    from inspection.record.run import Run
 
     run_dir = Path(sys.argv[1])
     question = sys.argv[2] if len(sys.argv) > 2 else "is there a logo on this cup?"
-    store = load_run(run_dir)
+    # `replay.py` used to hand this CLI a RunStore pre-populated with views;
+    # that module is gone (task-5), so rebuild the same shape here — `Run` is
+    # the read side now, `RunStore`/`FactWriter` still exist for exactly this
+    # kind of ad-hoc, disk-backed view bag (LabelSet/contact_sheet/report all
+    # key off `.views()`/`._d["grid"]`/`.path`).
+    run = Run.load(run_dir)
+    store = RunStore.create(run_dir, h_bins=12, v_elevs=(10.0, 40.0, 70.0),
+                            r=0.35)
+    facts = FactWriter(store)
+    for s in run.captured:
+        cell = None if s.id == 0 else tuple(s.record.view.address)
+        facts.add_view(cell=cell, pose_id=s.id, cap_dir=s.dir.name,
+                       T_base_cam=s.T_base_cam, t=s.record.t_captured)
     try:
         labels = LabelSet.load(run_dir)
         print(f"loaded existing labels ({labels.pending()} unlabelled)")
