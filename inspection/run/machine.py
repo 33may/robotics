@@ -47,12 +47,11 @@ from pathlib import Path
 
 import numpy as np
 
-from inspection.cell.geometry import (BOX_PCT, JUMP_GATE_M, WORKSPACE,
-                                     CloudAccumulator)
+from inspection.cell.geometry import BOX_PCT, CloudAccumulator
 from inspection.cell.world import DEFAULT_STEP, RobotCell
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
-from inspection.run.segmenter import object_view
+from inspection.run.settle import _plane_error, settle_capture
 from inspection.view.grid import object_extent, radius_for_extent
 from inspection.view.viewsphere import ViewSphere
 
@@ -62,41 +61,9 @@ log = logging.getLogger(__name__)
 # action at the pendant — no new request may be accepted while in one of these.
 _BUSY_PHASES = ("executing", "capturing", "fusing", "fault")
 
-#: Per-view sanity gate on the fitted table plane. The cell's table is probed
-#: ground truth at z=0 in the base frame; a view whose RANSAC plane lands far
-#: from that was placed with a wrong camera pose — whatever the cause (run
-#: 2108-ui: a silently frozen RTDE q stamped five views with the survey pose;
-#: their planes came out at z 90/-490/242 mm, tilted up to 48 deg). Rejecting
-#: on the plane catches ANY pose error, not just the one failure mode we have
-#: already met. Tolerances leave room for real arm flex (4-13 deg of tilt was
-#: historic for the SO-101; the UR5e fits within ~2 deg and ~10 mm).
-PLANE_Z_TOL_M = 0.03
-PLANE_TILT_TOL_DEG = 5.0
-
-
-def _plane_error(plane) -> str | None:
-    """Why the fitted table plane contradicts the probed cell, or None if ok.
-
-    `plane` is `fit_table`'s [a,b,c,d] with the unit normal forced +z. Height
-    is evaluated at the workspace centre — the plane's d alone would measure
-    height at the base origin, outside the crop, where a small tilt reads as
-    a large offset.
-    """
-    a, b, c, d = (float(x) for x in plane)
-    norm = float(np.linalg.norm((a, b, c)))
-    if norm < 1e-9 or c <= 0:
-        return f"degenerate table plane {plane!r}"
-    tilt = float(np.degrees(np.arccos(np.clip(c / norm, -1.0, 1.0))))
-    xc = (WORKSPACE["x"][0] + WORKSPACE["x"][1]) / 2
-    yc = (WORKSPACE["y"][0] + WORKSPACE["y"][1]) / 2
-    z_center = -(a * xc + b * yc + d) / c
-    if abs(z_center) > PLANE_Z_TOL_M:
-        return (f"table plane at z={z_center * 1000:.0f} mm "
-                f"(> {PLANE_Z_TOL_M * 1000:.0f} mm) — camera pose is wrong")
-    if tilt > PLANE_TILT_TOL_DEG:
-        return (f"table plane tilted {tilt:.1f} deg "
-                f"(> {PLANE_TILT_TOL_DEG:.0f} deg) — camera pose is wrong")
-    return None
+# `_plane_error` now lives in `run/settle.py` (the plane gate is part of the
+# extracted settle pipeline); re-exported here so any external reference to
+# `machine._plane_error` keeps working.
 
 
 class Supervisor:
@@ -491,35 +458,6 @@ class Supervisor:
             log.exception("preview worker failed")
             self.pub.log("error", "preview failed — see logs")
 
-    def _object_from_capture(self, cap):
-        """One capture -> (view, segmentation | None). Identity in image space.
-
-        The object is whatever the mask says it is, because every purely
-        geometric rule we tried could not separate a cable lying against the
-        cup: at 20 mm they are genuinely adjacent, and distance has nothing
-        to say about that (run 2408-cup2 view 003 — object extent 175.8 mm
-        with growth, 89.1 mm with a mask).
-
-        Identity persists WITHOUT any text prompt or tracking state: the
-        cloud we have plus this view's pose already say where the object must
-        appear, so reprojecting it gives a fresh box every frame for free.
-        Only the box SOURCE differs between the survey and later views —
-        everything after the box is one path.
-
-        Falls back to the depth pipeline whenever the mask cannot be trusted.
-        That keeps a model failure to a LIVENESS cost (a fuzzier box, which
-        the jump gate and percentile extent still guard) instead of a safety
-        one, and it is why those two guards stay even though segmentation now
-        does the real work.
-
-        The policy itself lives in `run.segmenter.object_view` so the offline
-        replay measures this exact code and not a copy of it.
-        """
-        return object_view(cap, self.rig.intr, self.rig.intr_color,
-                           self.rig.depth_scale, self.acc.points,
-                           self.segmenter,
-                           on_fallback=lambda why: self.pub.log("warn", why))
-
     def _publish_chain(self, cap, view, seg, dropped):
         """Render and announce the identity chain for the capture just fused.
 
@@ -608,40 +546,31 @@ class Supervisor:
         try:
             step = self._next_cell_step() if target != "survey" else 0
             cap = self.rig.capture(step)
-            view, seg = self._object_from_capture(cap)
-            # The plane gate sits BEFORE anything from this view is kept:
-            # a rejected view must not touch the accumulator, publish a
-            # capture, or mark the cell visited. `settle_done ok=False` is
-            # the same path a failed capture takes — the run carries on.
-            bad = _plane_error(view["plane"])
-            if bad:
+            # `settle_capture` (run/settle.py) is the object-identity + plane-
+            # gate + fuse pipeline, verbatim out of this worker: it rejects a
+            # bad view BEFORE anything from it is kept (no accumulator touch,
+            # no capture publish, no cell marked visited) and fuses into
+            # `self.acc` on success. `settle_done ok=False` is the same path
+            # a failed capture takes below — the run carries on either way.
+            res = settle_capture(cap, self.rig, self.segmenter, self.acc,
+                                 is_survey=(target == "survey"),
+                                 on_warn=lambda msg: self.pub.log("warn", msg))
+            if not res.ok:
                 self.events.put({"ev": "settle_done", "gen": gen,
                                  "target": target, "ok": False, "npts": 0,
-                                 "detail": f"view rejected: {bad}"})
+                                 "detail": res.detail})
                 return
             self.events.put({"ev": "phase", "gen": gen, "phase": "fusing"})
-            if seg is not None:
-                self._save_mask(cap, seg)
-            npts = len(view["points"]) if view["points"] is not None else 0
-            if target == "survey" and view["centroid"] is None:
-                self.events.put({"ev": "settle_done", "gen": gen, "target": target,
-                                 "ok": False, "npts": 0,
-                                 "detail": "NO OBJECT above the table"})
-                return
-            dropped = self.acc.add(view["points"]) if npts else 0
-            if dropped:
-                # Loud on purpose: a detached blob is a scene problem (a cable,
-                # a second object drifting in), not a routine filter event.
-                self.pub.log("warn", f"rejected {dropped} detached points "
-                                     f"(>{JUMP_GATE_M*100:.0f} cm from the object)")
+            if res.seg is not None:
+                self._save_mask(cap, res.seg)
             self._recenter()
             if self.sphere is not None:
                 self._reach = self.sphere.reachability(self.world, self.ik)
-            self._publish_chain(cap, view, seg, dropped)
+            self._publish_chain(cap, res.view, res.seg, res.dropped)
             self.pub.publish_capture(cap)
             self._last_cap_dir = cap.get("dir")
             self.events.put({"ev": "settle_done", "gen": gen, "target": target,
-                             "ok": True, "npts": npts, "detail": ""})
+                             "ok": True, "npts": res.npts, "detail": ""})
         except Exception as e:
             self.events.put({"ev": "settle_done", "gen": gen, "target": target,
                              "ok": False, "npts": 0, "detail": f"capture failed: {e}"})
