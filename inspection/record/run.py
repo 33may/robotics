@@ -35,17 +35,22 @@ class Step:
         return ViewState.model_validate_json(p.read_text()) if p.exists() else None
 
     # binaries ----------------------------------------------------------------
-    def rgb(self, upright: bool = True) -> np.ndarray | None:
-        """RGB order, from rgb.png.
+    # Convention (schema.py:Conventions.rotated_artifacts + capture.py:45-59,
+    # Anton 2026-08-24): rgb.png, depth_aligned.npy AND mask.png are all
+    # stored UPRIGHT on disk while the pose (T_base_cam etc.) stays RAW —
+    # capture.py rotates all three 180° at write time when the viewsphere
+    # roll is a half turn, so every reader gets an upright frame for free.
+    # `upright=True` (default) therefore returns the file as stored;
+    # `upright=False` rotates it back to the pose's RAW orientation — the
+    # shape reconstruction path needs (`step_replay.py`'s "Frames" note).
+    # One rotation policy, applied identically to all three artifacts here.
+    def _to_pose_frame(self, arr: np.ndarray, upright: bool) -> np.ndarray:
+        if not upright and self.record.rgb_rotation_deg == 180:
+            return rotate180(arr)
+        return arr
 
-        Convention (schema.py:Conventions.rotated_artifacts + capture.py:58,
-        Anton 2026-08-24): rgb.png is stored UPRIGHT on disk while the pose
-        (T_base_cam etc.) stays RAW — capture.py rotates the file 180° at
-        write time when the viewsphere roll is a half turn, so every reader
-        gets an upright image for free. `upright=True` therefore returns the
-        file as stored; `upright=False` rotates it back 180° to match the
-        raw pose, when `rgb_rotation_deg == 180`.
-        """
+    def rgb(self, upright: bool = True) -> np.ndarray | None:
+        """RGB order, from rgb.png."""
         p = self.dir / "rgb.png"
         if not p.exists():
             return None
@@ -53,13 +58,13 @@ class Step:
         if img is None:
             return None
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        if not upright and self.record.rgb_rotation_deg == 180:
-            img = rotate180(img)
-        return img
+        return self._to_pose_frame(img, upright)
 
-    def depth(self) -> np.ndarray | None:
+    def depth(self, upright: bool = True) -> np.ndarray | None:
         p = self.dir / "depth_aligned.npy"
-        return np.load(p) if p.exists() else None
+        if not p.exists():
+            return None
+        return self._to_pose_frame(np.load(p), upright)
 
     def cloud(self) -> np.ndarray | None:
         p = self.dir / "cloud.ply"
@@ -68,12 +73,14 @@ class Step:
         import open3d as o3d
         return np.asarray(o3d.io.read_point_cloud(str(p)).points)
 
-    def mask(self) -> np.ndarray | None:
+    def mask(self, upright: bool = True) -> np.ndarray | None:
         p = self.dir / "mask.png"
         if not p.exists():
             return None
         img = cv2.imread(str(p), cv2.IMREAD_GRAYSCALE)
-        return None if img is None else img > 0
+        if img is None:
+            return None
+        return self._to_pose_frame(img > 0, upright)
 
 
 class AIRun:

@@ -30,7 +30,8 @@ GEO = dict(offered=100, kept=90, dropped=10, fused_points=90, source="mask")
 
 
 def make_run(root, run_id="0309-boxA", *, status="aborted", object="box",
-             rig="real", with_answer=False, now=1788180000.0):
+             rig="real", with_answer=False, now=1788180000.0,
+             rgb_rotation_deg=0):
     """One fused step (with binaries) + one rejected step + events, closed."""
     w = RunWriter.create(
         root, run_id=run_id, name=run_id.split("-", 1)[1], object=object,
@@ -43,7 +44,8 @@ def make_run(root, run_id="0309-boxA", *, status="aborted", object="box",
     np.save(sdir / "depth_raw.npy", np.zeros((4, 4), dtype=np.uint16))
     (sdir / "rgb.png").write_bytes(b"\x89PNG fake image bytes")
     w.write_capture(sid, t_captured=now + 2, joints_rad=[0.1] * 6,
-                    T_base_flange=T4, T_base_cam=T4, rgb_rotation_deg=0)
+                    T_base_flange=T4, T_base_cam=T4,
+                    rgb_rotation_deg=rgb_rotation_deg)
     w.write_fused(sid, GEO, _vstate(sid))
 
     rid, _ = w.begin_step({"method": "vs1", "address": [4, 0]}, t_arrived=now + 5)

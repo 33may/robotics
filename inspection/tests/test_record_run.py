@@ -163,6 +163,49 @@ def test_depth_and_missing_binaries_are_none(tmp_path):
     assert step.cloud() is None and step.mask() is None
 
 
+def test_rgb_rotates_back_when_stored_rotated(tmp_path):
+    """make_run's fixture defaults to rgb_rotation_deg=0, so the test above
+    only ever walks the equal branch — this drives Step.rgb() through the
+    actual 180 branch: rgb.png is written UPRIGHT (per convention), and
+    upright=False must rotate it back to match the raw pose."""
+    make_run(tmp_path, run_id="0709-rot180", rgb_rotation_deg=180)
+    step = Run.load(tmp_path / "0709-rot180").captured[0]
+    assert step.record.rgb_rotation_deg == 180
+    import cv2
+    stored = np.zeros((4, 6, 3), np.uint8); stored[0, 0] = (255, 0, 0)
+    cv2.imwrite(str(step.dir / "rgb.png"), cv2.cvtColor(stored, cv2.COLOR_RGB2BGR))
+    up, raw = step.rgb(upright=True), step.rgb(upright=False)
+    assert np.array_equal(up, stored)          # upright=True returns the file as stored
+    assert not np.array_equal(up, raw)
+    assert np.array_equal(np.rot90(up, 2), raw)
+
+
+def test_depth_rotates_back_when_stored_rotated(tmp_path):
+    """Same one rotation policy applies to depth_aligned.npy (Conventions
+    .rotated_artifacts) — reconstruction consumers need it in RAW frame."""
+    make_run(tmp_path, run_id="0709-rot180d", rgb_rotation_deg=180)
+    step = Run.load(tmp_path / "0709-rot180d").captured[0]
+    stored = np.arange(24, dtype=np.uint16).reshape(4, 6)
+    np.save(step.dir / "depth_aligned.npy", stored)
+    up, raw = step.depth(upright=True), step.depth(upright=False)
+    assert np.array_equal(up, stored)
+    assert not np.array_equal(up, raw)
+    assert np.array_equal(np.rot90(up, 2), raw)
+
+
+def test_mask_rotates_back_when_stored_rotated(tmp_path):
+    """mask.png shares the same rotated_artifacts policy as rgb/depth."""
+    make_run(tmp_path, run_id="0709-rot180m", rgb_rotation_deg=180)
+    step = Run.load(tmp_path / "0709-rot180m").captured[0]
+    import cv2
+    stored = np.zeros((4, 6), np.uint8); stored[0, 0] = 255
+    cv2.imwrite(str(step.dir / "mask.png"), stored)
+    up, raw = step.mask(upright=True), step.mask(upright=False)
+    assert np.array_equal(up, stored > 0)
+    assert not np.array_equal(up, raw)
+    assert np.array_equal(np.rot90(up, 2), raw)
+
+
 def test_derived_probes_fits_then_flat_layout_then_none(tmp_path):
     """derived/<id> mirrors runs/<id> as a sibling of the run's own root;
     probes the legacy fits/<method> bucket, then the flat derive.py layout."""
