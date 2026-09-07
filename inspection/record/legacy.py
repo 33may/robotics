@@ -80,13 +80,25 @@ def adapt_run(run_dir: Path) -> AdaptedRun:
         )
 
     timestamps = [s.t_captured for s in steps.values()]
-    completed = (run_dir / "eyes" / "answer.json").exists()
+    # Status inference (Anton 2026-09-07): a capture-only run (no eyes/ at all)
+    # that has steps COMPLETED its sweep — there was no verdict to reach.
+    # Only an AI run that never answered, or an empty run, is aborted.
+    ai_ran = any((run_dir / "eyes" / f).exists()
+                 for f in ("store.json", "trace.jsonl", "transcripts"))
+    if not steps:
+        status = "aborted"
+    elif not ai_ran:
+        status = "completed"  # capture-only sweep (cup3/4/5, seeded pattern)
+    elif (run_dir / "eyes" / "answer.json").exists():
+        status = "completed"
+    else:
+        status = "aborted"  # AI ran, trace stopped, no verdict
     run = RunRecord(
         provenance="legacy",
         synthesized=["source", "status", "created_at", "view_methods"],
         id=run_dir.name, name=run_dir.name.split("-", 1)[-1],
         source="live", rig="real" if (run_dir / "session.json").exists() else "fake",
-        status="completed" if completed else "aborted",
+        status=status,
         created_at=min(timestamps) if timestamps else 0.0,
         view_methods=[{"id": "vs-legacy", "kind": "viewsphere-legacy",
                        "params": {"r": raw.get("r")}}],

@@ -72,11 +72,51 @@ def test_synthesized_fields_are_declared(tmp_path):
 
 def test_status_and_rig_inference(tmp_path):
     done = adapt_run(_legacy_run(tmp_path, "2408-a", with_answer=True))
-    dead = adapt_run(_legacy_run(tmp_path, "2408-b"))
     mock = adapt_run(_legacy_run(tmp_path, "2408-c", with_session=False))
     assert done.run.status == "completed"
-    assert dead.run.status == "aborted"
     assert mock.run.rig == "fake"
+
+
+def test_capture_only_run_is_completed_not_aborted(tmp_path):
+    """cup3/4/5 pattern: full sweep, no eyes/ at all -> nothing to conclude."""
+    d = _legacy_run(tmp_path, "2408-cup9")  # no eyes dir
+    assert adapt_run(d).run.status == "completed"
+
+
+def test_ai_run_without_answer_is_aborted(tmp_path):
+    """camdemo5 pattern: eyes/ exists, trace stopped, no verdict."""
+    d = _legacy_run(tmp_path, "3108-x")
+    (d / "eyes").mkdir()
+    (d / "eyes" / "store.json").write_text("{}")
+    assert adapt_run(d).run.status == "aborted"
+
+
+def test_zero_step_run_is_aborted(tmp_path):
+    d = tmp_path / "2108-z"
+    d.mkdir()
+    (d / "run.json").write_text(json.dumps(
+        {"q_survey": [0.0] * 6, "r": None, "turns": []}))
+    assert adapt_run(d).run.status == "aborted"
+
+
+def test_legacy_card_size_from_tree(tmp_path):
+    _legacy_run(tmp_path, "2408-old")
+    c = runs(tmp_path)[0]
+    assert c.size_bytes > 0  # no manifest -> summed from the tree
+
+
+def test_stray_eyes_debug_dir_is_not_an_ai_run(tmp_path):
+    """2408-seeded pattern: eyes/preview/ debug images only -> capture-only."""
+    d = _legacy_run(tmp_path, "2408-seeded9")
+    (d / "eyes" / "preview").mkdir(parents=True)
+    (d / "eyes" / "preview" / "cell_1.png").write_bytes(b"x")
+    assert adapt_run(d).run.status == "completed"
+
+
+def test_legacy_verdict_surfaces_on_card(tmp_path):
+    _legacy_run(tmp_path, "2408-done", with_answer=True)
+    c = runs(tmp_path)[0]
+    assert c.verdict == "yes"  # read from eyes/answer.json
 
 
 def test_adapter_never_writes(tmp_path):
@@ -94,7 +134,7 @@ def test_catalog_spans_both_generations(tmp_path):
     ids = {c.id for c in cards}
     assert ids == {"0309-new", "2408-old"}
     old = next(c for c in cards if c.id == "2408-old")
-    assert old.n_steps == 2 and old.status == "aborted"
+    assert old.n_steps == 2 and old.status == "completed"  # capture-only sweep
 
 
 if __name__ == "__main__":

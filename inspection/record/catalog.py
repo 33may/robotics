@@ -61,14 +61,17 @@ def _card(run_dir: Path, stale_s: float, now: float) -> Card | None:
             size = sum(e.bytes for e in man.files.values())
         except Exception:
             pass
+    if size == 0:  # no/empty manifest (legacy, running) -> sum the tree
+        size = sum(p.stat().st_size for p in run_dir.rglob("*") if p.is_file())
 
     verdict = None
-    ans_path = run_dir / "answer.json"
-    if ans_path.exists():
-        try:
-            verdict = json.loads(ans_path.read_text()).get("verdict")
-        except Exception:
-            pass
+    for ans_path in (run_dir / "answer.json", run_dir / "eyes" / "answer.json"):
+        if ans_path.exists():
+            try:
+                verdict = json.loads(ans_path.read_text()).get("verdict")
+            except Exception:
+                pass
+            break
 
     return Card(id=run.id, name=run.name, object=run.object,
                 object_instance=run.object_instance, source=run.source,
