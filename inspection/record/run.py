@@ -12,8 +12,10 @@ import numpy as np
 
 from inspection.cell.geometry import rotate180
 from inspection.record.legacy import adapt_run, is_legacy
-from inspection.record.schema import (ConfigSnapshot, OperatorEvent, RunRecord,
-                                      SessionRecord, StepRecord, ViewState)
+from inspection.record.schema import (AIRunRecord, AnswerRecord, ConfigSnapshot,
+                                      MenuDef, MenuInput, OperatorEvent, RunRecord,
+                                      SessionRecord, StepRecord, TranscriptRecord,
+                                      ViewState)
 from inspection.record.validate import Report, validate_run
 
 
@@ -72,6 +74,47 @@ class Step:
             return None
         img = cv2.imread(str(p), cv2.IMREAD_GRAYSCALE)
         return None if img is None else img > 0
+
+
+class AIRun:
+    """One orchestrator session: ai/<seq:03d>/ (spec: task-4 brief, binding
+    layout — airun.json, transcripts/tNNN.json, menu/menu_def.json,
+    menu/inputs.jsonl, answer.json, trace.jsonl)."""
+
+    def __init__(self, record: AIRunRecord, ai_dir: Path):
+        self.record, self.dir = record, ai_dir
+        self.seq = record.seq
+
+    @property
+    def transcripts(self) -> list[TranscriptRecord]:
+        tdir = self.dir / "transcripts"
+        if not tdir.is_dir():
+            return []
+        recs = [TranscriptRecord.model_validate_json(p.read_text())
+                for p in sorted(tdir.glob("t*.json"))]
+        return sorted(recs, key=lambda r: r.t)
+
+    @property
+    def answer(self) -> AnswerRecord | None:
+        p = self.dir / "answer.json"
+        return AnswerRecord.model_validate_json(p.read_text()) if p.exists() else None
+
+    @property
+    def menu(self) -> MenuDef | None:
+        p = self.dir / "menu" / "menu_def.json"
+        return MenuDef.model_validate_json(p.read_text()) if p.exists() else None
+
+    @property
+    def menu_inputs(self) -> list[MenuInput]:
+        p = self.dir / "menu" / "inputs.jsonl"
+        if not p.exists():
+            return []
+        return [MenuInput.model_validate_json(line)
+                for line in p.read_text().splitlines() if line.strip()]
+
+    @property
+    def trace_path(self) -> Path:
+        return self.dir / "trace.jsonl"
 
 
 class Run:
@@ -169,6 +212,20 @@ class Run:
                         colors = c
                 return pts, colors
         return None
+
+    @property
+    def ai(self) -> list[AIRun]:
+        """AIRuns under ai/*/airun.json, sorted by seq; [] when absent (also
+        legacy — legacy AI stays reachable via record/story.py, not here)."""
+        root = self.path / "ai"
+        if not root.is_dir():
+            return []
+        runs = []
+        for d in sorted(root.iterdir()):
+            p = d / "airun.json"
+            if d.is_dir() and p.exists():
+                runs.append(AIRun(AIRunRecord.model_validate_json(p.read_text()), d))
+        return sorted(runs, key=lambda a: a.seq)
 
     def validate(self, deep: bool = False) -> Report:
         return validate_run(self.path, deep=deep)

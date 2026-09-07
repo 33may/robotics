@@ -203,6 +203,48 @@ def test_refresh_picks_up_new_steps(tmp_path):
     assert [s.id for s in run.steps] == [0]
 
 
+def _write_airun(d):
+    """Build ai/000/ by hand with real, minimal-valid schema instances."""
+    from inspection.record.schema import (AIRunRecord, AnswerRecord, MenuDef,
+                                          MenuInput, TranscriptRecord)
+    d.mkdir(parents=True)
+    (d / "transcripts").mkdir()
+    (d / "menu").mkdir()
+
+    airun = AIRunRecord(seq=0, mode="live", orchestrator_model="claude-x",
+                        menu_id="menu-1", menu_hash="a" * 64)
+    (d / "airun.json").write_text(airun.model_dump_json())
+
+    t = TranscriptRecord(transcript_id="t000", kind="survey", step_id=1, t=1.0,
+                         model="vlm-x", task="look for logo",
+                         prompt="describe the object")
+    (d / "transcripts" / "t000.json").write_text(t.model_dump_json())
+
+    menu = MenuDef(menu_id="menu-1", version="1.0.0", content_hash="b" * 64,
+                   code_sha="deadbeef", verbs=["move", "capture"])
+    (d / "menu" / "menu_def.json").write_text(menu.model_dump_json())
+
+    mi = MenuInput(turn=0, step_id=1, t=1.0)
+    with (d / "menu" / "inputs.jsonl").open("w") as f:
+        f.write(mi.model_dump_json() + "\n")
+
+    answer = AnswerRecord(verdict="yes", reasoning="logo visible on survey")
+    (d / "answer.json").write_text(answer.model_dump_json())
+
+    (d / "trace.jsonl").write_text("")
+
+
+def test_ai_runs_scan_and_parse(tmp_path):
+    make_run(tmp_path, run_id="0709-ai")
+    _write_airun(tmp_path / "0709-ai" / "ai" / "000")   # helper in this test file
+    run = Run.load(tmp_path / "0709-ai")
+    assert len(run.ai) == 1
+    a = run.ai[0]
+    assert a.seq == 0 and a.record.orchestrator_model
+    assert len(a.transcripts) == 1 and a.transcripts[0].step_id == 1
+    assert a.answer is not None and a.menu is not None
+
+
 if __name__ == "__main__":
     import sys
     sys.exit(pytest.main([__file__, "-v"]))
