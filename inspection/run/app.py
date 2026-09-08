@@ -304,7 +304,124 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
     print(f"run saved: {outdir}")
 
 
+def collect(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
+           port: int = 8767, bus_port: int = 8765, no_window: bool = False,
+           seed: int = 0, gui: str = "qt", name: str | None = None,
+           object: str | None = None):
+    """One data-collection sweep — Flow B. `outdir` is `<runs root>/<run id>`.
+
+    Same composition as `run()` minus cognition/`brain/ask` — no VLM, no
+    question, nothing under `ai/` — plus a `SweepDriver` in place of an
+    operator picking cells: it walks the whole shell cheapest-path-first
+    through the SAME approval gate every other mover uses. The closing
+    status says whether it actually got there: `driver.finished` is True
+    only once the candidate set ran out, never on a run cut short.
+
+    `run()`'s own teardown (`finish_run`) closes on whether a question got
+    answered, which has no meaning for a run that never asked one — so the
+    close here is its own, not a call into `run()` or `finish_run` (the
+    merge-safety rule for this task: additive-only in this file, `run()`
+    itself untouched). It duplicates `finish_run`'s few lines of "save the
+    fused cloud" rather than its "did the AI answer" status logic.
+    """
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    from porthole import PortholeBus
+    from inspection.eyes.verbs_local import Sam3Backend
+    from inspection.motion.execute import preflight
+    from inspection.run.collect import SweepDriver
+    from inspection.run.machine import Supervisor
+    from inspection.run.rigs import PoseStreamer, RealRig
+    from inspection.run.segmenter import ObjectSegmenter
+    from inspection.record.writer import RunWriter
+    from inspection.ui.app import _require_build
+    from inspection.ui.publisher import InspectionPublisher
+
+    pf = preflight(ip)
+    if not pf["go"]:
+        raise SystemExit(f"preflight NO-GO: {pf}")
+    if not SURVEY_POSE_FILE.exists():
+        raise SystemExit("no survey pose — run `p inspection/run/app.py teach`")
+    if not _require_build():
+        raise SystemExit(1)
+    q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])
+
+    outdir = Path(outdir).resolve()
+    stop_event = threading.Event()
+    # Same "everything live inside the try" shape as `run()`, for the same
+    # reason: a failure part-way through setup must still hit the teardown
+    # below rather than leak a socket, an open RTDE interface or a camera.
+    bus = rig = sup = poses = child = writer = driver = None
+    try:
+        bus = PortholeBus(app="inspection", port=bus_port).start()
+        pub = InspectionPublisher(bus, run_dir=outdir)
+        pub.declare()
+        writer = RunWriter.create(
+            outdir.parent, run_id=outdir.name, name=name or outdir.name,
+            source="data-engine", rig="real", object=object, question=None,
+            config=config_snapshot({"segmenter": "sam3"}),
+            view_methods=[viewsphere_method(r)],
+            q_survey=[float(v) for v in q_survey])
+        rig = RealRig(None, stop_event, outdir, ip)   # world set below
+        writer.write_session(rig.session)
+        # Segmentation stays real (identity still matters for a sweep's
+        # cloud), only the question-answering tier is gone.
+        sup = Supervisor(rig, pub, writer, q_survey, seed=seed, r=r,
+                         segmenter=ObjectSegmenter(backend=Sam3Backend()))
+        install_sigint(sup)                          # earliest safe Ctrl-C
+        rig.world = sup.world
+        rig.start_camera(pub)
+        poses = PoseStreamer(rig.q, lambda q: pub.publish_pose(sup.world, q))
+        poses.active = sup.pose_active               # dispatcher-gated
+        sup.pose_quiesce = poses.quiesce             # settle-leg interlock
+        poses.start()
+
+        def on_sweep_event(state, **kw):
+            pub.log("info", f"sweep: {state} {kw.get('cell', '')}")
+
+        driver = SweepDriver(sup, outdir, on_event=on_sweep_event)
+        driver.start()
+
+        def pump():
+            # No `brain/ask` branch here — Flow B has no cognition command to
+            # intercept, every bus command is the Supervisor's.
+            for c in bus.commands():
+                sup.events.put(c)
+        threading.Thread(target=pump, name="cmd-pump", daemon=True).start()
+
+        child = _open_ui(outdir, port, bus_port, no_window, gui)
+        sup.run()                                    # blocks until done
+    finally:
+        # Same order as `run()`'s teardown (design §Safety): stop event ->
+        # join worker (bounded) -> stopJ -> save -> close.
+        if sup is not None:
+            sup.stop_event.set()
+            sup.pose_active.clear()
+            if not sup.join_workers(5.0):
+                log.warning("a worker outlived the join budget — closing anyway")
+        if poses is not None:
+            poses.stop()
+        if rig is not None:
+            try:
+                rig.arm.stop()
+            except Exception:
+                pass
+        if writer is not None:
+            acc = sup.acc if sup is not None else None
+            if acc is not None and len(acc.points):
+                d = writer.dir / "fused"
+                d.mkdir(parents=True, exist_ok=True)
+                np.save(d / "cloud.npy", acc.points)
+            writer.close("completed" if driver is not None and driver.finished
+                        else "aborted")
+        if rig is not None:
+            rig.close()
+        _close_ui(child)
+        if bus is not None:
+            bus.stop()
+    print(f"collect saved: {outdir}")
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
-    fire.Fire({"run": run, "teach": teach})
+    fire.Fire({"run": run, "teach": teach, "collect": collect})

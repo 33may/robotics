@@ -132,3 +132,63 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
 
     threading.Thread(target=run_and_close, daemon=True).start()
     return sup
+
+
+def start_mock_collect(bus, pub, outdir, seed: int = 0) -> Supervisor:
+    """`start_mock`'s Flow B twin: the same real `Supervisor`/`FakeRig`, but
+    `source="data-engine"`, no `brain/ask` handler, and a `SweepDriver` in
+    place of an operator picking cells one at a time.
+
+    A separate function rather than a branch inside `start_mock` on purpose
+    (merge-safety over DRY, same call as `run/app.py:collect` vs `run()`):
+    the two runs close differently — `finish_run` reads "did a question get
+    answered", which has no meaning for a run that never asked one, so this
+    duplicates its few lines of "save the fused cloud" instead of its status
+    logic, and leaves `start_mock` itself untouched for whatever else is
+    landing in this file in parallel.
+    """
+    q_survey = DEMO_PARK.copy()
+    outdir = Path(outdir)
+    rig = FakeRig(q_survey + np.radians([0, 0, 0, 0, 0, 8]), speed=0.6)
+    writer = RunWriter.create(
+        outdir.parent, run_id=outdir.name, name=outdir.name,
+        source="data-engine", rig="fake", question=None,
+        config=config_snapshot({"segmenter": "stub"}),
+        view_methods=[viewsphere_method()],
+        q_survey=[float(v) for v in q_survey], tags=["mock"])
+    sup = Supervisor(rig, pub, writer, q_survey=q_survey, seed=seed,
+                     segmenter=_stub_segmenter())
+    pub.publish_world(sup.world)
+
+    camera = CameraWorker(grab=lambda: {"rgb": mock_frame(time.time())},
+                          publish=pub.publish_frame)
+    camera.start()
+    poses = PoseStreamer(rig.q, lambda q: pub.publish_pose(sup.world, q))
+    poses.active = sup.pose_active
+    sup.pose_quiesce = poses.quiesce
+    poses.start()
+
+    from inspection.run.collect import SweepDriver
+    driver = SweepDriver(sup, outdir, on_event=lambda state, **kw:
+                         pub.log("info", f"sweep: {state} {kw.get('cell', '')}"))
+    driver.start()
+
+    def pump():
+        # No `brain/ask` branch: Flow B has no cognition command to
+        # intercept, every bus command is the Supervisor's.
+        for c in bus.commands():
+            sup.events.put(c)
+    threading.Thread(target=pump, name="mock-cmd-pump", daemon=True).start()
+
+    def run_and_close():
+        try:
+            sup.run()
+        finally:
+            if sup.acc is not None and len(sup.acc.points):
+                d = writer.dir / "fused"
+                d.mkdir(parents=True, exist_ok=True)
+                np.save(d / "cloud.npy", sup.acc.points)
+            writer.close("completed" if driver.finished else "aborted")
+
+    threading.Thread(target=run_and_close, daemon=True).start()
+    return sup
