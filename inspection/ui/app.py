@@ -159,6 +159,13 @@ def trace(run_dir: str, port: int = 8767, bus_port: int = 8765,
 
     bus = PortholeBus(app="inspection", port=bus_port).start()
     pub = InspectionPublisher(bus, run_dir=run_path)
+    try:  # the viewed run says which flow it was — the UI shapes itself to it
+        from inspection.record.run import Run
+        rec = Run.load(run_path).record
+        pub.publish_run_meta(source=rec.source, name=rec.name,
+                             object=rec.object, question=rec.question)
+    except Exception:
+        logging.getLogger("inspection.ui").exception("run/meta publish failed")
     print(f"bus  ws://127.0.0.1:{bus.port}", flush=True)
 
     def watch() -> None:

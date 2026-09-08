@@ -76,6 +76,8 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
         config=config_snapshot({"vlm": "stub", "segmenter": "stub"}),
         view_methods=[viewsphere_method()],
         q_survey=[float(v) for v in q_survey], tags=["mock"])
+    pub.publish_run_meta(source="live", name=outdir.name, object=None,
+                         question=None)
     # A STUB segmenter, not a real one: the mock must stay GPU-free and
     # offline, but the identity path — prompt box, mask, masked lift, chain
     # overlays — is then the same code a real run takes, so the frontend has

@@ -224,6 +224,10 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
                                     "segmenter": "sam3"}),
             view_methods=[viewsphere_method(r)],
             q_survey=[float(v) for v in q_survey])
+        # Retained, so a UI window opened at any moment knows which flow it
+        # is rendering (data-engine runs drop the AI panel).
+        pub.publish_run_meta(source="live", name=name or outdir.name,
+                             object=object, question=None)
         rig = RealRig(None, stop_event, outdir, ip)   # world set below
         # Built by the rig (it opens the camera), written by the writer (it
         # owns every JSON in the run) — the split that ended the two-writers
