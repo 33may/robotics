@@ -53,7 +53,7 @@ from pathlib import Path
 
 import numpy as np
 
-from inspection.cell.geometry import BOX_PCT, CloudAccumulator
+from inspection.cell.geometry import BOX_PCT, CloudAccumulator, object_box
 from inspection.cell.world import DEFAULT_STEP, RobotCell
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
@@ -690,11 +690,10 @@ class Supervisor:
     # ------------------------------------------------------------- helpers
     def _recenter(self):
         center = self.acc.centroid
-        # pct-trimmed: raw min/max let 168 stray cable points (4.7% of the
-        # cloud) grow the box until it contained the arm's own pose and every
-        # plan died in OMPL's start tree. See CloudAccumulator.aabb.
-        mn, mx = self.acc.aabb(pct=BOX_PCT)
         if self.r is None:
+            # pct-trimmed: raw min/max let 168 stray cable points (4.7% of
+            # the cloud) grow the extent. See CloudAccumulator.aabb.
+            mn, mx = self.acc.aabb(pct=BOX_PCT)
             # DERIVED ONCE, from the survey cloud, then frozen for the run.
             # Frozen because cells are the keys for coverage and evidence: a
             # shell that tightened as the cloud grew would silently re-point
@@ -713,10 +712,10 @@ class Supervisor:
             # guessed at run creation.
             self.writer.set_view_method_params(VIEW_METHOD, r=float(self.r))
         self.sphere = ViewSphere(center, r=self.r)
-        dims = np.maximum(mx - mn + 0.04, 0.05)         # 2 cm margin each side
-        mid = (mn + mx) / 2
-        self.world.set_object("object", dims.tolist(),
-                              [*mid.tolist(), 0.0, 0.0, 0.0], parent="base")
+        # Min-yaw box, one source of truth for margins — see
+        # `geometry.object_box`. The pose carries the yaw the UI also draws.
+        dims, pose = object_box(self.acc.points)
+        self.world.set_object("object", dims.tolist(), pose, parent="base")
 
     def _write(self, what, fn, *a, **kw):
         """Run one writer verb from the DISPATCHER; log and carry on if it
@@ -852,10 +851,12 @@ class Supervisor:
     def _publish_object(self):
         if self.acc.centroid is None:
             return
-        mn, mx = self.acc.aabb()
-        dims = np.maximum(mx - mn + 0.04, 0.05)
-        mid = (mn + mx) / 2
-        self.pub.publish_object(self.acc.points, dims.tolist(), mid.tolist())
+        # The SAME box the planner was told (`_recenter`) — this used to be a
+        # third copy of the math, and an untrimmed one: the UI drew a raw-
+        # AABB box while the planner avoided a pct-trimmed one.
+        dims, pose = object_box(self.acc.points)
+        self.pub.publish_object(self.acc.points, dims.tolist(), pose[:3],
+                                yaw=pose[5])
 
     def _cancel_preview(self):
         if self._preview_cancel is not None:

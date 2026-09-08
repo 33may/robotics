@@ -293,6 +293,43 @@ def test_accumulator_carries_colors_through_fusion():
     assert acc.colors.shape == acc.points.shape
 
 
+# ── min_yaw_aabb / object_box ───────────────────────────────────────────────
+
+def test_min_yaw_aabb_recovers_a_rotated_box():
+    """A 100 x 160 mm slab at 30 deg yaw: the axis-aligned AABB inflates its
+    footprint; the yaw box must recover the true dims and the yaw (mod 90)."""
+    from inspection.cell.geometry import min_yaw_aabb
+    rng = np.random.default_rng(3)
+    th = np.radians(30.0)
+    c, s = np.cos(th), np.sin(th)
+    local = np.column_stack([rng.uniform(-0.05, 0.05, 3000),
+                             rng.uniform(-0.08, 0.08, 3000)])
+    xy = local @ np.array([[c, s], [-s, c]])          # rotate slab TO 30 deg
+    pts = np.column_stack([xy + [0.1, -0.4], rng.uniform(0.0, 0.07, 3000)])
+    center, dims, yaw = min_yaw_aabb(pts)
+    assert abs((yaw % (np.pi / 2)) - th % (np.pi / 2)) < np.radians(2.0)
+    assert sorted(np.round(dims[:2], 3)) == [0.1, 0.16]
+    assert abs(dims[2] - 0.07) < 0.005
+    assert np.allclose(center[:2], [0.1, -0.4], atol=0.005)
+    aabb_area = np.ptp(pts[:, 0]) * np.ptp(pts[:, 1])
+    assert dims[0] * dims[1] < 0.8 * aabb_area        # genuinely tighter
+
+
+def test_object_box_margins_and_floor():
+    """+4 cm per dim, 5 cm floor, pose carries the yaw — the contract all
+    three callers (planner box, UI box, sweep's ranking box) share."""
+    from inspection.cell.geometry import min_yaw_aabb, object_box
+    rng = np.random.default_rng(4)
+    pts = np.column_stack([rng.uniform(0, 0.1, 500),
+                           rng.uniform(0, 0.1, 500),
+                           rng.uniform(0, 0.005, 500)])   # near-flat slab
+    _, raw, yaw = min_yaw_aabb(pts, pct=1.0)
+    dims, pose = object_box(pts)
+    assert np.allclose(dims[:2], raw[:2] + 0.04, atol=1e-9)
+    assert dims[2] == 0.05                                # floor beats 5mm+4cm
+    assert len(pose) == 6 and pose[5] == yaw
+
+
 # ── prompt_box ──────────────────────────────────────────────────────────────
 
 def test_prompt_box_lands_on_the_object_it_came_from():

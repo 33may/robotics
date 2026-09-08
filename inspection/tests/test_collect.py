@@ -104,8 +104,9 @@ class StubSup:
     """
 
     class _Acc:
-        def aabb(self, pct=None):
-            return None                  # no object yet -> nothing to mirror
+        # What `_mirror_object_box` reads now (`geometry.object_box` path):
+        # an empty cloud -> no object yet -> nothing to mirror.
+        points = np.empty((0, 3))
 
     class _Rig:
         def q(self):

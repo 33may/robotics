@@ -265,6 +265,67 @@ PROMPT_MARGIN_PX = 12
 PROMPT_PCT = 1.0
 
 
+def min_yaw_aabb(points: np.ndarray, pct: float = 0.0
+                 ) -> tuple[np.ndarray, np.ndarray, float]:
+    """Min-area box over YAW only: (center, dims, yaw), base frame.
+
+    Yaw-only on purpose (Anton 2026-09-08): the object rests on the table,
+    so the true tightening is in the tabletop plane — a 45-degree box under
+    an axis-aligned AABB inflates its footprint by up to sqrt(2), which is
+    exactly the oversized yellow box on run 0809-box2. A full 3D OBB would
+    tilt the collision box into the table for nothing.
+
+    Brute force over 1-degree steps of a quarter turn (the box is symmetric
+    under 90 degrees): ~90 passes of O(N) percentiles is well under a
+    millisecond at cloud sizes, needs no hull code, and is exact to within
+    a rotation the margins already dwarf. `pct` trims per axis in the
+    ROTATED frame, the same policy as `CloudAccumulator.aabb`.
+    """
+    pts = np.asarray(points, dtype=float)
+    xy = pts[:, :2]
+    best = None
+    for deg in range(90):
+        th = np.radians(deg)
+        c, s = np.cos(th), np.sin(th)
+        local = xy @ np.array([[c, -s], [s, c]])      # coords in yaw-th frame
+        if pct > 0:
+            lo, hi = np.percentile(local, [pct, 100.0 - pct], axis=0)
+        else:
+            lo, hi = local.min(axis=0), local.max(axis=0)
+        area = float((hi - lo).prod())
+        if best is None or area < best[0]:
+            best = (area, th, lo, hi)
+    _, yaw, lo, hi = best
+    if pct > 0:
+        zlo, zhi = np.percentile(pts[:, 2], [pct, 100.0 - pct])
+    else:
+        zlo, zhi = pts[:, 2].min(), pts[:, 2].max()
+    mid = (lo + hi) / 2
+    c, s = np.cos(yaw), np.sin(yaw)
+    center = np.array([c * mid[0] - s * mid[1],
+                       s * mid[0] + c * mid[1], (zlo + zhi) / 2])
+    dims = np.array([hi[0] - lo[0], hi[1] - lo[1], zhi - zlo])
+    return center, dims, float(yaw)
+
+
+def object_box(points: np.ndarray, pct: float = BOX_PCT
+               ) -> tuple[np.ndarray, list]:
+    """The object's collision box: `(dims, pose6)` for `world.set_object`.
+
+    THE one box: `machine._recenter` (what the planner avoids),
+    `machine._publish_object` (the yellow box the UI draws) and
+    `collect._mirror_object_box` (the sweep's ranking world) must all say
+    the same thing, and before this helper each carried its own copy of the
+    margin math — the UI's had even drifted to an untrimmed AABB. Margins:
+    2 cm each side (+4 cm per dim), 5 cm floor — coal adds its own padding
+    per side on top, and the pct trim slightly under-reads the object,
+    which those two margins are sized to cover (see `aabb`).
+    """
+    center, dims, yaw = min_yaw_aabb(points, pct=pct)
+    dims = np.maximum(dims + 0.04, 0.05)
+    return dims, [*center.tolist(), 0.0, 0.0, yaw]
+
+
 def project_to_pixels(points: np.ndarray, T_base_cam: np.ndarray,
                       intr: dict) -> np.ndarray:
     """Base-frame points -> (u, v) pixels, dropping anything behind the lens.

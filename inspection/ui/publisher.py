@@ -271,18 +271,22 @@ class InspectionPublisher:
         points: np.ndarray | None = None,
         dims: Sequence[float] | None = None,
         center: Sequence[float] | None = None,
+        yaw: float = 0.0,
     ) -> None:
         """The reconstructed object: its collision box and its fused cloud.
 
-        `dims`/`center` are the same values handed to `world.set_object`. Pass
-        them explicitly rather than reading them back — the world's object
-        registry is private, and this way the UI shows exactly what the planner
-        was told.
+        `dims`/`center`/`yaw` are the same values handed to
+        `world.set_object`. Pass them explicitly rather than reading them
+        back — the world's object registry is private, and this way the UI
+        shows exactly what the planner was told. `yaw`: the box is min-area
+        over yaw now (`geometry.min_yaw_aabb`), not axis-aligned.
         """
         try:
             nodes: list[dict] = []
             if dims is not None and center is not None:
                 T = np.eye(4)
+                c, s = np.cos(yaw), np.sin(yaw)
+                T[:2, :2] = [[c, -s], [s, c]]
                 T[:3, 3] = np.asarray(center, dtype=float)
                 nodes.append(box_node(
                     "object/obb", dims, T,

@@ -25,7 +25,7 @@ import threading
 import numpy as np
 
 from inspection.brain.live import SupervisorMover
-from inspection.cell.geometry import BOX_PCT
+from inspection.cell.geometry import object_box
 from inspection.cell.world import RobotCell
 from inspection.motion.ik import UR5eIK
 
@@ -66,20 +66,16 @@ def rank_candidates(cands, planner):
 def _mirror_object_box(world, acc) -> None:
     """Copy the object's collision box from the accumulator onto `world`.
 
-    Read-only on `acc` — `aabb()` returns fresh numpy arrays, nothing here
-    mutates the accumulator — and `world` is the driver's OWN `RobotCell`,
-    never `sup.world`. Mirrors `machine.py:_recenter`'s own box math (same
-    2 cm margin, same 5 cm floor) so this thread's ranking plans agree with
+    Read-only on `acc`, and `world` is the driver's OWN `RobotCell`, never
+    `sup.world`. Uses `geometry.object_box` — the SAME function
+    `machine._recenter` calls — so this thread's ranking plans agree with
     what the Supervisor's real planner will see when it plans for real.
     """
-    aabb = acc.aabb(pct=BOX_PCT)
-    if aabb is None:
+    pts = acc.points
+    if pts is None or not len(pts):
         return
-    mn, mx = aabb
-    dims = np.maximum(mx - mn + 0.04, 0.05)
-    mid = (mn + mx) / 2
-    world.set_object("object", dims.tolist(), [*mid.tolist(), 0.0, 0.0, 0.0],
-                     parent="base")
+    dims, pose = object_box(pts)
+    world.set_object("object", dims.tolist(), pose, parent="base")
 
 
 def _default_planner(sup, seed: int = 0):
