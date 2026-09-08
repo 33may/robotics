@@ -36,6 +36,8 @@ interface ViewsState {
 interface RunStatus { phase?: string; target?: unknown }
 /** Only the kinds matter here; the trace panel owns the full shape. */
 interface TraceState { events?: { kind: string }[] }
+/** Only `source` matters here; InspectionApp owns the full shape. */
+interface RunMeta { source?: string }
 
 const ACTIONABLE: ViewCellState[] = ['available', 'blocked', 'pending', 'previewing'];
 
@@ -61,7 +63,13 @@ export function ActionsPanel(_props: PanelProps) {
   const events = trace?.events ?? [];
   const driving =
     events.some((e) => e.kind === 'run') && !events.some((e) => e.kind === 'answer');
-  const approveOnly = forced ?? driving;
+  // A collect sweep is "driving" the whole run (Anton 2026-09-08): the
+  // SweepDriver names every target, so the decision left is the same yes/no
+  // as a brain request and the grid is 35 accidental redirects. It has no
+  // trace to infer that from, hence the explicit `run/meta` gate; the
+  // toggle still brings the grid back for a deliberate redirect.
+  const collect = useTopicPayload<RunMeta>('run/meta')?.source === 'data-engine';
+  const approveOnly = forced ?? (driving || collect);
 
   const cells = views?.cells ?? [];
   const rows = [...new Set(cells.map((c) => c.v))].sort((a, b) => b - a);
@@ -81,7 +89,10 @@ export function ActionsPanel(_props: PanelProps) {
       </div>
 
       {approveOnly ? (
-        <div className="actions-approve">
+        // Inline flex, not a css edit: the container must grow like the
+        // grid-mode survey button does (`.act { flex: 1 }` on a panel-level
+        // child), so its one button is the same full-height target.
+        <div className="actions-approve" style={{ flex: 1, minHeight: 0 }}>
           {surveyActive && survey ? (
             <button
               className={`act act-${survey}`}
