@@ -35,6 +35,12 @@ from inspection.motion.ik import UR5eIK
 #: human or the AI orchestrator, picked this cell.
 DECIDER = "sweep-shortest"
 
+#: `--auto`'s dwell between "previewing" and the driver's own confirm: the
+#: 3D view shows the chosen cell and the planned path for this long before
+#: the arm moves, so the operator watching the cell still sees every move
+#: coming — the approval is automatic, the transparency is not.
+AUTO_DWELL_S = 1.0
+
 
 def joint_l1(path) -> float:
     """Cost of a planned path: sum of |dq| over consecutive waypoints."""
@@ -131,7 +137,8 @@ class SweepDriver(threading.Thread):
     `rig.q()` on hardware the teardown is in the middle of closing.
     """
 
-    def __init__(self, sup, run_dir, on_event=None, planner=None):
+    def __init__(self, sup, run_dir, on_event=None, planner=None,
+                 auto: bool = False):
         super().__init__(name="sweep-driver", daemon=True)
         self.sup = sup
         self.run_dir = run_dir
@@ -154,7 +161,9 @@ class SweepDriver(threading.Thread):
             self.on_event(state, **kw)
 
         self.mover = SupervisorMover(sup, run_dir, on_event=_on_mover_event,
-                                     decider=DECIDER)
+                                     decider=DECIDER,
+                                     auto_confirm_s=AUTO_DWELL_S if auto
+                                     else None)
 
     def _candidates(self):
         """Reachable, unvisited, unblocked — straight off the Supervisor.

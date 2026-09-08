@@ -70,7 +70,7 @@ class SupervisorMover:
     """
 
     def __init__(self, sup, run_dir, on_event=None, plan_timeout=PLAN_TIMEOUT_S,
-                 decider: str = "ai"):
+                 decider: str = "ai", auto_confirm_s: float | None = None):
         self.sup = sup
         self.run_dir = run_dir
         self.on_event = on_event or (lambda *a, **k: None)
@@ -81,6 +81,17 @@ class SupervisorMover:
         #: drove and one a human clicked through is otherwise invisible on
         #: disk. A sweep passes its own id (task 9).
         self.decider = decider
+        #: `collect --auto` (Anton 2026-09-08): after `awaiting_approval`,
+        #: wait this long and press confirm OURSELVES — through the same
+        #: `view/confirm` message the button sends, so every dispatcher
+        #: validation still applies and the preview still renders in the 3D
+        #: view for the dwell. None (the default, and the only value Flow A
+        #: ever passes) keeps the gate human: "brain may request, only a
+        #: human confirms" stands for the AI — a data sweep with an operator
+        #: at the cell is the one sanctioned exception. STOP and the pendant
+        #: outrank it either way, and an operator click or redirect during
+        #: the dwell wins: our late confirm is then just a logged no-op.
+        self.auto_confirm_s = auto_confirm_s
 
     # ------------------------------------------------------------ helpers
     def _wait(self, predicate, timeout=None):
@@ -167,8 +178,14 @@ class SupervisorMover:
             return False, (f"{_json(cell)} could not be planned — no collision-"
                            f"free path was found. The arm has not moved.")
 
-        # 2. the human gate. Deliberately un-timed.
+        # 2. the human gate. Deliberately un-timed — unless this mover was
+        #    built with `auto_confirm_s`, in which case the gate is a dwell:
+        #    long enough for the 3D view to show where the arm is about to
+        #    go, then this mover presses the same button.
         self.on_event("awaiting_approval", cell=_json(cell))
+        if self.auto_confirm_s is not None:
+            time.sleep(self.auto_confirm_s)
+            self.sup.events.put({"cmd": "view/confirm", "target": _json(cell)})
         got = self._wait(lambda p, t: not (p == "previewing" and t == cell))
         phase, target = got
 

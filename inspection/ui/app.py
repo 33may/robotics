@@ -80,7 +80,8 @@ def _present(url: str, no_window: bool, gui: str, open_browser: bool = True) -> 
 
 def mock(port: int = 8767, bus_port: int = 8765, seed: int = 0,
          no_window: bool = False, gui: str = "qt", collect: bool = False,
-         run_root: str | None = None, open_browser: bool = True) -> int:
+         run_root: str | None = None, open_browser: bool = True,
+         auto: bool = False) -> int:
     """A real Supervisor + FakeRig run with no hardware, driven over the real bus.
 
     `bus_port` is passed to the UI as `?bus=`, so a mock can run beside a real
@@ -113,7 +114,8 @@ def mock(port: int = 8767, bus_port: int = 8765, seed: int = 0,
     print(f"bus  ws://127.0.0.1:{bus.port}", flush=True)
 
     if collect:
-        start_mock_collect(bus, pub, mock_run, seed=seed)
+        # `auto` only means anything to Flow B — Flow A's gate is the point.
+        start_mock_collect(bus, pub, mock_run, seed=seed, auto=auto)
     else:
         start_mock(bus, pub, mock_run, seed=seed)
 

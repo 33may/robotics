@@ -134,7 +134,8 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     return sup
 
 
-def start_mock_collect(bus, pub, outdir, seed: int = 0) -> Supervisor:
+def start_mock_collect(bus, pub, outdir, seed: int = 0,
+                       auto: bool = False) -> Supervisor:
     """`start_mock`'s Flow B twin: the same real `Supervisor`/`FakeRig`, but
     `source="data-engine"`, no `brain/ask` handler, and a `SweepDriver` in
     place of an operator picking cells one at a time.
@@ -155,7 +156,8 @@ def start_mock_collect(bus, pub, outdir, seed: int = 0) -> Supervisor:
         source="data-engine", rig="fake", question=None,
         config=config_snapshot({"segmenter": "stub"}),
         view_methods=[viewsphere_method()],
-        q_survey=[float(v) for v in q_survey], tags=["mock"])
+        q_survey=[float(v) for v in q_survey],
+        tags=["mock", "auto"] if auto else ["mock"])
     pub.publish_run_meta(source="data-engine", name=outdir.name, object=None,
                          question=None)
     sup = Supervisor(rig, pub, writer, q_survey=q_survey, seed=seed,
@@ -179,7 +181,8 @@ def start_mock_collect(bus, pub, outdir, seed: int = 0) -> Supervisor:
     from inspection.brain.live import make_event_sink
     from inspection.run.collect import SweepDriver
     driver = SweepDriver(sup, outdir,
-                         on_event=make_event_sink(writer, pub, label="sweep"))
+                         on_event=make_event_sink(writer, pub, label="sweep"),
+                         auto=auto)
     driver.start()
 
     def pump():

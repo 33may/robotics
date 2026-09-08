@@ -172,3 +172,48 @@ def test_flow_b_no_ai_panel_sweep_writes_a_valid_data_engine_run(mock_app_collec
               and s.view_state.decider == "sweep-shortest" for s in run.steps)
     report = run.validate()
     assert report.ok, [(p.severity, p.where, p.what) for p in report.problems]
+
+
+def test_flow_b_auto_collects_without_a_single_click(mock_app_collect_auto, page):
+    """`collect --auto`: the sweep approves itself — survey and cells — with
+    ZERO clicks on this page; the only human act left is finish. The page is
+    still open on purpose: the previews keep rendering, they just no longer
+    wait for anyone."""
+    page.set_default_timeout(30_000)
+    page.goto(mock_app_collect_auto.url)
+    page.wait_for_selector("[data-testid=collect-mode]", timeout=30_000)
+
+    def captured_at_least(n):
+        def check() -> bool:
+            try:
+                return len(Run.load(mock_app_collect_auto.run_dir).captured) >= n
+            except Exception:
+                return False
+        return check
+
+    # Survey + two sweep cells fused to disk with no click anywhere — the
+    # dwell is 1 s/view, so 60 s is generous even on a slow machine.
+    _wait_for(captured_at_least(3), timeout=60.0,
+             msg="auto sweep never captured 3 steps on its own")
+
+    page.click("[data-testid=finish-button]")
+
+    def run_completed() -> bool:
+        try:
+            return Run.load(
+                mock_app_collect_auto.run_dir).record.status == "completed"
+        except Exception:
+            return False
+
+    _wait_for(run_completed, timeout=30.0,
+             msg="auto run never closed completed after finish")
+
+    mock_app_collect_auto.shutdown()
+
+    run = Run.load(mock_app_collect_auto.run_dir)
+    assert "auto" in run.record.tags
+    assert run.record.status == "completed"
+    assert any(s.id > 0 and s.view_state is not None
+              and s.view_state.decider == "sweep-shortest" for s in run.steps)
+    report = run.validate()
+    assert report.ok, [(p.severity, p.where, p.what) for p in report.problems]

@@ -83,7 +83,7 @@ def _wait_ready(url: str, proc: subprocess.Popen, log_path: Path,
         f"{log_path.read_text() if log_path.exists() else '(no log)'}")
 
 
-def _launch(tmp_path: Path, collect: bool) -> MockApp:
+def _launch(tmp_path: Path, collect: bool, auto: bool = False) -> MockApp:
     run_root = tmp_path / "run"
     port, bus_port = _free_port(), _free_port()
     # `?bus=` is how the frontend learns which bus port to dial
@@ -98,7 +98,7 @@ def _launch(tmp_path: Path, collect: bool) -> MockApp:
         f"--port={port}", f"--bus_port={bus_port}",
         f"--run_root={run_root}",
         "--no_window", "--open_browser=False",
-        f"--collect={collect}",
+        f"--collect={collect}", f"--auto={auto}",
     ]
     # Logs go to a real file, not a PIPE: a subprocess that runs for the
     # length of a whole test writes enough log lines to fill a pipe's OS
@@ -124,6 +124,15 @@ def mock_app_live(tmp_path):
 @pytest.fixture
 def mock_app_collect(tmp_path):
     app = _launch(tmp_path, collect=True)
+    try:
+        yield app
+    finally:
+        app.shutdown()
+
+
+@pytest.fixture
+def mock_app_collect_auto(tmp_path):
+    app = _launch(tmp_path, collect=True, auto=True)
     try:
         yield app
     finally:

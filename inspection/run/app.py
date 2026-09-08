@@ -337,10 +337,15 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
 def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
            port: int = 8767, bus_port: int = 8765, no_window: bool = False,
            seed: int = 0, gui: str = "qt", name: str | None = None,
-           object: str | None = None):
+           object: str | None = None, auto: bool = False):
     """One data-collection sweep — Flow B. `outdir` defaults to
     `data/datasets/<DDMM-name>`: sweeps are training data, not inspection
     runs, and they land in their own archive (`ls --data` lists them).
+
+    `--auto` removes the approval CLICK, not the approval WINDOW: every view
+    still plans, previews in the 3D panel for `AUTO_DWELL_S`, and only then
+    confirms itself (`SupervisorMover.auto_confirm_s`) — STOP, finish and
+    exit keep working throughout, and the run is tagged "auto" on disk.
 
     Same composition as `run()` minus cognition/`brain/ask` — no VLM, no
     question, nothing under `ai/` — plus a `SweepDriver` in place of an
@@ -394,7 +399,8 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
             source="data-engine", rig="real", object=object, question=None,
             config=config_snapshot({"segmenter": "sam3"}),
             view_methods=[viewsphere_method(r)],
-            q_survey=[float(v) for v in q_survey])
+            q_survey=[float(v) for v in q_survey],
+            tags=["auto"] if auto else ())
         pub.publish_run_meta(source="data-engine", name=name or outdir.name,
                              object=object, question=None)
         rig = RealRig(None, stop_event, outdir, ip)   # world set below
@@ -421,7 +427,8 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
         from inspection.brain.live import make_event_sink
         driver = SweepDriver(sup, outdir,
                              on_event=make_event_sink(writer, pub,
-                                                      label="sweep"))
+                                                      label="sweep"),
+                             auto=auto)
         driver.start()
 
         def pump():
