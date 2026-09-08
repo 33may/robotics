@@ -64,10 +64,11 @@ def _require_build() -> bool:
     return False
 
 
-def _present(url: str, no_window: bool, gui: str) -> None:
+def _present(url: str, no_window: bool, gui: str, open_browser: bool = True) -> None:
     print(f"ui   {url}", flush=True)
     if no_window:
-        webbrowser.open(url)
+        if open_browser:
+            webbrowser.open(url)
         print("ctrl-c to stop", flush=True)
         try:
             threading.Event().wait()
@@ -78,17 +79,28 @@ def _present(url: str, no_window: bool, gui: str) -> None:
 
 
 def mock(port: int = 8767, bus_port: int = 8765, seed: int = 0,
-         no_window: bool = False, gui: str = "qt") -> int:
+         no_window: bool = False, gui: str = "qt", collect: bool = False,
+         run_root: str | None = None, open_browser: bool = True) -> int:
     """A real Supervisor + FakeRig run with no hardware, driven over the real bus.
 
     `bus_port` is passed to the UI as `?bus=`, so a mock can run beside a real
     loop without the two fighting over the default port.
+
+    `collect` swaps Flow A (`start_mock` — ask, survey, brain-driven views)
+    for Flow B (`start_mock_collect` — no cognition, `SweepDriver` walks the
+    whole shell) — same bus, same rig, same window entry point.
+
+    `run_root`, given, replaces this command's own tempdir for the run
+    directory's parent — lets a caller (the e2e harness) know the run dir up
+    front instead of scraping stdout. `open_browser=False` skips the
+    `webbrowser.open` call under `--no_window` — a harness driving its own
+    browser (Playwright) does not want a second, real one popping up too.
     """
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     if not _require_build():
         return 1
 
-    from inspection.ui.mock import start_mock
+    from inspection.ui.mock import start_mock, start_mock_collect
 
     bus = PortholeBus(app="inspection", port=bus_port).start()
     # The mock writes real capture files now, so give the publisher its run
@@ -96,16 +108,19 @@ def mock(port: int = 8767, bus_port: int = 8765, seed: int = 0,
     # the cloud/chain panels are blank in a way no check would notice.
     # NOT created here: `start_mock`'s RunWriter creates the run directory,
     # and it refuses one that already exists (evidence is never overwritten).
-    mock_run = Path(tempfile.mkdtemp()) / "mock-run"
+    mock_run = (Path(run_root) if run_root else Path(tempfile.mkdtemp())) / "mock-run"
     pub = InspectionPublisher(bus, run_dir=mock_run)
     print(f"bus  ws://127.0.0.1:{bus.port}", flush=True)
 
-    start_mock(bus, pub, mock_run, seed=seed)
+    if collect:
+        start_mock_collect(bus, pub, mock_run, seed=seed)
+    else:
+        start_mock(bus, pub, mock_run, seed=seed)
 
     url = serve_ui(DIST, port=port, assets=_asset_mounts(mock_run))
     if bus_port != 8765:
         url = f"{url}/?bus={bus_port}"
-    _present(url, no_window, gui)
+    _present(url, no_window, gui, open_browser=open_browser)
     bus.stop()
     return 0
 

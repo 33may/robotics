@@ -22,3 +22,18 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 include = ["inspection*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "e2e: headless-browser end-to-end tests over a live mock app subprocess (slow; excluded from the default collection by norecursedirs below — run explicitly with `pytest inspection/tests/e2e -m e2e`)",
+]
+# Keeps `pytest inspection/tests` fast and hardware/browser-free by default.
+# Pattern includes pytest's own defaults (docs: "norecursedirs") plus the e2e
+# dir; a pattern containing a path separator is matched against the whole
+# path, not just the directory's basename, so this excludes it wherever the
+# repo is checked out.
+norecursedirs = [
+    "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv",
+    "{arch}",
+    "inspection/tests/e2e",
+]
