@@ -161,6 +161,19 @@ export function ActionsPanel(_props: PanelProps) {
             no-op. */}
         <button className="act act-stop"
                 onClick={() => send('run/stop')}>STOP</button>
+        {collect ? (
+          // `run/finish` = exit's safe shutdown, closed as "completed":
+          // enough views is a decision, not an abort. Collect-only — a live
+          // run's completion is its answer, not a button. `act-visited`
+          // borrows the green "done" colour without a css edit.
+          <button
+            className="act act-visited"
+            data-testid="finish-button"
+            onClick={() => send('run/finish')}
+          >
+            finish
+          </button>
+        ) : null}
         <button className="act act-exit" onClick={() => send('run/exit')}>exit</button>
       </div>
     </div>

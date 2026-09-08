@@ -147,10 +147,27 @@ def test_flow_b_no_ai_panel_sweep_writes_a_valid_data_engine_run(mock_app_collec
     _wait_for(sweep_step_written, timeout=60.0,
              msg="no sweep-shortest step ever reached phase=fused on disk")
 
+    # End through the FINISH button, not a bare shutdown: `run/finish` is the
+    # operator declaring the run done, and the whole point of the path is
+    # that the record closes "completed" (a bare exit closes "aborted") with
+    # the decision as a `finished` row in events.jsonl.
+    page.click("[data-testid=finish-button]")
+
+    def run_completed() -> bool:
+        try:
+            return Run.load(mock_app_collect.run_dir).record.status == "completed"
+        except Exception:
+            return False
+
+    _wait_for(run_completed, timeout=30.0,
+             msg="run never closed completed after finish")
+
     mock_app_collect.shutdown()
 
     run = Run.load(mock_app_collect.run_dir)
     assert run.record.source == "data-engine"
+    assert run.record.status == "completed"
+    assert any(e.kind == "finished" for e in run.events)
     assert any(s.id > 0 and s.view_state is not None
               and s.view_state.decider == "sweep-shortest" for s in run.steps)
     report = run.validate()

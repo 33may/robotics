@@ -203,7 +203,10 @@ def start_mock_collect(bus, pub, outdir, seed: int = 0) -> Supervisor:
                 np.save(d / "cloud.npy", sup.acc.points)
                 # Row-aligned with cloud.npy, exactly as `finish_run` saves it.
                 np.save(d / "colors.npy", sup.acc.colors)
-            writer.close("completed" if driver.finished else "aborted")
+            # Operator finish counts as completed, exactly like the real
+            # teardown in `run/app.py:collect`.
+            writer.close("completed" if driver.finished or sup.finish_requested
+                         else "aborted")
 
     threading.Thread(target=run_and_close, daemon=True).start()
     return sup

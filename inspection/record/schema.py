@@ -457,7 +457,8 @@ class OperatorEvent(BaseModel):
 
     t: float
     kind: Literal["requested", "awaiting_approval", "approved", "redirected",
-                  "cancelled", "captured", "blocked", "stopped", "fault"]
+                  "cancelled", "captured", "blocked", "stopped", "fault",
+                  "finished"]
     step_id: int | None = None
     detail: str | None = None
 

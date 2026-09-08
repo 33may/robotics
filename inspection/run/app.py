@@ -473,8 +473,12 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
                     # one minus `ai/**` (flows-design §6), and a colourless
                     # cloud is not the same artifact.
                     np.save(d / "colors.npy", acc.colors)
-                writer.close("completed" if driver is not None
-                             and driver.finished else "aborted")
+                # Completed two ways: the sweep exhausted the shell, or the
+                # operator pressed finish — both are the run ending as
+                # intended. Only an unmarked exit is an abort.
+                finished = (driver is not None and driver.finished) or \
+                           (sup is not None and sup.finish_requested)
+                writer.close("completed" if finished else "aborted")
             except Exception:
                 log.exception("could not close the run record")
         if rig is not None:

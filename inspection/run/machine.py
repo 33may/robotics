@@ -117,6 +117,10 @@ class Supervisor:
         self._reach = {}            # cached sphere.reachability(), worker-refreshed
         self._exit_after = False    # run/exit arrived mid-action, shut down at its end
         self._shutting_down = False  # set by request_shutdown (signal thread)
+        #: `run/finish`: the operator declared the run DONE, not abandoned.
+        #: The machine only remembers it — the app teardown reads it to close
+        #: the record "completed" where a bare exit closes "aborted".
+        self.finish_requested = False
         self._last_cap_dir = None   # capture dir of the most recent capture()
         self._pending_request = None  # target deferred while a plan is in flight
         self._pose_ack = threading.Event()  # dispatcher -> exec worker: pose_active clear
@@ -218,6 +222,8 @@ class Supervisor:
             self._on_run_stop()
         elif cmd == "run/exit":
             self._on_run_exit()
+        elif cmd == "run/finish":
+            self._on_run_finish()
         else:
             log.warning("unknown command: %r", cmd)
             self.pub.log("warn", f"unknown command: {cmd!r}")
@@ -326,6 +332,17 @@ class Supervisor:
             self.stop_event.set()
         else:
             log.info("run/stop no-op in phase %s", self.phase)
+
+    def _on_run_finish(self):
+        # Exactly `run/exit`'s safe shutdown (stop if moving, defer past any
+        # in-flight worker), remembered as a DECISION: the flag flips the
+        # teardown's closing status to "completed", and the events row makes
+        # the record say who ended the run and that it was on purpose.
+        if not self.finish_requested:   # a second press is just an exit
+            self.finish_requested = True
+            self._write("finished event", self.writer.event, "finished",
+                        detail="operator finished the run")
+        self._on_run_exit()
 
     def _on_run_exit(self):
         # exit during an action = stop first (if moving), then shut down once
