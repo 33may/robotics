@@ -120,6 +120,15 @@ class SweepDriver(threading.Thread):
     `cands` is not) or a failed survey leave it False: something stopped
     this run short of covering the shell, and pretending otherwise would
     lose that from the record.
+
+    ENDING. The driver is not the run's owner and cannot be joined by one
+    that has already torn its hardware down, so it watches for two ways out
+    and checks BOTH before every request: `stop()` (the composition root's
+    teardown, `run/app.py:collect`) and a Supervisor that has reached
+    `fault`/`done`. Without them, a faulted run leaves this thread ranking
+    an unchanged candidate set forever — every request refused instantly by
+    `SupervisorMover`'s own busy check — hammering `plan_to_cell` and
+    `rig.q()` on hardware the teardown is in the middle of closing.
     """
 
     def __init__(self, sup, run_dir, on_event=None, planner=None):
@@ -128,6 +137,7 @@ class SweepDriver(threading.Thread):
         self.run_dir = run_dir
         self.on_event = on_event or (lambda *a, **k: None)
         self.finished = False
+        self._stop_flag = threading.Event()
         #: This thread's OWN collision world/IK — see the module docstring.
         self._world = RobotCell()
         self._ik = UR5eIK()
@@ -159,12 +169,32 @@ class SweepDriver(threading.Thread):
                 if r is not None and c not in self.sup.visited
                 and c not in self.sup.blocked]
 
+    def stop(self):
+        """Ask the sweep to end at its next check. Idempotent, never blocks.
+
+        The composition root calls this FIRST in its teardown, before the rig
+        is closed: the driver reads `rig.q()` and plans against its own world
+        on every pass, and neither should be happening while the RTDE
+        interface and the camera are being shut down.
+        """
+        self._stop_flag.set()
+
+    def _should_stop(self) -> bool:
+        """Both ways out. `fault`/`done` are terminal for the whole run —
+        no request can ever be accepted again — so continuing to rank from
+        here is pure spin."""
+        return self._stop_flag.is_set() or self.sup.phase in ("fault", "done")
+
     def run(self):
+        if self._should_stop():
+            return
         ok, reason = self.mover.request("survey")
         if not ok:
             self.on_event("sweep_aborted", reason=reason)
             return
         while True:
+            if self._should_stop():
+                return                # finished stays False: cut short
             cands = self._candidates()
             if not cands:
                 self.finished = True
@@ -183,6 +213,11 @@ class SweepDriver(threading.Thread):
                 return
             self._redirected = False
             for cell in ranked:
+                # Checked BETWEEN candidates too, not just per pass: a fault
+                # or a shutdown mid-pass would otherwise walk the whole ranked
+                # list collecting instant refusals before anyone noticed.
+                if self._should_stop():
+                    return
                 ok, reason = self.mover.request(cell)
                 if ok or self._redirected:
                     break

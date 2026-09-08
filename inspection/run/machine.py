@@ -437,8 +437,15 @@ class Supervisor:
             # here: `visited`/`current`/`blocked` have just been updated, so
             # the ViewState this attaches is the candidate set as it stands
             # after the fuse — which is what the next choice was made from.
-            self._write("fused step", self.writer.write_fused, sid,
-                        ev["geometry"], self._view_state(sid, target))
+            # A THUNK, not evaluated arguments: `_view_state` walks the whole
+            # shell (reachability, poses, the accumulator's AABB) and any
+            # throw inside it would otherwise happen BEFORE `_write` is
+            # entered — outside its guard, escaping this handler and leaving
+            # the dispatcher wedged in `fusing` with the arm on the table.
+            # Inside, a failure costs this one fused record (the step stays
+            # `captured`, which validates) and the machine still reaches idle.
+            self._write("fused step", lambda: self.writer.write_fused(
+                sid, ev["geometry"], self._view_state(sid, target)))
             self._write("captured event", self.writer.event, "captured",
                         step_id=sid)
             self._publish_object()

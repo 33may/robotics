@@ -16,6 +16,7 @@ import time
 from pathlib import Path
 
 import pytest
+from playwright.sync_api import expect
 
 from inspection.record.run import Run
 
@@ -88,17 +89,28 @@ def test_flow_a_ask_approve_writes_a_valid_live_run(mock_app_live, page):
 
 
 def test_flow_b_no_ai_panel_sweep_writes_a_valid_data_engine_run(mock_app_collect, page):
-    """Flow B: no `run/meta.source=="data-engine"` -> no trace panel, no ask
-    box (`InspectionApp.tsx`'s `collectMode` gate) -> the sweep proposes
-    cells one at a time, cheapest first -> a valid data-engine run with at
-    least one non-survey step the sweep (not a human or the AI) chose.
+    """Flow B: `run/meta.source=="data-engine"` -> the `collect-mode` marker,
+    and with it no trace panel and no ask box (`InspectionApp.tsx`'s
+    `collectMode` gate) -> the sweep proposes cells one at a time, cheapest
+    first -> a valid data-engine run with at least one non-survey step the
+    sweep (not a human or the AI) chose.
     """
     SCREEN_DIR.mkdir(parents=True, exist_ok=True)
     page.set_default_timeout(30_000)
 
     page.goto(mock_app_collect.url)
-    assert page.locator("[data-testid=trace-panel]").count() == 0
-    assert page.locator("[data-testid=ask-input]").count() == 0
+    # The POSITIVE marker first (`InspectionApp.tsx`'s collect branch): it is
+    # the only proof the retained `run/meta` actually arrived and the
+    # dashboard remounted into collect mode. Asserting the absences alone
+    # would pass on a page that had not yet received the topic — vacuously,
+    # and racily, because the live layout is what renders until it does.
+    page.wait_for_selector("[data-testid=collect-mode]", timeout=30_000)
+    # Retrying expectations, not one-shot `count()`: the marker and the
+    # filtered panel set come from the same render, but the dashboard applies
+    # its layout in `onReady`, so give the absences the same patience the
+    # presence got.
+    expect(page.locator("[data-testid=trace-panel]")).to_have_count(0)
+    expect(page.locator("[data-testid=ask-input]")).to_have_count(0)
 
     # Survey first, then two sweep-chosen cells — enough to prove the sweep
     # is really driving repeated approvals, not just the one-shot survey.

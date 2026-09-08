@@ -201,6 +201,43 @@ class SupervisorMover:
         return True, "reached and captured"
 
 
+#: The mover beats that are also `OperatorEvent.kind` literals
+#: (`record/schema.py`). A DRIVER's own states — `sweep_stuck`,
+#: `sweep_aborted` (`run/collect.py`) — deliberately are not: they go to the
+#: log only, because a kind the schema does not declare fails validation on
+#: every line and would turn a stuck sweep into a wall of write errors.
+EVENT_KINDS = frozenset({"requested", "awaiting_approval", "approved",
+                         "redirected", "cancelled", "captured"})
+
+
+def make_event_sink(writer, pub, label: str = "brain"):
+    """A mover `on_event` sink that puts the approval chain on disk.
+
+    `writer` is anything carrying the `event(kind, step_id=, detail=)` verb
+    `RunWriter` and `AIRunWriter` share — they append to the SAME run-level
+    `events.jsonl`, which is why a flow with no AI session (Flow B's sweep,
+    `run/app.py:collect`) can hand its plain `RunWriter` here and get the same
+    rows a brain-driven run writes.
+
+    Thread-safety: `event()` appends one line under O_APPEND, atomic at these
+    sizes, so this running on the mover's thread while the dispatcher writes
+    its own stopped/fault rows to the same file cannot interleave mid-line.
+
+    Never raises into the mover: a run that loses a beat is bad, the thread
+    that was mid-approval dying is worse.
+    """
+    def on_event(state, **kw):
+        if state in EVENT_KINDS:
+            try:
+                detail = " ".join(f"{k}={v}" for k, v in sorted(kw.items())
+                                  if k != "step_id") or None
+                writer.event(state, step_id=kw.get("step_id"), detail=detail)
+            except Exception:                        # noqa: BLE001
+                log.exception("could not record the %r beat", state)
+        pub.log("info", f"{label}: {state} {kw.get('cell', '')}")
+    return on_event
+
+
 def make_beat_handler(trace, ai, pub):
     """The mover's `on_event` sink: `events.jsonl` first, then trace and log.
 
@@ -215,18 +252,15 @@ def make_beat_handler(trace, ai, pub):
     `phase`, whatever a beat carries — because `OperatorEvent` has one free
     text field and no place for structure.
 
-    Never raises into the mover: a run that loses a beat is bad, a brain
-    thread that dies mid-approval is worse.
+    The events half is `make_event_sink` over the AI session's writer: one
+    implementation for both flows, so a sweep's approval chain and a brain's
+    land in the same file in the same shape.
     """
+    to_disk = make_event_sink(ai, pub, label="brain")
+
     def on_event(state, **kw):
         trace.event("approval", state=state, **kw)
-        try:
-            detail = " ".join(f"{k}={v}" for k, v in sorted(kw.items())
-                              if k != "step_id") or None
-            ai.event(state, step_id=kw.get("step_id"), detail=detail)
-        except Exception:                            # noqa: BLE001
-            log.exception("could not record the %r beat", state)
-        pub.log("info", f"brain: {state} {kw.get('cell', '')}")
+        to_disk(state, **kw)
     return on_event
 
 
@@ -253,8 +287,6 @@ def make_ask_handler(sup, pub, run_dir, cognition, writer):
     running = threading.Event()
 
     def ask(question):
-        from inspection.brain.loop import Brain
-
         question = str(question or "").strip()
         if not question:
             pub.log("warn", "brain/ask with no question")
@@ -264,33 +296,53 @@ def make_ask_handler(sup, pub, run_dir, cognition, writer):
             return
         running.set()
 
-        # The trace is opened HERE, not inside Brain, because the survey is
-        # part of the run and has to be visible while it happens: the question
-        # appears in the panel the moment it is asked, and the survey's
-        # approval beats land under it. Brain appends to this same writer.
-        from inspection.brain.loop import DEFAULT_MODEL
-        from inspection.brain.render import menu_def
-        from inspection.brain.trace import TraceWriter
-        from inspection.record.ai_writer import AIRunWriter, next_seq
+        # EVERY line of setup is guarded, because this runs ON THE COMMAND
+        # PUMP (`run/app.py:pump`): an exception escaping here kills the one
+        # thread that carries the browser's buttons to the Supervisor, and the
+        # operator is left with a UI whose Stop no longer works. A question
+        # that cannot be started is a message in the log; a dead pump is a
+        # robot nobody can command.
+        try:
+            # The trace is opened HERE, not inside Brain, because the survey is
+            # part of the run and has to be visible while it happens: the
+            # question appears in the panel the moment it is asked, and the
+            # survey's approval beats land under it. Brain appends to this same
+            # writer.
+            from inspection.brain.loop import DEFAULT_MODEL, Brain
+            from inspection.brain.render import menu_def
+            from inspection.brain.trace import TraceWriter
+            from inspection.record.ai_writer import AIRunWriter, next_seq
 
-        menu = menu_def()
-        ai = AIRunWriter.create(run_dir, seq=next_seq(run_dir),
-                                orchestrator_model=DEFAULT_MODEL,
-                                menu_id=menu.menu_id, menu_hash=menu.content_hash)
-        ai.menu_def(menu)
-        writer.set_question(question)
+            menu = menu_def()
+            ai = AIRunWriter.create(run_dir, seq=next_seq(run_dir),
+                                    orchestrator_model=DEFAULT_MODEL,
+                                    menu_id=menu.menu_id,
+                                    menu_hash=menu.content_hash)
+            ai.menu_def(menu)
+            writer.set_question(question)
+            # The retained `run/meta` was published at boot with no question
+            # (there was none yet). Republish it now the run has one, so a UI
+            # window opened mid-run reads the question off the topic rather
+            # than off the trace it may have missed the head of.
+            pub.publish_run_meta(**writer.run_meta())
 
-        trace = TraceWriter(ai.dir)
-        # `cognition` is on the header event because a mock run writes a trace
-        # of exactly the same shape as a real one — same wiring, by design —
-        # so without the label a screenshot of one is a screenshot of either.
-        trace.event("run", question=question, model=DEFAULT_MODEL,
-                    cognition=cognition.label, run_dir=str(run_dir),
-                    live=True, captured=0)
+            trace = TraceWriter(ai.dir)
+            # `cognition` is on the header event because a mock run writes a
+            # trace of exactly the same shape as a real one — same wiring, by
+            # design — so without the label a screenshot of one is a screenshot
+            # of either.
+            trace.event("run", question=question, model=DEFAULT_MODEL,
+                        cognition=cognition.label, run_dir=str(run_dir),
+                        live=True, captured=0)
 
-        mover = SupervisorMover(sup, run_dir,
-                                on_event=make_beat_handler(trace, ai, pub))
-        TraceWatcher(pub, ai.dir).start()
+            mover = SupervisorMover(sup, run_dir,
+                                    on_event=make_beat_handler(trace, ai, pub))
+            TraceWatcher(pub, ai.dir).start()
+        except Exception:                            # noqa: BLE001
+            log.exception("could not start the question")
+            pub.log("error", "could not start the question — see the console")
+            running.clear()
+            return
 
         def go():
             try:

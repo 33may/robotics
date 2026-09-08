@@ -204,6 +204,57 @@ def test_close_aborted_partial_run_is_valid(tmp_path):
     assert run.status == "aborted" and run.steps == [sid]
 
 
+def test_writes_after_close_raise(tmp_path):
+    """A closed run is evidence: its manifest hashes every binary and its
+    run.json is final, so a later write is a record its own receipt no longer
+    describes. Loud, never silently dropped."""
+    w = _writer(tmp_path)
+    w.close("aborted")
+    with pytest.raises(RuntimeError, match="run is closed"):
+        w.event("captured", step_id=0)
+    with pytest.raises(RuntimeError, match="run is closed"):
+        w.begin_step({"method": "vs1", "address": [3, 0]})
+    with pytest.raises(RuntimeError, match="run is closed"):
+        w.set_question("too late")
+
+
+def test_concurrent_run_json_writers_never_collide(tmp_path):
+    """`set_question` (command pump) racing a step write (dispatcher).
+
+    Both flush run.json through `_write_json`, from different threads. With
+    one temp name per process they scribbled over each other's half-written
+    bytes; the name carries the thread id for exactly this.
+    """
+    import threading
+
+    w = _writer(tmp_path)
+    sid, _ = w.begin_step({"method": "vs1", "address": [3, 0]})
+    errors = []
+
+    def hammer(fn):
+        try:
+            for i in range(60):
+                fn(i)
+        except Exception as e:                        # noqa: BLE001
+            errors.append(e)
+
+    threads = [
+        threading.Thread(target=hammer,
+                         args=(lambda i: w.set_question(f"q{i}"),)),
+        threading.Thread(target=hammer,
+                         args=(lambda i: _capture(w, sid, t_captured=float(i)),)),
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(30)
+    assert not errors, errors
+    # And the file both were writing is still parseable at the end.
+    run = RunRecord.model_validate_json(
+        (tmp_path / "0309-boxA" / "run.json").read_text())
+    assert run.question.startswith("q")
+
+
 def test_no_temp_files_left_behind(tmp_path):
     w = _writer(tmp_path)
     sid, _ = w.begin_step({"method": "vs1", "address": [3, 0]})

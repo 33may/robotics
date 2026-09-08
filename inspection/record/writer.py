@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -67,10 +68,17 @@ def git_sha() -> str:
 
 
 def _write_json(path: Path, model: RecordModel) -> None:
-    """Atomic, write-strict JSON write: validate -> temp -> rename."""
+    """Atomic, write-strict JSON write: validate -> temp -> rename.
+
+    The temp name carries the THREAD id as well as the pid: run.json has more
+    than one writer thread in a live run (the dispatcher flushes the steps
+    roster while `brain/ask` sets the question from the command pump), and two
+    threads sharing one temp path would have each other's half-written bytes
+    renamed over the file. Same-directory temp keeps `os.replace` atomic.
+    """
     data = model.model_dump(mode="json")
     validate_for_write(type(model), data)
-    tmp = path.parent / f".tmp-{path.name}-{os.getpid()}"
+    tmp = path.parent / f".tmp-{path.name}-{os.getpid()}-{threading.get_ident()}"
     tmp.write_text(json.dumps(data, indent=1))
     os.replace(tmp, path)
 
@@ -114,17 +122,39 @@ class RunWriter:
 
     def close(self, status: str, now: float | None = None) -> None:
         """Manifest over binaries, final run.json. Valid-at-close or marked."""
+        self._check_open()
         self._manifest()
         self._run.status = status  # type: ignore[assignment]
         self._run.closed_at = now if now is not None else time.time()
         self._flush_run()
         self._closed = True
 
+    # --- read-back ------------------------------------------------------------
+
+    @property
+    def question(self) -> str | None:
+        """The run's question as it stands — None until (or unless) one is set.
+
+        The writer already holds the run record, so a caller deciding on the
+        close status (`run/app.py:finish_run`: a question-less run owes no
+        answer) reads it from here rather than re-loading run.json from disk
+        one line before overwriting it.
+        """
+        return self._run.question
+
+    def run_meta(self) -> dict[str, Any]:
+        """`source`/`name`/`object`/`question` — exactly `publish_run_meta`'s
+        keyword arguments, so the retained UI topic cannot drift from the
+        record it describes."""
+        return {"source": self._run.source, "name": self._run.name,
+                "object": self._run.object, "question": self._run.question}
+
     # --- steps ----------------------------------------------------------------
 
     def begin_step(self, view: dict | Any,
                    t_arrived: float | None = None) -> tuple[int, Path]:
         """Allocate the next dense step_id and its directory."""
+        self._check_open()
         step_id = self._next_id
         self._next_id += 1
         sdir = self.dir / "steps" / f"{step_id:03d}"
@@ -139,6 +169,7 @@ class RunWriter:
                       joints_rad: list[float], T_base_flange: list,
                       T_base_cam: list, rgb_rotation_deg: int,
                       segmentation: Segmentation | dict | None = None) -> None:
+        self._check_open()
         pend = self._pending[step_id]
         rec = StepRecord(
             step_id=step_id, view=pend["view"], t_arrived=pend["t_arrived"],
@@ -151,6 +182,7 @@ class RunWriter:
 
     def write_fused(self, step_id: int, geometry: GeometryStats | dict,
                     view_state: ViewState) -> None:
+        self._check_open()
         rec = self._records[step_id].model_copy(update={
             "phase": "fused",
             "geometry": geometry if isinstance(geometry, GeometryStats)
@@ -161,6 +193,7 @@ class RunWriter:
 
     def mark_step(self, step_id: int, *, outcome: str, detail: str) -> None:
         """Explicit failure entry — never a silent gap in the id space."""
+        self._check_open()
         pend = self._pending[step_id]
         rec = StepRecord(
             step_id=step_id, view=pend["view"], t_arrived=pend["t_arrived"],
@@ -176,6 +209,7 @@ class RunWriter:
         Survey-derived values (the viewsphere `r`) are only known after the
         run has already been created.
         """
+        self._check_open()
         for vm in self._run.view_methods:
             if vm.id == method_id:
                 vm.params = {**vm.params, **params}
@@ -186,23 +220,44 @@ class RunWriter:
 
     def set_question(self, q: str) -> None:
         """Set run.question; flush run.json (Flow A's ask arrives after create)."""
+        self._check_open()
         self._run.question = q
         self._flush_run()
 
     def write_session(self, session: SessionRecord) -> None:
         """Write session.json (rigs whose camera opens only after create)."""
+        self._check_open()
         _write_json(self.dir / "session.json", session)
 
     # --- events ---------------------------------------------------------------
 
     def event(self, kind: str, step_id: int | None = None,
               detail: str | None = None, now: float | None = None) -> None:
+        """Append one `OperatorEvent` line to events.jsonl.
+
+        Safe from any thread, and from more than one at once: O_APPEND ("a")
+        makes each single-line write atomic at these sizes, so a mover's
+        approval beats on the driver thread cannot interleave with the
+        dispatcher's stopped/fault rows mid-line.
+        """
+        self._check_open()
         ev = OperatorEvent(t=now if now is not None else time.time(),
                            kind=kind, step_id=step_id, detail=detail)
         with (self.dir / "events.jsonl").open("a") as f:
             f.write(ev.model_dump_json() + "\n")
 
     # --- internals ------------------------------------------------------------
+
+    def _check_open(self) -> None:
+        """Refuse every write verb once `close()` has run.
+
+        A closed run has a manifest hashing every binary and a validated final
+        run.json — a line that lands afterwards is a record its own receipt no
+        longer describes. Raising (rather than dropping it quietly) is the
+        point: the caller believes the write happened otherwise.
+        """
+        if self._closed:
+            raise RuntimeError("run is closed")
 
     def _step_dir(self, step_id: int) -> Path:
         return self.dir / "steps" / f"{step_id:03d}"

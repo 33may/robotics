@@ -170,9 +170,16 @@ def start_mock_collect(bus, pub, outdir, seed: int = 0) -> Supervisor:
     sup.pose_quiesce = poses.quiesce
     poses.start()
 
+    # Same writer-backed sink the real `run/app.py:collect` installs: the
+    # sweep's approval chain (requested -> awaiting_approval -> approved) is a
+    # record, and a mock that only logged it would rehearse a different write
+    # path than the one it exists to rehearse. Two threads append to
+    # `events.jsonl` from here (this one, and the dispatcher's stopped/fault
+    # rows) — single-line O_APPEND writes, atomic at these sizes.
+    from inspection.brain.live import make_event_sink
     from inspection.run.collect import SweepDriver
-    driver = SweepDriver(sup, outdir, on_event=lambda state, **kw:
-                         pub.log("info", f"sweep: {state} {kw.get('cell', '')}"))
+    driver = SweepDriver(sup, outdir,
+                         on_event=make_event_sink(writer, pub, label="sweep"))
     driver.start()
 
     def pump():
@@ -186,10 +193,16 @@ def start_mock_collect(bus, pub, outdir, seed: int = 0) -> Supervisor:
         try:
             sup.run()
         finally:
+            # The driver first, like the real teardown: it must not still be
+            # ranking (and requesting) against a Supervisor that is done.
+            driver.stop()
+            driver.join(5.0)
             if sup.acc is not None and len(sup.acc.points):
                 d = writer.dir / "fused"
                 d.mkdir(parents=True, exist_ok=True)
                 np.save(d / "cloud.npy", sup.acc.points)
+                # Row-aligned with cloud.npy, exactly as `finish_run` saves it.
+                np.save(d / "colors.npy", sup.acc.colors)
             writer.close("completed" if driver.finished else "aborted")
 
     threading.Thread(target=run_and_close, daemon=True).start()

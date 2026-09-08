@@ -183,7 +183,15 @@ function InspectionDashboard() {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    // `collect-mode` is a POSITIVE marker for collect mode, and the only
+    // thing on the page that says "run/meta arrived AND said data-engine".
+    // The e2e gate needs it: "no trace panel" is true of a page that has not
+    // received `run/meta` yet, so asserting the absence alone passes before
+    // the topic lands and proves nothing (task-11 review).
+    <div
+      style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+      {...(collectMode ? { 'data-testid': 'collect-mode' } : {})}
+    >
       <div style={{ flex: 1, minHeight: 0 }}>
         <PortholeDashboard
           key={collectMode ? 'collect' : 'live'}

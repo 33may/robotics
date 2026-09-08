@@ -238,7 +238,7 @@ class ViewState(RecordModel):
     extent: Vec3 | None = None  # object AABB extent, meters
     r: float | None = None  # shell radius in effect, meters
     chosen: Any | None = None  # address picked next, if a choice was made
-    decider: str | None = None  # who chose: "operator" | "brain" | method id
+    decider: str | None = None  # who chose: "operator" | "ai" | method id
 
 
 # --- run-level records --------------------------------------------------------

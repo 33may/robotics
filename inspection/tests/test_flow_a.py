@@ -231,6 +231,42 @@ def test_a_crashing_capture_is_a_failed_step_on_disk(tmp_path, monkeypatch):
     assert run.validate().ok, run.validate().problems
 
 
+def test_a_failing_view_state_still_lands_the_run_in_idle(tmp_path, monkeypatch):
+    """The fused write is built INSIDE `_write`'s guard, thunk and all.
+
+    `_view_state` walks the whole shell — reachability, camera poses, the
+    accumulator's AABB — and used to be evaluated as an ARGUMENT to `_write`,
+    i.e. before the guard was entered. Anything it threw escaped
+    `_on_settle_done` (the dispatcher logs and carries on, so nothing dies
+    loudly), and the phase never came back: the machine sat in `fusing`
+    forever with the arm on the table and no way out but Ctrl-C.
+    """
+    from inspection.run.machine import Supervisor
+
+    sup, run_dir = start(tmp_path, monkeypatch)
+
+    def boom(self, step_id, target):
+        raise RuntimeError("synthetic view-state failure")
+
+    monkeypatch.setattr(Supervisor, "_view_state", boom)
+    survey(sup)                            # waits for idle — the wedge is here
+    assert sup.phase == "idle" and sup.target is None
+    assert sup.survey_state == "visited"   # the move itself was fine
+
+    sup.request_shutdown()
+    wait_for(lambda: sup.phase == "done", msg="shutdown")
+    wait_for(lambda: (run_dir / "manifest.json").exists(), msg="writer closed")
+
+    run = Run.load(run_dir)
+    step = run.step(0)
+    # The capture stands; only the fused half was lost, so the step is
+    # `captured` — never left claiming a phase it never finished.
+    assert step.record.phase == "captured"
+    assert step.record.outcome == "captured"
+    assert step.view_state is None
+    assert run.validate().ok, run.validate().problems
+
+
 def test_a_stopped_move_is_an_event_and_leaves_no_step(tmp_path, monkeypatch):
     """`run/stop` mid-move: the arm halted before any camera was pointed
     anywhere, so the record gets an event and NO step directory."""

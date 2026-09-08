@@ -138,7 +138,10 @@ def finish_run(writer, acc) -> None:
     run ends exactly the way a real one does. `fused/` is a directory because
     the cloud is derived from the steps, not one of them; `record/run.py`
     reads it there first. Status is read off the disk, not off a flag: a run
-    is completed iff some AI session actually answered.
+    is completed iff some AI session actually answered — OR the run never
+    asked anything, because a question-less run owes no answer (the same
+    ruling `record/validate.py` enforces: `completed` requires an answer only
+    when `run.question` is set).
 
     `acc` may be None — a run whose setup died before the Supervisor existed
     still gets closed, because "created but never closed" is the signature of
@@ -152,7 +155,8 @@ def finish_run(writer, acc) -> None:
         # contributed points without a usable colour frame.
         np.save(d / "colors.npy", acc.colors)
     answered = any((writer.dir / "ai").glob("*/answer.json"))
-    writer.close("completed" if answered else "aborted")
+    writer.close("completed" if answered or writer.question is None
+                 else "aborted")
 
 
 def teach(ip: str = ROBOT_IP):
@@ -377,10 +381,17 @@ def collect(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
         sup.pose_quiesce = poses.quiesce             # settle-leg interlock
         poses.start()
 
-        def on_sweep_event(state, **kw):
-            pub.log("info", f"sweep: {state} {kw.get('cell', '')}")
-
-        driver = SweepDriver(sup, outdir, on_event=on_sweep_event)
+        # The sweep's beats are a RECORD, not a log line: requested ->
+        # awaiting_approval -> approved is the on-disk proof that a human
+        # opened the gate for every cell this driver asked for, and Flow B
+        # has no AI session to write them through — so the sink takes the
+        # run's own `RunWriter`. Two threads append to `events.jsonl` from
+        # here on (this one and the dispatcher's stopped/fault rows); both
+        # write single lines under O_APPEND, which is atomic at these sizes.
+        from inspection.brain.live import make_event_sink
+        driver = SweepDriver(sup, outdir,
+                             on_event=make_event_sink(writer, pub,
+                                                      label="sweep"))
         driver.start()
 
         def pump():
@@ -394,7 +405,15 @@ def collect(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
         sup.run()                                    # blocks until done
     finally:
         # Same order as `run()`'s teardown (design §Safety): stop event ->
-        # join worker (bounded) -> stopJ -> save -> close.
+        # join worker (bounded) -> stopJ -> save -> close. The driver is
+        # asked to stop FIRST: it plans and reads `rig.q()` on its own
+        # thread, and neither may still be happening once `rig.close()`
+        # below takes the RTDE interface and the camera away.
+        if driver is not None:
+            driver.stop()
+            driver.join(5.0)
+            if driver.is_alive():
+                log.warning("the sweep driver outlived the join budget")
         if sup is not None:
             sup.stop_event.set()
             sup.pose_active.clear()
@@ -408,13 +427,26 @@ def collect(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
             except Exception:
                 pass
         if writer is not None:
-            acc = sup.acc if sup is not None else None
-            if acc is not None and len(acc.points):
-                d = writer.dir / "fused"
-                d.mkdir(parents=True, exist_ok=True)
-                np.save(d / "cloud.npy", acc.points)
-            writer.close("completed" if driver is not None and driver.finished
-                        else "aborted")
+            # Guarded exactly like `run()`'s `finish_run` call, and for the
+            # same reason: losing the last bytes of a record must never cost
+            # us `rig.close()` below — a leaked RTDE interface and a camera
+            # left running are worse than an unclosed run, which the reader
+            # already detects as crashed.
+            try:
+                acc = sup.acc if sup is not None else None
+                if acc is not None and len(acc.points):
+                    d = writer.dir / "fused"
+                    d.mkdir(parents=True, exist_ok=True)
+                    np.save(d / "cloud.npy", acc.points)
+                    # Row-aligned with cloud.npy, exactly as `finish_run`
+                    # saves it: a data-engine run's fused output is the live
+                    # one minus `ai/**` (flows-design §6), and a colourless
+                    # cloud is not the same artifact.
+                    np.save(d / "colors.npy", acc.colors)
+                writer.close("completed" if driver is not None
+                             and driver.finished else "aborted")
+            except Exception:
+                log.exception("could not close the run record")
         if rig is not None:
             rig.close()
         _close_ui(child)
