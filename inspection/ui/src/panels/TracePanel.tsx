@@ -148,6 +148,7 @@ function Ask({ initial }: { initial: string }) {
       <div className="trace-ask-row">
         <input
           className="trace-ask-input"
+          data-testid="ask-input"
           value={q}
           autoFocus
           onChange={(e) => setQ(e.target.value)}
@@ -155,7 +156,13 @@ function Ask({ initial }: { initial: string }) {
             if (e.key === 'Enter') ask();
           }}
         />
-        <button className="trace-ask-go" type="button" onClick={ask} disabled={sent}>
+        <button
+          className="trace-ask-go"
+          data-testid="ask-send"
+          type="button"
+          onClick={ask}
+          disabled={sent}
+        >
           {sent ? 'asked' : 'ask'}
         </button>
       </div>
@@ -763,7 +770,7 @@ export function TracePanel({ config }: PanelProps<TracePanelConfig>) {
   const current = blocks.find((b) => b.key === selected) ?? null;
 
   return (
-    <div className="trace-panel">
+    <div className="trace-panel" data-testid="trace-panel">
       <div className="trace-main">
         {head ? (
           <div className="trace-head">

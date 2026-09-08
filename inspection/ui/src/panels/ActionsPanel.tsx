@@ -39,6 +39,7 @@ export function ActionsPanel(_props: PanelProps) {
       {survey && (
         <button
           className={`act act-${survey}`}
+          data-testid={survey === 'previewing' ? 'confirm-button' : undefined}
           disabled={!ACTIONABLE.includes(survey)}
           onClick={() => press(survey, 'survey')}
         >
@@ -52,6 +53,7 @@ export function ActionsPanel(_props: PanelProps) {
               <button
                 key={`${c.h}-${c.v}`}
                 className={`act act-${c.state}`}
+                data-testid={c.state === 'previewing' ? 'confirm-button' : undefined}
                 disabled={!ACTIONABLE.includes(c.state)}
                 onClick={() => press(c.state, [c.h, c.v])}
                 title={`h${c.h} v${c.v}: ${c.state}`}

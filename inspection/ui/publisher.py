@@ -59,6 +59,7 @@ TOPIC_CLOUD = "cloud/fused"
 TOPIC_CAMERA = "camera/wrist"
 TOPIC_VIEWS = "views/state"
 TOPIC_STATUS = "run/status"
+TOPIC_META = "run/meta"
 TOPIC_LOG = "log/events"
 TOPIC_CHAIN = "chain/latest"
 TOPIC_TRACE = "trace/state"
@@ -181,6 +182,7 @@ class InspectionPublisher:
             self.bus.declare(TOPIC_CAMERA, qos="stream", kind="image/jpeg")
             self.bus.declare(TOPIC_VIEWS, qos="stream", kind="json")
             self.bus.declare(TOPIC_STATUS, qos="stream", kind="json")
+            self.bus.declare(TOPIC_META, qos="stream", kind="json")
             self.bus.declare(TOPIC_LOG, qos="event")
             self.bus.declare(TOPIC_CHAIN, qos="stream", kind="json")
             self.bus.declare(TOPIC_TRACE, qos="stream", kind="json")
@@ -631,6 +633,35 @@ class InspectionPublisher:
                 frame, quality=quality))
         except Exception:
             log.exception("publish_frame failed")
+
+    def publish_run_meta(
+        self,
+        source: str,
+        name: str,
+        object: str | None = None,
+        question: str | None = None,
+    ) -> None:
+        """Retained run identity — RETAINED, so a UI that connects late still
+        knows what it is looking at without waiting for the next event.
+
+        Published once at boot, before anything else that depends on it, and
+        again whenever the question is set (`brain/ask`). `source` is what the
+        frontend gates on: `"data-engine"` runs have no brain in the loop, so
+        the trace panel and the Ask composer render nothing for them — see
+        `InspectionApp.tsx`. `"live"` is every run driven by `run/machine.py`'s
+        `Supervisor` with a brain attached.
+        """
+        try:
+            if source not in ("live", "data-engine"):
+                log.warning("publish_run_meta: unexpected source %r", source)
+            self.bus.publish(TOPIC_META, {
+                "source": source,
+                "name": name,
+                "object": object,
+                "question": question,
+            })
+        except Exception:
+            log.exception("publish_run_meta failed")
 
     def status(self, **fields: Any) -> None:
         """Merge fields into the retained status strip."""

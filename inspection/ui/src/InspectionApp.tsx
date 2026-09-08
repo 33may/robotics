@@ -10,6 +10,7 @@
  * `executing` only).
  */
 
+import { useMemo } from 'react';
 import { BusProvider, PortholeDashboard, useBusStatus, useTopicPayload } from '@porthole/framework';
 import type { LayoutSpec } from '@porthole/framework';
 
@@ -79,6 +80,37 @@ function busUrlFromQuery(): string | undefined {
   return `ws://${window.location.hostname || '127.0.0.1'}:${value}`;
 }
 
+/**
+ * `run/meta`, RETAINED (`ui/publisher.py:publish_run_meta`) — published once at
+ * boot, before the UI is even served, so by the time this connects the message
+ * is already sitting on the bus. `source` is what gates the collect-mode UI:
+ * a `"data-engine"` run has no brain in the loop, so the trace panel and its
+ * Ask composer have nothing to show and are dropped from the layout entirely
+ * (not just hidden — see `collectModePanels` below).
+ */
+interface RunMeta {
+  readonly source?: 'live' | 'data-engine';
+  readonly name?: string;
+  readonly object?: string | null;
+  readonly question?: string | null;
+}
+
+/**
+ * `trace` out, everything else identical. Filtering the panel list AND the
+ * layout (rather than rendering `TracePanel` empty) is what makes it not
+ * appear as a tab at all — an empty tab would still say "this run has an
+ * agent" to anyone glancing at the dockview strip.
+ */
+function collectModePanels(
+  panels: typeof inspectionPanelDefinitions,
+): typeof inspectionPanelDefinitions {
+  return panels.filter((p) => p.type !== 'trace');
+}
+
+function collectModeLayout(layout: LayoutSpec): LayoutSpec {
+  return layout.filter((p) => p.id !== 'trace');
+}
+
 interface RunStatus {
   readonly phase?: string;
   readonly step?: number;
@@ -120,21 +152,57 @@ function InspectionStatusBar() {
   );
 }
 
+/**
+ * The dashboard proper, inside `BusProvider` so it can read `run/meta`.
+ *
+ * Defaults to the LIVE panel set whenever `source` is not (yet, or ever)
+ * `"data-engine"` — undefined included. `run/meta` is retained and published
+ * before the UI is served, so in practice it is already cached by the time
+ * this ever renders; defaulting to live rather than blocking on it is what
+ * keeps every OTHER boot path (mock, trace-viewer) working unchanged if one
+ * is ever booted without publishing `run/meta` at all.
+ *
+ * `key` forces a full remount — and a fresh `applyDefaultLayout` — the
+ * instant `source` resolves to `data-engine`: `PortholeDashboard` only
+ * applies its layout prop once, in `onReady`, so a bare prop swap after the
+ * dashboard has already mounted would leave a stale `trace` tab sitting
+ * there. A distinct `storageKey` per mode keeps the two saved layouts from
+ * fighting over the same `localStorage` entry.
+ */
+function InspectionDashboard() {
+  const meta = useTopicPayload<RunMeta>('run/meta');
+  const collectMode = meta?.source === 'data-engine';
+
+  const panels = useMemo(
+    () => (collectMode ? collectModePanels(inspectionPanelDefinitions) : inspectionPanelDefinitions),
+    [collectMode],
+  );
+  const layout = useMemo(
+    () => (collectMode ? collectModeLayout(inspectionLayout) : inspectionLayout),
+    [collectMode],
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <PortholeDashboard
+          key={collectMode ? 'collect' : 'live'}
+          panels={panels}
+          layout={layout}
+          storageKey={collectMode ? 'inspection-collect' : 'inspection'}
+        />
+      </div>
+      <InspectionStatusBar />
+    </div>
+  );
+}
+
 export function InspectionApp() {
   const url = busUrlFromQuery();
   return (
     // Conditional spread: `exactOptionalPropertyTypes` rejects `url={undefined}`.
     <BusProvider {...(url !== undefined ? { url } : {})}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <PortholeDashboard
-            panels={inspectionPanelDefinitions}
-            layout={inspectionLayout}
-            storageKey="inspection"
-          />
-        </div>
-        <InspectionStatusBar />
-      </div>
+      <InspectionDashboard />
     </BusProvider>
   );
 }
