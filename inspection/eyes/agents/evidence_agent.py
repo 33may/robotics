@@ -79,7 +79,7 @@ def normalise_evidence_image(raw):
     return None
 
 
-EVIDENCE = VlmAgent(rules=EVIDENCE_RULES,
+EVIDENCE = VlmAgent(rules=EVIDENCE_RULES, kind="evidence",
                     # `note` feeds the planner's ledger; a hunt reports to a
                     # verdict. Dropping it is the AgentOccam lever applied to
                     # this variant's action set.
@@ -107,7 +107,7 @@ def hunt_evidence(tools, verbs, writer, model, cell, find, on_turn=None):
     Everything model-authored in the record is verbatim (`report`); every
     path is harness-resolved from the transcript. The record ships into
     answer.json as-is:
-      {cell, find, found, report, crop, frame, transcript}
+      {cell, find, found, report, crop, frame, transcript, transcript_id}
     """
     f = EVIDENCE.run(tools, verbs, writer, model, task=f"Find: {find}",
                      cell=cell, on_turn=on_turn)
@@ -136,4 +136,7 @@ def hunt_evidence(tools, verbs, writer, model, cell, find, on_turn=None):
             "crop": crop,
             # The "we looked here" receipt — present even on a miss.
             "frame": f.transcript.get("image"),
-            "transcript": f.transcript_rel}
+            "transcript": f.transcript_rel,
+            # The record id, not just the path: this is what the answer cites
+            # (`AnswerRecord.evidence_images[].transcript_id`).
+            "transcript_id": f.transcript_id}

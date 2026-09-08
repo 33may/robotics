@@ -107,7 +107,7 @@ def normalise_view(raw):
     return out
 
 
-INSPECT = VlmAgent(rules=_RULES,
+INSPECT = VlmAgent(rules=_RULES, kind="inspect",
                    emit=("evidence", "reasoning", "answer", "view"),
                    extras={"view": normalise_view},
                    max_turns=MAX_TURNS)

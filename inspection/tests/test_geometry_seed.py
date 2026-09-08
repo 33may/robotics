@@ -222,6 +222,77 @@ def test_empty_mask_yields_no_points_not_a_crash():
     assert out["plane"] is not None          # plane still fitted on the FULL view
 
 
+# ── per-point colour ────────────────────────────────────────────────────────
+
+def _rgb_two_tone(depth):
+    """Frame painted blue, object pixels (the synth box) painted red on the
+    left half and green on the right — so pixel pairing is checkable: a
+    correctly lifted cloud contains ONLY reds and greens, in both tones."""
+    rgb = np.zeros((*depth.shape, 3), dtype=np.uint8)
+    rgb[:] = (0, 0, 255)
+    rgb[200:280, 384:424] = (255, 0, 0)
+    rgb[200:280, 424:464] = (0, 255, 0)
+    return rgb
+
+
+def test_mask_colors_are_pixel_paired():
+    depth, intr, scale, T_bc, _ = synth_capture()
+    mask = np.zeros(depth.shape, dtype=bool)
+    mask[200:280, 384:464] = True
+    out = object_in_base(depth, intr, scale, T_bc, mask=mask,
+                         rgb=_rgb_two_tone(depth))
+    C, P = out["colors"], out["points"]
+    assert C is not None and C.shape == P.shape and C.dtype == np.uint8
+    reds = (C == (255, 0, 0)).all(axis=1)
+    greens = (C == (0, 255, 0)).all(axis=1)
+    assert (reds | greens).all(), "a colour leaked in from outside the mask"
+    assert reds.any() and greens.any(), "one half of the object lost its tone"
+
+
+def test_bootstrap_and_seeded_colors_follow_the_points():
+    depth, intr, scale, T_bc, _ = synth_capture()
+    rgb = _rgb_two_tone(depth)
+    boot = object_in_base(depth, intr, scale, T_bc, rgb=rgb)
+    assert boot["colors"].shape == boot["points"].shape
+    blue = (boot["colors"] == (0, 0, 255)).all(axis=1)
+    assert not blue.any(), "bootstrap cluster picked up table pixels"
+
+    seed = boot["points"]
+    grown = object_in_base(depth, intr, scale, T_bc, seed=seed, rgb=rgb)
+    assert grown["colors"].shape == grown["points"].shape
+    assert not (grown["colors"] == (0, 0, 255)).all(axis=1).any()
+
+
+def test_no_rgb_means_no_colors():
+    depth, intr, scale, T_bc, _ = synth_capture()
+    out = object_in_base(depth, intr, scale, T_bc)
+    assert out.get("colors") is None
+
+
+def test_accumulator_carries_colors_through_fusion():
+    """Colours ride the same filters as the points: jump-gate rejects drop
+    them, the voxel average blends them, and a colourless add is mid-grey —
+    the row alignment with `points` must survive all three."""
+    from inspection.cell.geometry import CloudAccumulator, JUMP_GATE_M
+    rng = np.random.default_rng(0)
+    cup = rng.normal(scale=0.02, size=(400, 3)) + [0.30, 0.0, 0.05]
+    red = np.tile(np.array([[200, 10, 10]], dtype=np.uint8), (400, 1))
+    acc = CloudAccumulator()
+    acc.add(cup, red)
+    assert acc.colors.shape == acc.points.shape
+    assert acc.colors.dtype == np.uint8
+    assert (acc.colors[:, 0] > 150).all()          # still red after voxelising
+
+    far = rng.normal(scale=0.01, size=(60, 3)) + [0.30 + 3 * JUMP_GATE_M, 0, 0.05]
+    green = np.tile(np.array([[10, 200, 10]], dtype=np.uint8), (60, 1))
+    assert acc.add(far, green) == 60               # detached -> rejected
+    assert not (acc.colors[:, 1] > 150).any(), "rejected points left colour behind"
+
+    near = cup[:50] + [0.01, 0.0, 0.0]
+    acc.add(near, None)                            # colourless add -> grey fill
+    assert acc.colors.shape == acc.points.shape
+
+
 # ── prompt_box ──────────────────────────────────────────────────────────────
 
 def test_prompt_box_lands_on_the_object_it_came_from():

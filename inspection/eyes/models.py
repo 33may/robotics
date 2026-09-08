@@ -36,9 +36,19 @@ class StubVlm:
                     "answer": "unknown"}
         return self.script.pop(0)
 
+    #: The convention this model speaks. Quoted to the model in tool-failure
+    #: messages, so the loop never teaches a convention the adapter does not
+    #: apply (that mismatch cost a real run 16 turns of background crops,
+    #: 2708-aicam f04).
+    BOX_CONVENTION = "[x0, y0, x1, y1] in full-frame pixels"
+
     @staticmethod
     def to_pixel_box(box, width, height):
         return tuple(int(v) for v in box)          # already pixels
+
+    @staticmethod
+    def to_model_box(box, width, height):
+        return [int(v) for v in box]               # identity, both ways
 
 
 class GeminiVlm:
@@ -91,6 +101,25 @@ class GeminiVlm:
         ymin, xmin, ymax, xmax = vals
         return (round(xmin / 1000.0 * width), round(ymin / 1000.0 * height),
                 round(xmax / 1000.0 * width), round(ymax / 1000.0 * height))
+
+    #: See to_pixel_box: this is what the model natively emits, so it is also
+    #: the only convention it may ever be shown.
+    BOX_CONVENTION = "[ymin, xmin, ymax, xmax], normalised 0-1000, y first"
+
+    @staticmethod
+    def to_model_box(box, width, height):
+        """(x0, y0, x1, y1) px -> ER-2's [ymin, xmin, ymax, xmax] (0-1000).
+
+        The exact inverse of to_pixel_box. Every box the model READS (detect
+        results, crop echoes) passes through here, so what it reads is what
+        it may echo back — round-trip through the model boundary is identity.
+        Without this, 2708-aicam f04 burned 16 turns: detect printed pixels,
+        the model echoed them into crop, the adapter decoded them as 0-1000
+        y-first, and every crop landed on background.
+        """
+        x0, y0, x1, y1 = [float(v) for v in box]
+        return [round(y0 / height * 1000.0), round(x0 / width * 1000.0),
+                round(y1 / height * 1000.0), round(x1 / width * 1000.0)]
 
     def respond(self, parts, schema=None):
         from google.genai import types

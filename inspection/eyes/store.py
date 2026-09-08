@@ -121,21 +121,59 @@ class PlanWriter:
 
 
 class FindingWriter:
-    """Inspection-subagent tier: per-view findings + verbatim transcripts."""
+    """Inspection-subagent tier: per-view findings + verbatim transcripts.
 
-    def __init__(self, store: RunStore):
+    `ai` is the session's `AIRunWriter` when there is one. Transcripts are
+    `TranscriptRecord`s either way — same name (`transcripts/tNNN.json`), same
+    shape, same id — because that is what the one read door reads
+    (`record/run.py:AIRun.transcripts`) and what `validate_run` checks. A
+    transcript the reader cannot see is a transcript nobody will ever read.
+    """
+
+    def __init__(self, store: RunStore, ai=None):
         self._s = store
+        self._ai = ai
 
-    def add_finding(self, cell, summary, transcript_text):
-        tdir = self._s.path / "transcripts"
-        tdir.mkdir(parents=True, exist_ok=True)
-        rel = f"transcripts/f{len(self._s._d['findings']):03d}.json"
-        (self._s.path / rel).write_text(transcript_text)
+    @property
+    def artifacts_dir(self) -> Path:
+        """Where the images a subagent actually looked at are persisted —
+        `ai/<seq>/artifacts/`, the home the schema gives them, so an answer's
+        `evidence_images[].artifact` is a path under its own AI session."""
+        d = (self._ai.dir if self._ai is not None else self._s.path) / "artifacts"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def add_finding(self, cell, summary, record):
+        """Persist one subagent transcript; return its store-relative path.
+
+        `record` is a `TranscriptRecord`; the writer stamps its id.
+        """
+        from inspection.record.ai_writer import next_transcript_id
+        # Two relativities, one boundary. The loop reports artifact paths
+        # RUN-relative because that is what the trace and the UI's capture
+        # mount speak (`ui/publisher.py:_asset_url`); the record declares them
+        # relative to the AI session (`schema.py:TranscriptRecord.artifacts`).
+        # They all live in `artifacts_dir`, so the session-relative form is
+        # exactly that directory plus the file name.
+        record.artifacts = [f"artifacts/{Path(a).name}" for a in record.artifacts]
+        if self._ai is not None:
+            path = self._ai.transcript(record)
+        else:
+            # No AI session (unit tests, bench tools): same record, same
+            # naming, written beside the store. NOT a second format.
+            from inspection.record.writer import _write_json
+            tdir = self._s.path / "transcripts"
+            tdir.mkdir(parents=True, exist_ok=True)
+            record.transcript_id = next_transcript_id(tdir)
+            path = tdir / f"{record.transcript_id}.json"
+            _write_json(path, record)
+        rel = f"transcripts/{path.name}"
         self._s._d["findings"].append(
             # None is the survey: its declaration is a finding like any other,
             # it just has no cell address (eyes/agents/survey_agent.py).
             {"cell": None if cell is None else list(cell),
              "summary": str(summary), "transcript": rel,
+             "transcript_id": record.transcript_id,
              "t": time.time()})
         self._s._flush()
         return rel

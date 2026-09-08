@@ -27,11 +27,14 @@ state and publishes transitions itself; reaching in with a callback would add
 a second writer to the thing whose single-writer property is the reason the
 state machine is trustworthy.
 """
+import logging
 import threading
 import time
 from pathlib import Path
 
 from inspection.record.run import Run
+
+log = logging.getLogger(__name__)
 
 POLL_S = 0.05
 #: How long to wait for the planner before giving up on a request. Approval
@@ -110,17 +113,19 @@ class SupervisorMover:
             "blocked": set(self.sup.blocked),
         }
 
-    def _captures(self):
-        """How many frames exist on disk. Zero before the first one.
+    def _captured_ids(self):
+        """Step ids of the frames on disk, oldest first. Empty before the first.
 
         Deliberately tolerant: `Run.load` needs `run.json`, which does not
         exist until the survey has been captured — and the survey is now the
-        first thing this class is asked to do.
+        first thing this class is asked to do. Ids, not a count, because the
+        `captured` beat has to name the step it captured
+        (`OperatorEvent.step_id`), and the newest captured step IS that step.
         """
         try:
-            return len(Run.load(self.run_dir).captured)
+            return [s.id for s in Run.load(self.run_dir).captured]
         except Exception:                            # noqa: BLE001
-            return 0
+            return []
 
     # --------------------------------------------------------------- move
     def request(self, cell):
@@ -132,7 +137,7 @@ class SupervisorMover:
             return False, (f"the arm is {self.sup.phase} right now — the "
                            f"request was not sent. Ask again once it settles.")
 
-        before = self._captures()
+        before = self._captured_ids()
         self.on_event("requested", cell=_json(cell))
         # Exactly the message the browser's button sends, plus a signature.
         # No private API, no second path into the robot.
@@ -186,11 +191,43 @@ class SupervisorMover:
         if got[0] == "fault":
             return False, f"the move to {_json(cell)} faulted; the run is halted."
 
-        if self._captures() <= before:
+        after = self._captured_ids()
+        if len(after) <= len(before):
             return False, (f"the arm reached {_json(cell)} but no frame was "
                            f"captured. Nothing to inspect there.")
-        self.on_event("captured", cell=_json(cell))
+        # The step this move produced — the one id that makes the whole beat
+        # chain joinable to the geometry it was about.
+        self.on_event("captured", cell=_json(cell), step_id=after[-1])
         return True, "reached and captured"
+
+
+def make_beat_handler(trace, ai, pub):
+    """The mover's `on_event` sink: `events.jsonl` first, then trace and log.
+
+    Every beat `SupervisorMover` emits — requested, awaiting_approval,
+    approved, redirected, cancelled, captured — is exactly an
+    `OperatorEvent.kind` literal (`record/schema.py`), and this is the row of
+    the write-path table that puts them on disk as validated records. It
+    matters which file they live in: the approval chain is the on-disk proof
+    of the project's central safety property (the brain may request, only a
+    human confirms), and `trace.jsonl` is best-effort, unvalidated and read by
+    nothing but the panel. The trace keeps its own richer copy — `to`,
+    `phase`, whatever a beat carries — because `OperatorEvent` has one free
+    text field and no place for structure.
+
+    Never raises into the mover: a run that loses a beat is bad, a brain
+    thread that dies mid-approval is worse.
+    """
+    def on_event(state, **kw):
+        trace.event("approval", state=state, **kw)
+        try:
+            detail = " ".join(f"{k}={v}" for k, v in sorted(kw.items())
+                              if k != "step_id") or None
+            ai.event(state, step_id=kw.get("step_id"), detail=detail)
+        except Exception:                            # noqa: BLE001
+            log.exception("could not record the %r beat", state)
+        pub.log("info", f"brain: {state} {kw.get('cell', '')}")
+    return on_event
 
 
 def make_ask_handler(sup, pub, run_dir, cognition, writer):
@@ -251,11 +288,8 @@ def make_ask_handler(sup, pub, run_dir, cognition, writer):
                     cognition=cognition.label, run_dir=str(run_dir),
                     live=True, captured=0)
 
-        def on_event(state, **kw):
-            trace.event("approval", state=state, **kw)
-            pub.log("info", f"brain: {state} {kw.get('cell', '')}")
-
-        mover = SupervisorMover(sup, run_dir, on_event=on_event)
+        mover = SupervisorMover(sup, run_dir,
+                                on_event=make_beat_handler(trace, ai, pub))
         TraceWatcher(pub, ai.dir).start()
 
         def go():

@@ -34,6 +34,17 @@ from inspection.record.schema import (
 from inspection.record.writer import _write_json
 
 
+def next_transcript_id(tdir: Path) -> str:
+    """Next dense transcript id in a transcripts dir: t000, t001, ...
+
+    The naming is the read door's (`record/run.py:AIRun.transcripts` globs
+    `t*.json`), so it lives beside the writer that owns it and is shared with
+    every producer — nobody invents a second convention.
+    """
+    n = len(list(Path(tdir).glob("t*.json"))) if Path(tdir).is_dir() else 0
+    return f"t{n:03d}"
+
+
 def next_seq(run_dir: Path) -> int:
     """Next unused ai/ sequence number: max existing + 1, 0 when none."""
     root = Path(run_dir) / "ai"
@@ -73,10 +84,16 @@ class AIRunWriter:
 
     def transcript(self, rec: TranscriptRecord) -> Path:
         """transcripts/t{n:03d}.json — n is a collision-proof directory count,
-        never caller-picked (mirrors RunWriter.begin_step's dense ids)."""
+        never caller-picked (mirrors RunWriter.begin_step's dense ids).
+
+        The id is STAMPED onto the record here, for the same reason: the
+        filename and `transcript_id` are one fact, only this method knows the
+        number, and an `AnswerRecord.evidence_images[].transcript_id` that
+        does not name a file on disk is a citation to nothing.
+        """
         tdir = self._dir / "transcripts"
-        n = len(list(tdir.glob("t*.json")))
-        path = tdir / f"t{n:03d}.json"
+        rec.transcript_id = next_transcript_id(tdir)
+        path = tdir / f"{rec.transcript_id}.json"
         _write_json(path, rec)
         return path
 

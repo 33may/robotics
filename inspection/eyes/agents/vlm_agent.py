@@ -68,10 +68,15 @@ class Finding:
         #: about the model, not an exception, and cleaner than string-matching
         #: the reasoning text.
         self.exhausted = exhausted
-        #: Run-relative path of the persisted transcript, set by the loop
+        #: Store-relative path of the persisted transcript, set by the loop
         #: after `writer.add_finding`. The audit trail behind any claim a
         #: caller builds on this finding (the evidence agent cites it).
         self.transcript_rel = None
+        #: The record's own id (`TranscriptRecord.transcript_id`), stamped by
+        #: the writer that named the file. What a citation must carry — a
+        #: path can be relative to anything, an id resolves through the one
+        #: read door.
+        self.transcript_id = None
 
     @property
     def view(self):
@@ -157,7 +162,7 @@ def _dispatch(name, args, tools, verbs, writer, img, fmt_box):
     return (f"unknown tool {name!r} — tools are {sorted(TOOLS)}", None)
 
 
-def _save_seen(tools, img, tag, kind="crops"):
+def _save_seen(tools, writer, img, tag, kind="crop"):
     """Persist EXACTLY the pixels handed to the model. Run-relative path back.
 
     Two reasons this writes a file instead of pointing at the capture on disk:
@@ -171,17 +176,72 @@ def _save_seen(tools, img, tag, kind="crops"):
       answered about. For an observability surface that is the worst possible
       failure: it looks right and it is lying.
 
+    They land in the AI session's own `artifacts/` (`FindingWriter.
+    artifacts_dir`), which is the home `schema.py` gives them — so an answer
+    citing one cites a path inside the session that produced it. The path
+    returned is RUN-relative, because that is what the trace and the UI's
+    capture mount speak.
+
     Best-effort: a failed write must not end an otherwise good inspection.
     """
     try:
         import cv2
-        d = tools._run.path / "eyes" / kind
-        d.mkdir(parents=True, exist_ok=True)
-        name = f"{tag}.png"
+        d = writer.artifacts_dir
+        name = f"{tag}_{kind}.png"
         cv2.imwrite(str(d / name), cv2.cvtColor(img.rgb, cv2.COLOR_RGB2BGR))
-        return f"eyes/{kind}/{name}"
+        return (d / name).relative_to(tools._run.path).as_posix()
     except Exception:                            # noqa: BLE001
         return None
+
+
+def _model_id(model) -> str:
+    """What to call the model in the record. Never "unrecorded" again.
+
+    `TranscriptRecord.model` is the VLM's identity, and the only honest source
+    is the object that answered: its configured model name when it has one
+    (`GeminiVlm.model`), its class otherwise (`StubVlm` — which is exactly the
+    fact a reader needs to know about a mock run's transcripts).
+    """
+    return str(getattr(model, "model", None) or type(model).__name__)
+
+
+def _record(transcript: dict, spec) -> "TranscriptRecord":
+    """The in-memory transcript -> the on-disk `TranscriptRecord`.
+
+    The loop's dict is what the Finding and the trace carry (it holds
+    `cell`, `view_text`, `hypothesis` and each variant's appendix fields, none
+    of which the schema declares); this is the record. Nothing is lost — the
+    dict rides the trace event and the Finding — but what the READ DOOR
+    returns is a validated record with a step id, a kind and a model.
+
+    `answer` is the WHOLE final emit, not just the answer string: a variant's
+    appendix fields (`view`, `recommendation`, …) are model output with no
+    other home in the schema, and dropping them at the write boundary would
+    lose the one part of a finding the orchestrator reasons with. The schema
+    types the field `dict | list | str | None` for exactly this.
+
+    `answer_schema` becomes the constraint the model actually ran under: the
+    emit ORDER (which `models.respond` enforces) plus the caller's requested
+    answer shape, if any.
+
+    Nothing else is lost either — `view_text` and `hypothesis` are verbatim
+    inside `prompt`, `cell` is the step's own address, `image` is
+    `artifacts[0]`.
+    """
+    from inspection.record.schema import TranscriptRecord
+    artifacts = [p for p in [transcript.get("image")] if p]
+    artifacts += [t["image"] for t in transcript["turns"] if t.get("image")]
+    schema = {"order": list(spec.emit)}
+    if transcript.get("answer_schema"):
+        schema["answer_shape"] = transcript["answer_schema"]
+    answer = {k: transcript[k] for k in spec.emit if k in transcript}
+    answer.setdefault("answer", transcript.get("answer"))
+    return TranscriptRecord(
+        transcript_id="unassigned",     # stamped by the writer that names it
+        kind=spec.kind, step_id=transcript["step_id"], t=transcript["t"],
+        model=transcript["model"], task=transcript["task"],
+        prompt=transcript["prompt"], turns=list(transcript["turns"]),
+        answer=answer, answer_schema=schema, artifacts=artifacts)
 
 
 class VlmAgent:
@@ -190,8 +250,8 @@ class VlmAgent:
     resources (tools/verbs/writer/model) arrive there because a Brain builds
     them per run while specs are constants."""
 
-    def __init__(self, *, rules, tool_names=TOOLS, emit=EMIT_CORE,
-                 extras=None, max_turns=16):
+    def __init__(self, *, rules, kind="inspect", tool_names=TOOLS,
+                 emit=EMIT_CORE, extras=None, max_turns=16):
         # Import-time invariants: a broken spec kills the import, so no
         # variant can silently reorder the schema the way JSON mode does.
         assert tuple(emit[:3]) == EMIT_CORE, "answer never precedes reasoning"
@@ -201,6 +261,10 @@ class VlmAgent:
         assert frozenset(tool_names) <= TOOLS, \
             f"unknown tools {set(tool_names) - TOOLS}"
         self.rules = rules
+        #: What invoked this agent, as the record names it
+        #: (`schema.py:TranscriptRecord.kind`). Declared by the variant so the
+        #: filename never has to carry it.
+        self.kind = kind
         self.tool_names = frozenset(tool_names)
         self.emit = tuple(emit)
         self.extras = dict(extras or {})
@@ -231,7 +295,15 @@ class VlmAgent:
                 except Exception:                    # noqa: BLE001
                     pass  # a watcher must never break the thing it watches
 
-        img = tools.get_view(view_rec if view_rec is not None else cell)
+        # Resolve the RECORD, not just the pixels: the transcript is keyed to
+        # the step whose capture it looked at (`TranscriptRecord.step_id`),
+        # and that join is the whole reason a verdict can be traced back to a
+        # robot position. `get_view` still raises on a missing view exactly as
+        # before — a cell with no capture is a caller error, not a record.
+        rec = view_rec if view_rec is not None else (
+            tools.view_at(tuple(cell)) if cell is not None else None)
+        img = tools.get_view(rec if rec is not None else cell)
+        step_id = int(rec.pose_id)
         # THE BOX BOUNDARY, both directions: every box the model WRITES is
         # converted in via `to_pixel_box`; every box it READS is rendered via
         # `to_model_box`. Round-trip is identity (pinned by test) — a model
@@ -257,9 +329,11 @@ class VlmAgent:
 
         transcript = {"cell": list(cell) if cell else None, "task": task,
                       "answer_schema": answer_schema,
+                      "step_id": step_id, "kind": self.kind,
+                      "model": _model_id(model),
                       # The uprighted array, not the raw capture — _save_seen.
-                      "image": _save_seen(tools, img, img.cap_dir,
-                                          kind="frames"),
+                      "image": _save_seen(tools, writer, img, img.cap_dir,
+                                          kind="frame"),
                       "view_text": img.text,
                       "hypothesis": hypothesis, "prompt": prompt,
                       "t": time.time(), "turns": []}
@@ -278,8 +352,9 @@ class VlmAgent:
         for turn_i in range(max_turns):
             _tick(turn_i + 1, "thinking")
             reply = model.respond(parts, schema={"order": self.emit})
-            transcript["turns"].append(dict(reply) if isinstance(reply, dict)
-                                       else {"raw": str(reply)})
+            transcript["turns"].append(
+                {"type": "reply", **reply} if isinstance(reply, dict)
+                else {"type": "reply", "raw": str(reply)})
             if isinstance(reply, dict) and "tool" in reply:
                 name = reply["tool"]
                 if name not in self.tool_names:
@@ -288,7 +363,8 @@ class VlmAgent:
                     # a message, never an exception, and never runs.
                     result = (f"{name} is not a tool this agent has — tools "
                               f"are {sorted(self.tool_names)}")
-                    transcript["turns"].append({"result": result})
+                    transcript["turns"].append({"type": "tool_result",
+                                                "tool": name, "result": result})
                     parts.append(f"[{name}] {result}")
                     continue
                 args = _boxes_to_pixels(reply.get("args", {}) or {}, model, img)
@@ -301,7 +377,8 @@ class VlmAgent:
                               f"and returned: {done[key]} — the result will "
                               f"not change. Use a different tool or give your "
                               f"answer now.")
-                    transcript["turns"].append({"result": result})
+                    transcript["turns"].append({"type": "tool_result",
+                                                "tool": name, "result": result})
                     parts.append(f"[{name}] {result}")
                     continue
                 try:
@@ -319,11 +396,13 @@ class VlmAgent:
                                        f"frame."), None
                 _tick(turn_i + 1, "tool", tool=name, args=args,
                       result=str(result)[:300])
-                turn_rec, crop_label = {"result": result}, None
+                turn_rec, crop_label = {"type": "tool_result", "tool": name,
+                                        "result": result}, None
                 if new_img is not None:
                     rel = _save_seen(
-                        tools, new_img,
-                        f"{img.cap_dir}_{len(transcript['turns']):02d}")
+                        tools, writer, new_img,
+                        f"{img.cap_dir}_{len(transcript['turns']):02d}",
+                        kind=name)
                     if rel is not None:
                         turn_rec["image"] = rel
                         # Announce the number IN the result text, so the
@@ -356,8 +435,9 @@ class VlmAgent:
             transcript["answer"] = answer
             for k, v in extras.items():
                 transcript[k] = v            # disk and Finding always agree
-            finding.transcript_rel = writer.add_finding(
-                cell, finding.summary, json.dumps(transcript, indent=1))
+            rec = _record(transcript, self)
+            finding.transcript_rel = writer.add_finding(cell, finding.summary, rec)
+            finding.transcript_id = rec.transcript_id
             return finding
 
         # Out of turns: a finding about the model, not an exception.
@@ -366,6 +446,7 @@ class VlmAgent:
         finding = Finding(cell, "unknown", [],
                           f"no answer within {max_turns} turns",
                           transcript, exhausted=True)
-        finding.transcript_rel = writer.add_finding(
-            cell, finding.summary, json.dumps(transcript, indent=1))
+        rec = _record(transcript, self)
+        finding.transcript_rel = writer.add_finding(cell, finding.summary, rec)
+        finding.transcript_id = rec.transcript_id
         return finding

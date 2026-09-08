@@ -29,7 +29,9 @@ at exactly one place — `_gate` — and the seam is marked.
 """
 import asyncio
 import json
+import logging
 import sys
+import time
 from pathlib import Path
 
 from claude_agent_sdk import (AssistantMessage, ClaudeAgentOptions, HookMatcher,
@@ -45,7 +47,10 @@ from inspection.eyes.store import FindingWriter, PlanWriter, RunStore
 from inspection.eyes.tools import ViewTools
 from inspection.record.ai_writer import AIRunWriter, next_seq
 from inspection.record.run import Run
+from inspection.record.schema import MenuInput
 from inspection.view.grid import DEFAULT_R, H_BINS, V_ELEVATIONS
+
+log = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "claude-opus-5"
 MAX_TURNS = 40                 # budget, not a plan: the loop must be able to
@@ -165,7 +170,10 @@ class Brain:
                             r=DEFAULT_R)
         self.plan_writer = PlanWriter(self.store)
         self.tools = ViewTools(self.run, writer=self.plan_writer)
-        self.finding_writer = FindingWriter(self.store)
+        # Bound to the AI session: every subagent transcript is written
+        # through it as a `TranscriptRecord`, so `Run.load(...).ai[].transcripts`
+        # can see what this run's eyes actually did.
+        self.finding_writer = FindingWriter(self.store, ai=self.ai)
         self.vlm = vlm
         # Both models are given, never defaulted. Until 2026-08-26 `verbs`
         # fell back to `LocalVerbs(StubBackend())`, so every live run so far
@@ -365,6 +373,23 @@ class Brain:
                     f"same hunt to ship with the gap on record.", records)
         return None, records
 
+    def _ai_relative(self, path):
+        """A run-relative artifact path -> relative to this AI session.
+
+        The eyes tier writes its frames and crops into `ai/<seq>/artifacts/`
+        and reports them run-relative (what the trace and the UI mount read);
+        `EvidenceImage.artifact` is declared relative to the AIRun. One
+        conversion, at the boundary that knows both. A path from outside this
+        session cannot be cited as its evidence.
+        """
+        if not path:
+            return None
+        try:
+            return Path(path).relative_to(
+                self.ai.dir.relative_to(self.run_dir)).as_posix()
+        except ValueError:
+            return None
+
     def _answer_record(self, args, records):
         """The verdict as `AnswerRecord` — the write boundary of the AI tier.
 
@@ -384,11 +409,19 @@ class Brain:
           trace (`evidence` event) and in the transcript on disk, so nothing
           is lost — the answer simply does not claim a picture it does not
           have.
+        - `artifact` is stored RELATIVE TO THE AI SESSION (schema.py:
+          EvidenceImage), while the hunt reports run-relative paths — that is
+          what the trace and the UI's capture mount speak. The conversion is
+          here, at the one boundary that knows both.
+        - the same hunt cited twice (the planner re-citing a cached miss to
+          ship with the gap on record) is ONE citation: `_hunts` returns the
+          identical record, and a verdict does not gain evidence by repeating
+          itself.
         """
         self.run.refresh()
-        images, step_ids, transcript_ids = [], [], []
+        images, step_ids, transcript_ids, seen = [], [], [], set()
         for r in records:
-            artifact = r.get("crop") or r.get("frame")
+            artifact = self._ai_relative(r.get("crop") or r.get("frame"))
             step = self.run.at(r["cell"]) if r.get("cell") is not None else None
             if artifact is None or step is None:
                 self.trace.event("text", text=(
@@ -396,7 +429,13 @@ class Brain:
                     f"({'no artifact' if artifact is None else 'no step'}) — "
                     f"it stays in the trace"))
                 continue
-            tid = Path(str(r.get("transcript") or "")).stem or "unknown"
+            # The transcript's id as the WRITER stamped it, so the citation
+            # names a file `Run.ai[].transcripts` actually returns.
+            tid = str(r.get("transcript_id")
+                      or Path(str(r.get("transcript") or "")).stem or "unknown")
+            if (step.id, artifact) in seen:
+                continue
+            seen.add((step.id, artifact))
             images.append({
                 "step_id": step.id, "transcript_id": tid, "artifact": artifact,
                 "note": f"{r['find']} — {'found' if r['found'] else 'NOT found'}"
@@ -541,6 +580,38 @@ class Brain:
 
         return [_plan, _inspect, _move, _answer]
 
+    def _menu_input(self):
+        """One `MenuInput` line per turn — the AI-tier half of the menu.
+
+        The menu is the pure function (ViewState, MenuInput) -> text. ViewState
+        is physical truth and belongs to the step; THIS is what the agent-side
+        rendering additionally consumed — which cells this agent has actually
+        read, how many findings stand, and the recommendations hanging off the
+        view ledger. With both on disk a menu experiment can re-render a
+        recorded turn instead of re-flying it. The rendered text itself is
+        deliberately not repeated here: it is already in the trace.
+
+        Best effort: losing a menu line must not cost the turn.
+        """
+        try:
+            step = (self.run.at(self.cell) if self.cell is not None
+                    else self.run.survey)
+            self.ai.menu_input(MenuInput(
+                turn=self.turn, step_id=step.id if step is not None else 0,
+                t=time.time(),
+                agent_context={
+                    "seen": sorted(map(list, self.agent_seen)),
+                    "findings": len(self.store.findings()),
+                    "recommends": {str(list(c)): v["recommendation"]
+                                   for c, v in self.view_notes.items()
+                                   if (v or {}).get("recommendation")},
+                    "nav": {k: sorted(map(list, v))
+                            for k, v in (self._nav() or {}).items()},
+                }))
+        except Exception:                            # noqa: BLE001
+            log.exception("could not record the menu input for turn %s",
+                          self.turn)
+
     # ------------------------------------------------------------- hooks
     async def _staple_state(self, input_data, tool_use_id, context):
         """Push state onto every tool result — the model cannot forget to look.
@@ -566,6 +637,7 @@ class Brain:
         # Traced as its own kind: this is context the model was GIVEN, not text
         # it wrote. Telling those apart is the whole point of watching a run.
         self.trace.event("state", text=text)
+        self._menu_input()
         return {"hookSpecificOutput": {"hookEventName": "PostToolUse",
                                        "additionalContext": text}}
 

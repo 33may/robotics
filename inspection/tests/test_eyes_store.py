@@ -11,6 +11,15 @@ from inspection.eyes.store import (FactWriter, FindingWriter, PlanWriter,
 T = np.eye(4); T[:3, 3] = [0.1, 0.2, 0.3]
 
 
+def _transcript():
+    """One subagent transcript, as the eyes tier hands it over: a
+    `TranscriptRecord` whose id the writer stamps."""
+    from inspection.record.schema import TranscriptRecord
+    return TranscriptRecord(transcript_id="unassigned", kind="inspect",
+                            step_id=1, t=1.0, model="StubVlm", task="t",
+                            prompt="p", turns=[])
+
+
 def _fresh(tmp):
     """`tmp` IS the store directory — in a run that is the orchestrator
     session's own `ai/<seq>/`, handed in by whoever opened it."""
@@ -57,7 +66,7 @@ def test_agent_writers():
         plan.set_plan("sweep h=3..5 at v=1")
         plan.note("view 12 shows a fragment at right edge")
         rel = finder.add_finding((3, 1), "partial logo, right edge",
-                                 transcript_text='{"turns": []}')
+                                 _transcript())
         finder.note("wanted neighbour (4,1) — not captured", cell=(3, 1))
         again = RunStore.open(Path(tmp))
         assert again.hypothesis == "logo likely on far wall"
@@ -74,8 +83,10 @@ def test_trust_levels_by_construction():
         assert "add_view" not in api, cls
     assert {m for m in dir(PlanWriter) if not m.startswith("_")} == \
         {"set_plan", "set_hypothesis", "note"}
+    # `artifacts_dir` is where this tier's images go, not a geometry verb —
+    # the trust level is unchanged.
     assert {m for m in dir(FindingWriter) if not m.startswith("_")} == \
-        {"add_finding", "note"}
+        {"add_finding", "artifacts_dir", "note"}
 
 
 def main():

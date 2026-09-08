@@ -10,6 +10,7 @@ planning, the state machine) is the same code path a real run takes.
 
 from __future__ import annotations
 
+import logging
 import math
 import threading
 from pathlib import Path
@@ -121,7 +122,11 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
         try:
             sup.run()
         finally:
-            finish_run(writer, sup.acc)
+            try:
+                finish_run(writer, sup.acc)
+            except Exception:
+                logging.getLogger(__name__).exception(
+                    "could not close the mock run record")
 
     threading.Thread(target=run_and_close, daemon=True).start()
     return sup

@@ -63,7 +63,7 @@ def _rig(tmp, cells=((3, 0), (9, 0), (6, 1)), survey_az=45.0):
 def _notes(tmp, name="notes"):
     """A separate RunStore — task-5: ViewTools' `writer` still binds to the
     surviving RunStore, independent of the run's own views (`Run` now)."""
-    return RunStore.create(Path(tmp) / name, h_bins=12,
+    return RunStore.create(Path(tmp) / "run" / name, h_bins=12,
                            v_elevs=(10.0, 40.0, 70.0), r=R)
 
 

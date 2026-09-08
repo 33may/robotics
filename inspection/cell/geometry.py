@@ -120,12 +120,16 @@ def rotate180(img: np.ndarray) -> np.ndarray:
 
 def deproject(depth_u16: np.ndarray, intr: dict, depth_scale: float,
               max_range: float = MAX_RANGE_M, min_range: float = MIN_RANGE_M,
-              stride: int = 2) -> np.ndarray:
+              stride: int = 2, return_px: bool = False):
     """Raw depth image -> (N,3) points in the camera (IR-left) frame.
 
     min_range acts as the v1 arm mask: the gripper fingers permanently hover
     7-12cm in front of the wrist camera and otherwise become the largest
     above-table cluster (observed 2026-08-14 — they track the camera).
+
+    `return_px=True` additionally returns the (N,2) int array of (v, u)
+    source pixels, in FULL-resolution image coordinates (the stride is
+    already applied) — this is what pairs each point with its rgb pixel.
     """
     z = depth_u16[::stride, ::stride].astype(np.float64) * depth_scale
     h, w = z.shape
@@ -136,7 +140,10 @@ def deproject(depth_u16: np.ndarray, intr: dict, depth_scale: float,
     z = z[valid]
     x = (uu[valid] - intr["ppx"]) / intr["fx"] * z
     y = (vv[valid] - intr["ppy"]) / intr["fy"] * z
-    return np.column_stack([x, y, z])
+    pts = np.column_stack([x, y, z])
+    if return_px:
+        return pts, np.column_stack([vv[valid], uu[valid]]).astype(int)
+    return pts
 
 
 def cam_to_base(points_cam: np.ndarray, T_base_cam: np.ndarray) -> np.ndarray:
@@ -145,12 +152,16 @@ def cam_to_base(points_cam: np.ndarray, T_base_cam: np.ndarray) -> np.ndarray:
     return points_cam @ T_base_cam[:3, :3].T + T_base_cam[:3, 3]
 
 
-def crop_workspace(points: np.ndarray) -> np.ndarray:
+def _workspace_mask(points: np.ndarray) -> np.ndarray:
     m = np.ones(len(points), dtype=bool)
     for i, ax in enumerate("xyz"):
         lo, hi = WORKSPACE[ax]
         m &= (points[:, i] >= lo) & (points[:, i] <= hi)
-    return points[m]
+    return m
+
+
+def crop_workspace(points: np.ndarray) -> np.ndarray:
+    return points[_workspace_mask(points)]
 
 
 def fit_table(points: np.ndarray) -> np.ndarray:
@@ -165,46 +176,33 @@ def fit_table(points: np.ndarray) -> np.ndarray:
     return plane
 
 
-def above_table(points: np.ndarray, plane: np.ndarray,
+def _above_mask(points: np.ndarray, plane: np.ndarray,
                 margin: float = ABOVE_TABLE_M) -> np.ndarray:
     d = points @ plane[:3] + plane[3]
-    return points[d > margin]
+    return d > margin
 
 
-def rectify_to_table(points: np.ndarray, plane: np.ndarray) -> np.ndarray:
-    """Rotate+shift so the fitted table plane becomes exactly z=0.
-
-    The table is flat ground truth visible in every view; per-view FK
-    orientation error (arm flex/backlash, observed 4-13 deg of plane tilt)
-    is absorbed here. Only yaw about z remains uncorrected.
-    """
-    n = plane[:3] / np.linalg.norm(plane[:3])
-    target = np.array([0.0, 0.0, 1.0])
-    v = np.cross(n, target)
-    s, c = np.linalg.norm(v), float(n @ target)
-    if s < 1e-9:
-        R = np.eye(3)
-    else:
-        vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-        R = np.eye(3) + vx + vx @ vx * ((1 - c) / s**2)
-    pts = points @ R.T
-    # plane point closest to origin maps to z = -d after rotation
-    pts[:, 2] += plane[3]
-    return pts
+def above_table(points: np.ndarray, plane: np.ndarray,
+                margin: float = ABOVE_TABLE_M) -> np.ndarray:
+    return points[_above_mask(points, plane, margin)]
 
 
-def largest_cluster(points: np.ndarray) -> np.ndarray:
-    """Largest DBSCAN cluster — v1 stand-in for detection-seeded growth."""
+def _largest_cluster_mask(points: np.ndarray) -> np.ndarray:
     import open3d as o3d
     if len(points) < DBSCAN_MIN_PTS:
-        return points
+        return np.ones(len(points), dtype=bool)
     pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(points))
     labels = np.asarray(pcd.cluster_dbscan(eps=DBSCAN_EPS_M,
                                            min_points=DBSCAN_MIN_PTS))
     if labels.max() < 0:
-        return points
+        return np.ones(len(points), dtype=bool)
     counts = np.bincount(labels[labels >= 0])
-    return points[labels == counts.argmax()]
+    return labels == counts.argmax()
+
+
+def largest_cluster(points: np.ndarray) -> np.ndarray:
+    """Largest DBSCAN cluster — v1 stand-in for detection-seeded growth."""
+    return points[_largest_cluster_mask(points)]
 
 
 def grow_from_seed(seed: np.ndarray, points: np.ndarray,
@@ -225,14 +223,23 @@ def grow_from_seed(seed: np.ndarray, points: np.ndarray,
 
     `seed` is the cloud so far, in the same base frame as `points`.
     """
+    points = np.asarray(points, dtype=float).reshape(-1, 3)
+    return points[_grow_mask(seed, points, eps)]
+
+
+def _grow_mask(seed: np.ndarray, points: np.ndarray,
+               eps: float = GROW_EPS_M) -> np.ndarray:
+    """Boolean membership form of `grow_from_seed`, row-aligned with
+    `points` — the form that lets a caller carry parallel data (colours)
+    through the growth without disturbing the measured policy above."""
     from scipy.spatial import cKDTree
 
     points = np.asarray(points, dtype=float).reshape(-1, 3)
     seed = np.asarray(seed, dtype=float).reshape(-1, 3)
-    if not len(points) or not len(seed):
-        return np.empty((0, 3))
-    tree = cKDTree(points)
     keep = np.zeros(len(points), dtype=bool)
+    if not len(points) or not len(seed):
+        return keep
+    tree = cKDTree(points)
     frontier = seed
     while len(frontier):
         hits = [h for h in tree.query_ball_point(frontier, eps) if h]
@@ -244,7 +251,7 @@ def grow_from_seed(seed: np.ndarray, points: np.ndarray,
             break
         keep[idx] = True
         frontier = points[idx]
-    return points[keep]
+    return keep
 
 
 #: Slack added around a reprojected cloud when it is used as a prompt box.
@@ -301,37 +308,16 @@ def prompt_box(points: np.ndarray, T_base_cam: np.ndarray, intr: dict,
     return box if box[2] > box[0] and box[3] > box[1] else None
 
 
-def object_from_view(depth_u16: np.ndarray, intr: dict, depth_scale: float,
-                     T_base_cam: np.ndarray,
-                     plane: np.ndarray | None = None) -> dict:
-    """One view -> object candidate. Returns dict with points/centroid/plane."""
-    pts_cam = deproject(depth_u16, intr, depth_scale)
-    pts = crop_workspace(cam_to_base(pts_cam, T_base_cam))
-    if len(pts) < 100:
-        raise RuntimeError(f"only {len(pts)} workspace points — bad view?")
-    if plane is None:
-        plane = fit_table(pts)
-    rect = rectify_to_table(pts, plane)          # table -> exactly z=0
-    above = rect[rect[:, 2] > ABOVE_TABLE_M]
-    obj = largest_cluster(above) if len(above) else above
-    return {
-        "points": obj,                            # table-rectified frame
-        "centroid": obj.mean(axis=0) if len(obj) else None,
-        "plane": plane,
-        "n_scene": len(pts),
-    }
-
-
 def object_in_base(depth_u16: np.ndarray, intr: dict, depth_scale: float,
                    T_base_cam: np.ndarray, seed: np.ndarray | None = None,
                    eps: float = GROW_EPS_M,
-                   mask: np.ndarray | None = None) -> dict:
+                   mask: np.ndarray | None = None,
+                   rgb: np.ndarray | None = None) -> dict:
     """One view -> object points in the BASE frame (no rectification).
 
     The loop plans in the base frame: the viewsphere center and the
-    collision box must not live in the table-rectified frame that
-    object_from_view returns. UR5e FK is mm-accurate, so skipping the
-    per-view tilt correction is safe here (it existed for SO-101 flex).
+    collision box must not live in a table-rectified frame. UR5e FK is
+    mm-accurate, so no per-view tilt correction is needed.
 
     Two ways to decide which points are the object:
 
@@ -363,9 +349,29 @@ def object_in_base(depth_u16: np.ndarray, intr: dict, depth_scale: float,
     A view that finds nothing returns zero points and a None centroid. That
     is an ordinary outcome, not an error: the view was valid, the object just
     wasn't legible from there. The caller adds nothing and carries on.
+
+    `rgb` — the (H, W, 3) uint8 colour frame in the SAME orientation as the
+    depth. When given, the result carries `"colors"`: uint8 (N, 3), row-
+    aligned with `"points"` — each point's source pixel sampled from `rgb`.
+    On the mask path (depth_aligned + colour intrinsics) the pairing is
+    exact by construction. On the depth paths (depth_raw + IR intrinsics)
+    it is approximate: the D405 derives colour from the left imager, so the
+    viewpoints coincide and only the ~1.6% intrinsics delta shifts the
+    sample a few pixels — accepted for a fallback path whose job is a
+    legible cloud, not radiometric truth. Without `rgb`, `"colors"` is None.
     """
-    pts_cam = deproject(depth_u16, intr, depth_scale)
-    pts = crop_workspace(cam_to_base(pts_cam, T_base_cam))
+    def _take(a, m):
+        return None if a is None else a[m]
+
+    pts_cam, px_all = deproject(depth_u16, intr, depth_scale, return_px=True)
+    pts_all = cam_to_base(pts_cam, T_base_cam)
+    if len(pts_all) != len(px_all):
+        # A wrapped `cam_to_base` changed the row set (the replay's legacy
+        # workspace crop does this) — pixel pairing is gone, so colours are
+        # honestly None rather than silently misaligned.
+        px_all = None
+    ws = _workspace_mask(pts_all)
+    pts, pts_px = pts_all[ws], _take(px_all, ws)
     if len(pts) < 100:
         raise RuntimeError(f"only {len(pts)} workspace points — bad view?")
     plane = fit_table(pts)
@@ -386,17 +392,37 @@ def object_in_base(depth_u16: np.ndarray, intr: dict, depth_scale: float,
         # Masked points are still bounded: `deproject` clips to
         # [MIN_RANGE_M, MAX_RANGE_M], `above_table` drops the table, and the
         # accumulator's jump gate remains the model-independent backstop.
-        m_pts = cam_to_base(
-            deproject(np.where(mask, depth_u16, 0), intr, depth_scale),
-            T_base_cam)
-        obj = above_table(m_pts, plane) if len(m_pts) else m_pts
+        m_pts_cam, m_px = deproject(np.where(mask, depth_u16, 0), intr,
+                                    depth_scale, return_px=True)
+        m_pts = cam_to_base(m_pts_cam, T_base_cam)
+        if len(m_pts) != len(m_px):
+            m_px = None
+        if len(m_pts):
+            am = _above_mask(m_pts, plane)
+            obj, px = m_pts[am], _take(m_px, am)
+        else:
+            obj, px = m_pts, m_px
     elif seed is None or not len(seed):
-        above = above_table(pts, plane)
-        obj = largest_cluster(above) if len(above) else above
+        am = _above_mask(pts, plane)
+        above, above_px = pts[am], _take(pts_px, am)
+        if len(above):
+            cm = _largest_cluster_mask(above)
+            obj, px = above[cm], _take(above_px, cm)
+        else:
+            obj, px = above, above_px
     else:
-        obj = grow_from_seed(seed, above_table(pts, plane), eps)
+        am = _above_mask(pts, plane)
+        above, above_px = pts[am], _take(pts_px, am)
+        gm = _grow_mask(seed, above, eps)
+        obj, px = above[gm], _take(above_px, gm)
+    colors = None
+    if rgb is not None and px is not None:
+        rgb = np.asarray(rgb)
+        colors = np.ascontiguousarray(
+            rgb[px[:, 0], px[:, 1]]).astype(np.uint8).reshape(-1, 3)
     return {
         "points": obj,
+        "colors": colors,
         "centroid": obj.mean(axis=0) if len(obj) else None,
         "plane": plane,
         "n_scene": len(pts),
@@ -406,9 +432,14 @@ def object_in_base(depth_u16: np.ndarray, intr: dict, depth_scale: float,
 class CloudAccumulator:
     """Grows the object cloud across views; centroid tracks the fused cloud."""
 
+    #: Colour given to points fused without one — mid-grey, so an uncoloured
+    #: contribution is visibly "no data" rather than a plausible colour.
+    GRAY = 128
+
     def __init__(self, voxel: float = VOXEL_M):
         self.voxel = voxel
         self._points = np.empty((0, 3))
+        self._colors = np.empty((0, 3), dtype=np.uint8)
         #: The subset of the LAST `add` that survived the jump gate — what
         #: this view actually contributed. A diagnostic side-channel for the
         #: chain overlay: the fused cloud is voxelised and outlier-filtered
@@ -416,7 +447,8 @@ class CloudAccumulator:
         #: came from where. Never read by the loop itself.
         self.last_kept = np.empty((0, 3))
 
-    def add(self, points: np.ndarray) -> int:
+    def add(self, points: np.ndarray,
+            colors: np.ndarray | None = None) -> int:
         """Fuse one view's points. Returns how many were REJECTED as detached.
 
         Points further than `JUMP_GATE_M` from anything already accumulated do
@@ -432,31 +464,51 @@ class CloudAccumulator:
         cable points that pass within 80 mm still stretch a raw min/max extent
         (measured: 118 x 154 mm, arm still inside its own object box). That is
         what `aabb(pct=...)` is for — the two guards are complementary.
+
+        `colors` — uint8 (N, 3), row-aligned with `points` (the `"colors"`
+        field of `object_in_base`). Colours ride every filter the points do:
+        the jump gate drops them together, the voxel average blends them, the
+        outlier filter keeps the survivors'. `None` fuses mid-grey so the
+        cloud/colour row alignment can never break.
         """
         import open3d as o3d
         self.last_kept = np.empty((0, 3))
         if len(points) == 0:
             return 0
+        if colors is None:
+            colors = np.full((len(points), 3), self.GRAY, dtype=np.uint8)
+        colors = np.asarray(colors, dtype=np.uint8).reshape(-1, 3)
+        if len(colors) != len(points):
+            raise ValueError(f"{len(colors)} colors for {len(points)} points")
         rejected = 0
         if len(self._points) and JUMP_GATE_M:
             from scipy.spatial import cKDTree
             keep = cKDTree(self._points).query(points)[0] <= JUMP_GATE_M
             rejected = int((~keep).sum())
-            points = points[keep]
+            points, colors = points[keep], colors[keep]
             if not len(points):
                 return rejected
         self.last_kept = np.asarray(points)
         merged = np.vstack([self._points, points])
+        merged_c = np.vstack([self._colors, colors])
         pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(merged))
+        pcd.colors = o3d.utility.Vector3dVector(merged_c.astype(np.float64) / 255.0)
         pcd = pcd.voxel_down_sample(self.voxel)
         if len(pcd.points) > 50:
             pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=16, std_ratio=2.5)
         self._points = np.asarray(pcd.points)
+        self._colors = np.clip(np.rint(np.asarray(pcd.colors) * 255.0),
+                               0, 255).astype(np.uint8)
         return rejected
 
     @property
     def points(self) -> np.ndarray:
         return self._points
+
+    @property
+    def colors(self) -> np.ndarray:
+        """uint8 (N, 3), row-aligned with `points` for the life of the run."""
+        return self._colors
 
     @property
     def centroid(self) -> np.ndarray | None:

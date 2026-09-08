@@ -31,7 +31,7 @@ def _notes(tmp):
     """A separate RunStore — task-5: ViewTools' `writer` still binds to the
     surviving RunStore (plan/hypothesis/findings), independent of the run's
     own views, which now live on `Run`."""
-    return RunStore.create(Path(tmp) / "notes", h_bins=12,
+    return RunStore.create(Path(tmp) / "run" / "notes", h_bins=12,
                            v_elevs=(10.0, 40.0, 70.0), r=0.35)
 
 

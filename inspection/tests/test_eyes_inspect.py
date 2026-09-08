@@ -27,7 +27,7 @@ def _rig(tmp):
 
 def _run(tmp, script):
     run = _rig(tmp)
-    store = RunStore.create(Path(tmp) / "notes", h_bins=12,
+    store = RunStore.create(Path(tmp) / "run" / "notes", h_bins=12,
                             v_elevs=(10.0, 40.0, 70.0), r=0.35)
     tools = ViewTools(run, writer=FindingWriter(store))
     verbs = LocalVerbs(StubBackend(boxes=[((100, 100, 300, 300), 0.9, "cup")],
@@ -57,7 +57,10 @@ def test_tool_turns_run_then_the_answer_lands():
              "reasoning": "the OCR read sits inside the cup box",
              "answer": "yes"}])
         assert f.answer == "yes"
-        assert [t["tool"] for t in f.transcript["turns"] if "tool" in t] == \
+        # The model's own calls, told apart from their results by the
+        # turn discriminator every record carries (schema).
+        assert [t["tool"] for t in f.transcript["turns"]
+                if t.get("type") == "reply" and "tool" in t] == \
             ["detect", "read_text"]
 
 
@@ -104,7 +107,10 @@ def test_view_block_is_normalised_and_kept():
                           "recommendation": "around right"}
         rel = store.findings()[0]["transcript"]
         disk = json.loads((store.path / rel).read_text())
-        assert disk["view"] == f.view
+        # The record's `answer` is the whole final emit — a variant's appendix
+        # is model output with no other home in the schema, so it is written
+        # there rather than dropped at the write boundary.
+        assert disk["answer"]["view"] == f.view
 
 
 def test_view_none_recommendation_is_dropped_saw_survives():

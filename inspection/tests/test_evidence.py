@@ -29,7 +29,7 @@ def _rig(tmp):
 
 def _hunt(tmp, script, find="the ACME wordmark"):
     run = _rig(tmp)
-    store = RunStore.create(Path(tmp) / "notes", h_bins=12,
+    store = RunStore.create(Path(tmp) / "run" / "notes", h_bins=12,
                             v_elevs=(10.0, 40.0, 70.0), r=0.35)
     tools = ViewTools(run, writer=FindingWriter(store))
     verbs = LocalVerbs(StubBackend(
@@ -60,8 +60,10 @@ def test_found_hunt_resolves_the_cited_crop():
              "answer": "found — the ACME wordmark, whole and unclipped",
              "evidence_image": 1}])
         assert rec["found"] is True
-        assert rec["crop"] and "crops" in rec["crop"]     # the cited crop
-        assert rec["frame"] and "frames" in rec["frame"]
+        # Both live under the AI session's own artifacts/ now — that is
+        # where an answer may cite them from (schema: EvidenceImage).
+        assert rec["crop"] and "artifacts/" in rec["crop"]   # the cited crop
+        assert rec["frame"] and rec["frame"].endswith("_frame.png")
         assert rec["report"].startswith("found")
         assert rec["transcript"]                           # audit trail
         assert (store.path / rec["transcript"]).exists()
@@ -85,7 +87,7 @@ def test_garbled_citation_falls_back_to_the_last_image():
             {"evidence": ["e"], "reasoning": "r",
              "answer": "found — the mark", "evidence_image": "the last crop"}])
         assert rec["found"] is True
-        assert rec["crop"] and "crops" in rec["crop"]      # last image taken
+        assert rec["crop"] and "artifacts/" in rec["crop"]  # last image taken
 
 
 def test_the_hunter_has_no_note_and_no_view():

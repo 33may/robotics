@@ -32,7 +32,7 @@ def _rig(tmp):
 
 def _run(tmp, agent, script):
     run = _rig(tmp)
-    store = RunStore.create(Path(tmp) / "notes", h_bins=12,
+    store = RunStore.create(Path(tmp) / "run" / "notes", h_bins=12,
                             v_elevs=(10.0, 40.0, 70.0), r=0.35)
     tools = ViewTools(run, writer=FindingWriter(store))
     verbs = LocalVerbs(StubBackend(boxes=[((100, 100, 300, 300), 0.9, "cup")]))
@@ -101,7 +101,9 @@ def test_extras_are_normalised_written_to_disk_and_exposed():
         assert f.extras["mark"] == "HERE"
         disk = json.loads((store.path / store.findings()[0]["transcript"])
                           .read_text())
-        assert disk["mark"] == "HERE"             # disk and Finding agree
+        # `answer` carries the whole emit, appendix included (schema:
+        # TranscriptRecord.answer is dict | list | str | None).
+        assert disk["answer"]["mark"] == "HERE"   # disk and Finding agree
         assert f.view == {}                       # undeclared appendix -> {}
 
 
@@ -128,7 +130,7 @@ def test_boxes_round_trip_through_the_model_boundary():
     spec = VlmAgent(rules="r")
     with tempfile.TemporaryDirectory() as tmp:
         run = _rig(tmp)
-        store = RunStore.create(Path(tmp) / "notes", h_bins=12,
+        store = RunStore.create(Path(tmp) / "run" / "notes", h_bins=12,
                                 v_elevs=(10.0, 40.0, 70.0), r=0.35)
         tools = ViewTools(run, writer=FindingWriter(store))
         verbs = LocalVerbs(StubBackend(boxes=[(px, 0.9, "cup")]))
@@ -151,7 +153,7 @@ def test_read_text_takes_a_region_and_each_box_is_its_own_call():
     spec = VlmAgent(rules="r")
     with tempfile.TemporaryDirectory() as tmp:
         run = _rig(tmp)
-        store = RunStore.create(Path(tmp) / "notes", h_bins=12,
+        store = RunStore.create(Path(tmp) / "run" / "notes", h_bins=12,
                                 v_elevs=(10.0, 40.0, 70.0), r=0.35)
         tools = ViewTools(run, writer=FindingWriter(store))
         verbs = LocalVerbs(StubBackend(
@@ -175,7 +177,7 @@ def test_failure_messages_speak_the_models_convention():
     spec = VlmAgent(rules="r")
     with tempfile.TemporaryDirectory() as tmp:
         run = _rig(tmp)
-        store = RunStore.create(Path(tmp) / "notes", h_bins=12,
+        store = RunStore.create(Path(tmp) / "run" / "notes", h_bins=12,
                                 v_elevs=(10.0, 40.0, 70.0), r=0.35)
         tools = ViewTools(run, writer=FindingWriter(store))
         f = spec.run(tools, LocalVerbs(StubBackend()), FindingWriter(store),

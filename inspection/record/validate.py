@@ -148,11 +148,18 @@ def validate_run(run_dir: Path, deep: bool = False,
                 rep.problems.append(Problem("warn", f"ai/{adir.name}",
                                             "no menu/menu_def.json — "
                                             "menu_hash cross-check skipped"))
-        # `t*.json` is the TranscriptRecord naming (`AIRunWriter.transcript`,
-        # `Run.ai[].transcripts`) — the same glob the read door uses, so a
-        # file the reader ignores is not a file the validator rejects.
+        # EVERY json under transcripts/, not just the `t*.json` the read door
+        # globs: a file the reader silently ignores is exactly the failure
+        # this check exists to catch (a live session whose transcripts are
+        # invisible from both directions). If it is in here, it must be a
+        # TranscriptRecord and it must be readable.
         tdir = adir / "transcripts"
-        for tpath in sorted(tdir.glob("t*.json")) if tdir.exists() else []:
+        for tpath in sorted(tdir.glob("*.json")) if tdir.exists() else []:
+            if not tpath.name.startswith("t"):
+                rep.problems.append(Problem(
+                    "error", f"ai/{adir.name}/transcripts/{tpath.name}",
+                    "transcript is not named tNNN.json — the read door "
+                    "(Run.ai[].transcripts) will never return it"))
             tr = _load(rep, tpath, TranscriptRecord)
             if tr and tr.step_id not in roster:
                 rep.problems.append(Problem(

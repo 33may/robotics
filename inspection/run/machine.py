@@ -588,10 +588,18 @@ class Supervisor:
         # "the arm stood somewhere and a camera was pointed at it". A move
         # that stopped or faulted never gets one (`_on_exec_done` logs the
         # event instead) — the id space stays dense over things that happened.
-        sid, sdir = self.writer.begin_step(
-            {"method": VIEW_METHOD,
-             "address": None if target == "survey" else list(target)})
+        #
+        # Inside the try, and `sid` defined before it: `begin_step` does real
+        # filesystem work (mkdir, run.json flush) and can fail on a full or
+        # read-only disk. If it did so unguarded, this thread would die
+        # without queueing `settle_done` — and `capturing` is a busy phase, so
+        # the dispatcher would drop every further command INCLUDING run/exit,
+        # leaving the operator no way to stop a run with a robot in it.
+        sid, sdir = None, None
         try:
+            sid, sdir = self.writer.begin_step(
+                {"method": VIEW_METHOD,
+                 "address": None if target == "survey" else list(target)})
             cap = self.rig.capture(sid, sdir)
             # `settle_capture` (run/settle.py) is the object-identity + plane-
             # gate + fuse pipeline, verbatim out of this worker: it rejects a
@@ -631,8 +639,9 @@ class Supervisor:
         except Exception as e:
             log.exception("capture/settle failed for step %s", sid)
             try:
-                self.writer.mark_step(sid, outcome="failed",
-                                      detail=f"capture failed: {e}")
+                if sid is not None:
+                    self.writer.mark_step(sid, outcome="failed",
+                                          detail=f"capture failed: {e}")
             except Exception:
                 # The dispatcher MUST get its terminal event even if the
                 # record cannot be written — a wedged run is worse than a

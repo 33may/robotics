@@ -62,7 +62,8 @@ Rules:
   number, no `view` block."""
 
 
-SURVEY = VlmAgent(rules=SURVEY_RULES, max_turns=SURVEY_MAX_TURNS)
+SURVEY = VlmAgent(rules=SURVEY_RULES, kind="survey",
+                  max_turns=SURVEY_MAX_TURNS)
 
 
 def describe_survey(tools, verbs, writer, model, on_turn=None,

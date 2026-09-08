@@ -282,7 +282,16 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
             except Exception:
                 pass
         if writer is not None:
-            finish_run(writer, sup.acc if sup is not None else None)
+            # Guarded like every other line of this teardown: `finish_run`
+            # saves two arrays, hashes every binary in the run and validates
+            # the final run.json. Losing the last bytes of a record must never
+            # cost us `rig.close()` — a leaked RTDE interface and a camera pipe
+            # left running are worse than an unclosed run, which the reader
+            # already detects as crashed.
+            try:
+                finish_run(writer, sup.acc if sup is not None else None)
+            except Exception:
+                log.exception("could not close the run record")
         if rig is not None:
             rig.close()
         _close_ui(child)
