@@ -14,6 +14,16 @@ from pathlib import Path
 from inspection.record.schema import Manifest, RunRecord
 from inspection.record.validate import STALE_S
 
+# The archive is two sibling folders, split by what a run IS (Anton
+# 2026-09-08): `runs/` holds real inspection runs — a question asked, a
+# verdict reached — and `datasets/` holds data-collection sweeps (Flow B,
+# source="data-engine"), which are inputs to training, not inspections.
+# The run.json `source` field says the same thing from inside the run; the
+# folder says it from the outside, so `ls` can list one world at a time.
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+RUNS_ROOT = DATA_DIR / "runs"
+DATASETS_ROOT = DATA_DIR / "datasets"
+
 
 @dataclass
 class Card:
@@ -87,6 +97,8 @@ def runs(root: Path, *, object: str | None = None, source: str | None = None,
          now: float | None = None) -> list[Card]:
     now = now if now is not None else time.time()
     cards = []
+    if not Path(root).is_dir():  # a root that has seen no runs yet is empty
+        return cards
     for d in sorted(Path(root).iterdir()):
         if not (d.is_dir() and (d / "run.json").exists()):
             continue

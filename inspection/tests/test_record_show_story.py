@@ -76,6 +76,35 @@ def test_cli_ls_and_card(tmp_path, capsys):
     assert "ok" in out.lower()
 
 
+def test_cli_two_roots(tmp_path, capsys, monkeypatch):
+    """runs/ vs datasets/ split: `ls` reads one world, `--data` the other,
+    `--all` both, and an ID resolves across both without --root."""
+    import inspection.record.__main__ as cli
+    runs_root, data_root = tmp_path / "runs", tmp_path / "datasets"
+    runs_root.mkdir()
+    make_run(runs_root, run_id="0309-cup1", object="cup",
+             status="completed", with_answer=True)
+    make_run(data_root, run_id="0809-box1", object="box",
+             status="completed", with_answer=True)
+    monkeypatch.setattr(cli, "RUNS_ROOT", runs_root)
+    monkeypatch.setattr(cli, "DATASETS_ROOT", data_root)
+
+    main = cli.main
+    main(["ls"])
+    out = capsys.readouterr().out
+    assert "0309-cup1" in out and "0809-box1" not in out
+    main(["ls", "--data"])
+    out = capsys.readouterr().out
+    assert "0809-box1" in out and "0309-cup1" not in out
+    main(["ls", "--all"])
+    out = capsys.readouterr().out
+    assert "0309-cup1" in out and "0809-box1" in out
+
+    main(["card", "0809-box1"])  # datasets root, found without --root
+    assert "box" in capsys.readouterr().out
+    assert main(["validate", "--all"]) == 0
+
+
 if __name__ == "__main__":
     import sys
     sys.exit(pytest.main([__file__, "-v"]))

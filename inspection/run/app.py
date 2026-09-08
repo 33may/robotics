@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Loop v2 composition root. Design: inspection/docs/2026-08-20-ui-driven-loop-design.md.
 
-    p inspection/run/app.py run --outdir=data/runs/r1     # the real thing
-    p inspection/run/app.py teach                         # save survey pose
+    p inspection/run/app.py run --name=box1 --object=box      # -> data/runs/DDMM-box1
+    p inspection/run/app.py collect --name=box1 --object=box  # -> data/datasets/DDMM-box1
+    p inspection/run/app.py teach                             # save survey pose
+
+`--outdir` still works on both and overrides the default; without it, `run`
+lands in data/runs/ and `collect` in data/datasets/ (the runs-vs-data split,
+Anton 2026-09-08 — see record/catalog.py).
 """
+import datetime
 import json, logging, signal, subprocess, sys, threading, webbrowser
 from pathlib import Path
 import numpy as np
@@ -13,6 +19,23 @@ log = logging.getLogger(__name__)
 ROBOT_IP = "192.168.2.50"
 SURVEY_POSE_FILE = Path(__file__).resolve().parent / "survey_pose.json"
 UI_APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
+
+
+def _default_outdir(root: Path, name: str | None) -> Path:
+    """`<root>/<DDMM-name>`, suffixed -2, -3, ... if today already has one.
+
+    Only the DEFAULT path auto-suffixes: an explicit `--outdir` that already
+    exists still fails in `RunWriter.create` (evidence is never overwritten),
+    because there the collision is a mistake, not a second take of box1.
+    """
+    if not name:
+        raise SystemExit("give --name (or an explicit --outdir)")
+    today = datetime.date.today()
+    base = f"{today.day:02d}{today.month:02d}-{name}"
+    outdir, n = root / base, 2
+    while outdir.exists():
+        outdir, n = root / f"{base}-{n}", n + 1
+    return outdir
 
 
 def install_sigint(sup):
@@ -169,12 +192,13 @@ def teach(ip: str = ROBOT_IP):
     print(f"survey pose saved: {np.round(np.degrees(q), 1).tolist()} deg")
 
 
-def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
+def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
         port: int = 8767, bus_port: int = 8765, no_window: bool = False,
         seed: int = 0, gui: str = "qt", name: str | None = None,
         object: str | None = None):
-    """One live run. `outdir` is `<runs root>/<run id>`; `name` defaults to
-    the id's leaf and `object` is the free tag the archive is queried by."""
+    """One live run. `outdir` defaults to `data/runs/<DDMM-name>` (so `--name`
+    is enough); given explicitly it is `<root>/<run id>` and `name` defaults
+    to its leaf. `object` is the free tag the archive is queried by."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     from porthole import PortholeBus
     from inspection.eyes.cognition import real_cognition
@@ -207,7 +231,9 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
         raise SystemExit(1)
     q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])
 
-    outdir = Path(outdir).resolve()
+    from inspection.record.catalog import RUNS_ROOT
+    outdir = Path(outdir).resolve() if outdir \
+        else _default_outdir(RUNS_ROOT, name)
     stop_event = threading.Event()
     # Everything that owns a socket, hardware or a thread is built inside the
     # try, so a failure part-way through setup still runs the teardown below
@@ -308,11 +334,13 @@ def run(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
     print(f"run saved: {outdir}")
 
 
-def collect(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
+def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
            port: int = 8767, bus_port: int = 8765, no_window: bool = False,
            seed: int = 0, gui: str = "qt", name: str | None = None,
            object: str | None = None):
-    """One data-collection sweep — Flow B. `outdir` is `<runs root>/<run id>`.
+    """One data-collection sweep — Flow B. `outdir` defaults to
+    `data/datasets/<DDMM-name>`: sweeps are training data, not inspection
+    runs, and they land in their own archive (`ls --data` lists them).
 
     Same composition as `run()` minus cognition/`brain/ask` — no VLM, no
     question, nothing under `ai/` — plus a `SweepDriver` in place of an
@@ -349,7 +377,9 @@ def collect(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
         raise SystemExit(1)
     q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])
 
-    outdir = Path(outdir).resolve()
+    from inspection.record.catalog import DATASETS_ROOT
+    outdir = Path(outdir).resolve() if outdir \
+        else _default_outdir(DATASETS_ROOT, name)
     stop_event = threading.Event()
     # Same "everything live inside the try" shape as `run()`, for the same
     # reason: a failure part-way through setup must still hit the teardown
