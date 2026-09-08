@@ -259,6 +259,10 @@ def _grow_mask(seed: np.ndarray, points: np.ndarray,
 #: what is background inside it — so a loose box is cheap and a tight one that
 #: clips the object is not. Measured on 2408-cup2: boxes containing a large
 #: slice of cable still returned clean masks (0.73-0.97).
+#: PROMPT_GROW scales with the box (Anton 2026-09-08: "20% larger whatever
+#: the bbox is" — 10% per side); PROMPT_MARGIN_PX is the FLOOR per side, so
+#: a small far-away box keeps at least the old fixed slack.
+PROMPT_GROW = 0.10
 PROMPT_MARGIN_PX = 12
 #: Percentile trimmed off the reprojection before boxing it, for the same
 #: reason `aabb` has one: a handful of stray points must not define the box.
@@ -385,8 +389,10 @@ def prompt_box(points: np.ndarray, T_base_cam: np.ndarray, intr: dict,
     if len(uv) < 10:
         return None
     h, w = shape[:2]
-    lo = np.percentile(uv, pct, axis=0) - margin
-    hi = np.percentile(uv, 100.0 - pct, axis=0) + margin
+    lo = np.percentile(uv, pct, axis=0)
+    hi = np.percentile(uv, 100.0 - pct, axis=0)
+    grow = np.maximum(PROMPT_GROW * (hi - lo), margin)  # per side, per axis
+    lo, hi = lo - grow, hi + grow
     box = (int(max(0, lo[0])), int(max(0, lo[1])),
            int(min(w, hi[0])), int(min(h, hi[1])))
     return box if box[2] > box[0] and box[3] > box[1] else None

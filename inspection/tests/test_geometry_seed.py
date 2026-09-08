@@ -380,6 +380,26 @@ def test_prompt_box_floor_extrusion_reaches_the_table():
     assert floored[3] >= plain[3] + 20                   # ~30 px of sides here
 
 
+def test_prompt_box_grows_20_percent_of_its_size():
+    """A big close-up box must grow with itself (10% per side), not by the
+    fixed floor: 400 px across -> 40 px per side, well past the 12 px floor."""
+    from inspection.cell.geometry import PROMPT_GROW, prompt_box
+    rng = np.random.default_rng(7)
+    T_bc = np.array([[0., 0., -1., 0.5],
+                     [-1., 0., 0., 0.0],
+                     [0., -1., 0., 0.05],
+                     [0., 0., 0., 1.]])
+    intr = {"fx": 430.0, "fy": 430.0, "ppx": 424.0, "ppy": 240.0}
+    pts = np.column_stack([np.zeros(2000),
+                           rng.uniform(-0.2, 0.2, 2000),     # ~344 px wide
+                           rng.uniform(0.02, 0.08, 2000)])
+    box = prompt_box(pts, T_bc, intr, (480, 848), pct=0.0)
+    x0, y0, x1, y1 = box
+    raw_w = 0.4 / 0.5 * 430.0                                # ~344 px
+    assert abs((x1 - x0) - raw_w * (1 + 2 * PROMPT_GROW)) < 6
+    assert x0 < 424 - raw_w / 2 - 20                          # grew past floor
+
+
 def test_prompt_box_clips_to_the_frame():
     from inspection.cell.geometry import prompt_box
     depth, intr, scale, T_bc, _ = synth_capture()
