@@ -156,6 +156,8 @@ def start_mock_collect(bus, pub, outdir, seed: int = 0) -> Supervisor:
         config=config_snapshot({"segmenter": "stub"}),
         view_methods=[viewsphere_method()],
         q_survey=[float(v) for v in q_survey], tags=["mock"])
+    pub.publish_run_meta(source="data-engine", name=outdir.name, object=None,
+                         question=None)
     sup = Supervisor(rig, pub, writer, q_survey=q_survey, seed=seed,
                      segmenter=_stub_segmenter())
     pub.publish_world(sup.world)

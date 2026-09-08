@@ -122,7 +122,11 @@ def validate_run(run_dir: Path, deep: bool = False,
     answers += sorted((run_dir / "ai").glob("*/answer.json"))
     ans_records = [a for a in (_load(rep, p, AnswerRecord) for p in answers)
                    if a is not None]
-    if run.status == "completed" and not ans_records:
+    # Only a run that ASKED something owes an answer (ruling 2026-09-08): a
+    # data-engine sweep has question=None and completes when the candidate
+    # set runs out — there was never a verdict to reach.
+    if run.status == "completed" and run.question is not None \
+            and not ans_records:
         rep.problems.append(Problem("error", "answer.json",
                                     "completed run requires an answer"))
     for ans in ans_records:

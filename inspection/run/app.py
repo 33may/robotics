@@ -361,6 +361,8 @@ def collect(outdir: str, ip: str = ROBOT_IP, r: float | None = None,
             config=config_snapshot({"segmenter": "sam3"}),
             view_methods=[viewsphere_method(r)],
             q_survey=[float(v) for v in q_survey])
+        pub.publish_run_meta(source="data-engine", name=name or outdir.name,
+                             object=object, question=None)
         rig = RealRig(None, stop_event, outdir, ip)   # world set below
         writer.write_session(rig.session)
         # Segmentation stays real (identity still matters for a sweep's

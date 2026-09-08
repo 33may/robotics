@@ -93,28 +93,7 @@ def _stub_segmenter():
     return ObjectSegmenter(backend=StubBackend())
 
 
-def test_sweep_driver_visits_every_reachable_cell(tmp_path, monkeypatch):
-    # ENV WORKAROUND, out of Task 9's scope: `run/settle.py:settle_capture`
-    # calls `acc.add(view["points"], view.get("colors"))`, but
-    # `cell/geometry.py:CloudAccumulator.add` only accepts `points` — a
-    # pre-existing mismatch (colors are never actually produced anywhere;
-    # `object_view` never sets a "colors" key, so this is always `None`)
-    # that also fails test_flow_a.py's own survey-only test in this
-    # worktree, independent of anything here (reproduced separately:
-    # `TypeError: add() takes 2 positional arguments but 3 were given`).
-    # Matches Task 8's tracked C2 finding ("committed tree alone cannot
-    # complete a step"), being fixed by the parallel Task 8 agent in the
-    # main checkout. This shim only widens the call signature so the REAL
-    # settle/RunWriter/Supervisor pipeline can complete a step here — it
-    # changes no behavior any caller depends on today.
-    import inspection.cell.geometry as geometry
-    real_add = geometry.CloudAccumulator.add
-
-    def _add_ignoring_colors(self, points, colors=None):
-        return real_add(self, points)
-
-    monkeypatch.setattr(geometry.CloudAccumulator, "add", _add_ignoring_colors)
-
+def test_sweep_driver_visits_every_reachable_cell(tmp_path):
     run_dir = tmp_path / "0709-sweep"
     q_survey = DEMO_PARK.copy()
     rig = FakeRig(q_survey + np.radians([0, 0, 0, 0, 0, 8]))
@@ -187,22 +166,9 @@ def test_sweep_driver_visits_every_reachable_cell(tmp_path, monkeypatch):
             (step.id, vstate.decider if vstate else None)
 
     rep = run.validate()
-    # KNOWN, OUT-OF-SCOPE GAP (not this task's call — surfaced, not patched
-    # around): `record/validate.py`'s "completed run requires an answer"
-    # rule fires for ANY `status == "completed"` run with no `answer.json`,
-    # live OR data-engine. Flow B's sweep never asks a question
-    # (`question=None`, spec'd by this task's brief) and so never has a
-    # verdict to answer with — `AnswerRecord` is a VLM verdict
-    # (`verdict`/`reasoning`), and fabricating one for a pure sweep would be
-    # inventing content the run never produced. `validate.py`'s own comment
-    # anticipates "a data-engine run answers at the root", which is a real
-    # design gap between that rule and this task's spec, not a defect in
-    # the record this test wrote — asserted precisely, so a real problem
-    # elsewhere in the record still fails this test.
-    other = [p for p in rep.problems
-             if not (p.where == "answer.json" and "requires an answer" in p.what)]
-    assert not other, other
-    assert len(rep.problems) == 1, rep.problems
+    # A question-less sweep owes no answer (validate ruling 2026-09-08):
+    # the record must stand entirely clean.
+    assert rep.ok, rep.problems
 
 
 if __name__ == "__main__":
