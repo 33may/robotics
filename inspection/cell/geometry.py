@@ -288,7 +288,8 @@ def project_to_pixels(points: np.ndarray, T_base_cam: np.ndarray,
 
 def prompt_box(points: np.ndarray, T_base_cam: np.ndarray, intr: dict,
                shape: tuple, margin: int = PROMPT_MARGIN_PX,
-               pct: float = PROMPT_PCT) -> tuple | None:
+               pct: float = PROMPT_PCT,
+               floor_z: float | None = None) -> tuple | None:
     """Where known object points land in THIS view, as a box to prompt with.
 
     This is how object identity survives a viewpoint change without any text
@@ -296,7 +297,24 @@ def prompt_box(points: np.ndarray, T_base_cam: np.ndarray, intr: dict,
     already say where the object must appear, so each new frame gets a fresh
     prompt for free. Returns None when too little of the cloud is visible to
     trust — the caller then falls back rather than segmenting a guess.
+
+    `floor_z` (base-frame table height) extrudes the cloud down to the table
+    before projecting. Without it the box is anchored on whatever has been
+    SEEN, and a run that opens top-down has seen only the top face — so every
+    side view gets a top-band box, the mask stays on the top face, the sides
+    never enter the cloud, and the anchor can never grow (run 0809-0809box:
+    a 70 mm box believed 31 mm tall for all 27 views). Objects rest on the
+    table — the same assumption the survey's "NO OBJECT above the table"
+    check already makes — so the shadow of the seen cloud on the table is
+    always inside the object's true silhouette in x/y and reaches its true
+    bottom in z. Measured on that run's side view 015: 856 -> 4171 fused
+    points, and the fused cloud grew real sides.
     """
+    points = np.asarray(points, dtype=float)
+    if floor_z is not None and len(points):
+        floor = points.copy()
+        floor[:, 2] = float(floor_z)
+        points = np.vstack([points, floor])
     uv = project_to_pixels(points, T_base_cam, intr)
     if len(uv) < 10:
         return None

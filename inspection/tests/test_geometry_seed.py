@@ -319,6 +319,30 @@ def test_prompt_box_is_none_when_the_cloud_is_not_visible():
     assert prompt_box(np.empty((0, 3)), T_bc, intr, depth.shape) is None
 
 
+def test_prompt_box_floor_extrusion_reaches_the_table():
+    """A top-only cloud seen side-on prompts a top-band box — the anchor that
+    kept run 0809-0809box's sides out of the cloud for all 27 views. With
+    `floor_z` the box must keep its footprint and top edge but grow DOWN to
+    the table line, where the unseen sides live."""
+    from inspection.cell.geometry import prompt_box
+    rng = np.random.default_rng(0)
+    top = np.column_stack([rng.uniform(-0.05, 0.05, 400),
+                           rng.uniform(-0.05, 0.05, 400),
+                           np.full(400, 0.07)])          # the SEEN top face
+    T_bc = np.array([[0., 0., -1., 1.0],                 # side-on camera 1 m
+                     [-1., 0., 0., 0.0],                 # out, level with the
+                     [0., -1., 0., 0.05],                # object
+                     [0., 0., 0., 1.]])
+    intr = {"fx": 430.0, "fy": 430.0, "ppx": 424.0, "ppy": 240.0}
+    plain = prompt_box(top, T_bc, intr, (480, 848))
+    floored = prompt_box(top, T_bc, intr, (480, 848), floor_z=0.0)
+    assert plain is not None and floored is not None
+    assert abs(plain[0] - floored[0]) <= 2               # footprint unchanged
+    assert abs(plain[2] - floored[2]) <= 2
+    assert abs(plain[1] - floored[1]) <= 2               # top edge stays
+    assert floored[3] >= plain[3] + 20                   # ~30 px of sides here
+
+
 def test_prompt_box_clips_to_the_frame():
     from inspection.cell.geometry import prompt_box
     depth, intr, scale, T_bc, _ = synth_capture()

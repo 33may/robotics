@@ -94,6 +94,17 @@ class Supervisor:
         self.segmenter = segmenter
         self.outdir = Path(writer.dir); self.q_survey = np.asarray(q_survey, float)
         self.world = world if world is not None else RobotCell()
+        # The probed tabletop height in the base frame (cell.yaml `frames.
+        # table`), for `prompt_box`'s floor extrusion — the fix for the
+        # top-anchored prompt (see `cell/geometry.py:prompt_box`). Reaching
+        # into `_frame_to_base`/`_frames` is deliberate smallest-footprint:
+        # promote to a `RobotCell` property when that file is next open.
+        try:
+            from inspection.cell.world import _frame_to_base
+            self._floor_z = float(
+                _frame_to_base(self.world._frames, "table").translation[2])
+        except Exception:
+            self._floor_z = None    # a world with no probed table: old behavior
         self.ik = ik if ik is not None else UR5eIK()
         self.r, self.seed = r, seed
         self.events = queue.Queue()
@@ -633,7 +644,8 @@ class Supervisor:
             # a failed capture takes below — the run carries on either way.
             res = settle_capture(cap, self.rig, self.segmenter, self.acc,
                                  is_survey=(target == "survey"),
-                                 on_warn=lambda msg: self.pub.log("warn", msg))
+                                 on_warn=lambda msg: self.pub.log("warn", msg),
+                                 floor_z=self._floor_z)
             if not res.ok:
                 # An explicit entry, never a silent gap: the bytes are on disk
                 # and the record says why they were refused.

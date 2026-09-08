@@ -116,7 +116,7 @@ class ObjectSegmenter:
 
 
 def object_view(cap, intr, intr_color, depth_scale, seed, segmenter,
-                on_fallback=None):
+                on_fallback=None, floor_z=None):
     """One capture -> (view, Segmentation | None). The whole identity policy.
 
     Lives here rather than in the Supervisor so that the offline replay
@@ -131,7 +131,8 @@ def object_view(cap, intr, intr_color, depth_scale, seed, segmenter,
     cluster before that. Everything after the box is a single path.
     """
     depth_view = object_in_base(cap["depth_raw"], intr, depth_scale,
-                                cap["T_base_cam"], seed=seed)
+                                cap["T_base_cam"], seed=seed,
+                                rgb=cap.get("rgb"))
     if segmenter is None:
         return depth_view, None
 
@@ -144,7 +145,10 @@ def object_view(cap, intr, intr_color, depth_scale, seed, segmenter,
     if rgb is None:
         return _fell_back("capture carried no rgb — fell back to depth growth")
     source = seed if seed is not None and len(seed) else depth_view["points"]
-    box = prompt_box(source, cap["T_base_cam"], intr_color, np.shape(rgb)[:2])
+    # `floor_z` breaks the top-anchor loop (see `prompt_box`): without it a
+    # top-down opening view fixes the prompt on the top face forever.
+    box = prompt_box(source, cap["T_base_cam"], intr_color, np.shape(rgb)[:2],
+                     floor_z=floor_z)
     # Recorded on the view so the chain overlay can draw the evidence the box
     # was built from. On the survey that is this frame's own depth cluster,
     # which nothing else keeps a handle on.
@@ -155,9 +159,11 @@ def object_view(cap, intr, intr_color, depth_scale, seed, segmenter,
     if seg is None:
         return _fell_back("no object mask — fell back to depth growth")
     # The mask is computed on rgb, so it must be applied to the depth sharing
-    # the colour viewport: `depth_aligned` with the colour intrinsics.
+    # the colour viewport: `depth_aligned` with the colour intrinsics. That
+    # same viewport is why the lifted colours are exact here: mask, depth and
+    # rgb are pixel-paired by construction.
     masked = object_in_base(cap["depth_aligned"], intr_color, depth_scale,
-                            cap["T_base_cam"], mask=seg.mask)
+                            cap["T_base_cam"], mask=seg.mask, rgb=rgb)
     if masked["centroid"] is None:
         return _fell_back("object mask lifted no depth — fell back to depth growth")
     masked["prompt_source"], masked["prompt_box"] = source, box

@@ -71,7 +71,8 @@ class SettleResult:
 
 
 def settle_capture(cap, rig, segmenter, acc, is_survey: bool,
-                   on_warn=lambda msg: None) -> SettleResult:
+                   on_warn=lambda msg: None,
+                   floor_z: float | None = None) -> SettleResult:
     """One capture -> object identity, plane gate, and fuse into `acc`.
 
     Moved verbatim (same order) from `_exec_worker`'s capture leg:
@@ -89,7 +90,8 @@ def settle_capture(cap, rig, segmenter, acc, is_survey: bool,
         on_warn(why)
 
     view, seg = object_view(cap, rig.intr, rig.intr_color, rig.depth_scale,
-                            acc.points, segmenter, on_fallback=_fallback)
+                            acc.points, segmenter, on_fallback=_fallback,
+                            floor_z=floor_z)
     # The plane gate sits BEFORE anything from this view is kept: a rejected
     # view must not touch the accumulator, publish a capture, or mark the
     # cell visited.
