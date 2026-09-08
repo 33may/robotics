@@ -20,6 +20,7 @@ own plan is thrown away, it exists only to rank.
 """
 from __future__ import annotations
 
+import logging
 import threading
 
 import numpy as np
@@ -195,6 +196,16 @@ class SweepDriver(threading.Thread):
             return
         ok, reason = self.mover.request("survey")
         if not ok:
+            # LOUD, in the terminal, not only on the bus log topic: a sweep
+            # that dies here leaves a UI sitting at "idle 0/?" with a healthy
+            # camera, which reads as "nothing started" instead of "the survey
+            # was refused" (box7, 2026-09-08: arm parked in an unplannable
+            # configuration — the operator had nothing to go on).
+            logging.getLogger(__name__).error(
+                "SWEEP ABORTED before the survey: %s — the run will sit idle. "
+                "Most likely the arm's current pose cannot be planned to the "
+                "survey pose (move the arm to a normal front-of-cell pose "
+                "and restart).", reason)
             self.on_event("sweep_aborted", reason=reason)
             return
         while True:
