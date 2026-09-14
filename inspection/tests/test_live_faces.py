@@ -33,9 +33,56 @@ def test_prompt_mentions_face_priority():
         "system prompt must carry the SOFT face-evidence priority"
 
 
+class _StoreStub:
+    @staticmethod
+    def findings():
+        return []
+
+
+class _MoverStub:
+    @staticmethod
+    def nav():
+        return {"reachable": set(), "visited": set(), "blocked": set(),
+                "faces": {"x+": {"status": "ready", "off_angle_deg": None},
+                          "top": {"status": "visited", "off_angle_deg": 12.0}}}
+
+
+class _AiStub:
+    def __init__(self):
+        self.captured = None
+
+    def menu_input(self, mi):
+        self.captured = mi
+
+
+def test_menu_input_faces_survive_unshredded():
+    """`_menu_input` used to run EVERY nav() value through
+    `sorted(map(list, v))`, which assumes a set of cell tuples. The faces
+    block is a dict of dicts — under the old code `{"x+": ..., "top": ...}`
+    shredded into `[['t','o','p'], ['x','+']]`, a silent record corruption
+    with no exception raised. Face names must arrive intact."""
+    from inspection.brain.loop import Brain
+    brain = Brain.__new__(Brain)          # no disk, no SDK session
+    brain.run = type("R", (), {"survey": None})()
+    brain.cell = None
+    brain.turn = 0
+    brain.store = _StoreStub()
+    brain.view_notes = {}
+    brain.agent_seen = set()
+    brain.mover = _MoverStub()
+    brain.ai = _AiStub()
+
+    brain._menu_input()
+
+    faces = brain.ai.captured.agent_context["nav"]["faces"]
+    assert faces["x+"]["status"] == "ready"
+    assert faces["top"]["off_angle_deg"] == 12.0
+
+
 def main():
     test_nav_carries_faces()
     test_prompt_mentions_face_priority()
+    test_menu_input_faces_survive_unshredded()
     print("OK test_live_faces")
 
 

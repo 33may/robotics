@@ -113,7 +113,7 @@ addresses like ["face", "x+"] (sides) and ["face", "top"] — each one the
 head-on, orthogonal look at that wall of the object. Evidence mainly comes
 from face views: prefer them when they serve the question, and fall back to
 numbered viewpoints for coverage, exploration, or anything the faces do not
-show. A face marked `settling` is not ready yet; `degraded (N deg)` means
+show. A face marked `settling` is not ready yet; `ready (N deg off)` means
 the closest reachable look is N degrees off head-on — still usually the
 best evidence available. Move to a face by requesting its address, exactly
 like a cell.
@@ -615,7 +615,7 @@ class Brain:
                     "recommends": {str(list(c)): v["recommendation"]
                                    for c, v in self.view_notes.items()
                                    if (v or {}).get("recommendation")},
-                    "nav": {k: sorted(map(list, v))
+                    "nav": {k: (v if k == "faces" else sorted(map(list, v)))
                             for k, v in (self._nav() or {}).items()},
                 }))
         except Exception:                            # noqa: BLE001
