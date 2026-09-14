@@ -382,6 +382,7 @@ class InspectionPublisher:
         pending: tuple | None = None,
         previewing: tuple | None = None,
         survey: str = "visited",
+        faces: Mapping[str, Mapping[str, Any]] | None = None,
     ) -> None:
         """Publish the viewsphere twice: as 3D markers and as clickable data.
 
@@ -399,6 +400,11 @@ class InspectionPublisher:
         carries the survey button's own state (`available|pending|previewing|
         visited`) alongside the sphere cells, in the same top-level payload,
         so the actions panel can render it from one topic.
+
+        `faces` is `run/machine.py`'s `_face_states()` block verbatim —
+        `{name: {"status": ..., "off_angle_deg": ...}}` — passed through
+        untouched (no UI panel reads it yet; this is the wire carrier the
+        record layer's viewer and a future face panel both read).
         """
         try:
             visited_set = {tuple(c) for c in visited}
@@ -455,6 +461,7 @@ class InspectionPublisher:
                 "current": list(current_cell) if current_cell else None,
                 "cells": cells,
                 "survey": {"state": survey},
+                "faces": faces or {},
             })
         except Exception:
             log.exception("publish_views failed")

@@ -819,6 +819,28 @@ def test_face_request_full_cycle():
         sup.request_shutdown(); th.join(10)
 
 
+def test_views_payload_carries_faces():
+    import numpy as np
+    from inspection.fit.contract import Primitive
+
+    sup, rig, bus, th = make_sup()
+    try:
+        full_boot(sup)
+        views = bus.last("views/state")
+        assert "faces" in views
+        assert views["faces"]["x+"]["status"] == "settling"
+        pose = [[1, 0, 0, 0.1], [0, 1, 0, -0.35], [0, 0, 1, 0.05],
+                [0, 0, 0, 1]]
+        prim = Primitive(kind="box", pose=pose,
+                         params={"extents": [0.1, 0.1, 0.1]}, label="box")
+        for _ in range(3):
+            sup._update_face_gate(prim)
+        sup._publish_views()
+        assert bus.last("views/state")["faces"]["x+"]["status"] == "ready"
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
@@ -846,6 +868,7 @@ def main():
     test_sigint_saves_and_exits()
     test_face_gate_opens_after_two_stable_fits()
     test_face_request_full_cycle()
+    test_views_payload_carries_faces()
     print("OK test_machine (task 5)")
 
 

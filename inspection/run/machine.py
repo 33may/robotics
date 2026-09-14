@@ -90,6 +90,15 @@ RETREAT_M = 0.05
 #: declared — so the two must be written from one constant.
 VIEW_METHOD = "vs"
 
+#: `_face_states()` status -> `ViewCandidate.status` (schema.py:280, a closed
+#: Literal that predates faces and has no "ready"/"settling" of its own).
+#: "settling" candidates are never recorded (`_view_state` skips them — an
+#: unstable box has no honest pose to log); "ready" maps onto "available",
+#: the cell vocabulary's word for exactly the same fact (reachable, not yet
+#: visited). "unreachable"/"visited" already match verbatim.
+_FACE_STATUS_TO_CANDIDATE = {"ready": "available", "unreachable": "unreachable",
+                             "visited": "visited"}
+
 # `_plane_error` now lives in `run/settle.py` (the plane gate is part of the
 # extracted settle pipeline); re-exported here so any external reference to
 # `machine._plane_error` keeps working.
@@ -1077,6 +1086,29 @@ class Supervisor:
                     address=list(cell), status=status,
                     pose=_mat(self.sphere.cam_pose(*cell, roll or 0.0)),
                     roll=None if roll is None else float(roll)))
+        if self._face_prim is not None:
+            from inspection.view.faceview import (face_cam_pose, face_frame,
+                                                  face_radius)
+            for f, st in self._face_states().items():
+                if st["status"] == "settling":
+                    continue
+                c, n, ext = face_frame(self._face_prim, f)
+                r_f = face_radius(ext, self.rig.intr["fy"],
+                                  self.rig.intr["height"])
+                theta = st["off_angle_deg"]
+                cands.append(ViewCandidate(
+                    address=["face", f],
+                    # `_face_states()` speaks "ready"/"unreachable"/"visited";
+                    # ViewCandidate.status is the closed cell vocabulary
+                    # (available/visited/blocked/unreachable/current) — a
+                    # "ready" face IS an "available" candidate by that
+                    # vocabulary's own meaning (reachable, not yet visited),
+                    # so it is recorded under that name rather than widening
+                    # the schema for one new synonym.
+                    status=_FACE_STATUS_TO_CANDIDATE[st["status"]],
+                    pose=_mat(face_cam_pose(c, n, r_f)),
+                    scores={} if theta is None
+                    else {"off_angle_deg": float(theta)}))
         mn_mx = self.acc.aabb(pct=BOX_PCT)
         centroid = self.acc.centroid
         return ViewState(
@@ -1131,7 +1163,8 @@ class Supervisor:
         self.pub.publish_views(
             self.sphere, self._reach, visited=self.visited, blocked=self.blocked,
             current=self.current, captures=self.captures, pending=pending,
-            previewing=previewing, survey=survey_state)
+            previewing=previewing, survey=survey_state,
+            faces=self._face_states())
 
     def _survey_display_state(self):
         """`self.survey_state` only ever stores "available"/"visited" (F3) —

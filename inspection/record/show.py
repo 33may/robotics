@@ -69,6 +69,14 @@ def show_run(run_dir: Path, out: Path) -> Path:
         if prev_id is not None:
             rr_log.recolor_camera(prev_id, intr)
         prev_id = s.id
+        vs = s.view_state
+        if vs is not None:
+            faces = [(c.address[1], c.pose, c.status,
+                      c.scores.get("off_angle_deg")) for c in vs.candidates
+                     if (isinstance(c.address, list) and len(c.address) == 2
+                         and c.address[0] == "face" and c.pose is not None)]
+            if faces:
+                rr_log.log_face_views(faces)
         if step_cloud is not None:
             fused = step_cloud(s)
             if fused is not None:

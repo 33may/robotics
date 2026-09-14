@@ -67,6 +67,9 @@ CLOUD_RGB = "/world/cloud_rgb"  # same cloud, captured colours   (per step, off)
 FRESH = "/world/fresh"          # what view k added, glowing     (per step)
 TABLE = "/world/table"          # fitted table plane             (static)
 CAMS = "/world/cam"             # frustum + rgb per view         (at its step)
+FACES = "/world/faces"          # /world/faces/<name>: face-view candidates
+                                 # (Task 6) — its OWN root, never under CAMS,
+                                 # so a reviewer can toggle face views alone.
 PRIM = "/world/prim"            # /world/prim/<method>/<label>   (per step)
 OVERLAY = "/world/overlay"      # stored vs replayed final cloud (static, off)
 OVERLAY_STORED = OVERLAY + "/stored"
@@ -91,6 +94,19 @@ C_CAM = (120, 205, 255)
 #: fresh glow on purpose: both mean "this is what step k is", and orange
 #: against thirty cyan cones is readable from across the room.
 C_CAM_ACTIVE = (255, 146, 26)
+
+#: Face-view candidates (Task 6), by status — see `log_face_views`. Chosen to
+#: be distinct from every colour already in this module (cam cyan/orange,
+#: fit green/violet/amber, fresh orange, overlay blue/pink).
+C_FACE_READY = (120, 235, 140)       # green: reachable, orthogonal (or unresolved)
+C_FACE_DEGRADED = (240, 200, 60)     # yellow: reachable, off-axis by off_angle_deg
+C_FACE_UNREACHABLE = (205, 70, 70)   # red
+C_FACE_VISITED = (90, 160, 255)      # blue
+C_FACE_SETTLING = (140, 140, 148)    # gray: box mid-convergence (rare to log)
+#: Face status carries no fixed on-screen length (there is no per-candidate
+#: intrinsics block to size a frustum from) — a short arrow along the
+#: boresight is the "small frustum or arrow" the design calls for.
+FACE_ARROW_M = 0.035
 
 #: Frustum length in metres. At the colour intrinsics this puts a ~120 mm
 #: image plane at the end of each cone — readable, and small enough that
@@ -326,6 +342,56 @@ def recolor_camera(pose_id: int, intr: Mapping | None,
                       camera_xyz=rr.ViewCoordinates.RDF,
                       image_plane_distance=FRUSTUM_M,
                       color=color))
+
+
+def _face_color(status: str, off_angle_deg: float | None) -> tuple:
+    """Status -> colour (design: ready/orthogonal green, degraded yellow,
+    unreachable red, visited blue, settling gray).
+
+    `status` here is `record/schema.py:ViewCandidate.status` as WRITTEN by
+    `machine.py::_view_state` — "available" (the schema's word for what
+    `_face_states()` calls "ready"), "visited", or "unreachable"; "settling"
+    candidates are never recorded, so that branch is defensive only. Ready
+    splits into orthogonal/degraded by `off_angle_deg`: unresolved (no plan
+    has run yet) and exactly 0 both read as orthogonal green.
+    """
+    if status == "unreachable":
+        return C_FACE_UNREACHABLE
+    if status == "visited":
+        return C_FACE_VISITED
+    if status == "settling":
+        return C_FACE_SETTLING
+    if off_angle_deg is not None and off_angle_deg > 0.5:
+        return C_FACE_DEGRADED
+    return C_FACE_READY
+
+
+def log_face_views(faces: Iterable[tuple]) -> None:
+    """Face-evidence view candidates (Task 6), one small arrow per face.
+
+    `faces`: iterable of `(name, T_base_cam (4x4), status, off_angle_deg_or_
+    None)` — exactly a step's `ViewState.candidates` whose `address ==
+    ["face", name]`, unpacked by the caller (`show.py`). Logged ALL under
+    `FACES` = "/world/faces/<name>" — its OWN root, never mixed into `CAMS`
+    (Anton 2026-09-14: face candidates must be a group a reviewer can toggle
+    on their own). Re-logged at every step that carries them, so a face's
+    dot tracks its status (settling -> ready -> visited) across the scrub
+    the same way a cell candidate would if this viewer drew those too.
+
+    A no-op for an empty `faces` (old runs, pre-gate steps, runs with no
+    boxguard fit): the loop below simply does not execute and nothing is
+    logged, so the entity never appears in the tree for those runs.
+    """
+    for name, T_base_cam, status, off_angle_deg in faces:
+        T = np.asarray(T_base_cam, dtype=float)
+        pos, boresight = T[:3, 3], T[:3, 0]      # +X is the boresight (face_cam_pose)
+        color = _face_color(status, off_angle_deg)
+        label = (str(name) if off_angle_deg is None
+                 else f"{name} {off_angle_deg:.0f}deg")
+        rr.log(f"{FACES}/{_leaf(str(name))}", rr.Arrows3D(
+            origins=[pos], vectors=[boresight * FACE_ARROW_M],
+            colors=[color], radii=FACE_ARROW_M * 0.12,
+            labels=[label], show_labels=True))
 
 
 def log_active_view(intr: Mapping | None, image_path: str | Path) -> None:

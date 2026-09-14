@@ -20,7 +20,8 @@ import numpy as np
 
 from inspection.motion.plan import DEMO_PARK
 from inspection.record.writer import RunWriter
-from inspection.run.app import config_snapshot, finish_run, viewsphere_method
+from inspection.run.app import (config_snapshot, face_method, finish_run,
+                                viewsphere_method)
 from inspection.run.machine import Supervisor
 from inspection.run.rigs import CameraWorker, FakeRig, PoseStreamer
 
@@ -74,7 +75,7 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
         outdir.parent, run_id=outdir.name, name=outdir.name,
         source="live", rig="fake", question=None,
         config=config_snapshot({"vlm": "stub", "segmenter": "stub"}),
-        view_methods=[viewsphere_method()],
+        view_methods=[viewsphere_method(), face_method()],
         q_survey=[float(v) for v in q_survey], tags=["mock"])
     pub.publish_run_meta(source="live", name=outdir.name, object=None,
                          question=None)
@@ -155,7 +156,7 @@ def start_mock_collect(bus, pub, outdir, seed: int = 0,
         outdir.parent, run_id=outdir.name, name=outdir.name,
         source="data-engine", rig="fake", question=None,
         config=config_snapshot({"segmenter": "stub"}),
-        view_methods=[viewsphere_method()],
+        view_methods=[viewsphere_method(), face_method()],
         q_survey=[float(v) for v in q_survey],
         tags=["mock", "auto"] if auto else ["mock"])
     pub.publish_run_meta(source="data-engine", name=outdir.name, object=None,
