@@ -5,6 +5,8 @@ orthogonal view direction. This module turns a box Primitive into camera
 targets — and (Task 2) resolves the closest ACCESSIBLE view when the exact
 orthogonal pose cannot be reached.
 """
+from collections import namedtuple
+
 import numpy as np
 
 from inspection.view.grid import radius_for_extent
@@ -62,3 +64,79 @@ def normals_delta_deg(prim_a, prim_b):
         dot = float(np.clip(na @ nb, -1.0, 1.0))
         worst = max(worst, float(np.degrees(np.arccos(dot))))
     return worst
+
+
+#: Resolution ladder defaults (design §Request-time resolution ladder).
+ZLIFT_STEP_M = 0.02          # rung 2 raise increment
+ZLIFT_MAX_DEG = 45.0         # rung 2 hands over to the cone past this
+CONE_STEP_DEG = 5.0          # rung 3 ring spacing
+CONE_MAX_DEG = 60.0          # classic measurability cutoff
+CONE_AZIMUTHS = 12
+
+FaceResolution = namedtuple("FaceResolution",
+                            ["T_cam", "T_flange", "theta_deg", "rung"])
+
+
+def _endpoint_ok(world, ik, T_cam, t_fc_inv, q_near):
+    T_fl = T_cam @ t_fc_inv
+    free = [q for q in ik.branches(T_fl, q_near=q_near)
+            if not world.is_colliding(q)]
+    return (T_fl, free[0]) if free else None
+
+
+def resolve_face_view(world, ik, t_flange_cam, prim, face, r, q_near=None):
+    """Closest accessible view of `face`, most-orthogonal-first.
+
+    Rungs (each the cheapest fix for its own failure mode):
+      exact  — the orthogonal pose itself.
+      zlift  — slim/short objects put a side camera at table height; rise
+               along +Z looking at the face center until valid or 45° off.
+      cone   — tilt rings around the normal, 5°..60°, 12 azimuths; the
+               first valid endpoint is the most orthogonal accessible.
+    Returns None when nothing within 60° has a collision-free IK branch —
+    the face is honestly unreachable.
+    """
+    t_fc_inv = np.linalg.inv(np.asarray(t_flange_cam, dtype=float))
+    center, normal, _ = face_frame(prim, face)
+
+    T = face_cam_pose(center, normal, r)                       # rung 1
+    hit = _endpoint_ok(world, ik, T, t_fc_inv, q_near)
+    if hit:
+        return FaceResolution(T, hit[0], 0.0, "exact")
+
+    if abs(normal[2]) < 0.5:                                   # rung 2
+        base = center + r * normal
+        z_cap = r * np.sin(np.deg2rad(ZLIFT_MAX_DEG))
+        dz = ZLIFT_STEP_M
+        while dz <= z_cap:
+            pos = base + np.array([0.0, 0.0, dz])
+            d = pos - center
+            theta = float(np.degrees(np.arccos(
+                np.clip((d / np.linalg.norm(d)) @ normal, -1.0, 1.0))))
+            T = face_cam_pose(center, d / np.linalg.norm(d),
+                              float(np.linalg.norm(d)))
+            hit = _endpoint_ok(world, ik, T, t_fc_inv, q_near)
+            if hit:
+                return FaceResolution(T, hit[0], theta, "zlift")
+            dz += ZLIFT_STEP_M
+
+    a = np.array([0.0, 0.0, 1.0])                              # rung 3
+    if abs(normal @ a) > 0.95:
+        a = np.array([1.0, 0.0, 0.0])
+    u = np.cross(a, normal); u /= np.linalg.norm(u)
+    v = np.cross(normal, u)
+    theta = CONE_STEP_DEG
+    while theta <= CONE_MAX_DEG:
+        th = np.deg2rad(theta)
+        for k in range(CONE_AZIMUTHS):
+            phi = 2 * np.pi * k / CONE_AZIMUTHS
+            d = (np.cos(th) * normal
+                 + np.sin(th) * (np.cos(phi) * u + np.sin(phi) * v))
+            if d[2] < 0.05:               # never approach from under the table
+                continue
+            T = face_cam_pose(center, d, r)
+            hit = _endpoint_ok(world, ik, T, t_fc_inv, q_near)
+            if hit:
+                return FaceResolution(T, hit[0], float(theta), "cone")
+        theta += CONE_STEP_DEG
+    return None
