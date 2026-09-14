@@ -1114,7 +1114,18 @@ export function TracePanel({ config }: PanelProps<TracePanelConfig>) {
 
       {lightbox ? (
         <div className="trace-lightbox" onClick={() => setLightbox(null)} role="presentation">
-          <img src={lightbox} alt="" />
+          {/* The larger side of the bitmap gets pinned to 60% of its screen
+              axis (CSS keys on data-orient); the other side follows the
+              image's own ratio. */}
+          <img
+            src={lightbox}
+            alt=""
+            onLoad={(e) => {
+              const im = e.currentTarget;
+              im.dataset.orient =
+                im.naturalWidth >= im.naturalHeight ? 'landscape' : 'portrait';
+            }}
+          />
         </div>
       ) : null}
     </div>

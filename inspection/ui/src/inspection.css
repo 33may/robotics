@@ -505,7 +505,19 @@
   display: flex; align-items: center; justify-content: center;
   background: rgba(0, 0, 0, 0.84); cursor: zoom-out;
 }
-.trace-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
+/* The image's LARGER side is pinned to 60% of its screen axis — landscape
+   keys width, portrait keys height — and the other side follows the image's
+   own ratio (data-orient is set by the img's onLoad). The max-* pair is a
+   screen-fit guard for near-square images on wide monitors; per CSS 2.1
+   §10.4 a max-clamp on a replaced element recomputes the free side, so the
+   ratio survives the clamp. */
+.trace-lightbox img {
+  border-radius: 4px;
+  max-width: calc(100vw - 56px);
+  max-height: calc(100vh - 56px);
+}
+.trace-lightbox img[data-orient='landscape'] { width: 60vw; height: auto; }
+.trace-lightbox img[data-orient='portrait'] { height: 60vh; width: auto; }
 
 /* A finding is fields, not paragraphs: the verdict leads, one piece of
    evidence supports it, the rest is one click away in the pane. */
