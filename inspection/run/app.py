@@ -167,6 +167,15 @@ def viewsphere_method(r: float | None = None) -> dict:
             "params": {"h_bins": H_BINS, "v_elevs": list(V_ELEVATIONS), "r": r}}
 
 
+def face_method() -> dict:
+    """Boxguard face-evidence views (docs/2026-09-14-face-evidence-design.md)."""
+    from inspection.view.faceview import (CONE_MAX_DEG,
+                                          FACE_STABLE_TOL_DEG_DEFAULT)
+    return {"id": "face", "kind": "boxguard-face", "version": "1",
+            "params": {"stable_tol_deg": FACE_STABLE_TOL_DEG_DEFAULT,
+                       "cone_max_deg": CONE_MAX_DEG}}
+
+
 def finish_run(writer, acc) -> None:
     """Close a run: the fused cloud beside the steps, then the final run.json.
 
@@ -208,11 +217,19 @@ def teach(ip: str = ROBOT_IP):
 def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
         port: int = 8767, bus_port: int = 8765, no_window: bool = False,
         seed: int = 0, gui: str = "qt", name: str | None = None,
-        object: str | None = None):
+        object: str | None = None, fit: str = "boxguard"):
     """One live run. `outdir` defaults to `data/runs/<DDMM-name>` (so `--name`
     is enough); given explicitly it is `<root>/<run id>` and `name` defaults
-    to its leaf. `object` must be one of OBJECTS (archive query tag)."""
+    to its leaf. `object` must be one of OBJECTS (archive query tag).
+
+    `--fit` names the per-step primitive fitter (`fit/apply.py:METHODS`;
+    empty or "none" disables it): every fused step then records the same
+    `decomposition.json` the offline backfill writes — same registry, same
+    record builder, same writer, byte-compatible by construction — and the
+    fitted box shows up live in the 3D scene as the cloud grows.
+    """
     object = _check_object(object)
+    fit = None if not fit or str(fit).lower() == "none" else str(fit)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     from porthole import PortholeBus
     from inspection.eyes.cognition import real_cognition
@@ -265,8 +282,9 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
             outdir.parent, run_id=outdir.name, name=name or outdir.name,
             source="live", rig="real", object=object, question=None,
             config=config_snapshot({"vlm": cognition.label,
-                                    "segmenter": "sam3"}),
-            view_methods=[viewsphere_method(r)],
+                                    "segmenter": "sam3",
+                                    "fit": fit or "none"}),
+            view_methods=[viewsphere_method(r), face_method()],
             q_survey=[float(v) for v in q_survey])
         # Retained, so a UI window opened at any moment knows which flow it
         # is rendering (data-engine runs drop the AI panel).
@@ -282,7 +300,7 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
         # Weights load lazily on the first capture or the first detect,
         # whichever comes first — never here.
         sup = Supervisor(rig, pub, writer, q_survey, seed=seed, r=r,
-                         segmenter=ObjectSegmenter(backend=sam3))
+                         segmenter=ObjectSegmenter(backend=sam3), fit=fit)
         install_sigint(sup)                          # earliest safe Ctrl-C
         rig.world = sup.world
         rig.start_camera(pub)
@@ -351,7 +369,8 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
 def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
            port: int = 8767, bus_port: int = 8765, no_window: bool = False,
            seed: int = 0, gui: str = "qt", name: str | None = None,
-           object: str | None = None, auto: bool = False):
+           object: str | None = None, auto: bool = False,
+           random: bool = False, fit: str = "boxguard"):
     """One data-collection sweep — Flow B. `outdir` defaults to
     `data/datasets/<DDMM-name>`: sweeps are training data, not inspection
     runs, and they land in their own archive (`ls --data` lists them).
@@ -360,6 +379,17 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
     still plans, previews in the 3D panel for `AUTO_DWELL_S`, and only then
     confirms itself (`SupervisorMover.auto_confirm_s`) — STOP, finish and
     exit keep working throughout, and the run is tagged "auto" on disk.
+
+    `--random` visits cells in seeded-shuffled order instead of
+    cheapest-path-first — the honest step ordering for convergence analysis
+    (nearest-first grows the cloud one-sided). Tagged "random" on the run;
+    every step's `ViewState.decider` says `sweep-random`.
+
+    `--fit` names the per-step primitive fitter (`fit/apply.py:METHODS`;
+    empty or "none" disables it): every fused step then records the same
+    `decomposition.json` the offline backfill writes — same registry, same
+    record builder, same writer, byte-compatible by construction — and the
+    fitted box shows up live in the 3D scene as the sweep's cloud grows.
 
     Same composition as `run()` minus cognition/`brain/ask` — no VLM, no
     question, nothing under `ai/` — plus a `SweepDriver` in place of an
@@ -376,6 +406,7 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
     fused cloud" rather than its "did the AI answer" status logic.
     """
     object = _check_object(object)
+    fit = None if not fit or str(fit).lower() == "none" else str(fit)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     from porthole import PortholeBus
     from inspection.eyes.verbs_local import Sam3Backend
@@ -412,10 +443,11 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
         writer = RunWriter.create(
             outdir.parent, run_id=outdir.name, name=name or outdir.name,
             source="data-engine", rig="real", object=object, question=None,
-            config=config_snapshot({"segmenter": "sam3"}),
-            view_methods=[viewsphere_method(r)],
+            config=config_snapshot({"segmenter": "sam3",
+                                    "fit": fit or "none"}),
+            view_methods=[viewsphere_method(r), face_method()],
             q_survey=[float(v) for v in q_survey],
-            tags=["auto"] if auto else ())
+            tags=(["auto"] if auto else []) + (["random"] if random else []))
         pub.publish_run_meta(source="data-engine", name=name or outdir.name,
                              object=object, question=None)
         rig = RealRig(None, stop_event, outdir, ip)   # world set below
@@ -423,7 +455,8 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
         # Segmentation stays real (identity still matters for a sweep's
         # cloud), only the question-answering tier is gone.
         sup = Supervisor(rig, pub, writer, q_survey, seed=seed, r=r,
-                         segmenter=ObjectSegmenter(backend=Sam3Backend()))
+                         segmenter=ObjectSegmenter(backend=Sam3Backend()),
+                         fit=fit)
         install_sigint(sup)                          # earliest safe Ctrl-C
         rig.world = sup.world
         rig.start_camera(pub)
@@ -443,7 +476,7 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
         driver = SweepDriver(sup, outdir,
                              on_event=make_event_sink(writer, pub,
                                                       label="sweep"),
-                             auto=auto)
+                             auto=auto, random_order=random)
         driver.start()
 
         def pump():

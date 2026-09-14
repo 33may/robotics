@@ -31,12 +31,13 @@ def make_writer(q_survey=None):
     point: a machine that cannot record is not the machine we ship.
     """
     from inspection.record.writer import RunWriter
-    from inspection.run.app import config_snapshot, viewsphere_method
+    from inspection.run.app import config_snapshot, face_method, viewsphere_method
     q = DEMO_PARK.copy() if q_survey is None else q_survey
     return RunWriter.create(
         Path(tempfile.mkdtemp()), run_id="run", name="run", source="live",
         rig="fake", config=config_snapshot(), tags=["test"],
-        view_methods=[viewsphere_method()], q_survey=[float(v) for v in q])
+        view_methods=[viewsphere_method(), face_method()],
+        q_survey=[float(v) for v in q])
 
 
 def make_sup(q_start=None, rig_cls=FakeRig, **kw):
@@ -784,6 +785,40 @@ def test_face_gate_opens_after_two_stable_fits():
         sup.request_shutdown(); th.join(10)
 
 
+def test_face_request_full_cycle():
+    import numpy as np
+    from inspection.fit.contract import Primitive
+
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        pose = [[1, 0, 0, 0.10], [0, 1, 0, -0.35], [0, 0, 1, 0.05],
+                [0, 0, 0, 1]]
+        prim = Primitive(kind="box", pose=pose,
+                         params={"extents": [0.12, 0.08, 0.10]}, label="box")
+        for _ in range(3):                      # open the gate
+            sup._update_face_gate(prim)
+        sup.events.put({"cmd": "view/request", "target": ["face", "top"]})
+        wait_for(lambda: sup.phase == "previewing", timeout=60,
+                 msg="face preview")
+        assert sup.target == ("face", "top")
+        sup.events.put({"cmd": "view/confirm", "target": ["face", "top"]})
+        wait_for(lambda: "top" in sup.face_visited, timeout=60,
+                 msg="face visited")
+        assert sup._face_theta.get("top") is not None
+        # The record carries the face identity.
+        import json as _json
+        from pathlib import Path as _P
+        run_dir = _P(sup.outdir)
+        steps = sorted((run_dir / "steps").iterdir())
+        step = _json.load(open(steps[-1] / "step.json"))
+        assert step["view"]["method"] == "face"
+        assert step["view"]["address"] == ["top"]
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
@@ -810,6 +845,7 @@ def main():
     test_three_plan_refusals_trigger_retreat()
     test_sigint_saves_and_exits()
     test_face_gate_opens_after_two_stable_fits()
+    test_face_request_full_cycle()
     print("OK test_machine (task 5)")
 
 

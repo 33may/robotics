@@ -309,6 +309,12 @@ class Supervisor:
                 log.info("view/request survey dropped: already visited")
                 self.pub.log("warn", "survey already visited")
                 return
+        elif isinstance(target, tuple) and target[0] == "face":
+            st = self._face_states()[target[1]]["status"]
+            if st != "ready":
+                log.info("view/request face %s dropped: %s", target[1], st)
+                self.pub.log("warn", f"face {target[1]} dropped: {st}")
+                return
         else:
             if (self.sphere is None or self._reach.get(target) is None
                     or target in self.visited):
@@ -507,7 +513,10 @@ class Supervisor:
             if target == "survey":
                 self.survey_state = "visited"
             else:
-                self.visited.add(target)
+                if isinstance(target, tuple) and target[0] == "face":
+                    self.face_visited.add(target[1])
+                else:
+                    self.visited.add(target)
                 self.captures[target] = {"step": sid,
                                          "dir": self._last_cap_dir}
                 self.current = target
@@ -652,6 +661,26 @@ class Supervisor:
                 path, rep = plan_viewpoint(self.world, self.ik, q_now,
                                            self.ik.fk(self.q_survey), seed=self.seed)
                 detail = "" if path else str(rep.get("reason", rep))
+            elif isinstance(target, tuple) and target[0] == "face":
+                from inspection.view.faceview import (face_frame, face_radius,
+                                                      resolve_face_view)
+                from inspection.view.viewsphere import T_FLANGE_CAM
+                face, prim = target[1], self._face_prim
+                _, _, ext = face_frame(prim, face)
+                r_f = face_radius(ext, self.rig.intr["fy"],
+                                  self.rig.intr["height"])
+                res = resolve_face_view(self.world, self.ik, T_FLANGE_CAM,
+                                        prim, face, r_f, q_near=q_now)
+                if res is None:
+                    self._face_unreachable.add(face)
+                    path, detail = None, "face unreachable within 60deg"
+                else:
+                    self._face_theta[face] = res.theta_deg
+                    path, rep = plan_viewpoint(self.world, self.ik, q_now,
+                                               res.T_flange, seed=self.seed)
+                    detail = (f"tier {rep['tier']} "
+                              f"{res.rung} {res.theta_deg:.0f}deg"
+                              if path else "plan refused")
             else:
                 path, prep, roll = self.sphere.plan_to_cell(
                     self.world, self.ik, q_now, *target, seed=self.seed)
@@ -782,8 +811,11 @@ class Supervisor:
         sid, sdir = None, None
         try:
             sid, sdir = self.writer.begin_step(
-                {"method": VIEW_METHOD,
-                 "address": None if target == "survey" else list(target)})
+                {"method": "face" if isinstance(target, tuple)
+                                     and target[0] == "face" else VIEW_METHOD,
+                 "address": ([target[1]] if isinstance(target, tuple)
+                             and target[0] == "face"
+                             else None if target == "survey" else list(target))})
             cap = self.rig.capture(sid, sdir)
             # `settle_capture` (run/settle.py) is the object-identity + plane-
             # gate + fuse pipeline, verbatim out of this worker: it rejects a
@@ -1167,6 +1199,16 @@ class Supervisor:
         """
         if raw == "survey":
             return "survey"
+        # Face target: ["face", "x+"] from the bus (UI's face panel), or
+        # "face:x+" from a marker id (parity with the "h07v1" cell markers
+        # below) — both name one of faceview.FACES, never the cell grid.
+        from inspection.view.faceview import FACES
+        if (isinstance(raw, (list, tuple)) and len(raw) == 2
+                and raw[0] == "face" and raw[1] in FACES):
+            return ("face", raw[1])
+        if isinstance(raw, str) and raw.startswith("face:") \
+                and raw[5:] in FACES:
+            return ("face", raw[5:])
         # Marker id, as published in the scene: "h07v1" (ui.publisher.cell_key).
         # Clicking a sphere in the 3D view hands back the id the BACKEND chose,
         # so the viewsphere's naming stays on this side of the bus and the
