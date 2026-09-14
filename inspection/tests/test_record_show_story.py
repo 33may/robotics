@@ -65,13 +65,13 @@ def test_show_handles_legacy_run(tmp_path):
 
 
 def test_cli_ls_and_card(tmp_path, capsys):
-    from inspection.record.__main__ import main
+    from inspection.record.__main__ import ls, validate
     make_run(tmp_path, run_id="0309-cup1", object="cup",
              status="completed", with_answer=True)
-    main(["ls", "--root", str(tmp_path)])
+    ls(root=str(tmp_path))
     out = capsys.readouterr().out
     assert "0309-cup1" in out and "cup" in out
-    main(["validate", "0309-cup1", "--root", str(tmp_path)])
+    validate("0309-cup1", root=str(tmp_path))  # raises SystemExit(1) if bad
     out = capsys.readouterr().out
     assert "ok" in out.lower()
 
@@ -89,20 +89,19 @@ def test_cli_two_roots(tmp_path, capsys, monkeypatch):
     monkeypatch.setattr(cli, "RUNS_ROOT", runs_root)
     monkeypatch.setattr(cli, "DATASETS_ROOT", data_root)
 
-    main = cli.main
-    main(["ls"])
+    cli.ls()
     out = capsys.readouterr().out
     assert "0309-cup1" in out and "0809-box1" not in out
-    main(["ls", "--data"])
+    cli.ls(data=True)
     out = capsys.readouterr().out
     assert "0809-box1" in out and "0309-cup1" not in out
-    main(["ls", "--all"])
+    cli.ls(all=True)
     out = capsys.readouterr().out
     assert "0309-cup1" in out and "0809-box1" in out
 
-    main(["card", "0809-box1"])  # datasets root, found without --root
+    cli.card("0809-box1")  # datasets root, found without --root
     assert "box" in capsys.readouterr().out
-    assert main(["validate", "--all"]) == 0
+    assert cli.validate(all=True) is None  # all ok -> no SystemExit(1)
 
 
 if __name__ == "__main__":

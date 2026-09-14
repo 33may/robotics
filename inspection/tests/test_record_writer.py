@@ -129,6 +129,76 @@ def test_rejected_step_recorded_without_pose(tmp_path):
     assert sid in run.steps  # explicit failure entry, never a silent gap
 
 
+# --- per-step fused cloud (StepRecord v2) -------------------------------------
+# The accumulated object cloud is run-time state: the accumulator voxelises
+# and outlier-filters the MERGED cloud on every add, so step k's state is not
+# reconstructable from per-view contributions. A fused step therefore
+# persists it — steps/NNN/fused/{cloud,colors}.npy, mirroring the run-level
+# fused/ pair — instead of leaving it to replay (Anton, 2026-09-10).
+
+PTS = np.array([[0.40, 0.00, 0.02], [0.41, 0.01, 0.03], [0.42, -0.01, 0.05]])
+CLR = np.array([[10, 20, 30], [40, 50, 60], [70, 80, 90]], dtype=np.uint8)
+
+
+def _fused_step(w, **fuse_kw):
+    sid, sdir = w.begin_step({"method": "vs1", "address": [3, 0]})
+    _capture(w, sid)
+    w.write_fused(sid, GEO, _vstate(sid), **fuse_kw)
+    return sid, sdir
+
+
+def test_write_fused_persists_cloud_pair(tmp_path):
+    w = _writer(tmp_path)
+    _, sdir = _fused_step(w, points=PTS, colors=CLR)
+    assert np.array_equal(np.load(sdir / "fused" / "cloud.npy"), PTS)
+    got = np.load(sdir / "fused" / "colors.npy")
+    assert got.dtype == np.uint8 and np.array_equal(got, CLR)
+    assert not list(sdir.rglob(".tmp-*"))  # atomic: temp -> os.replace
+
+
+def test_write_fused_cloud_pair_is_optional_at_writer(tmp_path):
+    # Metadata-only fuse stays legal HERE (adapters, old tooling): whether a
+    # run must carry the pair is validate's question, gated on step version.
+    w = _writer(tmp_path)
+    _, sdir = _fused_step(w)
+    assert not (sdir / "fused").exists()
+
+
+def test_write_fused_points_without_colors_raises(tmp_path):
+    # Colours are always recorded with the cloud (Anton 2026-09-03) — a
+    # points-only write would break the row-aligned pair invariant.
+    w = _writer(tmp_path)
+    sid, _ = w.begin_step({"method": "vs1", "address": [3, 0]})
+    _capture(w, sid)
+    with pytest.raises(ValueError):
+        w.write_fused(sid, GEO, _vstate(sid), points=PTS)
+
+
+def test_write_fused_misaligned_colors_raise(tmp_path):
+    w = _writer(tmp_path)
+    sid, _ = w.begin_step({"method": "vs1", "address": [3, 0]})
+    _capture(w, sid)
+    with pytest.raises(ValueError):
+        w.write_fused(sid, GEO, _vstate(sid), points=PTS, colors=CLR[:2])
+
+
+def test_fused_step_json_carries_version_2(tmp_path):
+    w = _writer(tmp_path)
+    _, sdir = _fused_step(w, points=PTS, colors=CLR)
+    on_disk = StepRecord.model_validate_json((sdir / "step.json").read_text())
+    assert on_disk.schema_version == 2
+
+
+def test_manifest_hashes_step_cloud_pair(tmp_path):
+    w = _writer(tmp_path)
+    _fused_step(w, points=PTS, colors=CLR)
+    w.close("aborted")
+    man = Manifest.model_validate_json(
+        (tmp_path / "0309-boxA" / "manifest.json").read_text())
+    assert {"steps/000/fused/cloud.npy",
+            "steps/000/fused/colors.npy"} <= set(man.files)
+
+
 # --- events -------------------------------------------------------------------
 
 def test_events_append_as_jsonl(tmp_path):

@@ -16,8 +16,8 @@ erDiagram
     RunRecord ||--o| AnswerRecord : "answer.json"
     RunRecord ||--o{ OperatorEvent : "events.jsonl"
     StepRecord ||--|| ViewState : "steps/NNN/view_state.json"
-    AIRunRecord }o--|| MenuDef : "ai/seq/menu.json"
-    AIRunRecord ||--o{ MenuInput : "ai/seq/menu_input/NNN.json"
+    AIRunRecord }o--|| MenuDef : "ai/seq/menu/menu_def.json"
+    AIRunRecord ||--o{ MenuInput : "ai/seq/menu/inputs.jsonl"
     AIRunRecord ||--o{ TranscriptRecord : "transcripts/tNNN.json"
     TranscriptRecord }o--|| StepRecord : "step_id"
     RunRecord ||--o{ DerivationMeta : "derived/run/method/meta.json"
@@ -224,6 +224,8 @@ erDiagram
         list evidence
         list step_ids
         list transcript_ids
+        list views_inspected
+        str coverage
     }
     OperatorEvent {
         float t
@@ -330,9 +332,17 @@ write-protocol discriminator — "captured" means geometry hasn't been written
 yet (crash window is unambiguous), "fused" means the record is complete.
 Pose/capture fields are required only when outcome == "captured".
 
+v2 (2026-09-10): a fused step also persists the accumulated object cloud —
+`fused/cloud.npy` + `fused/colors.npy` (uint8, row-aligned) in its step
+dir, mirroring the run-level `fused/` pair. The accumulator voxelises and
+outlier-filters the MERGED cloud on every add, so this state is run-time
+truth, not a derivable quantity ("no run-time state left to
+recomputation"). v1 steps predate this: their per-step clouds exist only
+via replay into the derived tree, and validate must not demand the files.
+
 | field | type | required | default |
 |---|---|---|---|
-| `schema_version` | `int` | no | `1` |
+| `schema_version` | `int` | no | `2` |
 | `provenance` | `'native' | 'legacy'` | no | `'native'` |
 | `synthesized` | `list[str]` | no | `list()` |
 | `step_id` | `int` | yes | — |
@@ -500,7 +510,7 @@ cell.yaml/calib edits. Model identities live HERE, not per step.
 
 ### MenuDef
 
-ai/<seq>/menu.json — the menu definition, snapshot + shared id.
+ai/<seq>/menu/menu_def.json — the menu definition, snapshot + shared id.
 
 The menu is the pure function (ViewState, MenuInput) -> LLM text; this is
 its definition side. Provenance follows the scores.jsonl pattern:
@@ -522,7 +532,7 @@ Rendered per-turn text lives in the AI trace.
 
 ### MenuInput
 
-ai/<seq>/menu_input/<NNN>.json — AI-tier menu context, one per turn.
+ai/<seq>/menu/inputs.jsonl — AI-tier menu context, one per turn (one line each).
 
 ViewState is physical truth; THIS carries what the agent-side rendering
 additionally consumed (seen cells, findings count, recommendations).
@@ -612,6 +622,8 @@ answer.json — the verdict, with explicit back-references.
 | `evidence_images` | `list[EvidenceImage]` | no | `list()` |
 | `step_ids` | `list[int]` | no | `list()` |
 | `transcript_ids` | `list[str]` | no | `list()` |
+| `views_inspected` | `list[list[int]]` | no | `list()` |
+| `coverage` | `str | None` | no | `None` |
 
 ### OperatorEvent
 
@@ -622,7 +634,7 @@ No per-line schema_version: the run's version covers the file.
 | field | type | required | default |
 |---|---|---|---|
 | `t` | `float` | yes | — |
-| `kind` | `'requested' | 'awaiting_approval' | 'approved' | 'redirected' | 'cancelled' | 'captured' | 'blocked' | 'stopped' | 'fault'` | yes | — |
+| `kind` | `'requested' | 'awaiting_approval' | 'approved' | 'redirected' | 'cancelled' | 'captured' | 'blocked' | 'stopped' | 'fault' | 'finished'` | yes | — |
 | `step_id` | `int | None` | no | `None` |
 | `detail` | `str | None` | no | `None` |
 

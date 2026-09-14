@@ -43,6 +43,13 @@ B_TOOL = np.array([[0.0, 1.0, 0.0, 0.0],
 _B_INV = np.linalg.inv(B_TOOL)
 
 
+# ur5e joint limits (rad): +-2pi everywhere, elbow +-pi — matches the model in
+# robot_descriptions (test_ik_branches pins this table against it, so it
+# cannot silently rot)
+_JOINT_LIMITS = np.array([2 * np.pi, 2 * np.pi, np.pi,
+                          2 * np.pi, 2 * np.pi, 2 * np.pi])
+
+
 class UR5eIK:
     """branches(T) -> every exact analytic solution for a flange pose."""
 
@@ -53,15 +60,29 @@ class UR5eIK:
         """Flange pose (4x4) for joint config q, in the controller `base` frame."""
         return self._bot.fwdKin(np.asarray(q, dtype=float)) @ B_TOOL
 
-    def branches(self, T_flange):
+    def branches(self, T_flange, q_near=None):
         """All exact IK branches for a flange pose in the controller `base` frame.
 
         Returns (N, 6) array, N in 0..8, angles wrapped to [-pi, pi].
         Least-squares pseudo-solutions are filtered out (is_LS gotcha).
+
+        q_near: when planning FROM a config, pass it. Each solution joint is
+        then re-expressed in the 2pi revolution nearest q_near (within the
+        joint limits). FK is 2pi-periodic, so the poses and their collision
+        status are untouched — but joint-space distances become honest.
+        Without this, a wrist wound to -289 deg saw every goal branch ~380 deg
+        away (through the cable-loop/forearm sweep) and the survey was
+        refused as "no collision-free path" (2026-08-31).
         """
         sol = self._bot.IK(np.asarray(T_flange, dtype=float) @ _B_INV)
         Q, ls = np.array(sol.Q), np.array(sol.is_LS)
         if Q.size == 0:
             return np.empty((0, 6))
         Q = Q[~ls]
-        return (Q + np.pi) % (2 * np.pi) - np.pi
+        Q = (Q + np.pi) % (2 * np.pi) - np.pi
+        if q_near is not None:
+            q_near = np.asarray(q_near, dtype=float)
+            alias = Q + 2 * np.pi * np.round((q_near - Q) / (2 * np.pi))
+            legal = np.abs(alias) <= _JOINT_LIMITS  # else keep the +-pi form
+            Q = np.where(legal, alias, Q)
+        return Q

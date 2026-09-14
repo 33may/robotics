@@ -16,8 +16,8 @@ terminal-approved before it touches the robot.
 `cell/world.py`, OMPL ladder via `motion/plan.py`, pyrealsense2 via
 `perception/camera.py`. No new dependencies.
 
-**Spec:** `inspection/2026-08-19-loop-v1-design.md` (parent:
-`inspection/2026-08-12-ai-inspection-project-definition.md`, sections D3/D4).
+**Spec:** `inspection/docs/2026-08-19-loop-v1-design.md` (parent:
+`inspection/docs/2026-08-12-ai-inspection-project-definition.md`, sections D3/D4).
 
 ## Global Constraints
 
@@ -170,7 +170,7 @@ Expected: FAIL — `ModuleNotFoundError`/`ImportError` (decider.py absent).
 #!/usr/bin/env python3
 """Decider seam for the v1 loop — the AI slot from the project definition.
 
-D3/D4 (inspection/2026-08-12-ai-inspection-project-definition.md): the
+D3/D4 (inspection/docs/2026-08-12-ai-inspection-project-definition.md): the
 decider READs the newest capture (a comment) and DECIDEs look(h, v) or
 answer(text). v1 is Anton at the terminal; BusDecider (UI toolkit) and
 AgentDecider swap in later without touching loop.py.
@@ -871,7 +871,7 @@ Expected: FAIL — `ModuleNotFoundError: inspection.run.loop`.
 #!/usr/bin/env python3
 """Inspection loop v1 (POC) — the D3 orchestrator with a human decider.
 
-Spec: inspection/2026-08-19-loop-v1-design.md. Boot: plan to the taught
+Spec: inspection/docs/2026-08-19-loop-v1-design.md. Boot: plan to the taught
 survey pose (approved, like every motion), capture 000, seed the object.
 Turn: READ comment -> DECIDE look/answer -> plan -> meshcat preview ->
 approve -> move (ENTER = software stop) -> capture -> fuse -> re-center.
@@ -1210,7 +1210,7 @@ Replace the `## Files` section of `inspection/run/AGENTS.md` with:
   approve -> move -> capture -> fuse. Every motion is human-approved;
   ENTER during motion is the software stop. Subcommands: `teach`
   (save freedrive survey pose), `run`. Spec:
-  `inspection/2026-08-19-loop-v1-design.md`.
+  `inspection/docs/2026-08-19-loop-v1-design.md`.
 - `decider.py` — the AI seam. Decider.read/.decide contract, egocentric
   menu glosses (D4), Console (stdin owner + stop arming), TerminalDecider.
   BusDecider (UI toolkit) and AgentDecider slot in here later.

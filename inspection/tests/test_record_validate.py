@@ -39,6 +39,27 @@ def test_unresolved_method_id_flagged(tmp_path):
     assert any("ghost-method" in p.what for p in rep.problems)
 
 
+def test_v2_fused_step_missing_cloud_pair_is_error(tmp_path):
+    # StepRecord v2: a fused step carries steps/NNN/fused/{cloud,colors}.npy.
+    d = make_run(tmp_path)
+    (d / "steps" / "000" / "fused" / "colors.npy").unlink()
+    rep = validate_run(d)
+    assert any(p.severity == "error" and "fused/colors.npy" in p.what
+               for p in rep.problems)
+
+
+def test_v1_fused_step_without_cloud_is_declared_missing(tmp_path):
+    # A run recorded before v2 has no per-step clouds — that is its era, not
+    # a defect. schema_version on the step gates the requirement.
+    d = make_run(tmp_path, with_step_cloud=False)
+    sj = d / "steps" / "000" / "step.json"
+    raw = json.loads(sj.read_text())
+    raw["schema_version"] = 1
+    sj.write_text(json.dumps(raw))
+    rep = validate_run(d)
+    assert rep.ok, [p.what for p in rep.problems]
+
+
 def test_step_dir_missing_from_roster_flagged(tmp_path):
     d = make_run(tmp_path)
     extra = d / "steps" / "007"

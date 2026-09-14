@@ -83,6 +83,19 @@ def _write_json(path: Path, model: RecordModel) -> None:
     os.replace(tmp, path)
 
 
+def _write_npy(path: Path, arr) -> None:
+    """Atomic npy write — same temp-in-same-dir -> os.replace as `_write_json`.
+
+    `np.save` on a PATH appends ".npy" to names it doesn't like; writing to
+    an open handle sidesteps that, so the temp name can carry pid+thread.
+    """
+    import numpy as np
+    tmp = path.parent / f".tmp-{path.name}-{os.getpid()}-{threading.get_ident()}"
+    with open(tmp, "wb") as f:
+        np.save(f, arr)
+    os.replace(tmp, path)
+
+
 class RunWriter:
     def __init__(self, run_dir: Path, run: RunRecord,
                  config: ConfigSnapshot, session: SessionRecord | None):
@@ -181,8 +194,34 @@ class RunWriter:
         self._write_step(rec)
 
     def write_fused(self, step_id: int, geometry: GeometryStats | dict,
-                    view_state: ViewState) -> None:
+                    view_state: ViewState,
+                    points=None, colors=None) -> None:
+        """The fused half of a step — and, since StepRecord v2, its cloud.
+
+        `points`/`colors` are the accumulated object cloud AFTER this step's
+        add (`CloudAccumulator.points`/`.colors`): run-time state the voxel +
+        outlier passes make unreconstructable from per-view contributions, so
+        it is recorded, not left to replay (Anton, 2026-09-10). Written to
+        `fused/cloud.npy` + `fused/colors.npy` in the step dir — the same
+        pair the run level writes — BEFORE step.json flips to "fused", so a
+        step that says fused has its cloud on disk (crash window stays
+        unambiguous). Colours are mandatory with points: the pair is
+        row-aligned for the life of the run (Anton, 2026-09-03).
+        """
         self._check_open()
+        if points is not None:
+            import numpy as np
+            pts = np.asarray(points, dtype=float)
+            if colors is None:
+                raise ValueError("points without colors — the fused pair is "
+                                 "row-aligned; pass CloudAccumulator.colors")
+            clr = np.asarray(colors, dtype=np.uint8)
+            if len(clr) != len(pts):
+                raise ValueError(f"{len(clr)} colors for {len(pts)} points")
+            fdir = self._step_dir(step_id) / "fused"
+            fdir.mkdir(exist_ok=True)
+            _write_npy(fdir / "cloud.npy", pts)
+            _write_npy(fdir / "colors.npy", clr)
         rec = self._records[step_id].model_copy(update={
             "phase": "fused",
             "geometry": geometry if isinstance(geometry, GeometryStats)

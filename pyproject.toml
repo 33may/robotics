@@ -18,6 +18,8 @@ dependencies = [
     "shapely",           # keep-out footprint union (cell/world.py, display)
     "trimesh",           # extrude the merged footprint into one clean mesh
     "mapbox-earcut",     # trimesh's polygon triangulation engine
+    "numba",             # JIT for the vendored EMS superquadric solver (fit/)
+    "fire",              # the CLI shell — inspection/cli.py and every module main
 ]
 
 [tool.setuptools.packages.find]

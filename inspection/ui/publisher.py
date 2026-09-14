@@ -94,6 +94,10 @@ CELL_STYLE = [
 ]
 CELL_DEFAULT = ("#2288cc", 0.8)
 
+# taught keep-outs: same look as cell/viewer.py's merged blobs (0xC0392B @ .22)
+KEEPOUT_COLOR = "#c0392b"
+KEEPOUT_OPACITY = 0.22
+
 TOOL_COLOR = "#c8a24a"
 COLLIDING_COLOR = "#dd2222"
 BACKGROUND_BAD = ["#5a2b2b", "#2a1414"]
@@ -219,6 +223,17 @@ class InspectionPublisher:
             for gid, gobj in enumerate(world.geom_model.geometryObjects):
                 name = gobj.name
                 if name.startswith("cell_"):
+                    if name.startswith(("cell_plane_", "cell_corner_")):
+                        # taught keep-outs (panels + Convex prisms): rendered
+                        # below as ONE merged mesh, the way cell/viewer.py
+                        # draws them — per-shape translucent boxes would
+                        # stack alpha and z-fight
+                        continue
+                    if not hasattr(gobj.geometry, "halfSide"):
+                        # unknown non-box geometry must never black out the
+                        # whole scene again (2026-08-31: Convex did)
+                        log.warning("publish_world: skipping non-box %s", name)
+                        continue
                     color, opacity = _cell_style(name)
                     cell_nodes.append(box_node(
                         f"cell/{name[5:]}",
@@ -233,6 +248,8 @@ class InspectionPublisher:
                         color=TOOL_COLOR, opacity=0.55,
                     ))
                     pose_names.append(f"tool/{name[5:]}")
+
+            cell_nodes += self._keepout_nodes(world)
 
             for gobj in world.visual_model.geometryObjects:
                 url = f"{self.mesh_mount}/{Path(str(gobj.meshPath)).name}"
@@ -250,6 +267,39 @@ class InspectionPublisher:
             self._publish_description()
         except Exception:
             log.exception("publish_world failed")
+
+    def _keepout_nodes(self, world) -> list[dict]:
+        """Taught keep-outs as the union-extrusion blobs cell/viewer.py draws
+        (`world.keepout_display_meshes`). The scene protocol has no
+        inline-triangles kind, so each blob is written as a wavefront OBJ into
+        the run dir — already served at the capture mount — and published as a
+        `mesh_node`. `?v=<crc>` busts the browser cache when the cell is
+        re-taught between runs; the loader strips it before the extension."""
+        meshes = getattr(world, "keepout_display_meshes", None)
+        if meshes is None or self.run_dir is None:
+            return []
+        try:
+            import zlib
+
+            nodes = []
+            for i, (verts, faces) in enumerate(meshes()):
+                obj = "".join(
+                    [f"v {v[0]:.6f} {v[1]:.6f} {v[2]:.6f}\n" for v in verts]
+                    + [f"f {a} {b} {c}\n" for a, b, c in
+                       np.asarray(faces, dtype=int) + 1])
+                path = self.run_dir / f"keepout_blob{i}.obj"
+                path.write_text(obj)
+                nodes.append(mesh_node(
+                    f"cell/keepout_blob{i}",
+                    f"{self.capture_mount}/{path.name}"
+                    f"?v={zlib.crc32(obj.encode()):08x}",
+                    color=KEEPOUT_COLOR, opacity=KEEPOUT_OPACITY,
+                ))
+            return nodes
+        except Exception:
+            # display-only geometry: degrade to boxes-only, never blackout
+            log.exception("keep-out mesh publish failed")
+            return []
 
     def _fresh_geom_data(self, world):
         """Our own geom data, rebuilt when the world gains or loses geometry.
@@ -482,6 +532,22 @@ class InspectionPublisher:
                 # path the browser cannot fetch.
                 if isinstance(ev.get("image"), str):
                     ev["image"] = self._asset_url(ev["image"])
+                # Evidence hunts: an `evidence` event is one flattened record,
+                # the final `answer` event carries the full list. Both cite a
+                # crop and its frame by run-relative path; unmapped they are
+                # receipts the browser cannot fetch. `_asset_url` may return
+                # None (absolute/escaping path) — the panel falls back from
+                # crop to frame to no image, so None is a valid value here.
+                for k in ("crop", "frame"):
+                    if isinstance(ev.get(k), str):
+                        ev[k] = self._asset_url(ev[k])
+                if isinstance(ev.get("evidence_images"), list):
+                    ev["evidence_images"] = [
+                        {**r, **{k: self._asset_url(r[k])
+                                 for k in ("crop", "frame")
+                                 if isinstance(r.get(k), str)}}
+                        if isinstance(r, dict) else r
+                        for r in ev["evidence_images"]]
                 sub = ev.get("sub")
                 if isinstance(sub, dict):
                     sub = dict(sub)

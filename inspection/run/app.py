@@ -18,6 +18,19 @@ log = logging.getLogger(__name__)
 
 ROBOT_IP = "192.168.2.50"
 SURVEY_POSE_FILE = Path(__file__).resolve().parent / "survey_pose.json"
+
+#: Controlled object vocabulary — the archive is queried by this tag, so a
+#: typo (`cyl`, `Cup`) would silently fragment the dataset. Extend the
+#: tuple when a new object class is collected (Anton, 2026-09-10).
+OBJECTS = ("box", "cup", "cylinder", "duck")
+
+
+def _check_object(object: str | None) -> str | None:
+    if object is not None and object not in OBJECTS:
+        raise SystemExit(
+            f"unknown --object '{object}' — one of {', '.join(OBJECTS)} "
+            f"(extend OBJECTS in {Path(__file__).name} for a new class)")
+    return object
 UI_APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
 
 
@@ -198,7 +211,8 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
         object: str | None = None):
     """One live run. `outdir` defaults to `data/runs/<DDMM-name>` (so `--name`
     is enough); given explicitly it is `<root>/<run id>` and `name` defaults
-    to its leaf. `object` is the free tag the archive is queried by."""
+    to its leaf. `object` must be one of OBJECTS (archive query tag)."""
+    object = _check_object(object)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     from porthole import PortholeBus
     from inspection.eyes.cognition import real_cognition
@@ -361,6 +375,7 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
     itself untouched). It duplicates `finish_run`'s few lines of "save the
     fused cloud" rather than its "did the AI answer" status logic.
     """
+    object = _check_object(object)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     from porthole import PortholeBus
     from inspection.eyes.verbs_local import Sam3Backend

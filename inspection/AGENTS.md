@@ -3,15 +3,14 @@
 ## Purpose
 VLM decides how to inspect an object; this package perceives, models the
 workcell, picks viewpoints, solves motion, and orchestrates the loop
-(`run/app.py` + `run/machine.py`; design: `2026-08-20-ui-driven-loop-design.md`).
+(`run/app.py` + `run/machine.py`; design: `docs/2026-08-20-ui-driven-loop-design.md`).
 Pure Python, no ROS. Stack: pinocchio+coal, OMPL, EAIK, ur_rtde,
 open3d, meshcat.
 
 ## Files
 Pipeline shape: perceive (`perception/`) → model world (`cell/`) → pick
 view (`view/`) → solve motion (`motion/`) → orchestrate (`run/`).
-`calib/` holds registration scripts and data. Top-level `ik.py` and
-`safety.py` are SO-101 legacy, kept only until `motion/` replaces them.
+`calib/` holds registration scripts and data. Design docs live in `docs/`.
 
 ## Contracts & decisions
 - Self-contained: new code never imports `vbti.*`. When touching a file

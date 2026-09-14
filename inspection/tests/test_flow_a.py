@@ -377,7 +377,9 @@ def _two_step_run(root):
                         T_base_flange=T4, T_base_cam=T4, rgb_rotation_deg=0)
         w.write_fused(sid, dict(offered=1, kept=1, dropped=0, fused_points=1,
                                 source="depth"),
-                      ViewState(step_id=sid, candidates=[]))
+                      ViewState(step_id=sid, candidates=[]),
+                      points=np.zeros((1, 3)),
+                      colors=np.zeros((1, 3), dtype=np.uint8))
     return w
 
 

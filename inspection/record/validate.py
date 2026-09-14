@@ -105,6 +105,15 @@ def validate_run(run_dir: Path, deep: bool = False,
                                             "fused step lacks view_state.json"))
             else:
                 _load(rep, sdir / "view_state.json", ViewState)
+            # StepRecord v2: a fused step persists the accumulated cloud as
+            # fused/{cloud,colors}.npy. Gated on the step's WRITTEN version —
+            # v1 steps predate the pair (declared missing, not a defect).
+            if step.schema_version >= 2:
+                for rel in ("fused/cloud.npy", "fused/colors.npy"):
+                    if not (sdir / rel).exists():
+                        rep.problems.append(Problem(
+                            "error", f"steps/{sdir.name}",
+                            f"v{step.schema_version} fused step lacks {rel}"))
     roster = set(run.steps)
     for extra in sorted(dir_ids - roster):
         rep.problems.append(Problem("error", f"steps/{extra:03d}",

@@ -18,6 +18,16 @@ The stub is the smaller lie of the two: `object_view` also owns the prompt
 box, the four fallback branches and the "mask lifted no depth" check, and
 calling `object_in_base` directly would silently skip all of them.
 
+Layout. NATIVE record-layer runs only (schema_version 1): the run resolves
+across both archive roots — data/runs/ first, then data/datasets/ — captures
+live in steps/NNN/ with step.json, the two replay anchors sit in
+step.json["geometry"] (GeometryStats.offered / .fused_points — the same
+numbers machine.py used to print as "+N pts, fused M"), and the verdict is
+fused/cloud.npy. The legacy reader (run.json["turns"], capture dirs at the
+run root, fused_cloud.npy, and the pre-2026-08-24 `--crop` machinery) was
+removed when the archives went native-only; it lives in git history if a
+never-migrated run ever needs it.
+
 Frames. `rgb.png`, `depth_aligned.npy` AND `mask.png` are stored upright —
 `capture.py:58` rotates the first two on a half turn and `capture.py:95`
 rotates the mask by the same rule — while `depth_raw` and `T_base_cam` stay
@@ -25,45 +35,35 @@ raw. The loop works in RAW orientation throughout, so all three are
 un-rotated here. Feeding the disk mask straight in would deproject an
 upside-down cup against a right-way-up pose.
 
-Two things stand between "same inputs" and "same floats":
-
-  the workspace crop — `object_in_base` used to crop the MASKED points to
-      WORKSPACE too, and the note that removed it (`geometry.py:333`) cites
-      run 2408-cup4 as its evidence. The whole change reached git in one
-      commit, e0976e4 at 16:30 on 2026-08-24, AFTER every cup run, so the
-      runs must date themselves — and their own recorded counts do it
-      cleanly: cup3 (15:34) and cup4 (16:03) reproduce only WITH the crop,
-      cup5 (16:24) only without. Uncropped, cup4 view 010 offers 1667 points
-      where the run recorded 202; cropped, cup5 view 001 offers 2733 where
-      the run recorded 4298. `auto` reads that off the counts, `--crop
-      on|off` overrides it.
+One thing stands between "same inputs" and "same floats":
 
   the table plane — `fit_table` (geometry.py:156) is RANSAC with no seed,
       so the plane moves by 1-3 mm of height and up to ~1 deg of tilt
       between calls, and `above_table` then keeps a slightly different set
-      of points. Nothing on disk records the plane the run used. What
-      run.json DOES record is the count that plane produced and the cloud it
-      fused into (`machine.py:436` writes "+N pts, fused M"), so by default
-      the replay re-draws the plane until both agree — that pins the one
-      input the recorder dropped. `--no-pin` shows the honest spread
-      instead: on these runs it lands 4-11 mm and a few hundred points away.
+      of points. Runs recorded since the plane landed in GeometryStats
+      carry it verbatim (`geometry.plane`), and the replay forces that
+      plane back into the loop — deterministic, exact on the first pass,
+      with the recorded counts demoted to pure verification. When a record
+      predates the plane field, the counts are all that is left and the
+      replay falls back to re-drawing planes until offered AND fused both
+      agree. `--nopin` disables both and shows the honest RANSAC spread.
 
-Which makes the replay a stochastic search, and open3d's RANSAC is
-OpenMP-parallel so seeding does not make it repeatable. `--attempts`
-re-runs the whole thing until the final cloud is exact. That is not fitting
-to the answer: `fused_cloud.npy` is never an input, only the verdict.
+Only that fallback is a stochastic search (open3d's RANSAC is
+OpenMP-parallel, seeding does not make it repeatable), and only there does
+`--attempts` matter: it re-runs the whole replay until the final cloud is
+exact. That is not fitting to the answer: `fused/cloud.npy` is never an
+input, only the verdict.
 
-    p inspection/investigation/step_replay.py --run 2408-cup3
-    p inspection/investigation/step_replay.py --run 2408-cup5 --no-pin
-    p inspection/investigation/step_replay.py --run 2408-cup4 --crop on
+    p inspection/investigation/step_replay.py 0809-box2
+    p inspection/investigation/step_replay.py --run 0809-box2
+    p inspection/investigation/step_replay.py --run 0809-box2 --nopin
 
 Everything it writes goes to /tmp/step_replay/<run>/ — step_NNN.ply/.npy
-(NNN is the capture dir the step fused), the three renders, summary.json.
+(NNN is the steps/ dir the step fused), the three renders, summary.json.
+Copy that into inspection/data/derived/<run>/steps/ to make it durable —
+`record/rr/workspace.py` reads the derived tree first, /tmp as fallback.
 """
-import argparse
 import json
-import re
-import sys
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -71,57 +71,68 @@ import numpy as np
 
 import inspection.cell.geometry as geom
 from inspection.cell.geometry import (ABOVE_TABLE_M, CloudAccumulator,
-                                      above_table, cam_to_base, crop_workspace,
-                                      deproject, fit_table, rotate180)
+                                      rotate180)
+from inspection.record.catalog import DATASETS_ROOT, RUNS_ROOT
 from inspection.run.segmenter import Segmentation, object_view
 
-RUNS = Path(__file__).resolve().parents[1] / "data" / "runs"
 OUT = Path("/tmp/step_replay")
 
-#: `machine.py:436` — "+{npts} pts, fused {len(acc.points)}".
-_TURN = re.compile(r"\+(\d+) pts, fused (\d+)$")
+
+def run_dir_for(run_id: str) -> Path:
+    """Resolve an ID across both archive roots, runs/ first — the same
+    resolution `p -m inspection.record` uses."""
+    for root in (RUNS_ROOT, DATASETS_ROOT):
+        d = root / run_id
+        if (d / "run.json").exists():
+            return d
+    raise SystemExit(f"run {run_id!r} not found under {RUNS_ROOT} "
+                     f"or {DATASETS_ROOT}")
 
 
 # --------------------------------------------------------------- disk -> loop
 def recorded(run_dir: Path) -> dict:
-    """{pose_id: (offered, fused)} for every turn that actually fused a view.
+    """{step_id: (offered, fused, plane|None)} per step that fused a view.
 
-    `machine.py:609` numbers a capture with `_next_cell_step()`, which counts
-    prior CELL turns only (survey is always 000), so run.json's turn list maps
-    back onto the NNN dirs without guessing. A turn that never reached a
-    capture still consumes its number — `_record_turn` runs for a software
-    stop too — which is exactly why 2408-cup5 has no 029/ on disk.
+    Native records carry both replay anchors verbatim in
+    steps/NNN/step.json["geometry"] (GeometryStats.offered / .fused_points)
+    — and, on runs recorded since the plane landed in GeometryStats, the
+    fitted table plane itself, which turns the replay from a stochastic
+    search into a deterministic re-run. A step that captured but crashed
+    before fusing stays at phase "captured" with no geometry — excluded
+    here, reported as unfused.
     """
-    turns = json.loads((run_dir / "run.json").read_text())["turns"]
-    out, cells = {}, 0
-    for t in turns:
-        if t["target"] == "survey":
-            step = 0
-        else:
-            cells += 1
-            step = cells
-        m = _TURN.match(t["result"])
-        if m:
-            out[step] = (int(m.group(1)), int(m.group(2)))
+    out = {}
+    for d in sorted((run_dir / "steps").iterdir()):
+        if not d.is_dir() or not d.name.isdigit():
+            continue
+        j = json.loads((d / "step.json").read_text())
+        g = j.get("geometry")
+        if j.get("outcome") == "captured" and j.get("phase") == "fused" and g:
+            out[int(d.name)] = (int(g["offered"]), int(g["fused_points"]),
+                                g.get("plane"))
     return out
 
 
 def captures(run_dir: Path):
-    """(pose_id, cap, stored_mask) per capture, in capture order, RAW frame.
+    """(step_id, cap, stored_mask) per capture, in step order, RAW frame.
 
-    Capture order IS sorted dir order: the id is a monotone counter over
-    turns (`machine.py:685`), never reused, so sorting the digits sorts the
-    run in time.
+    Step order IS sorted dir order: step_id is a monotone counter, never
+    reused, so sorting the digits sorts the run in time. Mask score/box sit
+    in step.json["segmentation"]; rejected/failed steps carry no frames and
+    are skipped.
     """
     import cv2
-    for d in sorted(p for p in run_dir.iterdir()
+    for d in sorted(p for p in (run_dir / "steps").iterdir()
                     if p.is_dir() and p.name.isdigit()):
-        meta = json.loads((d / "meta.json").read_text())
-        rot = int(meta.get("rgb_rotation_deg", 0))
+        meta = json.loads((d / "step.json").read_text())
+        if meta.get("outcome") != "captured" or not (d / "rgb.png").exists():
+            continue
+        rot = int(meta.get("rgb_rotation_deg") or 0)
         rgb = cv2.cvtColor(cv2.imread(str(d / "rgb.png")), cv2.COLOR_BGR2RGB)
         depth_aligned = np.load(d / "depth_aligned.npy")
+        seg = meta.get("segmentation")
         mask = None
-        if (d / "mask.png").exists() and "mask" in meta:
+        if (d / "mask.png").exists() and seg:
             mask = cv2.imread(str(d / "mask.png"), cv2.IMREAD_UNCHANGED) > 0
         if rot == 180:
             rgb, depth_aligned = rotate180(rgb), rotate180(depth_aligned)
@@ -131,8 +142,7 @@ def captures(run_dir: Path):
                "depth_aligned": depth_aligned,
                "T_base_cam": np.array(meta["T_base_cam"], dtype=float)}
         yield int(d.name), cap, (None if mask is None else
-                                 (mask, meta["mask"]["score"],
-                                  tuple(meta["mask"]["box"])))
+                                 (mask, seg["score"], tuple(seg["box"])))
 
 
 class StoredMask:
@@ -166,55 +176,6 @@ class StoredMask:
                             float(score))
 
 
-@contextmanager
-def legacy_workspace_crop():
-    """Put the workspace crop back on the masked branch, for pre-fix runs.
-
-    Patching `cam_to_base` rather than copying `object_in_base` keeps every
-    other line of the shipped function in the replay. The scene branch
-    (`geometry.py:324`) already crops and `crop_workspace` is idempotent and
-    order-preserving, so it is untouched; only the masked branch
-    (`geometry.py:345`) gains its crop back.
-    """
-    orig = geom.cam_to_base
-    geom.cam_to_base = lambda p, T: crop_workspace(orig(p, T))
-    try:
-        yield
-    finally:
-        geom.cam_to_base = orig
-
-
-def detect_crop(run_dir, intr_color, scale, rec, probes=5, draws=14) -> str:
-    """"on"/"off": which masked branch reproduces this run's recorded counts.
-
-    Deliberately built out of the geometry primitives rather than out of
-    `object_view` — it is choosing a MODE, not producing a point, and it has
-    to score both branches under a plane that moves. For each of the first
-    few masked views it draws `draws` table planes and asks which branch's
-    range of counts brackets the number run.json recorded.
-    """
-    on = off = 0
-    for pose_id, cap, stored in captures(run_dir):
-        if stored is None or pose_id not in rec or probes <= 0:
-            continue
-        probes -= 1
-        want = rec[pose_id][0]
-        da, T = cap["depth_aligned"], cap["T_base_cam"]
-        scene = crop_workspace(
-            cam_to_base(deproject(da, intr_color, scale), T))
-        raw = cam_to_base(
-            deproject(np.where(stored[0], da, 0), intr_color, scale), T)
-        cropped = crop_workspace(raw)
-        n_off, n_on = [], []
-        for _ in range(draws):
-            plane = fit_table(scene)
-            n_off.append(len(above_table(raw, plane, ABOVE_TABLE_M)))
-            n_on.append(len(above_table(cropped, plane, ABOVE_TABLE_M)))
-        off += min(n_off) <= want <= max(n_off)
-        on += min(n_on) <= want <= max(n_on)
-    return "on" if on > off else "off"
-
-
 # ------------------------------------------------------------------- replay
 @contextmanager
 def _tap():
@@ -242,6 +203,25 @@ def _tap():
 
 
 @contextmanager
+def _forced_plane(plane):
+    """Every `fit_table` call answers with the recorded plane.
+
+    The masked branch fits exactly one plane and that is the one
+    GeometryStats recorded, so forcing it reproduces the recorded point set
+    outright. The depth branch inside the same `object_view` call also asks
+    for a plane, but its output is discarded whenever the mask lands — it
+    only seeds the prompt box, which `StoredMask` ignores — so forcing that
+    fit too costs nothing and spares counting call indices.
+    """
+    ft = geom.fit_table
+    geom.fit_table = lambda points: np.asarray(plane, dtype=float)
+    try:
+        yield
+    finally:
+        geom.fit_table = ft
+
+
+@contextmanager
 def _pinned_plane(plane, at_call):
     """Hand `object_in_base` a chosen plane on its `at_call`-th fit."""
     ft, n = geom.fit_table, [0]
@@ -260,10 +240,10 @@ def _pinned_plane(plane, at_call):
 
 def pinned_view(cap, intr, intr_color, scale, acc, segmenter, want, tries,
                 cands=64):
-    """`object_view` with the table plane pinned to what run.json recorded.
+    """Count-pinned fallback for records that predate `geometry.plane`.
 
-    The one input the recorder dropped is the RANSAC plane (`fit_table` is
-    unseeded, geometry.py:156). The two things it kept about it are the
+    The one input those recorders dropped is the RANSAC plane (`fit_table`
+    is unseeded, geometry.py:156). The two things they kept about it are the
     number of points that cleared it and the size of the cloud they fused
     into (`machine.py:436` writes both), and this searches real `fit_table`
     draws until BOTH agree. The second number is what makes the first one
@@ -341,23 +321,15 @@ def pinned_view(cap, intr, intr_color, scale, acc, segmenter, want, tries,
     return best, best_seg, min(tries, 200), best_fell
 
 
-def replay(args):
-    run_dir = RUNS / args.run
+def _replay(run, out_root, pin, tries):
+    run_dir = run_dir_for(run)
     session = json.loads((run_dir / "session.json").read_text())
     intr = session["intrinsics"]["ir_left"]
     intr_color = session["intrinsics"]["color"]
     scale = session["depth_scale_m_per_unit"]
     rec = recorded(run_dir)
 
-    crop = args.crop
-    if crop == "auto":
-        # Detected once and pinned onto args: a retry must not re-decide it.
-        crop = args.crop = detect_crop(run_dir, intr_color, scale, rec)
-        print(f"workspace crop on masked points: {crop} (detected)")
-    else:
-        print(f"workspace crop on masked points: {crop}")
-
-    out = Path(args.out) / args.run
+    out = Path(out_root) / run
     out.mkdir(parents=True, exist_ok=True)
 
     acc = CloudAccumulator()
@@ -365,51 +337,59 @@ def replay(args):
     print(f"{'k':>3} {'view':>4} {'src':>5} {'offered':>8} {'rec':>8} "
           f"{'draws':>6} {'drop':>5} {'cloud':>6} {'rec':>6} "
           f"{'extent mm':>22}")
-    ctx = legacy_workspace_crop() if crop == "on" else _null()
-    with ctx:
-        k = 0
-        for pose_id, cap, stored in captures(run_dir):
-            if pose_id not in rec:
-                unfused.append(pose_id)
-                print(f"    {pose_id:>4}  on disk but no fused turn — skipped")
-                continue
-            k += 1
-            want, want_fused = rec[pose_id]
-            view, seg, tries, fell = pinned_view(
+    k = 0
+    for pose_id, cap, stored in captures(run_dir):
+        if pose_id not in rec:
+            unfused.append(pose_id)
+            print(f"    {pose_id:>4}  on disk but never fused — skipped")
+            continue
+        k += 1
+        want, want_fused, plane = rec[pose_id]
+        if plane is not None and pin:
+            # Deterministic path: the run recorded its own table plane, so
+            # replay under it — no search, counts become pure verification.
+            fell = []
+            with _forced_plane(plane):
+                view, seg = object_view(cap, intr, intr_color, scale,
+                                        acc.points, StoredMask(stored),
+                                        on_fallback=fell.append)
+            draws = 1
+        else:
+            view, seg, draws, fell = pinned_view(
                 cap, intr, intr_color, scale, acc, StoredMask(stored),
-                None if args.no_pin else rec[pose_id], args.tries)
-            pts = view["points"]
-            dropped = acc.add(pts, view.get("colors")) if len(pts) else 0
-            P = acc.points
-            mn, mx = acc.aabb()
-            np.save(out / f"step_{pose_id:03d}.npy", P)
-            _write_ply(out / f"step_{pose_id:03d}.ply", P, acc.colors)
-            for why in fell:
-                fallbacks.append((pose_id, why))
-            steps.append({"k": k, "pose_id": pose_id,
-                          "source": "mask" if seg is not None else "depth",
-                          "offered": int(len(pts)), "offered_recorded": want,
-                          "tries": tries, "dropped": int(dropped),
-                          "cloud": int(len(P)), "cloud_recorded": want_fused,
-                          "extent_mm": [round(float(v) * 1000, 1)
-                                        for v in (mx - mn)],
-                          "box_delta_px": _box_delta(view, seg)})
-            flag = "" if len(pts) == want else "  <<< offered mismatch"
-            flag += "" if len(P) == want_fused else "  <<< cloud mismatch"
-            print(f"{k:>3} {pose_id:>4} "
-                  f"{('mask' if seg is not None else 'depth'):>5} "
-                  f"{len(pts):>8} {want:>8} {tries:>6} {dropped:>5} "
-                  f"{len(P):>6} {want_fused:>6} "
-                  f"{str(np.round((mx - mn) * 1000, 1)):>22}{flag}")
-            for why in fell:
-                print(f"       ! {why}")
+                (want, want_fused) if pin else None, tries)
+        pts = view["points"]
+        dropped = acc.add(pts, view.get("colors")) if len(pts) else 0
+        P = acc.points
+        mn, mx = acc.aabb()
+        np.save(out / f"step_{pose_id:03d}.npy", P)
+        _write_ply(out / f"step_{pose_id:03d}.ply", P, acc.colors)
+        for why in fell:
+            fallbacks.append((pose_id, why))
+        steps.append({"k": k, "pose_id": pose_id,
+                      "source": "mask" if seg is not None else "depth",
+                      "offered": int(len(pts)), "offered_recorded": want,
+                      "tries": draws, "dropped": int(dropped),
+                      "cloud": int(len(P)), "cloud_recorded": want_fused,
+                      "extent_mm": [round(float(v) * 1000, 1)
+                                    for v in (mx - mn)],
+                      "box_delta_px": _box_delta(view, seg)})
+        flag = "" if len(pts) == want else "  <<< offered mismatch"
+        flag += "" if len(P) == want_fused else "  <<< cloud mismatch"
+        print(f"{k:>3} {pose_id:>4} "
+              f"{('mask' if seg is not None else 'depth'):>5} "
+              f"{len(pts):>8} {want:>8} {draws:>6} {dropped:>5} "
+              f"{len(P):>6} {want_fused:>6} "
+              f"{str(np.round((mx - mn) * 1000, 1)):>22}{flag}")
+        for why in fell:
+            print(f"       ! {why}")
     # The colour backfill artifact: row-aligned with the replayed cloud,
-    # which `compare` proves is the stored fused_cloud.npy. Written HERE,
+    # which `compare` proves is the stored fused/cloud.npy. Written HERE,
     # never into the run dir — recorded runs are read-only.
     if len(acc.points):
         np.save(out / "fused_colors.npy", acc.colors)
         _write_ply(out / "fused_colored.ply", acc.points, acc.colors)
-    return acc.points, steps, fallbacks, unfused, out, crop
+    return acc.points, steps, fallbacks, unfused, out
 
 
 @contextmanager
@@ -576,42 +556,35 @@ def render_curve(out, steps):
 
 
 # --------------------------------------------------------------------- main
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--run", required=True)
-    ap.add_argument("--out", default=str(OUT))
-    ap.add_argument("--crop", choices=("auto", "on", "off"), default="auto",
-                    help="workspace crop on the MASKED points — the pre-"
-                         "2026-08-24 branch (geometry.py:333)")
-    ap.add_argument("--no-pin", action="store_true",
-                    help="do not re-draw the table plane to the count "
-                         "run.json recorded; shows the raw RANSAC spread")
-    ap.add_argument("--tries", type=int, default=100000,
-                    help="plane re-draw budget per view when pinning")
-    ap.add_argument("--seed", type=int, default=0,
-                    help="open3d global RNG seed")
-    ap.add_argument("--attempts", type=int, default=4,
-                    help="repeat the whole replay until the final cloud is "
-                         "exact; the search over planes is stochastic")
-    ap.add_argument("--no-renders", action="store_true")
-    args = ap.parse_args()
+def replay(run, out=str(OUT), pin=True, tries=100000, seed=0, attempts=4,
+           renders=True):
+    """Replay `run` view by view and verify against fused/cloud.npy.
 
+    pin=False (--nopin) skips both plane pinning paths and shows the raw
+    RANSAC spread; tries is the plane re-draw budget per view when
+    pinning; seed seeds open3d's global RNG; attempts repeats the whole
+    replay until the final cloud is exact (the plane search is
+    stochastic); renders=False (--norenders) skips the three plots.
+    """
+    run = str(run)  # fire literal-evals: a bare-int run id arrives as int
     import open3d as o3d
-    o3d.utility.random.seed(args.seed)
+    o3d.utility.random.seed(seed)
 
-    stored = np.load(RUNS / args.run / "fused_cloud.npy")
-    # The plane search is a search, and open3d's RANSAC is OpenMP-parallel —
-    # `utility.random.seed` does not make it repeatable, so two attempts do
-    # not draw the same planes. A view can therefore end on a plane that
-    # matches both recorded numbers yet differs in a point or two, and starve
-    # a LATER view of any reachable draw. Nothing is being fitted to the
-    # answer by repeating: every attempt is judged against fused_cloud.npy,
-    # which the replay never reads as an input.
-    for attempt in range(1, max(1, args.attempts) + 1):
-        P, steps, fallbacks, unfused, out, crop = replay(args)
+    stored = np.load(run_dir_for(run) / "fused" / "cloud.npy")
+    # With recorded planes the first attempt is the only attempt. The loop
+    # exists for the count-pinned fallback, where the plane search is a
+    # search and open3d's RANSAC is OpenMP-parallel — `utility.random.seed`
+    # does not make it repeatable, so two attempts do not draw the same
+    # planes. Nothing is being fitted to the answer by repeating: every
+    # attempt is judged against fused/cloud.npy, which the replay never
+    # reads as an input.
+    attempts_used = 0
+    for attempt in range(1, max(1, attempts) + 1):
+        attempts_used = attempt
+        P, steps, fallbacks, unfused, out_dir = _replay(run, out, pin, tries)
         ver = compare(stored, P, verbose=False)
-        print(f"attempt {attempt}/{args.attempts}: {ver['verdict']}")
-        if ver["verdict"] == "exact" or args.no_pin:
+        print(f"attempt {attempt}/{attempts}: {ver['verdict']}")
+        if ver["verdict"] == "exact" or not pin:
             break
     ver = compare(stored, P)
 
@@ -629,22 +602,26 @@ def main():
     if boxes:
         print(f"prompt box vs stored box: max corner delta {max(boxes)} px")
 
-    renders = {}
-    if not args.no_renders:
-        renders = {"growth_strip": str(render_strip(out, steps, P)),
-                   "final_overlay": str(render_overlay(out, stored, P)),
-                   "cloud_size": str(render_curve(out, steps))}
-        for k, v in renders.items():
+    rendered = {}
+    if renders:
+        rendered = {"growth_strip": str(render_strip(out_dir, steps, P)),
+                    "final_overlay": str(render_overlay(out_dir, stored, P)),
+                    "cloud_size": str(render_curve(out_dir, steps))}
+        for k, v in rendered.items():
             print(f"render {k}: {v}")
 
-    (out / "summary.json").write_text(json.dumps(
-        {"run": args.run, "crop": crop, "pinned": not args.no_pin,
-         "seed": args.seed, "steps": steps, "verification": ver,
+    (out_dir / "summary.json").write_text(json.dumps(
+        {"run": run, "pinned": pin,
+         "seed": seed, "attempts_used": attempts_used,
+         "steps": steps, "verification": ver,
          "fallbacks": fallbacks, "unfused_dirs": unfused,
-         "renders": renders}, indent=2) + "\n")
-    print(f"summary: {out / 'summary.json'}")
-    return 0 if ver.get("verdict") == "exact" else 1
+         "renders": rendered}, indent=2) + "\n")
+    print(f"summary: {out_dir / 'summary.json'}")
+    if ver.get("verdict") != "exact":
+        raise SystemExit(1)  # the historical `sys.exit(main())` contract
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import fire
+    fire.core.Display = lambda lines, out: print(*lines, file=out)
+    fire.Fire(replay)

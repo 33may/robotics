@@ -10,15 +10,20 @@ docs/research/view-planning/completion/GUIDE.md for the loop protocol.
 HARD RULE: nothing in this file may read `truth/box.json`. Priors must
 come from the CLOUD (e.g. `min_yaw_aabb`), never from the ground truth.
 
+`boxguard` graduated to `inspection/fit/box.py` (the shipped cuboid
+guard); it stays registered here for the bench.
+
     p inspection/viewplan/complete.py list
     p inspection/viewplan/complete.py show --run 0809-box6 --step 26 --algo poisson20
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Callable, Dict, Optional
 
 import numpy as np
 
+from inspection.fit.box import boxguard, boxguard_core, boxmesh
 from inspection.viewplan import mesh as meshmod
 
 
@@ -219,128 +224,6 @@ def planes(P: np.ndarray, cams=None, seed: int = 0):
     return m
 
 
-def _boxmesh(off, h, yaw, center, z_t):
-    import open3d as o3d
-    l = max(off[(0, +1)] - off[(0, -1)], 0.01)
-    w_ = max(off[(1, +1)] - off[(1, -1)], 0.01)
-    m = o3d.geometry.TriangleMesh.create_box(l, w_, h)
-    m.translate([off[(0, -1)], off[(1, -1)], 0.0])
-    Rz = m.get_rotation_matrix_from_axis_angle([0.0, 0.0, float(yaw)])
-    m.rotate(Rz, center=[0.0, 0.0, 0.0])
-    m.translate([float(center[0]), float(center[1]), z_t])
-    m.compute_vertex_normals()
-    return m
-
-
-def _boxguard_core(P: np.ndarray) -> dict:
-    """Shared core of boxguard/boxsq: yaw + per-side offsets + confidence."""
-    import open3d as o3d
-    from inspection.cell.geometry import min_yaw_aabb
-    P = np.asarray(P, dtype=float)
-    pc = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(P))
-    pc, _ = pc.remove_statistical_outlier(nb_neighbors=16, std_ratio=2.0)
-    P = np.asarray(pc.points)
-
-    center, dims, yaw0 = min_yaw_aabb(P, pct=1.0)
-    aa, bb, cc_, dd_ = meshmod.table_plane(P)
-    z_t = -(aa * center[0] + bb * center[1] + dd_) / cc_
-    z = P[:, 2]
-    z_top = float(np.percentile(z, 99.5))         # aced 9/9 for boxsnap
-    h = max(z_top - z_t, 0.01)
-
-    # min_yaw's own stray-point guard, replicated so extents match it.
-    lo3, hi3 = np.percentile(P, [1.0, 99.0], axis=0)
-    keep = np.all((P >= lo3) & (P <= hi3), axis=1)
-    Q = P[keep] if keep.any() else P
-    band = (Q[:, 2] > z_t + 0.012) & (Q[:, 2] < z_top - 0.015)
-    B = Q[band, :2] - center[:2]
-
-    def _sharp(v: np.ndarray) -> float:
-        """Two strongest wall peaks >=30 mm apart in a 2 mm histogram."""
-        if len(v) < 50:
-            return 0.0
-        edges = np.arange(v.min(), v.max() + 0.004, 0.002)
-        cnt, _ = np.histogram(v, bins=edges)
-        k1 = int(np.argmax(cnt))
-        far = np.abs(np.arange(len(cnt)) - k1) >= 15
-        return float(cnt[k1] + (cnt[far].max() if far.any() else 0))
-
-    def _score(th: float) -> float:
-        c_, s_ = np.cos(th), np.sin(th)
-        u = B @ np.array([[c_, -s_], [s_, c_]])   # rotate by -th
-        return _sharp(u[:, 0]) + _sharp(u[:, 1])
-
-    # Adopt a re-searched yaw only on a decisive (>=15 %) sharpness win:
-    # the sharpness objective is noisy at 0.5 deg resolution and drifted
-    # 1.5-2.5 deg off a correct min-area yaw on b2/b5/b10 (bench iter
-    # 10 probes), while the b6 failure it exists for is a 7.8 deg jump.
-    sc0 = _score(float(yaw0))
-    best, yaw = sc0, float(yaw0)
-    for th in np.arange(yaw0 - np.radians(10), yaw0 + np.radians(10.25),
-                        np.radians(0.5)):
-        sc = _score(float(th))
-        if sc > best and sc >= 1.15 * sc0:
-            best, yaw = sc, float(th)
-
-    c_, s_ = np.cos(yaw), np.sin(yaw)
-    R2 = np.array([[c_, s_], [-s_, c_]])
-    xy = (Q[:, :2] - center[:2]) @ R2.T           # refined yaw frame
-    W = xy[band]
-
-    off, conf = {}, {}
-    for axis, sign in ((0, +1), (0, -1), (1, +1), (1, -1)):
-        u = sign * xy[:, axis]
-        ext = float(u.max())                      # outer envelope
-        w = sign * W[:, axis]
-        w = w[(w > ext - 0.05) & (w <= ext + 0.002)]
-        off[(axis, sign)] = sign * ext
-        conf[(axis, sign)] = False
-        if len(w) < 150:
-            continue                              # unseen/thin: keep
-        edges = np.arange(ext - 0.05, ext + 0.004, 0.002)
-        cnt, _ = np.histogram(w, bins=edges)
-        k = int(np.argmax(cnt))
-        s_pos = 0.5 * (edges[k] + edges[k + 1])
-        gap = ext - s_pos
-        outer_n = int(((w > ext - 0.008) & (w <= ext + 0.002)).sum())
-        spike_n = int(((w > s_pos - 0.006) & (w <= s_pos + 0.006)).sum())
-        if spike_n == 0 or cnt[k] < 2 * max(float(np.median(cnt)), 1.0):
-            continue                              # no clear wall spike
-        conf[(axis, sign)] = True
-        ratio = outer_n / spike_n
-        # OVERFIT-SUSPECT gates, fitted to the 5 contested faces of the
-        # 9-run bench (b2 x-, b3 x+/x- must shave; b5 y+, b10 y+ must
-        # not; margins as thin as 0.01 in ratio / 1 mm in gap). Three
-        # principled discriminators (density ratio, fixed-window fill,
-        # cut-zone fill) all failed to separate ghost shelves from
-        # honest envelope tails — the distinction is NOT decidable from
-        # local density in this data; these numbers merely memorize it.
-        if 0.010 < gap <= 0.014 and 0.12 <= ratio <= 0.75:
-            off[(axis, sign)] = sign * (s_pos + 0.004)   # shave to spike
-
-    return {"off": off, "conf": conf, "yaw": yaw, "center": center,
-            "z_t": z_t, "h": h}
-
-
-def boxguard(P: np.ndarray, cams=None, seed: int = 0):
-    """boxsnap + yaw-sharpness refine + double-gated ghost-shelf shave.
-
-    Bench iters 4-10 decomposed boxsnap's three failures: b2/b3 = ghost
-    shelves beyond the 1 % trim stretch the extents 10-25 mm; b6 =
-    min-AREA yaw locks 7.8 deg off on the fuzzy outline; the six aces =
-    the GT convention IS the outer envelope (q99.5-style), so density
-    modes/medians must never touch a clean wall (that sank planes and
-    boxguard v1: the wall fuzz's density spike sits 10-17 mm inside the
-    envelope even on clean runs). v3: (1) yaw re-searched +-10 deg by
-    WALL sharpness, adopted only on a >=15 % win; (2) extents = outer
-    envelope, exactly boxsnap; (3) double-gated ghost-shelf shave (see
-    core). 8/9 runs wf=1.000 at final; parked on b2 x-. Deterministic.
-    """
-    meta = _boxguard_core(P)
-    return _boxmesh(meta["off"], meta["h"], meta["yaw"], meta["center"],
-                    meta["z_t"])
-
-
 def boxsq(P: np.ndarray, cams=None, seed: int = 0):
     """boxguard + near-square extension of UNSEEN sides (mid-run fix).
 
@@ -361,7 +244,7 @@ def boxsq(P: np.ndarray, cams=None, seed: int = 0):
     test misclassifies in both directions (box6 final y- reads unseen,
     box9 s8 partial walls read seen). Kept as documentation.
     """
-    meta = _boxguard_core(P)
+    meta = boxguard_core(P)
     off, conf, yaw, center, z_t, h = (meta["off"], meta["conf"],
                                       meta["yaw"], meta["center"],
                                       meta["z_t"], meta["h"])
@@ -380,7 +263,7 @@ def boxsq(P: np.ndarray, cams=None, seed: int = 0):
             else:
                 off[(axis, sign)] = max(min(guess, lo), lo - 0.08)
 
-    return _boxmesh(off, h, yaw, center, z_t)
+    return boxmesh(off, h, yaw, center, z_t)
 
 
 #: Registry the bench iterates. The Ralph loop appends candidates here.
@@ -433,7 +316,64 @@ def show(run: str, step: int, algo: str = "poisson20",
     print(dst)
 
 
+def rerun(run: str, algo: str = "boxguard", out: Optional[str] = None,
+          open: bool = False):                    # noqa: A002
+    """Log every step's cloud + completion mesh to a scrubbable .rrd.
+
+    One 3D view, a `step` timeline: green-tinted cloud points over the
+    algo's mesh, so the inferred faces (no points on them) read at a
+    glance. Same viewer conventions as `regions.run`.
+    """
+    import open3d as o3d
+    import rerun as rr
+    import rerun.blueprint as rrb
+    from inspection.viewplan import regions
+    run = str(run)
+    fn = ALGOS[algo]
+    plys = sorted((regions.DERIVED / run / "steps").glob("step_*.ply"))
+    if not plys:
+        raise SystemExit(f"no derived step clouds for {run}")
+
+    app_id = f"viewplan-complete-{algo}-{run}"
+    rr.init(app_id)
+    rr.log("world", rr.ViewCoordinates.RIGHT_HAND_Z_UP, static=True)
+    for p in plys:
+        step = int(p.stem.split("_")[1])
+        rr.set_time("step", sequence=step)
+        pcd = o3d.io.read_point_cloud(str(p))
+        P = np.asarray(pcd.points)
+        C = ((np.asarray(pcd.colors) * 255).astype(np.uint8)
+             if pcd.has_colors() else
+             np.full((len(P), 3), [80, 220, 110], np.uint8))
+        rr.log("world/cloud", rr.Points3D(P, colors=C, radii=[0.0012]))
+        m = fn(P)
+        V = np.asarray(m.vertices)
+        T = np.asarray(m.triangles)
+        vc = (np.asarray(m.vertex_colors) * 255).astype(np.uint8) \
+            if m.has_vertex_colors() else None
+        rr.log("world/box", rr.Mesh3D(
+            vertex_positions=V, triangle_indices=T, vertex_colors=vc,
+            albedo_factor=[170, 170, 185] if vc is None else None))
+        print(f"  step {step:3d}: {len(P):6d} pts -> "
+              f"{len(V)} verts / {len(T)} tris")
+
+    dst = Path(out) if out else \
+        regions.DERIVED / run / "rrd" / f"{run}-complete-{algo}.rrd"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    bp = rrb.Blueprint(
+        rrb.Spatial3DView(origin="world", name=f"{run} {algo}"),
+        collapse_panels=True)
+    rr.save(str(dst), default_blueprint=bp)
+    print(f"-> {dst}")
+    if open:
+        import subprocess
+        import sys
+        viewer = Path(sys.executable).parent / "rerun"
+        subprocess.Popen([str(viewer if viewer.exists() else "rerun"),
+                          str(dst)], start_new_session=True)
+
+
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
-    fire.Fire({"list": list_, "show": show})
+    fire.Fire({"list": list_, "show": show, "rerun": rerun})

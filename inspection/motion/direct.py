@@ -33,7 +33,7 @@ def plan_to_pose(world, ik, q_from, T_flange, step=DEFAULT_STEP):
     Returns (path, info): path is [q_from, q_goal] or None; info is a dict
     with the branch bookkeeping (how many enumerated / endpoint-free / tried).
     """
-    branches = ik.branches(T_flange)
+    branches = ik.branches(T_flange, q_near=q_from)
     info = {"enumerated": len(branches), "endpoint_free": 0, "tried": 0}
     if len(branches) == 0:
         return None, info
@@ -129,7 +129,7 @@ def main():
             time.sleep(1.5)
             T = sample_viewpoint(rng)
             n += 1
-            branches = ik.branches(T)
+            branches = ik.branches(T, q_near=q_now)
             free = [q for q in branches if not world.is_colliding(q)]
             if not free:
                 print(f"[{n}] unreachable: {len(branches)} branches, "

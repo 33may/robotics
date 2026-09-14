@@ -72,7 +72,8 @@ class SettleResult:
 
 def settle_capture(cap, rig, segmenter, acc, is_survey: bool,
                    on_warn=lambda msg: None,
-                   floor_z: float | None = None) -> SettleResult:
+                   floor_z: float | None = None,
+                   pose_confirmed: bool = False) -> SettleResult:
     """One capture -> object identity, plane gate, and fuse into `acc`.
 
     Moved verbatim (same order) from `_exec_worker`'s capture leg:
@@ -81,6 +82,15 @@ def settle_capture(cap, rig, segmenter, acc, is_survey: bool,
     centroid rejection -> `acc.add` with its detached-points warning routed
     through `on_warn` rather than a hardwired publisher, so this function has
     no dependency on the Supervisor or a live UI.
+
+    `pose_confirmed` — the caller verified the stamped joints match the
+    PLANNED arrival pose (the arm demonstrably stood where we sent it). The
+    plane gate exists to catch a wrong camera pose (2108-ui: frozen RTDE q);
+    with the pose independently confirmed, a bad plane is a bad FIT — the
+    10-deg ring sees almost no table, so RANSAC fits a grazing sliver
+    (1009-cup cell [10,0]: z=-71 mm from a correct pose, twice) — and
+    rejecting the view only throws away good data (Anton 2026-09-10). The
+    gate then warns and fuses instead of rejecting.
     """
     fell_back = None
 
@@ -97,9 +107,14 @@ def settle_capture(cap, rig, segmenter, acc, is_survey: bool,
     # cell visited.
     bad = _plane_error(view["plane"])
     if bad:
-        return SettleResult(ok=False, detail=f"view rejected: {bad}",
-                            view=None, seg=None, npts=0, dropped=0,
-                            fallback=fell_back)
+        if pose_confirmed:
+            on_warn(f"plane gate waived: {bad} — arm confirmed at the "
+                    f"planned pose, so this is a plane FIT problem "
+                    f"(grazing view); fusing anyway")
+        else:
+            return SettleResult(ok=False, detail=f"view rejected: {bad}",
+                                view=None, seg=None, npts=0, dropped=0,
+                                fallback=fell_back)
     npts = len(view["points"]) if view["points"] is not None else 0
     if is_survey and view["centroid"] is None:
         return SettleResult(ok=False, detail="NO OBJECT above the table",

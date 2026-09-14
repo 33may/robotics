@@ -97,7 +97,9 @@ def test_future_schema_version_is_rejected_loudly():
 
 def test_version_gate_is_per_model():
     assert RunRecord.VERSION == 1
-    assert StepRecord.VERSION == 1  # bumps independently later
+    # StepRecord bumped independently — exactly what B6 promised. v2 =
+    # per-step fused cloud pair (2026-09-10); RunRecord stayed put.
+    assert StepRecord.VERSION == 2
 
 
 # --- read-tolerant / write-strict (B6) ---------------------------------------

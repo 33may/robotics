@@ -6,7 +6,7 @@
 
 **Goal:** Build the eyes of the inspection system — the run structure, tool
 API, and two-tier agent machinery that answer questions from captured views
-(design: `inspection/2026-08-20-image-machinery-design.md`).
+(design: `inspection/docs/2026-08-20-image-machinery-design.md`).
 
 **Architecture:** A deterministic view store replayed from captured runs, a
 small geometry tool API on top, local perception verbs (detect/segment/OCR),

@@ -11,12 +11,15 @@ Loop shape (Anton, 2026-08-25):
     survey -> plan() -> { inspect(question, cell) | move(cell) }* -> answer()
 
 ## Files
-- `loop.py` — `Brain(run_dir, question, vlm)`: the four verbs as in-process MCP
-  tools, the `PostToolUse` state hook, the `PreToolUse` safety gate, the system
+- `loop.py` — `Brain(run_dir, question, vlm, verbs)` (both models injected,
+  never defaulted — `eyes/cognition.py` assembles them): the four verbs as
+  in-process MCP tools, the `PostToolUse` state hook (STATE + MOVES, every
+  turn, stamped), the `PreToolUse` safety gate, the survey declaration before
+  the opening, the answer-time evidence hunts with bounce-on-miss, the system
   prompt and the run budget. CLI:
   `p inspection/brain/loop.py inspection/data/runs/2408-cup1 "is there a logo on the cup?"`
 - `render.py` — everything the planner reads that a model did not write:
-  `state_delta`, `action_menu`, `gloss`, `opening`.
+  `state_block`, `moves_block`, `survey_bearing_line`, `gloss`, `opening`.
 
 ## Contracts & decisions
 - **The orchestrator is blind** (Anton 2026-08-25). No images, ever. The
@@ -72,8 +75,8 @@ Loop shape (Anton, 2026-08-25):
   model cannot invoke — a loop must be able to stop.
 - **Replay first.** `move` jumps to cells a data-engine sweep already captured,
   so the loop runs and benches with no arm. The live executor binds at exactly
-  one seam: `Brain._gate`, where `inspection.safety.config_is_safe` /
-  `path_is_safe` run before any real motion.
+  one seam: `Brain._gate`, where the motion tier's checks
+  (`motion/execute.py`: path validity, safety mode) run before any real motion.
 
 ## Does NOT belong here
 - Pixels, crops, detection, OCR — all of that is `eyes/`, behind `inspect`.

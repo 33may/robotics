@@ -9,8 +9,8 @@ nothing from sibling packages.
 - `cell.yaml` — declared cuboids with the frame tree: base→table probed
   once (robot is welded to the table, transform is permanent);
   table→shelf tape-measured.
-- `geometry.py` — depth-cloud geometry: deproject, table fit/rectify,
-  cluster, `CloudAccumulator` (SO-101 era, base-frame clouds).
+- `geometry.py` — depth-cloud geometry: deproject, table fit,
+  cluster, `CloudAccumulator` (base-frame clouds).
   `object_in_base(..., mask=)` is the masked lift; `project_to_pixels` /
   `prompt_box` turn a known cloud into a box in a new view. Pure numpy —
   it must NEVER import `eyes` (`eyes/tools.py` imports this module, so it

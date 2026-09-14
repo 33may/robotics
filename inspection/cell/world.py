@@ -370,6 +370,9 @@ class RobotCell:
         # from the same builder the viewer draws (one truth)
         panels, prisms = build_keepouts(
             cfg, lambda f: _frame_to_base(self._frames, f).homogeneous)
+        # kept for display consumers (keepout_display_meshes): whoever renders
+        # this world must draw what WE loaded, not re-derive it from yaml
+        self.keepout_panels, self.keepout_prisms = panels, prisms
         for name, R, center, dims in panels:
             gid = self._add_box_geom(f"cell_{name}", 0, pin.SE3(R, center), dims)
             self._env_geoms.append(gid)
@@ -384,6 +387,13 @@ class RobotCell:
 
         self._viz = None
         self._objects = {}  # soft geometry: display/standoff only, never pairs
+
+    def keepout_display_meshes(self):
+        """DISPLAY ONLY: the taught keep-outs as the union footprint extruded
+        once -> [(vertices, faces)] per watertight blob. Same builder output
+        the collision shapes came from, merged the way cell/viewer.py draws
+        them — see merged_keepout_mesh for why (stacked-alpha z-fighting)."""
+        return merged_keepout_mesh(self.keepout_panels, self.keepout_prisms)
 
     # ------------------------------------------------------------------ setup
     def _add_box_geom(self, name, joint_id, placement, dims):

@@ -176,7 +176,18 @@ class StepRecord(RecordModel):
     write-protocol discriminator — "captured" means geometry hasn't been written
     yet (crash window is unambiguous), "fused" means the record is complete.
     Pose/capture fields are required only when outcome == "captured".
+
+    v2 (2026-09-10): a fused step also persists the accumulated object cloud —
+    `fused/cloud.npy` + `fused/colors.npy` (uint8, row-aligned) in its step
+    dir, mirroring the run-level `fused/` pair. The accumulator voxelises and
+    outlier-filters the MERGED cloud on every add, so this state is run-time
+    truth, not a derivable quantity ("no run-time state left to
+    recomputation"). v1 steps predate this: their per-step clouds exist only
+    via replay into the derived tree, and validate must not demand the files.
     """
+
+    VERSION: ClassVar[int] = 2
+    schema_version: int = 2
 
     step_id: int = Field(ge=0)  # survey = 0
     view: ViewRef

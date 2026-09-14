@@ -1,65 +1,121 @@
-"""show — project a recorded run into a Rerun .rrd (user stories C1/D4).
+"""show — the reduced two-pane viewer over a recorded run (stories C1/D4).
 
-Robot-free 3D inspection: camera frusta from T_base_cam + session intrinsics,
-step images, fused cloud (colored when fused_colors.npy rides along).
-Works on both generations via `Run` (record/run.py), which adapts legacy
-runs transparently — no more separate per-layout file probing here.
-Read-only on the run.
+`p -m inspection.record show <id>` lands here when a run has no derived
+step clouds (the full six-story workspace, record/rr/workspace.py, needs
+them). Same two panes as the full workspace, from run files alone:
+
+  LEFT   3D — every camera frustum, the object cloud at step k (per-step
+         `steps/NNN/fused/cloud.npy` when the run recorded them; the
+         run-level final fused cloud standing in otherwise), and the
+         step-k camera lit in the accent colour.
+  RIGHT  2D — the rgb captured at step k, re-logged to the one stable
+         `ACTIVE` entity so the pane tracks the slider.
+
+All Rerun calls and the blueprint come from record/rr/log.py — one
+schema, both viewers, so scrubbing muscle memory transfers. Works on both
+run generations via `Run` (record/run.py). Read-only on the run; the only
+side product is rotated-back rgb copies for 180° views (scratch, /tmp —
+see `_pose_frame_rgb`).
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-import numpy as np
-
 from inspection.record.run import Run
+
+#: Same scratch home as workspace.py's IMG_CACHE: rotated rgb frames are an
+#: artefact of how capture stored the png, reproducible in a second.
+IMG_CACHE = Path("/tmp/rrd/_img")
 
 
 def show_run(run_dir: Path, out: Path) -> Path:
-    import rerun as rr
+    from inspection.record.rr import log as rr_log
+    from inspection.record.rr import workspace as rr_ws
 
     run_dir, out = Path(run_dir), Path(out)
     run = Run.load(run_dir)
-    rr.init(f"record-{run.record.id}", spawn=False)  # rerun 0.37: no '/' in app ids
-    rr.save(str(out))
+    app_id = f"record-{run.record.id}"  # rerun 0.37: no '/' in app ids
+    rr_log.begin(app_id)
+    rr_log.log_world()
 
     intr = _color_intrinsics(run_dir)
+    steps = [s for s in run.steps if s.T_base_cam is not None]
+    # The step-k cloud, by source precedence (Anton, 2026-09-10). The scrub
+    # must show the cloud GROWING view by view whenever per-step clouds
+    # exist ANYWHERE; the static final cloud is strictly the last resort.
+    #   1. steps/NNN/fused/ in the run itself  (StepRecord v2 records it)
+    #   2. derived/<run>/steps/step_NNN.npy/.ply (backfilled v1 runs;
+    #      NNN is the step/pose id, which can be sparse)
+    #   3. nothing per-step at all -> run-level final pair, static
+    derived = run_dir.parent.parent / "derived" / run.record.id / "steps"
+    if any((s.dir / "fused" / "cloud.npy").exists() for s in steps):
+        step_cloud = rr_ws._recorded_pair
+    elif any((derived / f"step_{s.id:03d}.npy").exists()
+             or (derived / f"step_{s.id:03d}.ply").exists() for s in steps):
+        step_cloud = lambda s: _derived_cloud(derived, s.id)  # noqa: E731
+    else:
+        step_cloud = None
 
-    for step in run.steps:
-        if step.T_base_cam is None:
-            continue
-        rr.set_time("step", sequence=step.id)
-        T = step.T_base_cam
-        ent = f"world/cam/{step.id:03d}"
-        rr.log(ent, rr.Transform3D(translation=T[:3, 3], mat3x3=T[:3, :3]))
-        if intr is not None:
-            rr.log(ent, rr.Pinhole(
-                image_from_camera=intr["K"], width=intr["w"], height=intr["h"]))
-        rgb_path = step.dir / "rgb.png"
-        if rgb_path.exists():
-            rr.log(f"{ent}/rgb", rr.EncodedImage(contents=rgb_path.read_bytes(),
-                                                 media_type="image/png"))
-        ply_path = step.dir / "cloud.ply"
-        if ply_path.exists():
-            rr.log(f"world/step_cloud/{step.id:03d}", rr.Asset3D(path=str(ply_path)))
+    prev_id = None
+    for s in steps:
+        rr_log.at(s.id)
+        # Step k's frustum arrives lit; last step's is demoted in the same
+        # breath — exactly one orange frustum at any slider position.
+        rr_log.log_camera(s.id, s.T_base_cam, intr,
+                          image_path=rr_ws._frustum_image(
+                              s, IMG_CACHE / run.record.id),
+                          color=rr_log.C_CAM_ACTIVE)
+        if prev_id is not None:
+            rr_log.recolor_camera(prev_id, intr)
+        prev_id = s.id
+        if step_cloud is not None:
+            fused = step_cloud(s)
+            if fused is not None:
+                rr_log.log_cloud(*fused)
+        ply = s.dir / "cloud.ply"
+        if ply.exists():
+            rr_log.log_step_ply(s.id, ply)
+        rgb = s.dir / "rgb.png"
+        if rgb.exists():
+            rr_log.log_active_view(intr, rgb)  # upright, as stored
 
-    fused = run.fused()
-    if fused is not None:
-        pts, colors = fused
-        rr.log("world/fused", rr.Points3D(pts, colors=colors, radii=0.002))
-    return out
+    if step_cloud is None:
+        fused = run.fused()
+        if fused is not None:
+            # STATIC: no per-step clouds anywhere, so the final cloud stands
+            # in at every slider position — never only on the last frame.
+            rr_log.log_cloud(*fused, static=True)
+
+    bp = rr_log.blueprint(run.record.id,
+                          hidden=(rr_log.OVERLAY, rr_log.CLOUD_RGB,
+                                  rr_log.STEP_PLY))
+    return rr_log.save(out, bp, app_id)
+
+
+def _derived_cloud(dsteps: Path, step_id: int) -> tuple | None:
+    """Backfilled step-k cloud from the derived tree; None when this step
+    has neither file (sparse ids). Loading defers to the full workspace's
+    `_step_cloud` — npy points, colours from the ply when row-aligned —
+    so both viewers read the tree identically."""
+    if not (dsteps / f"step_{step_id:03d}.npy").exists() and \
+       not (dsteps / f"step_{step_id:03d}.ply").exists():
+        return None
+    from inspection.record.rr.workspace import _step_cloud
+    return _step_cloud(dsteps, step_id)
 
 
 def _color_intrinsics(run_dir: Path) -> dict | None:
+    """The session's color intrinsics block, in the shape `rr/log.py`
+    expects (fx, fy, ppx, ppy, width, height); None when absent (mock and
+    old-mock runs)."""
     sp = run_dir / "session.json"
     if not sp.exists():
         return None
     try:
         raw = json.loads(sp.read_text())
         c = raw["intrinsics"]["color"]
-        return {"K": np.array([[c["fx"], 0, c["ppx"]],
-                               [0, c["fy"], c["ppy"]], [0, 0, 1]]),
-                "w": c["width"], "h": c["height"]}
+        return {"fx": c["fx"], "fy": c["fy"], "ppx": c["ppx"], "ppy": c["ppy"],
+                "width": c["width"], "height": c["height"]}
     except Exception:
         return None

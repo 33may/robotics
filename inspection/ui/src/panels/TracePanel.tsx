@@ -48,8 +48,10 @@ interface SubTurn {
    *  `{"fully_in_frame": "yes", "text_verbatim": "VBTI"}` is a real one that
    *  killed the app when rendered as a React child. Render via <Value>. */
   readonly answer?: unknown;
-  /** Viewing geometry of the target in this frame — `{target, facing, better}`,
-   *  camera-centric. Always an object, so always render via <Value>. */
+  /** What this viewpoint offered — `{saw, recommendation}`, camera-centric.
+   *  Always an object, so always render via <Value>. */
+  readonly view?: unknown;
+  /** Pre-2026-08-26 runs carried `{target, facing, better}` under this key. */
   readonly framing?: unknown;
   readonly raw?: string;
 }
@@ -63,6 +65,24 @@ interface SubTranscript {
   readonly prompt?: string;
   readonly turns?: readonly SubTurn[];
   readonly answer?: string;
+  /** The final turn's `view`, copied to the transcript top by the subagent
+   *  loop ("disk and Finding always agree", eyes/agents/vlm_agent.py). The
+   *  render falls back to this when the reply turn's own key is missing. */
+  readonly view?: unknown;
+}
+
+/** One resolved evidence hunt (brain/loop.py:_collect_evidence). Image paths
+ *  arrive as /captures URLs — publisher.publish_trace maps them — and either
+ *  image can be null. found:false is a real record, the "we looked here"
+ *  receipt, not an error. Old runs carry none of this and must still render. */
+interface EvidenceRec {
+  readonly cell?: readonly number[] | string;
+  readonly find?: string;
+  readonly found?: boolean;
+  readonly report?: string;
+  readonly crop?: string | null;
+  readonly frame?: string | null;
+  readonly transcript?: string;
 }
 
 export interface TraceEvent {
@@ -97,6 +117,16 @@ export interface TraceEvent {
   readonly image?: string;
   readonly result?: string;
   readonly answer?: string;
+  /** sub_step inside answer(): which citation is being hunted right now. */
+  readonly hunt?: string;
+  /** `evidence` events carry one EvidenceRec each, flattened. */
+  readonly find?: string;
+  readonly found?: boolean;
+  readonly report?: string;
+  readonly crop?: string | null;
+  readonly frame?: string | null;
+  /** The final `answer` event: one record per cited hunt, misses included. */
+  readonly evidence_images?: readonly EvidenceRec[];
 }
 
 interface TracePayload {
@@ -209,13 +239,18 @@ const ICON: Record<string, ReactElement> = {
 
 interface Block {
   key: number;
-  kind: 'run' | 'prose' | 'tool' | 'state' | 'answer' | 'approval';
+  kind: 'run' | 'prose' | 'tool' | 'state' | 'answer' | 'approval' | 'survey';
   ev?: TraceEvent;
   call?: TraceEvent;
   result?: TraceEvent;
   write?: TraceEvent;
   /** Live progress from the vision subagent, while it is still running. */
   steps?: TraceEvent[];
+  /** Hunts resolved inside an answer() call, in the order they streamed. */
+  evidence?: TraceEvent[];
+  /** The `answer` event, absorbed into its call: the only carrier of the
+   *  full evidence_images record (cached hunts emit no fresh event). */
+  answerEv?: TraceEvent;
 }
 
 function toBlocks(events: readonly TraceEvent[]): Block[] {
@@ -240,12 +275,25 @@ function toBlocks(events: readonly TraceEvent[]): Block[] {
       case 'approval':
         out.push({ key: ev.seq, kind: 'approval', ev });
         return;
-      case 'sub_step':
-        return; // absorbed by its tool block; never a row of its own
+      case 'sub_step': {
+        // Inside a tool call these are absorbed by the scan below. The
+        // SURVEY declaration agent streams its steps with cell:null BEFORE
+        // any tool_call exists, so with no owner they were dropped here and
+        // the survey run was invisible — the one sub-run with no verb gets
+        // a block of its own instead.
+        const prev = out[out.length - 1];
+        if (prev?.kind === 'survey') prev.steps?.push(ev);
+        else out.push({ key: ev.seq, kind: 'survey', steps: [ev] });
+        return;
+      }
       case 'answer':
-        // Dropped on purpose: this duplicates the `answer` TOOL CALL, whose
-        // args carry the same verdict/reasoning/evidence. Rendering both is
-        // the exact duplication LangSmith had to ship a dedup fix for.
+        // Owned by the answer TOOL CALL — absorbed below, evidence_images
+        // and all. Reached only with no call to own it; rendering it here
+        // too is the duplication LangSmith had to ship a dedup fix for.
+        return;
+      case 'evidence':
+        // Emitted only inside an answer() call and absorbed there; an
+        // orphan's record rides the `answer` event too, so nothing is lost.
         return;
       case 'tool_call': {
         const block: Block = { key: ev.seq, kind: 'tool', call: ev };
@@ -260,6 +308,12 @@ function toBlocks(events: readonly TraceEvent[]): Block[] {
             used.add(next.seq);
           } else if (next.kind === 'sub_step') {
             (block.steps ??= []).push(next);
+            used.add(next.seq);
+          } else if (next.kind === 'evidence') {
+            (block.evidence ??= []).push(next);
+            used.add(next.seq);
+          } else if (next.kind === 'answer') {
+            block.answerEv = next;
             used.add(next.seq);
           } else if (next.kind === 'tool_result') {
             block.result = next;
@@ -566,6 +620,154 @@ function ToolBlock({
   );
 }
 
+/** One evidence hunt, as a receipt: the picture, where it was taken, and the
+ *  hunter's verbatim report. The crop is what the hunter chose to look at; a
+ *  miss (found:false) or a record with no crop shows the full frame instead —
+ *  proof of where we looked, which is the point of a NO. */
+function EvidenceRow({
+  rec,
+  onOpenImage,
+}: {
+  rec: EvidenceRec;
+  onOpenImage: (src: string) => void;
+}) {
+  const img = rec.found !== false && rec.crop ? rec.crop : rec.frame ?? rec.crop ?? null;
+  return (
+    <div className="trace-evrec" data-found={rec.found === false ? 'no' : 'yes'}>
+      {img ? <Media images={[img]} onOpen={onOpenImage} /> : null}
+      <div className="trace-evrec-meta">
+        <span className="trace-evrec-cell">
+          {cellLabel(rec.cell)}
+          {rec.found === false ? ' · not found' : ''}
+        </span>
+        {rec.report ? <span className="trace-evrec-report">{str(rec.report)}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+/** The survey declaration agent, rendered like the inspect sub-runs even
+ *  though no verb owns it: same card, same in-flight strip, and the `done`
+ *  step's answer IS the declaration the whole plan gets built from. */
+function SurveyBlock({
+  block,
+  selected,
+  onSelect,
+  onOpenImage,
+}: {
+  block: Block;
+  selected: boolean;
+  onSelect: () => void;
+  onOpenImage: (src: string) => void;
+}) {
+  const steps = block.steps ?? [];
+  const done = steps.find((st) => st.event === 'done');
+  const last = steps[steps.length - 1];
+  const images = steps.filter((st) => st.image).map((st) => st.image as string);
+  return (
+    <div
+      className="trace-tool"
+      data-tool="survey"
+      data-selected={selected ? 'yes' : undefined}
+      data-running={done ? undefined : 'yes'}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onSelect();
+      }}
+    >
+      <div className="trace-tool-head">
+        <span className="trace-tool-icon">{ICON.inspect}</span>
+        <span className="trace-tool-name">survey</span>
+      </div>
+      {done ? (
+        <div className="trace-tool-result">
+          <Clamp text={str(done.answer)} />
+          <Media images={images} onOpen={onOpenImage} />
+          <div className="trace-tool-foot">vision subagent · {done.n ?? steps.length} steps</div>
+        </div>
+      ) : (
+        <div className="trace-running-wrap">
+          {images.length ? <Media images={images.slice(-3)} onOpen={onOpenImage} /> : null}
+          <div className="trace-running">
+            <span className="trace-pulse" />
+            <span>{last ? `looking · step ${last.n}/${last.of}` : 'running'}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** answer() is not instant: the cited evidence hunts run INSIDE the call and
+ *  take tens of seconds each. Until the tool_result lands this card must read
+ *  as running — the preceding prose already sounds concluded, and a silent
+ *  gap here made the slowest part of a run look like a hang. A bounced
+ *  answer (failed=true) is an attempt on record, never the verdict. */
+function AnswerBlock({
+  block,
+  selected,
+  onSelect,
+  onOpenImage,
+}: {
+  block: Block;
+  selected: boolean;
+  onSelect: () => void;
+  onOpenImage: (src: string) => void;
+}) {
+  const a = block.call?.args ?? {};
+  const result = block.result;
+  const failed = result?.failed === true;
+  // The answer event's evidence_images is authoritative — cached hunts from
+  // a bounced attempt re-appear there without emitting a fresh `evidence`
+  // event. The streamed events are what exists while it runs, and all a
+  // bounced attempt leaves behind.
+  const recs: readonly EvidenceRec[] =
+    block.answerEv?.evidence_images ?? block.evidence ?? [];
+  const steps = block.steps ?? [];
+  const last = steps[steps.length - 1];
+  return (
+    <div
+      className="trace-answer"
+      data-failed={failed ? 'yes' : undefined}
+      data-running={result ? undefined : 'yes'}
+      data-selected={selected ? 'yes' : undefined}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') onSelect();
+      }}
+    >
+      <div className="trace-answer-label">{failed ? 'answer · bounced' : 'answer'}</div>
+      <div className="trace-answer-verdict">{str(a.verdict)}</div>
+      {recs.map((rec, i) => (
+        <EvidenceRow key={i} rec={rec} onOpenImage={onOpenImage} />
+      ))}
+      {result ? (
+        <>
+          {failed && result.text ? <Clamp text={result.text} /> : null}
+          {!recs.length && result.images?.length ? (
+            // Old runs traced no evidence records — the crops the result
+            // carries are still worth a strip.
+            <Media images={result.images} onOpen={onOpenImage} />
+          ) : null}
+        </>
+      ) : (
+        <div className="trace-running">
+          <span className="trace-pulse" />
+          <span>
+            {last?.hunt
+              ? `collecting evidence · ${cellLabel(last.cell)} · ${last.n}/${last.of}`
+              : 'collecting evidence…'}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SubAgent({
   sub,
   onOpenImage,
@@ -586,6 +788,12 @@ function SubAgent({
     } else steps.push({ out: turn });
   });
   const final = turns.find((t) => t.evidence || t.reasoning || t.answer);
+  // Three places the viewpoint appendix can live, oldest run last: the final
+  // reply turn's `view`; that turn's `framing` (the pre-2026-08-26 key); the
+  // transcript top-level copy the loop writes, which survives even when the
+  // reply turn's shape drifted (or, exhausted runs, when no final turn
+  // exists at all). Reading only one of these is how it went unrendered.
+  const view = final?.view ?? final?.framing ?? sub.view;
 
   return (
     <>
@@ -650,15 +858,17 @@ function SubAgent({
               </div>
             </>
           ) : null}
-          {final.framing ? (
-            <>
-              {/* The only part of a finding that is about the VIEW rather
-                  than the object — and the part the orchestrator steers on,
-                  so it is worth being able to check what was actually said. */}
-              <div className="trace-section">framing</div>
-              <Value v={final.framing} />
-            </>
-          ) : null}
+        </>
+      ) : null}
+      {view ? (
+        <>
+          {/* The only part of a finding that is about the VIEW rather than
+              the object — and the part the orchestrator steers on, so it is
+              worth being able to check what was actually said. Outside the
+              `final` guard: the top-level copy renders even when no reply
+              turn qualified as a final. */}
+          <div className="trace-section">view</div>
+          <Value v={view} />
         </>
       ) : null}
     </>
@@ -711,7 +921,11 @@ function Detail({
 
       {!result && block.steps?.length ? (
         <>
-          <div className="trace-section">looking now</div>
+          {/* A survey block never gets a result; its steps ARE the record,
+              not an in-flight glimpse, so the label must not say otherwise. */}
+          <div className="trace-section">
+            {block.kind === 'survey' ? 'steps' : 'looking now'}
+          </div>
           <ol className="trace-steps">
             {block.steps.map((st, i) => (
               <li className="trace-step" key={i}>
@@ -720,13 +934,24 @@ function Detail({
                   <div className="trace-step-head">
                     <b>{st.event === 'tool' ? st.tool : st.event}</b>
                     {st.args ? <code className="trace-step-args">{str(st.args)}</code> : null}
+                    {st.hunt ? <code className="trace-step-args">{st.hunt}</code> : null}
                   </div>
                   {st.result ? <div className="trace-step-out">{st.result}</div> : null}
+                  {st.answer ? <div className="trace-step-out">{str(st.answer)}</div> : null}
                   {st.image ? <Media images={[st.image]} onOpen={onOpenImage} /> : null}
                 </div>
               </li>
             ))}
           </ol>
+        </>
+      ) : null}
+
+      {block.answerEv?.evidence_images?.length || block.evidence?.length ? (
+        <>
+          <div className="trace-section">evidence</div>
+          {(block.answerEv?.evidence_images ?? block.evidence ?? []).map((rec, i) => (
+            <EvidenceRow key={i} rec={rec} onOpenImage={onOpenImage} />
+          ))}
         </>
       ) : null}
 
@@ -848,22 +1073,26 @@ export function TracePanel({ config }: PanelProps<TracePanelConfig>) {
                 </div>
               );
             }
-            if (block.call?.tool === 'answer') {
-              const a = block.call.args ?? {};
+            if (block.kind === 'survey') {
               return (
-                <div
-                  className="trace-answer"
+                <SurveyBlock
                   key={block.key}
-                  onClick={() => setSelected(block.key)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') setSelected(block.key);
-                  }}
-                >
-                  <div className="trace-answer-label">answer</div>
-                  <div className="trace-answer-verdict">{str(a.verdict)}</div>
-                </div>
+                  block={block}
+                  selected={block.key === selected}
+                  onSelect={() => setSelected(block.key)}
+                  onOpenImage={setLightbox}
+                />
+              );
+            }
+            if (block.call?.tool === 'answer') {
+              return (
+                <AnswerBlock
+                  key={block.key}
+                  block={block}
+                  selected={block.key === selected}
+                  onSelect={() => setSelected(block.key)}
+                  onOpenImage={setLightbox}
+                />
               );
             }
             return (

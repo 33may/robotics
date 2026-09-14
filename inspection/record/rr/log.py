@@ -72,6 +72,8 @@ OVERLAY = "/world/overlay"      # stored vs replayed final cloud (static, off)
 OVERLAY_STORED = OVERLAY + "/stored"
 OVERLAY_REPLAYED = OVERLAY + "/replayed"
 CHAIN = "/chain"                # /chain/<slot>, 2D images       (per step)
+ACTIVE = "/active_cam"          # step-k rgb + pinhole, ONE path (per step)
+STEP_PLY = "/world/step_cloud"  # per-view cloud.ply, legacy      (off)
 
 #: The accumulator voxel is 3 mm (`inspection/cell/geometry.py:46`), so a
 #: 1.5 mm radius draws one ball per occupied voxel with no gaps and no mush.
@@ -85,6 +87,10 @@ C_TABLE = (86, 100, 124, 70)    # translucent slab
 C_STORED = (60, 170, 255)       # story 5, channel A
 C_REPLAYED = (255, 74, 138)     # story 5, channel B
 C_CAM = (120, 205, 255)
+#: The frustum that captured the step under the slider. Same accent as the
+#: fresh glow on purpose: both mean "this is what step k is", and orange
+#: against thirty cyan cones is readable from across the room.
+C_CAM_ACTIVE = (255, 146, 26)
 
 #: Frustum length in metres. At the colour intrinsics this puts a ~120 mm
 #: image plane at the end of each cone — readable, and small enough that
@@ -190,7 +196,8 @@ def log_world() -> None:
     rr.log(WORLD, rr.ViewCoordinates.RIGHT_HAND_Z_UP, static=True)
 
 
-def log_cloud(points: np.ndarray, colors: np.ndarray | None = None) -> None:
+def log_cloud(points: np.ndarray, colors: np.ndarray | None = None,
+              static: bool = False) -> None:
     """The fused cloud as of the current step (story 2: it grows).
 
     Two entities, one cloud: `CLOUD` is the neutral backdrop the fits are
@@ -198,14 +205,20 @@ def log_cloud(points: np.ndarray, colors: np.ndarray | None = None) -> None:
     colours (`fused_colors.npy` / colored step PLYs), hidden by default —
     the eye icon IS the colour toggle. A step without colours logs an
     empty `CLOUD_RGB` so a scrub never shows a stale colouring.
+
+    `static=True` for a run that has ONLY its final cloud (v1 runs in the
+    reduced viewer): timeless, so the 3D pane has the object at every
+    slider position — including step 0 — instead of only at the end.
     """
     points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
-    rr.log(CLOUD, rr.Points3D(points, colors=C_CLOUD, radii=R_CLOUD))
+    rr.log(CLOUD, rr.Points3D(points, colors=C_CLOUD, radii=R_CLOUD),
+           static=static)
     if colors is not None and len(colors) == len(points):
         rr.log(CLOUD_RGB, rr.Points3D(points, colors=np.asarray(colors),
-                                      radii=R_CLOUD))
+                                      radii=R_CLOUD), static=static)
     else:
-        rr.log(CLOUD_RGB, rr.Points3D(np.zeros((0, 3), dtype=np.float32)))
+        rr.log(CLOUD_RGB, rr.Points3D(np.zeros((0, 3), dtype=np.float32)),
+               static=static)
 
 
 def log_fresh(points: np.ndarray) -> None:
@@ -251,23 +264,31 @@ def log_table(plane: Sequence[float], center: Sequence[float],
            static=True)
 
 
-def log_camera(pose_id: int, T_base_cam: np.ndarray, intr: Mapping,
+def _K(intr: Mapping) -> np.ndarray:
+    """3x3 camera matrix from a session.json intrinsics block."""
+    return np.array([[intr["fx"], 0.0, intr["ppx"]],
+                     [0.0, intr["fy"], intr["ppy"]],
+                     [0.0, 0.0, 1.0]], dtype=float)
+
+
+def log_camera(pose_id: int, T_base_cam: np.ndarray, intr: Mapping | None,
                image_path: str | Path | None = None,
-               label: str | None = None) -> None:
+               label: str | None = None,
+               color: tuple = C_CAM) -> None:
     """A frustum at the pose this view actually shot from, wearing its rgb.
 
     Logged at the current step and never again, so it appears when its
-    view is fused and persists for the rest of the scrub (story 2).
+    view is fused and persists for the rest of the scrub (story 2). The
+    producer passes `color=C_CAM_ACTIVE` for the step's own camera and
+    demotes it next step with `recolor_camera` — see there.
 
     `intr` is a session.json intrinsics block (`fx, fy, ppx, ppy, width,
-    height`). `camera_xyz=RDF` is the OpenCV convention the cell's
-    `deproject` uses (`geometry.py`), so the frustum points where the
-    depth actually went.
+    height`) — or None (mock/legacy runs without intrinsics), which logs
+    the pose alone: axes where the camera stood, no cone, no preview.
+    `camera_xyz=RDF` is the OpenCV convention the cell's `deproject` uses
+    (`geometry.py`), so the frustum points where the depth actually went.
     """
     T = np.asarray(T_base_cam, dtype=float)
-    K = np.array([[intr["fx"], 0.0, intr["ppx"]],
-                  [0.0, intr["fy"], intr["ppy"]],
-                  [0.0, 0.0, 1.0]], dtype=float)
     path = f"{CAMS}/{pose_id:03d}"
     # Three levels, and each one earns its place. The POSE is on the camera
     # entity, so hiding `/world/cam` takes the axis gizmos with it. The
@@ -276,14 +297,61 @@ def log_camera(pose_id: int, T_base_cam: np.ndarray, intr: Mapping,
     # stay a sibling in metres. The PREVIEW is a textured mesh in camera
     # coordinates, which the parent transform then places.
     rr.log(path, rr.Transform3D(translation=T[:3, 3], mat3x3=T[:3, :3]))
+    if intr is None:
+        return
     rr.log(f"{path}/frustum",
-           rr.Pinhole(image_from_camera=K,
+           rr.Pinhole(image_from_camera=_K(intr),
                       resolution=(intr["width"], intr["height"]),
                       camera_xyz=rr.ViewCoordinates.RDF,
                       image_plane_distance=FRUSTUM_M,
-                      color=C_CAM))
+                      color=color))
     if image_path is not None:
         _log_preview_quad(path, intr, image_path)
+
+
+def recolor_camera(pose_id: int, intr: Mapping | None,
+                   color: tuple = C_CAM) -> None:
+    """Re-log frustum `pose_id`'s pinhole in `color` at the CURRENT step.
+
+    The active-camera highlight is latest-at state: step k logs its own
+    frustum in `C_CAM_ACTIVE` (`log_camera(color=...)`) and demotes step
+    k-1's back to `C_CAM` with this. Exactly one frustum is ever lit, and
+    scrubbing backwards relights the right one for free.
+    """
+    if intr is None:
+        return
+    rr.log(f"{CAMS}/{int(pose_id):03d}/frustum",
+           rr.Pinhole(image_from_camera=_K(intr),
+                      resolution=(intr["width"], intr["height"]),
+                      camera_xyz=rr.ViewCoordinates.RDF,
+                      image_plane_distance=FRUSTUM_M,
+                      color=color))
+
+
+def log_active_view(intr: Mapping | None, image_path: str | Path) -> None:
+    """Step k's rgb (upright, as stored) on ONE stable entity path.
+
+    The standard rerun pattern for "the image of the current step": the
+    right-hand pane is a `Spatial2DView` rooted at `ACTIVE`, this is
+    re-logged every step, and latest-at makes the pane track the slider.
+    The pinhole rides along (when the run has intrinsics) so the view
+    frames the image at its true aspect.
+    """
+    if intr is not None:
+        rr.log(ACTIVE, rr.Pinhole(image_from_camera=_K(intr),
+                                  resolution=(intr["width"], intr["height"])))
+    rr.log(f"{ACTIVE}/rgb", rr.EncodedImage(path=str(image_path)))
+
+
+def log_step_ply(step_id: int, ply_path: str | Path) -> None:
+    """A step's own single-view cloud.ply, `/world/step_cloud/<id>`.
+
+    Legacy reduced-path data, kept logged but hidden by default: these
+    accumulate over the scrub (each is logged at its step and persists),
+    which is exactly what the per-step `CLOUD` entity is for — so they are
+    an eye-click, not the default picture.
+    """
+    rr.log(f"{STEP_PLY}/{int(step_id):03d}", rr.Asset3D(path=str(ply_path)))
 
 
 def _log_preview_quad(path: str, intr: Mapping,
@@ -568,18 +636,25 @@ def log_chain(slots: Mapping[str, str | Path]) -> None:
 
 
 # ------------------------------------------------------------------ blueprint
-def blueprint(run: str, chain_slots: Sequence[str],
+def blueprint(run: str,
               hidden: Sequence[str] = (OVERLAY,)) -> rrb.Blueprint:
     """The arranged workspace, saved into the file (story 1).
 
-    3D dominant on the left, chain stacked on the right, one time panel at
-    the bottom pinned to the `step` timeline. `auto_views=False` so Rerun
-    does not helpfully add a fourth view nobody asked for and shift every
+    Exactly TWO panes (Anton, 2026-09-10): the 3D scene on the left —
+    frusta, the step-k cloud, the step-k camera lit in `C_CAM_ACTIVE` —
+    and on the right one 2D view rooted at `ACTIVE`, showing only the
+    image captured at the step under the slider. One time panel at the
+    bottom pinned to the `step` timeline. `auto_views=False` so Rerun does
+    not helpfully add a third view nobody asked for and shift every
     coordinate a screenshot test depends on.
 
-    Default visibility is the spec's: cloud, cameras, chain and every
-    primitive method on; the stored/replayed overlay off, present in the
-    tree with its eye closed so turning it on is one click.
+    The chain images (`/chain`) are still logged — story 4's data is all
+    there — but out of the layout: neither pane's origin reaches them, so
+    they cost nothing on screen and stay one manual view away.
+
+    Default visibility: cloud, cameras and every primitive method on; the
+    stored/replayed overlay off, present in the tree with its eye closed
+    so turning it on is one click.
 
     The one-click groups the tree gives a reviewer, by design:
     `/world/cam` — EVERYTHING the cameras draw: frusta, axis gizmos and
@@ -588,17 +663,6 @@ def blueprint(run: str, chain_slots: Sequence[str],
     2026-09-03). Then `/world/prim/<method>` (one fitter at a time) and
     `/world/overlay` (story 5).
     """
-    # 2x2, not a column (Anton, 2026-09-03). The chain is four faces of one
-    # moment — what the camera saw, what was asked for, what came back, what
-    # survived — and a stack of four letterboxed 848x480 frames wastes most
-    # of the panel on black bars. A grid gives each of them real pixels and
-    # puts them side by side, which is how they are compared. Runs with only
-    # the rgb+mask fallback fill two cells of the same grid rather than
-    # getting a different layout.
-    chain = rrb.Grid(
-        contents=[rrb.Spatial2DView(name=s, origin=f"{CHAIN}/{s}")
-                  for s in chain_slots],
-        grid_columns=2, name="chain")
     scene = rrb.Spatial3DView(
         name=f"{run} — scene",
         origin=WORLD,
@@ -607,8 +671,9 @@ def blueprint(run: str, chain_slots: Sequence[str],
         line_grid=rrb.LineGrid3D(visible=True, spacing=0.05),
         overrides={h: rrb.EntityBehavior(visible=False) for h in hidden},
     )
+    active = rrb.Spatial2DView(name="view @ step", origin=ACTIVE)
     return rrb.Blueprint(
-        rrb.Horizontal(scene, chain, column_shares=[3.2, 1.0]),
+        rrb.Horizontal(scene, active, column_shares=[2.4, 1.0]),
         # Paused, not playing. A file that starts animating the moment it
         # opens costs the reviewer a click before he can read anything, and
         # it makes every screenshot of the workspace a different screenshot.
@@ -668,3 +733,263 @@ def _quat_from_z(n: np.ndarray) -> tuple[float, float, float, float]:
         return (0.0, 0.0, 0.0, 1.0) if c > 0 else (1.0, 0.0, 0.0, 0.0)
     s = np.sqrt((1.0 + c) * 2.0)
     return (float(v[0] / s), float(v[1] / s), float(v[2] / s), float(s / 2.0))
+
+
+# ---- viewplan additions (additive only) ------------------------------
+# Six small functions for `inspection/viewplan/workspace.py`
+# (docs/research/view-planning/poc/structure.md). Nothing above this line
+# is touched: viewplan gets its own subtree, its own colour, and its own
+# blueprint builder, so the record session's schema and this one cannot
+# collide even though they may both be open on the same run.
+VIEWPLAN = "/world/plan"        # new subtree: one eye-click kills the plan
+VP_MESH = VIEWPLAN + "/mesh"    # this step's reconstructed mesh
+VP_COVER = VIEWPLAN + "/coverage"  # samples coloured by measurability
+VP_CAMS = VIEWPLAN + "/cam"     # /world/plan/cam/<view_id> — planned views
+RENDERS = "/renders"            # /renders/<slot> — the 2D grid, milestone-only
+
+#: Magenta — checked against every colour already in this module (neutral
+#: cloud grey, fresh orange, table slate, stored/replayed blue/pink, cam
+#: cyan, the three pinned fit hues): farthest in hue from all of them, so a
+#: planned frustum is never mistaken for a recorded one on the same screen.
+C_PLANNED = (255, 96, 210)
+
+VP_PATCHES = VIEWPLAN + "/patches"  # samples coloured by OWNING view
+
+#: One colour per planned view id, shared by that view's frustum and the
+#: samples it owns (`covered_by` in the npz), so "which camera sees this
+#: patch" is answered by colour alone. Qualitative 12-hue set tuned for the
+#: dark viewer background; red is NOT in it (red means "uncovered" in the
+#: coverage channel) and uncovered samples here are dim grey, so neither
+#: channel's vocabulary leaks into the other. Wraps past 12.
+VP_VIEW_COLORS = (
+    (86, 180, 233), (230, 159, 0), (0, 158, 115), (240, 228, 66),
+    (204, 121, 167), (213, 94, 0), (100, 143, 255), (220, 38, 127),
+    (255, 176, 0), (120, 94, 240), (44, 160, 44), (23, 190, 207),
+)
+C_UNOWNED = (90, 90, 95)
+
+
+def viewplan_view_color(view_id: int) -> tuple:
+    """The pinned colour of planned view `view_id` (wraps past the palette)."""
+    return VP_VIEW_COLORS[int(view_id) % len(VP_VIEW_COLORS)]
+
+
+def log_viewplan_patches(points: np.ndarray, covered_by: np.ndarray
+                         ) -> list[str]:
+    """One entity PER OWNING VIEW: `/world/plan/patches/view_NN` (+ `unowned`).
+
+    The complement of `log_viewplan_coverage`: coverage answers "how well is
+    this patch seen", this answers "by WHICH camera". Each view's territory
+    is its own entity so the reviewer can reveal them one at a time with the
+    eye icons — `viewplan_blueprint(patch_paths=...)` hides them all by
+    default for exactly that workflow. Colour matches the view's frustum
+    (`viewplan_view_color`). `covered_by` is the npz column: view id per
+    sample, -1 = unowned (dim grey, not red — red belongs to coverage).
+    RETURNS the logged entity paths so the caller can retire stale ones
+    when a later step's plan has fewer views.
+    """
+    P = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+    owner = np.asarray(covered_by, dtype=int).reshape(-1)
+    logged: list[str] = []
+    for vid in np.unique(owner):
+        sel = owner == vid
+        if not sel.any():
+            continue
+        if vid < 0:
+            path, color = f"{VP_PATCHES}/unowned", C_UNOWNED
+        else:
+            path, color = (f"{VP_PATCHES}/view_{int(vid):02d}",
+                           viewplan_view_color(int(vid)))
+        rr.log(path, rr.Points3D(P[sel], colors=np.tile(
+            np.array(color, dtype=np.uint8), (int(sel.sum()), 1)),
+            radii=R_CLOUD * 1.3))
+        logged.append(path)
+    return logged
+
+
+def log_viewplan_mesh(vertices: np.ndarray, faces: np.ndarray,
+                      vertex_normals: np.ndarray | None = None) -> None:
+    """This step's reconstructed mesh, re-logged every step (it changes).
+
+    Neutral translucent albedo — the mesh is the surface the plan reasons
+    about, not a result to be admired, so it must not compete with the
+    coverage colouring drawn over it (`log_viewplan_coverage`) or the
+    accent magenta of the planned frusta.
+    """
+    V = np.asarray(vertices, dtype=np.float32).reshape(-1, 3)
+    F = np.asarray(faces, dtype=np.uint32).reshape(-1, 3)
+    kw = {}
+    if vertex_normals is not None:
+        kw["vertex_normals"] = np.asarray(vertex_normals,
+                                          dtype=np.float32).reshape(-1, 3)
+    rr.log(VP_MESH, rr.Mesh3D(vertex_positions=V, triangle_indices=F,
+                              albedo_factor=(200, 205, 215, 90), **kw))
+
+
+def log_viewplan_coverage(points: np.ndarray, best_cos: np.ndarray,
+                          cutoff_cos: float) -> None:
+    """Surface samples coloured by measurability: red = uncovered, green
+    ramp = covered, brighter with better (closer to orthogonal) incidence.
+
+    `best_cos` is the per-sample best incidence cosine over the SELECTED
+    views (0 for a sample no selected view reaches), `cutoff_cos` the
+    variant's incidence-gate cosine — the same split `coverage_area_frac`
+    is computed from, so the picture and the metric never disagree.
+    """
+    P = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+    q = np.asarray(best_cos, dtype=float).reshape(-1)
+    cutoff = float(cutoff_cos)
+    covered = q >= cutoff
+    colors = np.tile(np.array([214, 64, 64], dtype=np.uint8), (len(P), 1))
+    if covered.any():
+        span = max(1.0 - cutoff, 1e-9)
+        t = np.clip((q[covered] - cutoff) / span, 0.0, 1.0)
+        colors[covered] = np.stack([
+            (70 - 30 * t) * 1.0,
+            (140 + 105 * t),
+            (50 - 30 * t),
+        ], axis=1).clip(0, 255).astype(np.uint8)
+    rr.log(VP_COVER, rr.Points3D(P, colors=colors, radii=R_CLOUD * 1.3))
+
+
+def log_viewplan_camera(view_id: int, T_base_cam: np.ndarray, intr: Mapping,
+                        label: str = "", image_path: str | Path | None = None,
+                        color: tuple | None = None) -> str:
+    """A planned view's frustum at `/world/plan/cam/<view_id>`.
+
+    Default magenta; pass `color=viewplan_view_color(view_id)` to paint the
+    frustum with its territory's patch colour instead.
+
+    Same three-level pattern as `log_camera` (Transform3D + child Pinhole,
+    optional textured preview via `_log_preview_quad`), so a planned camera
+    and a recorded one read the same way in the tree and differ only by
+    colour and subtree. RETURNS the entity path so the caller can diff it
+    against last step's set and `clear_primitives` whatever is retired —
+    plans change size step to step, unlike recorded frusta which are
+    logged once and never move.
+    """
+    T = np.asarray(T_base_cam, dtype=float)
+    K = np.array([[intr["fx"], 0.0, intr["ppx"]],
+                  [0.0, intr["fy"], intr["ppy"]],
+                  [0.0, 0.0, 1.0]], dtype=float)
+    path = f"{VP_CAMS}/{int(view_id):02d}"
+    rr.log(path, rr.Transform3D(translation=T[:3, 3], mat3x3=T[:3, :3]))
+    rr.log(f"{path}/frustum",
+           rr.Pinhole(image_from_camera=K,
+                      resolution=(intr["width"], intr["height"]),
+                      camera_xyz=rr.ViewCoordinates.RDF,
+                      image_plane_distance=FRUSTUM_M,
+                      color=C_PLANNED if color is None else tuple(color)))
+    if label:
+        rr.log(path, rr.AnyValues(label=str(label)))
+    if image_path is not None:
+        _log_preview_quad(path, intr, image_path)
+    return path
+
+
+def log_viewplan_meta(variant: str, **fields) -> None:
+    """The non-geometric half of a `StepPlan`, on the `/world/plan` entity.
+
+    Same `log_decomposition_meta` pattern: abstain / reason / n_views /
+    coverage have no shape to draw, but without them an empty step (no
+    views, or an honest abstain) is indistinguishable from a step nobody
+    ever planned.
+    """
+    rr.log(VIEWPLAN, rr.AnyValues(variant=str(variant), **fields))
+
+
+def log_viewplan_render(slot: str, image_path: str | Path) -> None:
+    """One milestone-step render into the 2D grid, `/renders/<slot>`.
+
+    Slot names are stable view-id slots (`view_00`, `view_01`, ...), not
+    per-step paths, so `viewplan_blueprint`'s grid has a fixed shape across
+    the whole timeline and latest-at makes each cell simply show the most
+    recent render logged for that slot — exactly the `log_chain` pattern.
+    """
+    rr.log(f"{RENDERS}/{slot}", rr.EncodedImage(path=str(image_path)))
+
+
+VP_SAMPLES = VIEWPLAN + "/samples"  # probe subset of raw surface samples
+
+
+def log_viewplan_sample_probes(points: np.ndarray, normals: np.ndarray,
+                               ids: np.ndarray, arrow_m: float = 0.10,
+                               cloud: np.ndarray | None = None,
+                               patch_radius_m: float = 0.012) -> list[str]:
+    """N raw sampled patches, one entity each: `/world/plan/samples/sNN`.
+
+    The debug view of the sampler itself — each probe is one of the 3000
+    area-uniform samples, drawn as the PATCH it stands on: every cloud
+    point within `patch_radius_m` of the sample tinted the probe's colour
+    (default 12 mm = `fit/common.py:NORMAL_RADIUS_M`, the radius whose PCA
+    produced the normal — so the coloured disk is literally the set of
+    points that VOTED for the arrow), plus the normal as an arrow of length
+    `arrow_m`. With `arrow_m` = the variant's standoff the arrow TIP is
+    exactly where that sample's candidate camera would sit and the
+    candidate boresight is the arrow reversed — the first two links of the
+    algorithm chain, drawn as geometry. RETURNS logged paths for retirement.
+    """
+    P = np.asarray(points, dtype=np.float32).reshape(-1, 3)
+    N = np.asarray(normals, dtype=np.float32).reshape(-1, 3)
+    C = None if cloud is None else np.asarray(cloud, dtype=np.float32).reshape(-1, 3)
+    logged: list[str] = []
+    for j, i in enumerate(np.asarray(ids, dtype=int).reshape(-1)):
+        path = f"{VP_SAMPLES}/s{j:02d}"
+        color = viewplan_view_color(j)
+        rr.log(path, rr.Points3D(P[i:i + 1], colors=[color],
+                                 radii=R_CLOUD * 2.0))
+        if C is not None and len(C):
+            near = C[np.linalg.norm(C - P[i], axis=1) <= float(patch_radius_m)]
+            if len(near):
+                rr.log(f"{path}/patch", rr.Points3D(
+                    near, colors=np.tile(np.array(color, dtype=np.uint8),
+                                         (len(near), 1)),
+                    radii=R_CLOUD * 1.4))
+        rr.log(f"{path}/normal",
+               rr.Arrows3D(origins=P[i:i + 1],
+                           vectors=(N[i:i + 1] * float(arrow_m)),
+                           colors=[color], radii=R_CLOUD * 0.5))
+        rr.log(path, rr.AnyValues(sample_index=int(i)))
+        logged.append(path)
+    return logged
+
+
+def viewplan_blueprint(run: str, variant: str,
+                       render_slots: Sequence[str],
+                       patch_paths: Sequence[str] = ()) -> rrb.Blueprint:
+    """3D plan view left, milestone-render grid right, `step` timeline.
+
+    Mirrors `blueprint()`'s shape (paused, no auto views, one time panel)
+    rather than reusing it directly: the right-hand panel here is a
+    RENDER grid keyed by view slot, not the fixed 2x2 identity chain, so
+    the two blueprints are siblings in style, not one function with a
+    branch — a viewplan reviewer never needs the chain panel and a record
+    reviewer never needs 12 empty render cells.
+
+    `patch_paths`: per-view patch entities to hide by default (Anton's
+    review gesture is revealing territories one eye-click at a time, so
+    they must START hidden — the override is blueprint state, exactly
+    where per-entity visibility lives in rerun).
+    """
+    grid = rrb.Grid(
+        contents=[rrb.Spatial2DView(name=s, origin=f"{RENDERS}/{s}")
+                  for s in render_slots],
+        grid_columns=3, name="renders")
+    scene = rrb.Spatial3DView(
+        name=f"{run} — {variant} plan",
+        origin=WORLD,
+        contents="$origin/**",
+        background=(18, 20, 26),
+        line_grid=rrb.LineGrid3D(visible=True, spacing=0.05),
+        overrides={p: rrb.EntityBehavior(visible=False)
+                   for p in patch_paths},
+    )
+    return rrb.Blueprint(
+        rrb.Horizontal(scene, grid, column_shares=[3.0, 1.4]),
+        rrb.TimePanel(state="expanded", timeline=TIMELINE,
+                      play_state="Paused", loop_mode="Off"),
+        rrb.BlueprintPanel(state="expanded"),
+        rrb.SelectionPanel(state="collapsed"),
+        auto_views=False,
+        auto_layout=False,
+    )

@@ -29,11 +29,22 @@ def make_config():
 
 GEO = dict(offered=100, kept=90, dropped=10, fused_points=90, source="mask")
 
+#: The accumulated object cloud a fused step persists (StepRecord v2):
+#: tiny but real arrays, so npy round-trips and manifest hashing are exercised.
+FUSED_PTS = np.array([[0.40, 0.00, 0.02], [0.41, 0.01, 0.03],
+                      [0.42, -0.01, 0.05]])
+FUSED_CLR = np.array([[10, 20, 30], [40, 50, 60], [70, 80, 90]],
+                     dtype=np.uint8)
+
 
 def make_run(root, run_id="0309-boxA", *, status="aborted", object="box",
              rig="real", with_answer=False, now=1788180000.0,
-             rgb_rotation_deg=0):
-    """One fused step (with binaries) + one rejected step + events, closed."""
+             rgb_rotation_deg=0, with_step_cloud=True):
+    """One fused step (with binaries) + one rejected step + events, closed.
+
+    `with_step_cloud=False` fuses metadata-only — the shape of a legacy
+    (StepRecord v1) run once the caller patches step.json's schema_version.
+    """
     w = RunWriter.create(
         root, run_id=run_id, name=run_id.split("-", 1)[1], object=object,
         source="data-engine", rig=rig, question="is there a logo?",
@@ -47,7 +58,11 @@ def make_run(root, run_id="0309-boxA", *, status="aborted", object="box",
     w.write_capture(sid, t_captured=now + 2, joints_rad=[0.1] * 6,
                     T_base_flange=T4, T_base_cam=T4,
                     rgb_rotation_deg=rgb_rotation_deg)
-    w.write_fused(sid, GEO, _vstate(sid))
+    if with_step_cloud:
+        w.write_fused(sid, GEO, _vstate(sid),
+                      points=FUSED_PTS, colors=FUSED_CLR)
+    else:
+        w.write_fused(sid, GEO, _vstate(sid))
 
     rid, _ = w.begin_step({"method": "vs1", "address": [4, 0]}, t_arrived=now + 5)
     w.mark_step(rid, outcome="rejected", detail="plane gate")

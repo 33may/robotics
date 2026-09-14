@@ -472,8 +472,13 @@ class Supervisor:
             # the dispatcher wedged in `fusing` with the arm on the table.
             # Inside, a failure costs this one fused record (the step stays
             # `captured`, which validates) and the machine still reaches idle.
+            # The accumulator's arrays ride along: `_exec_worker` fused them
+            # BEFORE queueing settle_done and nothing touches `acc` until the
+            # next move is commanded, so this is the exact post-fuse state —
+            # recorded, not left to replay (StepRecord v2, Anton 2026-09-10).
             self._write("fused step", lambda: self.writer.write_fused(
-                sid, ev["geometry"], self._view_state(sid, target)))
+                sid, ev["geometry"], self._view_state(sid, target),
+                points=self.acc.points, colors=self.acc.colors))
             self._write("captured event", self.writer.event, "captured",
                         step_id=sid)
             self._publish_object()
@@ -642,10 +647,21 @@ class Supervisor:
             # no capture publish, no cell marked visited) and fuses into
             # `self.acc` on success. `settle_done ok=False` is the same path
             # a failed capture takes below — the run carries on either way.
+            # Pose confirmation for the plane-gate waiver (settle.py): the
+            # stamped joints match the path's planned endpoint -> the arm
+            # stood where we sent it, so the stamp cannot be the frozen-RTDE
+            # failure the gate exists for. 0.02 rad (~1.1 deg) is far above
+            # controller settle wobble and far below the >=30 deg between
+            # cells a stale q would show.
+            arrived = bool(path is not None and len(path) and
+                           float(np.max(np.abs(np.asarray(cap["q"], float) -
+                                               np.asarray(path[-1], float))))
+                           < 0.02)
             res = settle_capture(cap, self.rig, self.segmenter, self.acc,
                                  is_survey=(target == "survey"),
                                  on_warn=lambda msg: self.pub.log("warn", msg),
-                                 floor_z=self._floor_z)
+                                 floor_z=self._floor_z,
+                                 pose_confirmed=arrived)
             if not res.ok:
                 # An explicit entry, never a silent gap: the bytes are on disk
                 # and the record says why they were refused.

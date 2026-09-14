@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the terminal-driven inspection loop with a UI-driven command state machine: two-press (request → looping preview → confirm) motions, live camera, live pose mirror, safe stop/exit — per `inspection/2026-08-20-ui-driven-loop-design.md` (read it first; it is the authority on every behavior below).
+**Goal:** Replace the terminal-driven inspection loop with a UI-driven command state machine: two-press (request → looping preview → confirm) motions, live camera, live pose mirror, safe stop/exit — per `inspection/docs/2026-08-20-ui-driven-loop-design.md` (read it first; it is the authority on every behavior below).
 
 **Architecture:** One process (`inspection/run/app.py`): a never-blocking dispatcher (main thread) drives a state machine; one action worker at a time does plan/preview-loop/execute/settle; camera and pose streamer threads publish continuously; the porthole bus carries topics out and commands in. The frontend gains an ActionsPanel that is pure IO.
 
@@ -672,7 +672,7 @@ def test_sigint_saves_and_exits():
 
 ```python
 #!/usr/bin/env python3
-"""Loop v2 composition root. Design: inspection/2026-08-20-ui-driven-loop-design.md.
+"""Loop v2 composition root. Design: inspection/docs/2026-08-20-ui-driven-loop-design.md.
 
     p inspection/run/app.py run --outdir=data/runs/r1     # the real thing
     p inspection/run/app.py teach                         # save survey pose

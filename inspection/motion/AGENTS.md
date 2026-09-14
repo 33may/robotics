@@ -2,7 +2,7 @@
 
 ## Purpose
 Get the arm from viewpoint to viewpoint without hitting anything, and
-without ugly motion. Replaces top-level `ik.py` and `safety.py` (SO-101 legacy).
+without ugly motion.
 
 ## Files
 - `ik.py` — `UR5eIK`: EAIK all-branches analytic IK on NOMINAL DH, flange
