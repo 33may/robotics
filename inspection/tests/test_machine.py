@@ -752,6 +752,38 @@ def test_three_plan_refusals_trigger_retreat():
     assert not th.is_alive()
 
 
+def test_face_gate_opens_after_two_stable_fits():
+    import numpy as np
+    from inspection.fit.contract import Decomposition, Primitive
+
+    def prim(yaw):
+        c, s = np.cos(yaw), np.sin(yaw)
+        pose = [[c, -s, 0, 0.1], [s, c, 0, -0.35], [0, 0, 1, 0.07],
+                [0, 0, 0, 1]]
+        return Primitive(kind="box", pose=pose,
+                         params={"extents": [0.2, 0.1, 0.15]}, label="box")
+
+    sup, rig, bus, th = make_sup()
+    try:
+        # Feed the gate directly — the unit under test is the counter.
+        sup._update_face_gate(prim(0.0))
+        assert sup._face_states()["x+"]["status"] == "settling"
+        sup._update_face_gate(prim(np.deg2rad(1.0)))     # small delta #1
+        assert sup._face_states()["x+"]["status"] == "settling"
+        sup._update_face_gate(prim(np.deg2rad(2.0)))     # small delta #2
+        assert sup._face_states()["x+"]["status"] == "ready"
+        sup._update_face_gate(prim(np.deg2rad(40.0)))    # box jumped
+        assert sup._face_states()["x+"]["status"] == "settling"
+        sup.face_visited.add("top")
+        sup._update_face_gate(prim(np.deg2rad(40.5)))
+        sup._update_face_gate(prim(np.deg2rad(41.0)))
+        st = sup._face_states()
+        assert st["top"]["status"] == "visited"
+        assert st["x+"]["status"] == "ready"
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
@@ -777,6 +809,7 @@ def main():
     test_idle_publishes_the_real_pose()
     test_three_plan_refusals_trigger_retreat()
     test_sigint_saves_and_exits()
+    test_face_gate_opens_after_two_stable_fits()
     print("OK test_machine (task 5)")
 
 

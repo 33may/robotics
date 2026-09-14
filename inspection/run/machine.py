@@ -162,6 +162,11 @@ class Supervisor:
         self._plan_fails = 0        # consecutive refusals from an unmoved stance
         self._last_box = None       # (dims, pose) currently installed by _recenter
         self._stance_box = None     # (dims, pose) the CURRENT stance was approved under
+        self._face_prim = None      # freshest boxguard Primitive (or None)
+        self._face_stable = 0       # consecutive small normal deltas (gate: >=2)
+        self._face_theta = {}       # face -> achieved off-angle from resolution
+        self._face_unreachable = set()  # faces whose ladder returned None
+        self.face_visited = set()   # face handles captured this run
         self._pose_ack = threading.Event()  # dispatcher -> exec worker: pose_active clear
         #: Who asked for the view now being planned/executed — it rides the
         #: `view/request` command ("operator" from a button, "ai" from the
@@ -944,6 +949,8 @@ class Supervisor:
                     reason=f"method mismatch: registry {self.fit!r} produced "
                            f"{d.method!r}")
         rec = record_of(sid, len(P), d)
+        if not d.abstain and d.method == "boxguard" and d.primitives:
+            self._update_face_gate(d.primitives[0])
         self.writer.write_decomposition(rec)
         publish = getattr(self.pub, "publish_decomposition", None)
         if publish is not None:
@@ -951,6 +958,44 @@ class Supervisor:
                 publish(rec.model_dump(mode="json"))
             except Exception:
                 log.exception("decomposition publish failed for step %s", sid)
+
+    def _update_face_gate(self, prim):
+        """Feed one boxguard fit to the stability gate (design §gate).
+
+        Called from `_fit_step` on the dispatcher for every non-abstain
+        boxguard fit. Two consecutive refit deltas within tolerance open
+        the gate; any jump closes it and voids cached resolutions — the
+        box moved, so every achieved theta is stale.
+        """
+        from inspection.view.faceview import (FACE_STABLE_TOL_DEG_DEFAULT,
+                                              normals_delta_deg)
+        if (self._face_prim is not None
+                and normals_delta_deg(self._face_prim, prim)
+                <= FACE_STABLE_TOL_DEG_DEFAULT):
+            self._face_stable = min(self._face_stable + 1, 2)
+        else:
+            self._face_stable = 0
+            self._face_theta.clear()
+            self._face_unreachable.clear()
+        self._face_prim = prim
+
+    def _face_states(self):
+        """Face menu block: {face: {status, off_angle_deg}} (design §menu)."""
+        from inspection.view.faceview import FACES
+        out = {}
+        gate_open = self._face_stable >= 2
+        for f in FACES:
+            if f in self.face_visited:
+                status = "visited"
+            elif not gate_open:
+                status = "settling"
+            elif f in self._face_unreachable:
+                status = "unreachable"
+            else:
+                status = "ready"
+            out[f] = {"status": status,
+                      "off_angle_deg": self._face_theta.get(f)}
+        return out
 
     def _geometry(self, res):
         """This step's fusion accounting, as `GeometryStats` (worker side).
