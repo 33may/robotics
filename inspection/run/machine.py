@@ -55,6 +55,7 @@ import numpy as np
 
 from inspection.cell.geometry import BOX_PCT, CloudAccumulator, object_box
 from inspection.cell.world import DEFAULT_STEP, RobotCell
+from inspection.motion.direct import direct_move
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
 from inspection.record.schema import ViewCandidate, ViewState
@@ -67,6 +68,21 @@ log = logging.getLogger(__name__)
 # Phases in which the arm is either moving or unrecoverable without operator
 # action at the pendant — no new request may be accepted while in one of these.
 _BUSY_PHASES = ("executing", "capturing", "fusing", "fault")
+
+#: The capture-refit self-trap (run 1409-lan-ai_bench1): `_recenter()` refits
+#: the object box from the grown cloud while the arm still STANDS at the
+#: viewpoint that produced the points; a stance accepted with millimetres of
+#: margin (padding is the only standoff) goes into collision, and from an
+#: invalid start every plan refuses — tier 1 fails at config 0, OMPL cannot
+#: initialize its start tree. The refusals blame the targets, so nothing
+#: upstream can tell the stance is the problem. After this many consecutive
+#: refusals from an unmoved stance, the machine retreats radially instead of
+#: refusing forever (Anton 2026-09-14).
+RETREAT_AFTER_FAILS = 3
+#: How far to back the flange out, away from the sphere center [m]. 3 cm
+#: already cleared the recorded trap (margin deficit ~10 mm); 5 buys headroom
+#: against bigger refits for one extra beat of travel.
+RETREAT_M = 0.05
 
 #: The id of the view method this machine addresses cells with, as declared in
 #: the run's `view_methods` (`RunWriter.create`). Every step's `view.method`
@@ -81,8 +97,17 @@ VIEW_METHOD = "vs"
 
 class Supervisor:
     def __init__(self, rig, pub, writer, q_survey, world=None, ik=None,
-                 r=None, seed=0, segmenter=None):
+                 r=None, seed=0, segmenter=None, fit=None):
         self.rig, self.pub = rig, pub
+        #: Name of the per-step primitive fitter (`fit/apply.py:METHODS`), or
+        #: None for no live fitting. Default None: composition roots opt in
+        #: explicitly (`app.py`/`mock.py` pass "boxguard"), the same way the
+        #: segmenter below is injected rather than assumed — a bare unit-test
+        #: Supervisor must not drag open3d onto every fused step. When set,
+        #: each fused step gets the SAME `decomposition.json` the offline
+        #: backfill would write: same registry, same record builder, same
+        #: writer (`_fit_step`).
+        self.fit = fit
         #: The run's ONE writer (`record/writer.py`). The machine owns no
         #: other path to disk: capture bytes go into the dir `begin_step`
         #: hands out, every JSON record goes through these verbs.
@@ -134,6 +159,9 @@ class Supervisor:
         self.finish_requested = False
         self._last_cap_dir = None   # capture dir of the most recent capture()
         self._pending_request = None  # target deferred while a plan is in flight
+        self._plan_fails = 0        # consecutive refusals from an unmoved stance
+        self._last_box = None       # (dims, pose) currently installed by _recenter
+        self._stance_box = None     # (dims, pose) the CURRENT stance was approved under
         self._pose_ack = threading.Event()  # dispatcher -> exec worker: pose_active clear
         #: Who asked for the view now being planned/executed — it rides the
         #: `view/request` command ("operator" from a button, "ai" from the
@@ -208,7 +236,8 @@ class Supervisor:
                 # arrive to release it. `exec_done` is deliberately not in
                 # this list — outcome "done" is not the end of the worker,
                 # its settle leg keeps running.
-                if self._exit_after and ev.get("ev") in ("plan_done", "settle_done"):
+                if self._exit_after and ev.get("ev") in ("plan_done", "settle_done",
+                                                         "retreat_done"):
                     log.info("stale %s released the deferred exit", ev.get("ev"))
                     self._shutdown()
                 return
@@ -249,6 +278,8 @@ class Supervisor:
             self._on_exec_done(ev)
         elif kind == "settle_done":
             self._on_settle_done(ev)
+        elif kind == "retreat_done":
+            self._on_retreat_done(ev)
         else:
             log.warning("unknown worker event: %r", kind)
 
@@ -331,6 +362,12 @@ class Supervisor:
         self.stop_event.clear()
         self._pose_ack.clear()      # armed here so only the dispatcher ever sets it
         self.pose_active.set()
+        # The stance this move ends at was validated against the world as it
+        # stands NOW; no refit can run between here and arrival (refits live
+        # in this move's own settle leg). Ordering is safe: `_last_box` is
+        # written by the exec worker before it queues `settle_done`, and the
+        # queue is processed before any next confirm can exist.
+        self._stance_box = self._last_box
         self._set_phase("executing", self.target)
         self._action_thread = threading.Thread(
             target=self._exec_worker,
@@ -396,9 +433,17 @@ class Supervisor:
                 self.blocked.add(target)
             self.pub.log("warn", f"plan refused for {target}: "
                           f"{ev.get('detail', '')}")
+            self._plan_fails += 1
+            if (self._plan_fails >= RETREAT_AFTER_FAILS
+                    and self.sphere is not None and not self._shutting_down):
+                self._start_retreat()
+                return
             self._set_phase("idle", None)
             self._publish_views()
             return
+        # A found path disproves the trap: the stance can still reach
+        # somewhere, so the refusals were about targets, not the start.
+        self._plan_fails = 0
         self._path = path
         self._set_phase("previewing", target)
         self._publish_views()
@@ -431,6 +476,7 @@ class Supervisor:
                                f"— arm halted mid-move")
             self.current = None
             self.blocked.clear()
+            self._plan_fails = 0      # the arm moved — earlier refusals are moot
             self.stop_event.clear()   # cleared only here, between actions
             self._set_phase("idle", None)
             self._publish_views()
@@ -461,6 +507,7 @@ class Supervisor:
                                          "dir": self._last_cap_dir}
                 self.current = target
             self.blocked.clear()
+            self._plan_fails = 0    # the arm stands somewhere new
             # The fused half of the step, written from the dispatcher and only
             # here: `visited`/`current`/`blocked` have just been updated, so
             # the ViewState this attaches is the candidate set as it stands
@@ -479,6 +526,13 @@ class Supervisor:
             self._write("fused step", lambda: self.writer.write_fused(
                 sid, ev["geometry"], self._view_state(sid, target),
                 points=self.acc.points, colors=self.acc.colors))
+            # Immediately after the fused cloud hits disk, and on the SAME
+            # array `write_fused` just saved — so the record's `n_points` is
+            # the byte-for-byte length of `fused/cloud.npy`, exactly as the
+            # offline backfill would compute it. Guarded like every other
+            # dispatcher write: a fit (or its write) that dies costs this one
+            # slot, never the machine's way back to idle.
+            self._write("step decomposition", self._fit_step, sid)
             self._write("captured event", self.writer.event, "captured",
                         step_id=sid)
             self._publish_object()
@@ -488,6 +542,7 @@ class Supervisor:
             # judged from a pose that no longer holds, and `current` would
             # otherwise keep pointing at a cell the camera has left.
             self.blocked.clear()
+            self._plan_fails = 0
             self.current = None
             self.pub.log("error", ev.get("detail", ""))
             # The step itself was already marked (rejected/failed) by the
@@ -497,6 +552,90 @@ class Supervisor:
         else:
             self._set_phase("idle", None)
         self._publish_views()   # recover the retained topic either way (F3)
+
+    def _start_retreat(self):
+        """Escape the capture-refit self-trap: back the flange out radially.
+
+        Reached from `_on_plan_done` after RETREAT_AFTER_FAILS consecutive
+        refusals from an unmoved stance. The move is validated in the worker
+        against the box the stance was APPROVED under (`_stance_box`), on a
+        throwaway RobotCell — never against the live world, whose refit is
+        exactly what swallowed the stance; and never ON the live world, so
+        no pose handoff is needed and nothing races the streamer.
+        """
+        self.gen += 1               # any stale worker event dies at the gate
+        self.stop_event.clear()
+        self.pose_active.set()      # the streamer shows the arm moving
+        self._set_phase("executing", None)
+        self.pub.log("warn", f"{RETREAT_AFTER_FAILS} plans refused from this "
+                             f"stance — retreating {RETREAT_M * 100:.0f} cm "
+                             f"to re-plan")
+        self._action_thread = threading.Thread(
+            target=self._retreat_worker, args=(self.gen, self._stance_box),
+            name="retreat", daemon=True)
+        self._action_thread.start()
+
+    def _retreat_worker(self, gen, stance_box):
+        try:
+            q_now = self.rig.q()
+            w = RobotCell()         # same cell.yaml the live world was built from
+            if stance_box is not None:
+                dims, pose = stance_box
+                w.set_object("object", dims, pose, parent="base")
+            T = np.asarray(self.ik.fk(q_now))
+            out = T[:3, 3] - np.asarray(self.sphere.center, dtype=float)
+            n = float(np.linalg.norm(out))
+            if n < 1e-6:
+                raise RuntimeError("flange is at the sphere center")
+            T_r = T.copy()
+            T_r[:3, 3] = T[:3, 3] + out / n * RETREAT_M
+            free = [q for q in self.ik.branches(T_r, q_near=q_now)
+                    if not w.is_colliding(q)]
+            free.sort(key=lambda q: float(np.abs(q - q_now).sum()))
+            path = None
+            for q_goal in free:
+                path = direct_move(w, q_now, q_goal)
+                if path is not None:
+                    break
+            if path is None:
+                self.events.put({"ev": "retreat_done", "gen": gen,
+                                 "moved": False,
+                                 "detail": "no valid retreat move"})
+                return
+            rep = self.rig.move(path)
+            self.events.put({"ev": "retreat_done", "gen": gen, "moved": True,
+                             "detail": "stopped mid-retreat"
+                                       if rep.get("stopped") else ""})
+        except Exception as e:
+            log.exception("retreat worker failed")
+            self.events.put({"ev": "retreat_done", "gen": gen, "moved": False,
+                             "detail": f"retreat error: {e}"})
+
+    def _on_retreat_done(self, ev):
+        self.pose_active.clear()
+        self._pose_ack.set()        # parity with exec: nobody waits, no harm
+        self.stop_event.clear()     # between actions, like the exec-stop path
+        # Reset in EVERY outcome: after a move the old refusals are moot, and
+        # after a failed attempt the next retreat must be re-earned by three
+        # fresh refusals — never re-triggered per-refusal into a thrash loop.
+        self._plan_fails = 0
+        if ev["moved"]:
+            # The stance the refusals were judged from is gone, and so is the
+            # cell the camera was standing at.
+            self.blocked.clear()
+            self.current = None
+            detail = ev.get("detail", "")
+            self.pub.log("warn" if detail else "info",
+                         f"retreat: {detail}" if detail
+                         else "retreat complete — cells re-plannable")
+        else:
+            self.pub.log("error", f"retreat failed: {ev.get('detail', '')} — "
+                                  f"the arm could not leave this stance")
+        if self._exit_after:
+            self._shutdown()
+        else:
+            self._set_phase("idle", None)
+        self._publish_views()
 
     # ------------------------------------------------------------- workers
     def _plan_worker(self, gen, target):
@@ -732,6 +871,12 @@ class Supervisor:
         # `geometry.object_box`. The pose carries the yaw the UI also draws.
         dims, pose = object_box(self.acc.points)
         self.world.set_object("object", dims.tolist(), pose, parent="base")
+        # What this refit installed. `_on_view_confirm` copies it into
+        # `_stance_box` when a move starts: the box a stance was APPROVED
+        # under is the last one installed before its move executed — the
+        # world a trapped arm may legally retreat through even after a newer
+        # refit has swallowed its stance (see RETREAT_AFTER_FAILS).
+        self._last_box = (dims.tolist(), pose)
 
     def _write(self, what, fn, *a, **kw):
         """Run one writer verb from the DISPATCHER; log and carry on if it
@@ -747,6 +892,65 @@ class Supervisor:
             fn(*a, **kw)
         except Exception:
             log.exception("record write failed (%s)", what)
+
+    def _fit_step(self, sid):
+        """Fit primitives to the step's just-saved cloud; record + publish.
+
+        The LIVE half of the one decomposition path (`fit/apply.py` is the
+        offline half): the method name comes from the same registry
+        (`METHODS`), the record from the same builder (`record_of`), the
+        bytes from the same writer (`write_step_decomposition`, via the
+        RunWriter door) — so a live run and a backfilled one are
+        byte-compatible by construction, and re-running the backfill over a
+        live run is a no-op, not a diff.
+
+        Imports are lazy on purpose: `fit/apply.py` pulls in the fit stack
+        (open3d behind `boxguard_fit`), and a Supervisor with `fit=None` —
+        every unit test, any rig without the fit extra installed — must
+        never pay that import.
+
+        Failure policy mirrors `apply_run`, with one live-loop softening: a
+        fitter exception is caught, logged LOUDLY, and recorded as an
+        abstain whose reason names the error — the slot records failure
+        honestly, and one bad fit never kills a run with a robot in it.
+        Registry-name honesty (`d.method == self.fit`) is checked the same
+        way, but a mismatch logs + abstains here where the backfill crashes:
+        the backfill can afford to die on a lying fitter, a live run cannot.
+
+        The publish is best-effort and `getattr`-guarded: the publisher's
+        `publish_decomposition` is landing separately, and a pub without it
+        (or a stub) just means no live box in the 3D scene — never a lost
+        record, which is written first.
+        """
+        if self.fit is None:
+            return
+        from inspection.fit.apply import METHODS, record_of
+        from inspection.fit.contract import Decomposition
+        P = np.asarray(self.acc.points, dtype=float)
+        try:
+            d = METHODS[self.fit](P)
+        except Exception as e:  # noqa: BLE001 — recorded, screamed, loop lives
+            log.error("!! step %03d: %s fitter raised %s: %s",
+                      sid, self.fit, type(e).__name__, e)
+            d = Decomposition(method=self.fit, version="error", abstain=True,
+                              reason=f"fitter error: {type(e).__name__}: {e}")
+        else:
+            if d.method != self.fit:
+                log.error("!! step %03d: registry name %r != produced "
+                          "Decomposition.method %r — recording an abstain",
+                          sid, self.fit, d.method)
+                d = Decomposition(
+                    method=self.fit, version="error", abstain=True,
+                    reason=f"method mismatch: registry {self.fit!r} produced "
+                           f"{d.method!r}")
+        rec = record_of(sid, len(P), d)
+        self.writer.write_decomposition(rec)
+        publish = getattr(self.pub, "publish_decomposition", None)
+        if publish is not None:
+            try:
+                publish(rec.model_dump(mode="json"))
+            except Exception:
+                log.exception("decomposition publish failed for step %s", sid)
 
     def _geometry(self, res):
         """This step's fusion accounting, as `GeometryStats` (worker side).

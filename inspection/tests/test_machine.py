@@ -710,6 +710,48 @@ def test_sigint_saves_and_exits():
         signal.signal(signal.SIGINT, signal.default_int_handler)
 
 
+def test_three_plan_refusals_trigger_retreat():
+    """The capture-refit self-trap (run 1409-lan-ai_bench1): the object box
+    grows over the standing arm, the start config goes invalid, and every
+    plan refuses — including cells that planned fine before. After three
+    consecutive refusals the machine must retreat radially (validated
+    against the box the stance was approved under) and become plannable
+    again, instead of dead-ending the run."""
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    full_boot(sup)
+    q_trapped = rig.q()
+    # The trap, modelled bluntly: a refit "grew" the object box over the
+    # stance. Small enough to leave most cell ENDPOINTS valid — in the real
+    # trap the refusals pass the request gate exactly because reachability
+    # (endpoint-only) stays green while the START is in collision.
+    p = np.asarray(sup.ik.fk(q_trapped))[:3, 3]
+    sup.world.set_object("object", [0.12, 0.12, 0.12],
+                         [float(p[0]), float(p[1]), float(p[2]), 0.0, 0.0, 0.0])
+    tried = set()
+    for n in (1, 2, 3):
+        avail = [c for c, r in sup._reach.items()
+                 if r is not None and c not in sup.visited and c not in tried]
+        assert avail, f"no requestable cell left before refusal {n}"
+        cell = avail[0]
+        tried.add(cell)
+        sup.events.put({"cmd": "view/request", "target": list(cell)})
+        if n < 3:
+            wait_for(lambda n=n: sup._plan_fails == n and sup.phase == "idle",
+                     timeout=60, msg=f"refusal {n} counted")
+        else:
+            # the third refusal triggers the escape move
+            wait_for(lambda: len(rig.moves) == 2, timeout=60, msg="retreat move")
+            wait_for(lambda: sup.phase == "idle", timeout=60,
+                     msg="idle after retreat")
+    assert sup._plan_fails == 0, "counter must reset after the retreat"
+    assert sup.blocked == set(), "refusals were judged from a stance that is gone"
+    assert sup.current is None, "the camera left the cell it was standing at"
+    assert np.abs(rig.q() - q_trapped).max() > 0.005, "the arm actually moved"
+    sup.request_shutdown(); th.join(10)
+    assert not th.is_alive()
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
@@ -733,6 +775,7 @@ def main():
     test_malformed_target_is_rejected_not_raised()
     test_marker_id_target_from_a_3d_click()
     test_idle_publishes_the_real_pose()
+    test_three_plan_refusals_trigger_retreat()
     test_sigint_saves_and_exits()
     print("OK test_machine (task 5)")
 
