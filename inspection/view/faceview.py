@@ -10,6 +10,24 @@ from collections import namedtuple
 import numpy as np
 
 from inspection.view.grid import radius_for_extent
+# ROLLS is mandated by ruling (2026-09-14): every ladder candidate must walk
+# camera rolls before being declared invalid — the tool hull is a cross with
+# an off-axis camera slab, and the 180 deg flip clears collisions the
+# upright roll cannot (ViewSphere.cell_reachable/plan_to_cell do the same
+# walk). This does pull the heavy IK/motion/pinocchio chain in through
+# viewsphere.py at import time — an acknowledged cost of the ruling, not an
+# oversight (see task-2-report.md fix-report for the note to the controller).
+from inspection.view.viewsphere import ROLLS
+
+
+def _rot_x(a):
+    """Rotation about the camera's own +X (boresight) axis — replicated
+    from viewsphere.py's `_rot_x` (viewsphere.py:54) rather than imported:
+    that helper is underscore-private to its module, and ROLLS is already
+    the one symbol this file borrows from viewsphere."""
+    c, s = np.cos(a), np.sin(a)
+    return np.array([[1.0, 0, 0], [0, c, -s], [0, s, c]])
+
 
 #: Box-frame face handles, stable under yaw. Bottom is excluded — it faces
 #: the table.
@@ -34,9 +52,10 @@ def face_frame(prim, face):
     return c, n, (ext[i], ext[j])
 
 
-def face_cam_pose(center, normal, r):
+def face_cam_pose(center, normal, r, roll=0.0):
     """Camera 4x4 on the normal ray: +X boresight at the face, +Z image-up
-    world-preferred — the same up-vector rule as ViewSphere.cam_pose."""
+    world-preferred — the same up-vector rule as ViewSphere.cam_pose,
+    optionally rolled about the boresight (same convention/helper)."""
     normal = np.asarray(normal, dtype=float)
     pos = np.asarray(center, dtype=float) + r * normal
     x = -normal
@@ -47,6 +66,7 @@ def face_cam_pose(center, normal, r):
     z = np.cross(x, y)
     T = np.eye(4)
     T[:3, 0], T[:3, 1], T[:3, 2], T[:3, 3] = x, y, z, pos
+    T[:3, :3] = T[:3, :3] @ _rot_x(roll)
     return T
 
 
@@ -74,14 +94,26 @@ CONE_MAX_DEG = 60.0          # classic measurability cutoff
 CONE_AZIMUTHS = 12
 
 FaceResolution = namedtuple("FaceResolution",
-                            ["T_cam", "T_flange", "theta_deg", "rung"])
+                            ["T_cam", "T_flange", "theta_deg", "rung", "roll"])
 
 
-def _endpoint_ok(world, ik, T_cam, t_fc_inv, q_near):
-    T_fl = T_cam @ t_fc_inv
-    free = [q for q in ik.branches(T_fl, q_near=q_near)
-            if not world.is_colliding(q)]
-    return (T_fl, free[0]) if free else None
+def _endpoint_ok(world, ik, center, direction, r, t_fc_inv, q_near):
+    """First (roll-order) free endpoint at this candidate direction/radius.
+
+    Walks ROLLS = [0, 180 deg] before declaring the candidate invalid — the
+    tool hull is a cross with an off-axis camera slab, so a 180 deg flip
+    often clears a collision the upright roll cannot (the same walk
+    ViewSphere.cell_reachable does). Returns (T_cam, T_flange, q, roll) or
+    None.
+    """
+    for roll in ROLLS:
+        T_cam = face_cam_pose(center, direction, r, roll)
+        T_fl = T_cam @ t_fc_inv
+        free = [q for q in ik.branches(T_fl, q_near=q_near)
+                if not world.is_colliding(q)]
+        if free:
+            return T_cam, T_fl, free[0], roll
+    return None
 
 
 def resolve_face_view(world, ik, t_flange_cam, prim, face, r, q_near=None):
@@ -93,31 +125,34 @@ def resolve_face_view(world, ik, t_flange_cam, prim, face, r, q_near=None):
                along +Z looking at the face center until valid or 45° off.
       cone   — tilt rings around the normal, 5°..60°, 12 azimuths; the
                first valid endpoint is the most orthogonal accessible.
-    Returns None when nothing within 60° has a collision-free IK branch —
-    the face is honestly unreachable.
+    Every candidate endpoint is tried at each camera roll (see
+    `_endpoint_ok`) before being rejected. Returns None when nothing within
+    60° has a collision-free IK branch at any roll — the face is honestly
+    unreachable.
     """
     t_fc_inv = np.linalg.inv(np.asarray(t_flange_cam, dtype=float))
     center, normal, _ = face_frame(prim, face)
 
-    T = face_cam_pose(center, normal, r)                       # rung 1
-    hit = _endpoint_ok(world, ik, T, t_fc_inv, q_near)
+    hit = _endpoint_ok(world, ik, center, normal, r, t_fc_inv, q_near)  # rung 1
     if hit:
-        return FaceResolution(T, hit[0], 0.0, "exact")
+        T_cam, T_fl, q, roll = hit
+        return FaceResolution(T_cam, T_fl, 0.0, "exact", roll)
 
     if abs(normal[2]) < 0.5:                                   # rung 2
         base = center + r * normal
-        z_cap = r * np.sin(np.deg2rad(ZLIFT_MAX_DEG))
+        z_cap = r * np.tan(np.deg2rad(ZLIFT_MAX_DEG))
         dz = ZLIFT_STEP_M
         while dz <= z_cap:
             pos = base + np.array([0.0, 0.0, dz])
             d = pos - center
+            dn = d / np.linalg.norm(d)
             theta = float(np.degrees(np.arccos(
-                np.clip((d / np.linalg.norm(d)) @ normal, -1.0, 1.0))))
-            T = face_cam_pose(center, d / np.linalg.norm(d),
-                              float(np.linalg.norm(d)))
-            hit = _endpoint_ok(world, ik, T, t_fc_inv, q_near)
+                np.clip(dn @ normal, -1.0, 1.0))))
+            hit = _endpoint_ok(world, ik, center, dn,
+                               float(np.linalg.norm(d)), t_fc_inv, q_near)
             if hit:
-                return FaceResolution(T, hit[0], theta, "zlift")
+                T_cam, T_fl, q, roll = hit
+                return FaceResolution(T_cam, T_fl, theta, "zlift", roll)
             dz += ZLIFT_STEP_M
 
     a = np.array([0.0, 0.0, 1.0])                              # rung 3
@@ -134,9 +169,9 @@ def resolve_face_view(world, ik, t_flange_cam, prim, face, r, q_near=None):
                  + np.sin(th) * (np.cos(phi) * u + np.sin(phi) * v))
             if d[2] < 0.05:               # never approach from under the table
                 continue
-            T = face_cam_pose(center, d, r)
-            hit = _endpoint_ok(world, ik, T, t_fc_inv, q_near)
+            hit = _endpoint_ok(world, ik, center, d, r, t_fc_inv, q_near)
             if hit:
-                return FaceResolution(T, hit[0], float(theta), "cone")
+                T_cam, T_fl, q, roll = hit
+                return FaceResolution(T_cam, T_fl, float(theta), "cone", roll)
         theta += CONE_STEP_DEG
     return None
