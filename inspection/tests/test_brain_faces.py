@@ -159,6 +159,13 @@ def test_render_blocks_survive_a_face_cell():
         assert moves.startswith("MOVES")
         assert "face" in moves and "top" in moves
 
+        # The reverse mix: standing at a NORMAL cell with a face already in
+        # agent_seen — the ring math must skip the face tuple, not compare
+        # "face" to an int (0 <= c[0] raised before the fix).
+        moves = render.moves_block(3, tools, (4, 1),
+                                   {(0, 1), ("face", "top")}, nav=None)
+        assert moves.startswith("MOVES")
+
 
 def test_sorted_addresses_mixes_cells_and_faces():
     """C1.5: `agent_seen` can hold both kinds; plain `sorted()` over mixed

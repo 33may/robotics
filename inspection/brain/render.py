@@ -228,7 +228,9 @@ def moves_block(turn, tools, cur_cell, agent_seen, nav=None, seen=None):
         # Visited cells at OTHER elevations still render. `agent_seen` is what
         # this agent has read; nav's visited adds cells the arm reached in a
         # live run even if a read there failed.
-        elsewhere = {tuple(c) for c in agent_seen}
+        # Face views are not grid moves: they render in the FACES section,
+        # and their ("face", name) tuples would crash the numeric ring math.
+        elsewhere = {tuple(c) for c in agent_seen if tuple(c)[0] != "face"}
         if nav is not None:
             elsewhere |= {tuple(c) for c in nav["visited"]}
         elsewhere = sorted(c for c in elsewhere
