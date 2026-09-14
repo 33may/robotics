@@ -108,6 +108,16 @@ other levels; the bearings beside them are relative to where you stand, and
 elevation, take an address and change its second number — the STATE block
 names the levels and their heights. Prefer moving by a listed address.
 
+FACE VIEWS. When the object's box has settled, the menu offers face views —
+addresses like ["face", "x+"] (sides) and ["face", "top"] — each one the
+head-on, orthogonal look at that wall of the object. Evidence mainly comes
+from face views: prefer them when they serve the question, and fall back to
+numbered viewpoints for coverage, exploration, or anything the faces do not
+show. A face marked `settling` is not ready yet; `degraded (N deg)` means
+the closest reachable look is N degrees off head-on — still usually the
+best evidence available. Move to a face by requesting its address, exactly
+like a cell.
+
 WHICH WAY TO GO. Each visited row carries what the vision subagent saw from
 there, and sometimes a line `recommends: <phrase>`. The phrase says how far
 to orbit and which way, judged in that view's frame — and the camera is
@@ -627,13 +637,22 @@ class Brain:
             return {}       # the run is over; there is nothing left to decide
         self.turn += 1
         visited, reachable = self._counts()
+        nav = self._nav()
         text = (render.state_block(self.turn, self.cell, self.tools._h_bins,
                                    self.tools._v_elevs, visited, reachable,
                                    len(self.store.findings()))
                 + "\n\n"
                 + render.moves_block(self.turn, self.tools, self.cell,
-                                     self.agent_seen, nav=self._nav(),
+                                     self.agent_seen, nav=nav,
                                      seen=self.view_notes))
+        faces = (nav or {}).get("faces") or {}
+        if faces:
+            rows = []
+            for name, st in faces.items():
+                extra = ("" if st["off_angle_deg"] is None
+                         else f" ({st['off_angle_deg']:.0f} deg off)")
+                rows.append(f'  ["face", "{name}"] — {st["status"]}{extra}')
+            text += "\nFACES (orthogonal evidence):\n" + "\n".join(rows)
         # Traced as its own kind: this is context the model was GIVEN, not text
         # it wrote. Telling those apart is the whole point of watching a run.
         self.trace.event("state", text=text)
@@ -665,8 +684,13 @@ class Brain:
                     f"v is 0..{n_v - 1}.")}}
         return {}
 
-    # -------------------------------------------------------------- run
-    async def run(self):
+    # ------------------------------------------------------------- loop
+    async def loop(self):
+        # Named `loop`, NOT `run`: `self.run` is the record (`Run.load`,
+        # __init__), and an instance attribute shadows a method of the same
+        # name — `brain.run()` raised "'Run' object is not callable" on the
+        # first live question (2026-09-14). The record keeps the `run` name;
+        # the codebase says "run" for the recorded thing everywhere else.
         server = create_sdk_mcp_server(name="brain", version="0.1.0",
                                        tools=self._build_tools())
         options = ClaudeAgentOptions(
@@ -771,7 +795,7 @@ def main(run_dir, question, model=DEFAULT_MODEL):
     # reach the stubs by injecting `stub_cognition()`, never by omission.
     cog = real_cognition()
     brain = Brain(run_dir, question, vlm=cog.vlm, verbs=cog.verbs, model=model)
-    answer, result = asyncio.run(brain.run())
+    answer, result = asyncio.run(brain.loop())
     print("\n=== ANSWER ===")
     print(json.dumps({k: v for k, v in answer.items() if k != "coverage"},
                      indent=1))

@@ -109,10 +109,13 @@ class SupervisorMover:
         """What the arm can actually do from here, straight off the Supervisor.
 
         These are the SAME three sets the 3D markers are coloured from
-        (`ui/publisher.py:_cell_state`): reachability cached by the plan/exec
+        (`ui/publisher.py:_cell_state`) — reachability cached by the plan/exec
         workers, cells already visited, and cells the planner refused from the
-        current stance. Before this existed the orchestrator guessed, and in
-        the first live run it spent two of its three moves being refused.
+        current stance — plus a fourth: `faces`, the Supervisor's per-face
+        status (`_face_states()`), settling/ready/unreachable/visited with
+        `off_angle_deg` when the closest reachable look is off head-on.
+        Before this existed the orchestrator guessed, and in the first live
+        run it spent two of its three moves being refused.
 
         `blocked` is deliberately soft — the Supervisor clears it on every real
         move, because "no path from where the arm is standing" can become
@@ -122,6 +125,7 @@ class SupervisorMover:
             "reachable": {c for c, r in self.sup._reach.items() if r is not None},
             "visited": set(self.sup.visited),
             "blocked": set(self.sup.blocked),
+            "faces": self.sup._face_states(),
         }
 
     def _captured_ids(self):
@@ -377,7 +381,7 @@ def make_ask_handler(sup, pub, run_dir, cognition, writer):
                 brain = Brain(run_dir, question, vlm=cognition.vlm,
                               verbs=cognition.verbs, mover=mover, trace=trace,
                               ai=ai)
-                asyncio.run(brain.run())
+                asyncio.run(brain.loop())
             except Exception:                        # noqa: BLE001
                 import logging
                 logging.getLogger(__name__).exception("brain run failed")
