@@ -42,7 +42,7 @@ def plan_viewpoint(world, ik, q_from, T_target, seed=0, n_branches=3,
     t0 = time.perf_counter()
     rep = {"enumerated": 0, "endpoint_free": 0, "tier": None, "ms": 0.0,
            "detour": None, "tries": 0, "reason": None}
-    branches = ik.branches(T_target)
+    branches = ik.branches(T_target, q_near=q_from)
     rep["enumerated"] = len(branches)
     free_all = [q for q in branches if not world.is_colliding(q)]
     rep["endpoint_free"] = len(free_all)
@@ -79,8 +79,15 @@ CUP_POS = np.array([0.09, -0.28, 0.10])      # base frame: on the table, 10cm ta
 CUP_DIMS = [0.08, 0.08, 0.12]
 
 # park clear of the cup column (the old Q_PARK hovers its tip IN the cup —
-# with a hard cup the start config must itself be valid)
-DEMO_PARK = np.array([-1.821, -0.992, 0.728, -0.305, -1.265, -0.619])
+# with a hard cup the start config must itself be valid). The joints are the
+# live survey pose every recorded sweep used (data/datasets/1009-*, same as
+# run/survey_pose.json): taught in the re-taught cell, so it stays clear of
+# the freedrive-tapped keep-outs — the previous constant predated the room
+# move and put the flange 11 cm BEHIND cell.yaml's back wall, which refused
+# every IK branch (2026-09-14).
+DEMO_PARK = np.array([-1.2340720335589808, -0.5793250960162659,
+                      -2.0220446586608887, -1.6667052708067835,
+                      1.5797290802001953, 0.27117177844047546])
 
 
 def sample_orbit_viewpoint(rng, center, r_lo=0.30, r_hi=0.45, max_tilt=65.0):

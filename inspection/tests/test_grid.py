@@ -53,7 +53,15 @@ def test_grid_is_light():
     import inspection.view.grid as g
     src = Path(g.__file__).read_text()
     assert "inspection.motion" not in src and "inspection.cell" not in src
-    assert "pinocchio" not in sys.modules        # importing grid must stay cheap
+    # importing grid must stay cheap. Checked in a FRESH interpreter: in-suite
+    # `"pinocchio" not in sys.modules` only held when this file ran before any
+    # test that boots a rig — suite order, not grid's import graph.
+    import subprocess
+    proc = subprocess.run(
+        [sys.executable, "-c",
+         "import sys, inspection.view.grid; sys.exit('pinocchio' in sys.modules)"],
+        cwd=Path(g.__file__).resolve().parents[2])
+    assert proc.returncode == 0, "importing grid dragged pinocchio in"
 
 
 def main():

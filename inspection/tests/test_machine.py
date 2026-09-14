@@ -39,9 +39,9 @@ def make_writer(q_survey=None):
         view_methods=[viewsphere_method()], q_survey=[float(v) for v in q])
 
 
-def make_sup(q_start=None, **kw):
+def make_sup(q_start=None, rig_cls=FakeRig, **kw):
     q_survey = DEMO_PARK.copy()
-    rig = FakeRig(q_start if q_start is not None else q_survey.copy())
+    rig = rig_cls(q_start if q_start is not None else q_survey.copy())
     bus = BusSpy()
     sup = Supervisor(rig, InspectionPublisher(bus), make_writer(q_survey),
                      q_survey, **kw)
@@ -350,24 +350,41 @@ def test_stop_mid_execute_returns_to_idle():
 
 
 class CaptureFailRig(FakeRig):
-    def capture(self, pose_id):
+    def capture(self, pose_id, out_dir=None):
         if pose_id == 1:
             raise RuntimeError("synthetic bad view")
-        return super().capture(pose_id)
+        return super().capture(pose_id, out_dir)
+
+
+class FrozenStampRig(FakeRig):
+    """Stamps every capture with the boot-time q — the 2108-ui frozen-RTDE
+    signature: the robot moved, the stamp did not. The survey capture is
+    unaffected (the arm really is at q0 there)."""
+
+    def __init__(self, q, *a, **k):
+        super().__init__(q, *a, **k)
+        self._q_frozen = np.asarray(q, dtype=float).copy()
+
+    def capture(self, pose_id, out_dir=None):
+        cap = super().capture(pose_id, out_dir)
+        cap["q"] = self._q_frozen.copy()
+        return cap
 
 
 def test_bad_plane_view_rejected():
-    """A view whose fitted table plane contradicts the probed cell is refused.
+    """A bad-plane view with an UNCONFIRMED pose stamp is refused.
 
     The table is at z=0 by measurement; a plane fitted 24 cm up or tilted 48
-    degrees means the camera pose that placed those points was wrong (run
-    2108-ui: a frozen RTDE q did exactly this to five views in a row). Such a
-    view must not enter the accumulator, and the run must carry on.
+    degrees, from a capture whose stamped q does NOT match the planned
+    arrival, is the 2108-ui failure (a frozen RTDE q did exactly this to
+    five views in a row). Such a view must not enter the accumulator, and
+    the run must carry on. (With the pose CONFIRMED at target the gate only
+    warns — see test_bad_plane_pose_confirmed_fuses.)
     """
     import inspection.run.settle as settle_mod
 
     sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
-        [0, 0, 0, 0, 0, 8]))
+        [0, 0, 0, 0, 0, 8]), rig_cls=FrozenStampRig)
     full_boot(sup)                        # real geometry: boot view is sane
     n_boot = len(sup.acc.points)
 
@@ -399,6 +416,49 @@ def test_bad_plane_view_rejected():
     assert tuple(target) not in sup.visited, "poisoned view marked visited"
     assert len(sup.acc.points) == n_boot, "poisoned points entered the fusion"
     assert sup.phase == "idle", "run did not continue after the rejection"
+    sup.request_shutdown(); th.join(10)
+
+
+def test_bad_plane_pose_confirmed_fuses():
+    """A bad plane with the pose CONFIRMED at target is waived, not rejected.
+
+    The stamped q matches the planned arrival (the default FakeRig stamps
+    truthfully), so the pose cannot be the frozen-RTDE failure the gate
+    exists for — a contradicting plane is then a grazing-view FIT problem
+    (1009-cup cell [10,0]: z=-71 mm from a correct pose, twice) and the
+    view must still count (Anton 2026-09-10: "if the camera is already
+    there, there is no point to reject the view").
+    """
+    import inspection.run.settle as settle_mod
+
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    full_boot(sup)
+
+    tilt = np.radians(48.0)
+    poisoned = {
+        "points": np.random.default_rng(0).normal(
+            [0.3, 0.0, 0.24], 0.01, (200, 3)),
+        "centroid": np.array([0.3, 0.0, 0.24]),
+        "plane": np.array([np.sin(tilt), 0.0, np.cos(tilt), -0.2]),
+        "n_scene": 200,
+    }
+    real = settle_mod.object_view
+    settle_mod.object_view = lambda *a, **k: (poisoned, None)
+    try:
+        views = bus.last("views/state")
+        target = [[c["h"], c["v"]] for c in views["cells"]
+                  if c["state"] == "available"][0]
+        sup.events.put({"cmd": "view/request", "target": target})
+        wait_for(lambda: sup.phase == "previewing", timeout=60, msg="preview")
+        sup.events.put({"cmd": "view/confirm", "target": target})
+        wait_for(lambda: sup.phase == "idle", timeout=60, msg="settle")
+    finally:
+        settle_mod.object_view = real
+
+    assert tuple(target) in sup.visited, \
+        "pose-confirmed view was rejected instead of waived"
+    assert sup.phase == "idle"
     sup.request_shutdown(); th.join(10)
 
 
@@ -665,6 +725,7 @@ def main():
     test_executor_fault_enters_fault_and_exit_works()
     test_exit_during_planning_defers_until_plan_done()
     test_bad_plane_view_rejected()
+    test_bad_plane_pose_confirmed_fuses()
     test_exit_during_planning_fires_on_stale_plan_done()
     test_queued_confirm_cannot_undo_a_ctrl_c()
     test_stop_mid_execute_records_the_event_before_exit()
