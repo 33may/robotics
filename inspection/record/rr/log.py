@@ -394,6 +394,21 @@ def log_face_views(faces: Iterable[tuple]) -> None:
             labels=[label], show_labels=True))
 
 
+def clear_face_views() -> None:
+    """Retire every face-view arrow at the current step (I2: gate regression).
+
+    A step's `ViewState` carrying zero face candidates means either the
+    stability gate just closed (the box moved; every unvisited face fell
+    back to `settling`) or no boxguard has ever been fitted — either way
+    there is nothing honest to draw right now. Without this, Rerun's
+    latest-at semantics keep showing the arrows logged at the box's OLD
+    pose from an earlier step, forever, across the whole rest of the scrub.
+    One recursive clear on the root retires the whole subtree, the same
+    `Clear(recursive=True)` primitive `clear_primitives` uses per-leaf.
+    """
+    rr.log(FACES, rr.Clear(recursive=True))
+
+
 def log_active_view(intr: Mapping | None, image_path: str | Path) -> None:
     """Step k's rgb (upright, as stored) on ONE stable entity path.
 

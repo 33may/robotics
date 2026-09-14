@@ -150,6 +150,19 @@ How to answer:
 - Do not answer before you have looked."""
 
 
+def _sorted_addresses(addrs):
+    """[[address], ...] — cell AND face addresses, sorted with a stable key.
+
+    `agent_seen` (and everywhere it is reported: `views_inspected`, the menu
+    record's `seen`) can now hold both `(h, v)` cell tuples and `("face",
+    name)` face tuples. Plain `sorted()` compares list elements pairwise and
+    raises the moment one of each meets the other in the same collection —
+    `0 < "face"` has no ordering in Python 3. `repr` orders every address
+    unambiguously and consistently, without needing to know its shape.
+    """
+    return sorted((list(a) for a in addrs), key=repr)
+
+
 class Brain:
     """One inspection run. Holds the state the render turns into text."""
 
@@ -349,11 +362,20 @@ class Brain:
             if not isinstance(e, dict) or "cell" not in e:
                 self.trace.event("text", text=f"dropped evidence entry {e!r}")
                 continue
-            try:
-                cell = tuple(int(c) for c in e["cell"])
-            except (TypeError, ValueError):
-                self.trace.event("text", text=f"dropped evidence entry {e!r}")
-                continue
+            raw_cell = e["cell"]
+            if (isinstance(raw_cell, (list, tuple)) and len(raw_cell) == 2
+                    and raw_cell[0] == "face"):
+                # A face citation — pass through as ("face", name) rather
+                # than through the int-pair coercion below, which raised on
+                # the name and silently dropped every face citation an
+                # answer tried to make.
+                cell = ("face", str(raw_cell[1]))
+            else:
+                try:
+                    cell = tuple(int(c) for c in raw_cell)
+                except (TypeError, ValueError):
+                    self.trace.event("text", text=f"dropped evidence entry {e!r}")
+                    continue
             find = str(e.get("find") or "").strip() or self.question
             key = (cell, find.casefold())
             if key in self._hunts:
@@ -460,7 +482,7 @@ class Brain:
             "evidence_images": images,
             "step_ids": sorted(set(step_ids)),
             "transcript_ids": sorted(set(transcript_ids)),
-            "views_inspected": sorted(map(list, self.agent_seen)),
+            "views_inspected": _sorted_addresses(self.agent_seen),
             "coverage": self.tools.coverage(cur=self.cell),
         }
 
@@ -574,7 +596,7 @@ class Brain:
                            "verdict": args["verdict"],
                            "evidence": args["evidence"],
                            "evidence_images": records,
-                           "views_inspected": sorted(map(list, self.agent_seen)),
+                           "views_inspected": _sorted_addresses(self.agent_seen),
                            "coverage": self.tools.coverage(cur=self.cell)}
             self.ai.answer(self._answer_record(args, records))
             # The trace keeps the RAW hunt records (cell/find/found/report/
@@ -610,7 +632,7 @@ class Brain:
                 turn=self.turn, step_id=step.id if step is not None else 0,
                 t=time.time(),
                 agent_context={
-                    "seen": sorted(map(list, self.agent_seen)),
+                    "seen": _sorted_addresses(self.agent_seen),
                     "findings": len(self.store.findings()),
                     "recommends": {str(list(c)): v["recommendation"]
                                    for c, v in self.view_notes.items()
@@ -673,6 +695,23 @@ class Brain:
         """
         cell = (input_data.get("tool_input") or {}).get("cell")
         h_bins, n_v = self.tools._h_bins, len(self.tools._v_elevs)
+        if isinstance(cell, (list, tuple)) and len(cell) == 2 and cell[0] == "face":
+            # A face address is not a cell — `int(cell[0])` below would raise
+            # on the string "face" before ever reaching a status check. Gate
+            # it on the Supervisor's own face status instead of reachability:
+            # "ready" is the only face state a move may act on (mirrors how
+            # a cell is checked against `nav["reachable"]`).
+            faces = (self._nav() or {}).get("faces") or {}
+            st = faces.get(cell[1])
+            if st is None or st["status"] != "ready":
+                return {"hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": (
+                        f'["face", {cell[1]!r}] is not requestable — '
+                        + ("not a known face on this object." if st is None
+                           else f"it is currently {st['status']}."))}}
+            return {}
         bad = (not isinstance(cell, (list, tuple)) or len(cell) != 2
                or not (0 <= int(cell[0]) < h_bins) or not (0 <= int(cell[1]) < n_v))
         if bad:
@@ -779,8 +818,8 @@ class Brain:
             # crash, and the bench needs to see it as one.
             self.answer = {"verdict": "cannot determine",
                            "reasoning": f"no answer within {self.max_turns} turns",
-                           "evidence": "", "views_inspected": sorted(
-                               map(list, self.agent_seen)),
+                           "evidence": "", "views_inspected": _sorted_addresses(
+                               self.agent_seen),
                            "coverage": self.tools.coverage(cur=self.cell)}
         return self.answer, result
 

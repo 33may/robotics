@@ -446,9 +446,29 @@ class Supervisor:
                      pending)
             self._start_planning(pending, self._pending_decider)
             return
+        # I3: `_plan_worker` runs on a worker thread and may not touch run
+        # state (module docstring, "only the dispatcher mutates run state").
+        # It carries a face plan's gate-state findings on the event instead;
+        # applied HERE, AFTER the exit/supersede checks above, so a
+        # superseded plan's face_theta/face_unreachable never lands even
+        # though its OWN result was just discarded.
+        face_theta = ev.get("face_theta")
+        if face_theta is not None:
+            name, theta = face_theta
+            self._face_theta[name] = theta
+        face_unreachable = ev.get("face_unreachable")
+        if face_unreachable is not None:
+            self._face_unreachable.add(face_unreachable)
         if path is None:
             if target == "survey":
                 self.survey_state = "available"
+            elif isinstance(target, tuple) and target[0] == "face":
+                # I1: a face refusal already lives in `_face_unreachable`/
+                # `_face_theta` (applied above) — `blocked` stays cell-only
+                # so `_menu_input`'s `sorted(map(list, v))` over it never
+                # meets a face tuple, and the menu never shows a face BOTH
+                # "blocked" and "ready" at once.
+                pass
             else:
                 self.blocked.add(target)
             self.pub.log("warn", f"plan refused for {target}: "
@@ -662,6 +682,13 @@ class Supervisor:
 
     # ------------------------------------------------------------- workers
     def _plan_worker(self, gen, target):
+        # I3: this runs on a worker thread. `face_theta`/`face_unreachable`
+        # ride the `plan_done` event instead of touching `self._face_theta`/
+        # `self._face_unreachable` directly — those are gate state, and the
+        # dispatcher is the only thread allowed to mutate it (module
+        # docstring). `_on_plan_done` applies them, after its own
+        # exit/supersede checks.
+        face_theta = face_unreachable = None
         try:
             if self.sphere is not None:
                 self._reach = self.sphere.reachability(self.world, self.ik)
@@ -681,10 +708,10 @@ class Supervisor:
                 res = resolve_face_view(self.world, self.ik, T_FLANGE_CAM,
                                         prim, face, r_f, q_near=q_now)
                 if res is None:
-                    self._face_unreachable.add(face)
+                    face_unreachable = face
                     path, detail = None, "face unreachable within 60deg"
                 else:
-                    self._face_theta[face] = res.theta_deg
+                    face_theta = (face, res.theta_deg)
                     path, rep = plan_viewpoint(self.world, self.ik, q_now,
                                                res.T_flange, seed=self.seed)
                     detail = (f"tier {rep['tier']} "
@@ -697,7 +724,9 @@ class Supervisor:
         except Exception as e:
             path, detail = None, f"planner error: {e}"
         self.events.put({"ev": "plan_done", "gen": gen, "target": target,
-                         "path": path, "detail": detail})
+                         "path": path, "detail": detail,
+                         "face_theta": face_theta,
+                         "face_unreachable": face_unreachable})
 
     def _preview_worker(self, path, cancel):
         try:
@@ -822,7 +851,13 @@ class Supervisor:
             sid, sdir = self.writer.begin_step(
                 {"method": "face" if isinstance(target, tuple)
                                      and target[0] == "face" else VIEW_METHOD,
-                 "address": ([target[1]] if isinstance(target, tuple)
+                 # ["face", name] — ONE identity for a face step, matching
+                 # the ViewState candidate address (`_view_state` below) and
+                 # what a mover/agent sends to request/confirm it (Anton
+                 # 2026-09-14 ruling). Was `[target[1]]` (just the name),
+                 # which could never round-trip through `Run.at()` against a
+                 # candidate address of `["face", name]`.
+                 "address": (["face", target[1]] if isinstance(target, tuple)
                              and target[0] == "face"
                              else None if target == "survey" else list(target))})
             cap = self.rig.capture(sid, sdir)

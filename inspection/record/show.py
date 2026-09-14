@@ -77,6 +77,13 @@ def show_run(run_dir: Path, out: Path) -> Path:
                          and c.address[0] == "face" and c.pose is not None)]
             if faces:
                 rr_log.log_face_views(faces)
+            else:
+                # I2: zero face candidates on a step that DOES carry a
+                # ViewState — settling, or no boxguard yet — must not leave
+                # stale arrows from an earlier step's box pose on screen.
+                # Legacy runs with no ViewState at all never reach this
+                # branch, so they stay the strict no-op they always were.
+                rr_log.clear_face_views()
         if step_cloud is not None:
             fused = step_cloud(s)
             if fused is not None:

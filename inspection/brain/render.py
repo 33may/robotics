@@ -138,6 +138,9 @@ def state_block(turn, cell, h_bins, v_elevs, n_visited, n_reachable,
     """
     if cell is None or cell == "survey":
         at = "at the survey pose (off-grid)"
+    elif isinstance(cell, (list, tuple)) and len(cell) == 2 and cell[0] == "face":
+        # A face pose is not a grid cell — nothing to unpack as (h, v).
+        at = f'standing at the ["face", "{cell[1]}"] evidence view'
     else:
         h, v = cell
         at = (f"at [{h}, {v}] — azimuth {azimuth_deg(h, h_bins):.0f}°, "
@@ -202,16 +205,23 @@ def moves_block(turn, tools, cur_cell, agent_seen, nav=None, seen=None):
             row += f"\n      recommends: {rec}"
         return row
 
-    if cur_cell is None or cur_cell == "survey":
-        # Off-grid: no origin to be relative to, so rows carry the absolute
-        # geometry instead of a bearing.
+    at_face = (isinstance(cur_cell, (list, tuple)) and len(cur_cell) == 2
+              and cur_cell[0] == "face")
+    if cur_cell is None or cur_cell == "survey" or at_face:
+        # Off-grid (survey), OR standing at a face evidence pose: neither has
+        # a ring position to be relative to, so rows carry the absolute
+        # geometry instead of a bearing. A face tuple has no (h, v) either —
+        # unpacking it below (`ch, cv = cur_cell`) is exactly what used to
+        # raise the moment the agent moved to one.
         rows = []
         for c in [(h, v) for v in range(n_v) for h in range(h_bins)]:
             ok, mark = status(c)
             if ok:
                 rows.append(fmt(c, f"az {azimuth_deg(c[0], h_bins):.0f}° "
                                    f"lvl {c[1]}", mark))
-        header = f"MOVES · turn {turn} · you are at the survey pose (off-grid)"
+        header = (f'MOVES · turn {turn} · standing at the '
+                 f'["face", "{cur_cell[1]}"] evidence view' if at_face else
+                 f"MOVES · turn {turn} · you are at the survey pose (off-grid)")
     else:
         ch, cv = cur_cell
         ring = [(h, cv) for h in range(h_bins) if h != ch]

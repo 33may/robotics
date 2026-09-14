@@ -814,7 +814,53 @@ def test_face_request_full_cycle():
         steps = sorted((run_dir / "steps").iterdir())
         step = _json.load(open(steps[-1] / "step.json"))
         assert step["view"]["method"] == "face"
-        assert step["view"]["address"] == ["top"]
+        assert step["view"]["address"] == ["face", "top"]
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
+def test_face_refusal_does_not_enter_blocked():
+    """I1: `_on_plan_done`'s refusal branch used to `self.blocked.add(target)`
+    for EVERY refused target, faces included. `blocked` mixes with cell
+    tuples in `nav()`, and `_menu_input`'s `sorted(map(list, v))` over it
+    raises the moment a face tuple sits beside a cell tuple — silently
+    losing the whole `MenuInput` record. A face refusal must stay entirely
+    in `_face_unreachable`/`_face_theta`; `blocked` stays cell-only."""
+    q_survey = DEMO_PARK.copy()
+    rig = FakeRig(q_survey.copy())
+    bus = BusSpy()
+    sup = RefusingPlanSupervisor(rig, InspectionPublisher(bus),
+                                 make_writer(q_survey), q_survey)
+    th = threading.Thread(target=sup.run, daemon=True)
+    th.start()
+    try:
+        import numpy as np
+        from inspection.fit.contract import Primitive
+        pose = [[1, 0, 0, 0.10], [0, 1, 0, -0.35], [0, 0, 1, 0.05],
+                [0, 0, 0, 1]]
+        prim = Primitive(kind="box", pose=pose,
+                         params={"extents": [0.12, 0.08, 0.10]}, label="box")
+        for _ in range(3):                      # open the gate
+            sup._update_face_gate(prim)
+        assert sup._face_states()["top"]["status"] == "ready"
+
+        wait_for(lambda: any(t == "views/state" for t, _ in bus.published),
+                 msg="boot views published")
+        n0 = len([1 for t, _ in bus.published if t == "views/state"])
+        sup.events.put({"cmd": "view/request", "target": ["face", "top"]})
+        wait_for(lambda: len([1 for t, _ in bus.published
+                              if t == "views/state"]) >= n0 + 2,
+                 msg="plan+refusal views republished")
+
+        assert sup.blocked == set(), \
+            "a face refusal must never land in the cell-only `blocked` set"
+        # The regression this guards: a mixed-type `blocked` used to raise
+        # here — sortable-with-list is exactly what `_menu_input` needs.
+        sorted(map(list, sup.blocked))
+        # The menu must not say the face is BOTH blocked (absent) and
+        # ready — its own vocabulary (`_face_states`) carries the refusal.
+        assert "top" not in {t[1] for t in sup.blocked
+                             if isinstance(t, tuple) and t and t[0] == "face"}
     finally:
         sup.request_shutdown(); th.join(10)
 
@@ -868,6 +914,7 @@ def main():
     test_sigint_saves_and_exits()
     test_face_gate_opens_after_two_stable_fits()
     test_face_request_full_cycle()
+    test_face_refusal_does_not_enter_blocked()
     test_views_payload_carries_faces()
     print("OK test_machine (task 5)")
 

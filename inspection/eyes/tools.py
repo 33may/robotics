@@ -147,16 +147,31 @@ class ViewTools:
         return out
 
     def coverage(self, cur=None):
-        """ASCII map of what has been seen, plus the count and a legend."""
-        visited = {tuple(s.record.view.address) for s in self._run.captured
-                  if s.id != 0}
+        """ASCII map of what has been seen, plus the count and a legend.
+
+        Face steps are NOT cells (address `("face", name)`, no (h, v) to
+        plot) — split them out before the grid unpack, or `for h, v in
+        visited` raises the moment a run holds a captured face view. They
+        still count, just on their own line rather than in the grid.
+        """
+        addrs = {tuple(s.record.view.address) for s in self._run.captured
+                if s.id != 0}
+        faces = {a for a in addrs if a and a[0] == "face"}
+        visited = addrs - faces
         cov = np.zeros((len(self._v_elevs), self._h_bins), dtype=bool)
         for h, v in visited:
             cov[v, h] = True
         n_cells = cov.shape[0] * cov.shape[1]
-        return (f"{int(cov.sum())}/{n_cells} cells seen  "
+        # `cur` is the agent's current address too, and a face pose has no
+        # (h, v) either — `coverage_map` would raise on the same shape.
+        cur_cell = None if (cur is None or (cur and cur[0] == "face")) else cur
+        text = (f"{int(cov.sum())}/{n_cells} cells seen  "
                 f"(# seen · . unseen · @ current)\n"
-                + coverage_map(cov, cur=cur, elevations=self._v_elevs))
+                + coverage_map(cov, cur=cur_cell, elevations=self._v_elevs))
+        if faces:
+            text += (f"\n{len(faces)} face view"
+                     f"{'s' if len(faces) != 1 else ''} captured")
+        return text
 
     # ------------------------------------------------------------- pixels
     def get_view(self, target):
@@ -241,6 +256,9 @@ class ViewTools:
         """Deterministic provenance for a view — geometry, never opinion."""
         if rec.cell is None:
             return f"survey view · dir {rec.cap_dir.name}"
+        if rec.cell[0] == "face":
+            return (f"face view · {rec.cell[1]} · orthogonal evidence pose "
+                    f"· dir {rec.cap_dir.name}")
         h, v = rec.cell
         return (f"cell [{h}, {v}] · azimuth {h * 360 / self._h_bins:.0f} deg "
                 f"(h{h} of {self._h_bins}) · elevation {self._v_elevs[v]:.0f} deg "
