@@ -79,6 +79,7 @@ tool/<box>            RG2 envelope + cable loop, welded to the flange
 object/obb            the reconstructed object primitive (world.set_object)
 object/cloud          points node -> streams from `cloud/fused`
 views/h<HH>v<V>       one marker sphere per viewsphere cell
+views/face:<name>     one marker per non-settling face target (x+ x- y+ y- top)
 ```
 
 The whole set is republished whenever anything changes — a marker turning green
@@ -102,6 +103,13 @@ resends the description. That is the protocol (`porthole/docs/scene-protocol.md`
 "try again after the arm moves", the other is "this cell is not addressable from
 this object position". Collapsing them hides the fact that `plan_failed` is
 cleared after every real move.
+
+Face markers use their own teal-shifted palette (`FACE_STATE_COLOR`) so the
+five orthogonal standoff points never read as viewsphere cells; `previewing`
+deliberately reuses the cell pink — one approve colour everywhere. A settling
+face has no marker (no stable box yet, so no honest position to draw). The
+node id `face:<name>` round-trips through the same `pickCommand` path as
+`h<HH>v<V>` — `machine._normalize_target` parses both.
 
 ---
 
@@ -151,10 +159,17 @@ cannot disagree.
     },
     ...
   ],
-  "survey": {"state": "visited"}   # same vocabulary; present even before any
+  "survey": {"state": "visited"},  # same vocabulary; present even before any
                                     # sphere exists ("cells" is [] then), so
                                     # the grid can render the survey button
                                     # at boot
+  "faces": {                        # machine.py `_faces_display()`: the GATE
+    "x+": {"status": "ready",       # vocabulary (settling|ready|pending|
+           "off_angle_deg": 4.1,    # previewing|visited|unreachable), NOT the
+           "pos": [x, y, z]},       # cell one; the in-flight face arrives as
+    ...                             # pending/previewing, phase-derived like
+  }                                 # cells. `pos` = camera standoff point,
+                                    # base frame — absent while settling.
 }
 ```
 
@@ -166,7 +181,9 @@ buttons and *does* send: a click on an `available`/`blocked`/`pending` cell
 (or the survey button) sends `view/request` — for `pending` this just
 re-sends the request for the cell already planning, a no-op deduped
 server-side (§8) — and a click on a `previewing` cell sends `view/confirm`
-(§8).
+(§8). The face row above the grid works identically with `["face", name]`
+targets (`ready` requests, `previewing` confirms), and the approve-only
+mode matches a pending/previewing face the same way it matches a cell.
 
 ---
 
