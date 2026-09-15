@@ -469,14 +469,18 @@ def test_answer_evidence_images_typed():
 
 
 def test_answer_carries_views_inspected_and_coverage():
-    """brain/loop.py:_answer's payload — cells the agent actually looked at
+    """brain/loop.py:_answer's payload — views the agent actually looked at
     plus the ASCII coverage map in effect when it answered. Optional: legacy
-    answers and non-AI runs never had these."""
+    answers and non-AI runs never had these. `views_inspected` holds BOTH
+    address kinds — `[h, v]` cells and `["face", name]` — the unified
+    identity; `list[list[int]]` here rejected every answer of a run that
+    had taken a face view (bench5: three submissions bounced, the loop
+    never ended)."""
     ans = AnswerRecord(verdict="yes", reasoning="r",
-                       views_inspected=[[3, 0], [3, 1]],
+                       views_inspected=[[3, 0], [3, 1], ["face", "x+"]],
                        coverage="2/48 cells seen (# seen · . unseen · @ current)")
     back = AnswerRecord.model_validate_json(ans.model_dump_json())
-    assert back.views_inspected == [[3, 0], [3, 1]]
+    assert back.views_inspected == [[3, 0], [3, 1], ["face", "x+"]]
     assert back.coverage.startswith("2/48")
 
 

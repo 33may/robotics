@@ -454,7 +454,11 @@ class AnswerRecord(RecordModel):
     evidence_images: list[EvidenceImage] = Field(default_factory=list)
     step_ids: list[int] = Field(default_factory=list)
     transcript_ids: list[str] = Field(default_factory=list)
-    views_inspected: list[list[int]] = Field(default_factory=list)  # cells the agent looked at (brain/loop.py)
+    # Views the agent looked at (brain/loop.py) — BOTH address kinds, the
+    # unified identity: `[h, v]` cells and `["face", name]`. `list[list[int]]`
+    # here was the one address site the face build missed: it bounced every
+    # answer of a run that had taken a face view (bench5, 2026-09-15).
+    views_inspected: list[list[int | str]] = Field(default_factory=list)
     coverage: str | None = None  # ASCII coverage map in effect at answer time
 
 

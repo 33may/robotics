@@ -422,6 +422,26 @@ class Brain:
         except ValueError:
             return None
 
+    def _commit_answer(self, args, records):
+        """Write answer.json FIRST; only a STORED answer ends the run.
+
+        `self.answer` is the loop's terminal flag — `_staple_state` goes
+        silent and `run()` returns it as the verdict the moment it is set.
+        bench5 set it BEFORE the write: `ai.answer()` rejected the record
+        (schema), the tool call failed back to the model, and the run was
+        half-over — state hook mute, no answer.json, model flying blind.
+        A write failure must leave the run exactly as it was: the raise
+        propagates into the failed tool result and the model hears it.
+        """
+        record = self._answer_record(args, records)
+        self.ai.answer(record)
+        self.answer = {"reasoning": args["reasoning"],
+                       "verdict": args["verdict"],
+                       "evidence": args["evidence"],
+                       "evidence_images": records,
+                       "views_inspected": _sorted_addresses(self.agent_seen),
+                       "coverage": self.tools.coverage(cur=self.cell)}
+
     def _answer_record(self, args, records):
         """The verdict as `AnswerRecord` — the write boundary of the AI tier.
 
@@ -592,15 +612,9 @@ class Brain:
                 self._collect_evidence, args.get("evidence_cells"))
             if bounce:
                 return done("answer", bounce, failed=True)
-            self.answer = {"reasoning": args["reasoning"],
-                           "verdict": args["verdict"],
-                           "evidence": args["evidence"],
-                           "evidence_images": records,
-                           "views_inspected": _sorted_addresses(self.agent_seen),
-                           "coverage": self.tools.coverage(cur=self.cell)}
-            self.ai.answer(self._answer_record(args, records))
+            self._commit_answer(args, records)
             # The trace keeps the RAW hunt records (cell/find/found/report/
-            # crop/frame/transcript) — `_answer_record` below narrows them to
+            # crop/frame/transcript) — `_answer_record` narrows them to
             # what the schema has a home for, and nothing may be lost between
             # the two.
             self.trace.event("answer", **{k: v for k, v in self.answer.items()

@@ -174,12 +174,77 @@ def test_sorted_addresses_mixes_cells_and_faces():
     assert [0, 0] in out and ["face", "top"] in out and [1, 2] in out
 
 
+class _AIStub:
+    """`ai_writer` seam: records the write, or refuses it on demand."""
+
+    def __init__(self, fail=False):
+        self.fail, self.written = fail, None
+
+    def answer(self, rec):
+        if self.fail:
+            raise ValueError("write rejected (stub)")
+        self.written = rec
+
+
+def _answer_ready_brain(tmp):
+    """A Brain at the answer boundary: mixed agent_seen, no evidence images."""
+    brain = Brain.__new__(Brain)
+    brain.tools = _face_fixture(tmp)
+    brain.run = brain.tools._run
+    brain.trace = _TraceStub()
+    brain.cell = ("face", "top")
+    brain.agent_seen = {(2, 0), ("face", "top")}
+    brain.answer = None
+    return brain
+
+
+def test_answer_record_survives_a_face_in_views_inspected():
+    """C1.7 — the missed write boundary: every runtime site handled the mixed
+    addresses, then `AnswerRecord.views_inspected: list[list[int]]` rejected
+    the whole record at validate_for_write. bench5: three answer submissions
+    bounced identically and the run never ended."""
+    with tempfile.TemporaryDirectory() as tmp:
+        brain = _answer_ready_brain(tmp)
+        args = {"verdict": "v", "reasoning": "r", "evidence": "e"}
+        from inspection.record.schema import AnswerRecord, validate_for_write
+        rec = validate_for_write(AnswerRecord, brain._answer_record(args, []))
+        assert ["face", "top"] in rec.views_inspected
+        assert [2, 0] in rec.views_inspected
+
+
+def test_failed_answer_write_leaves_the_run_alive():
+    """A rejected answer.json must NOT half-end the run: bench5 set
+    `self.answer` before the write, the write raised, and every later turn's
+    state hook returned {} — the model flew blind while the loop believed
+    the run was over. Write first; only a STORED answer ends the run."""
+    with tempfile.TemporaryDirectory() as tmp:
+        brain = _answer_ready_brain(tmp)
+        args = {"verdict": "v", "reasoning": "r", "evidence": "e"}
+
+        brain.ai = _AIStub(fail=True)
+        try:
+            brain._commit_answer(args, [])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("the write failure must propagate to the "
+                                 "tool call (the model has to hear it)")
+        assert brain.answer is None, "no stored answer -> the run is NOT over"
+
+        brain.ai = _AIStub()
+        brain._commit_answer(args, [])
+        assert brain.answer is not None and brain.answer["verdict"] == "v"
+        assert brain.ai.written is not None
+
+
 def main():
     test_gate_passes_ready_face_denies_others()
     test_face_step_resolves_through_view_at_coverage_gloss()
     test_collect_evidence_keeps_a_face_citation()
     test_render_blocks_survive_a_face_cell()
     test_sorted_addresses_mixes_cells_and_faces()
+    test_answer_record_survives_a_face_in_views_inspected()
+    test_failed_answer_write_leaves_the_run_alive()
     print("OK test_brain_faces")
 
 
