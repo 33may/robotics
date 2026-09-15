@@ -875,6 +875,11 @@ def test_views_payload_carries_faces():
         views = bus.last("views/state")
         assert "faces" in views
         assert views["faces"]["x+"]["status"] == "settling"
+        # Settling faces stay off the 3D scene: no standoff point, no marker.
+        assert "pos" not in views["faces"]["x+"]
+        desc = bus.last("scene/description")
+        assert not [n for n in desc["nodes"]
+                    if n["path"].startswith("views/face:")]
         pose = [[1, 0, 0, 0.1], [0, 1, 0, -0.35], [0, 0, 1, 0.05],
                 [0, 0, 0, 1]]
         prim = Primitive(kind="box", pose=pose,
@@ -882,7 +887,56 @@ def test_views_payload_carries_faces():
         for _ in range(3):
             sup._update_face_gate(prim)
         sup._publish_views()
-        assert bus.last("views/state")["faces"]["x+"]["status"] == "ready"
+        views = bus.last("views/state")
+        assert views["faces"]["x+"]["status"] == "ready"
+        # A ready face carries WHERE the camera would stand — the operator
+        # sees the destination before approving, not after (bench gap #2).
+        pos = views["faces"]["x+"]["pos"]
+        assert len(pos) == 3
+        # The x+ standoff sits beyond the face plane (center 0.1 + half 0.05).
+        assert pos[0] > 0.15
+        assert abs(pos[1] - (-0.35)) < 1e-6 and abs(pos[2] - 0.05) < 1e-6
+        # And each non-settling face is a scene marker the panel can click.
+        desc = bus.last("scene/description")
+        face_nodes = {n["path"] for n in desc["nodes"]
+                      if n["path"].startswith("views/face:")}
+        from inspection.view.faceview import FACES
+        assert face_nodes == {f"views/face:{f}" for f in FACES}
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
+def test_face_request_previews_on_the_wire():
+    """Bench gap #1: while a face plan is in flight the payload must say
+    pending, and previewing once the replay loops — the ActionsPanel approve
+    button renders from exactly this block, so a status that stays "ready"
+    is a face view no operator can ever confirm."""
+    import numpy as np
+    from inspection.fit.contract import Primitive
+
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        pose = [[1, 0, 0, 0.10], [0, 1, 0, -0.35], [0, 0, 1, 0.05],
+                [0, 0, 0, 1]]
+        prim = Primitive(kind="box", pose=pose,
+                         params={"extents": [0.12, 0.08, 0.10]}, label="box")
+        for _ in range(3):                      # open the gate
+            sup._update_face_gate(prim)
+        sup.events.put({"cmd": "view/request", "target": ["face", "top"]})
+        wait_for(lambda: sup.phase == "previewing", timeout=60,
+                 msg="face preview")
+        wait_for(lambda: bus.last("views/state")
+                 ["faces"]["top"]["status"] == "previewing",
+                 timeout=10, msg="previewing on the wire")
+        hist = [p["faces"]["top"]["status"] for t, p in bus.published
+                if t == "views/state" and "top" in p.get("faces", {})]
+        assert "pending" in hist, "the planning publish must say pending"
+        # The marker mirrors it: the previewing face is the enlarged sphere.
+        desc = bus.last("scene/description")
+        node = next(n for n in desc["nodes"] if n["path"] == "views/face:top")
+        assert node["geometry"]["radius"] >= 0.02
     finally:
         sup.request_shutdown(); th.join(10)
 
@@ -916,6 +970,7 @@ def main():
     test_face_request_full_cycle()
     test_face_refusal_does_not_enter_blocked()
     test_views_payload_carries_faces()
+    test_face_request_previews_on_the_wire()
     print("OK test_machine (task 5)")
 
 

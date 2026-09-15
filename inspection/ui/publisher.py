@@ -81,6 +81,18 @@ STATE_COLOR = {
     "previewing": "#f08bd4",
 }
 
+#: Face-marker palette: the cell palette shifted toward teal, so the five
+#: orthogonal standoff points never read as viewsphere cells. `previewing`
+#: deliberately reuses the cell pink — one approve colour everywhere.
+#: (No "settling" entry: a settling face carries no `pos` and gets no marker.)
+FACE_STATE_COLOR = {
+    "ready": "#5fc9c4",
+    "pending": "#8fa8e8",
+    "previewing": "#f08bd4",
+    "visited": "#4fc98f",
+    "unreachable": "#3a5a58",
+}
+
 #: Cosmetic only. Mirrors the table in `inspection/cell/viewer.py`, duplicated
 #: rather than imported because that module pulls meshcat at import time and
 #: this path must not depend on it. If they drift, colours differ; nothing breaks.
@@ -401,10 +413,13 @@ class InspectionPublisher:
         visited`) alongside the sphere cells, in the same top-level payload,
         so the actions panel can render it from one topic.
 
-        `faces` is `run/machine.py`'s `_face_states()` block verbatim —
-        `{name: {"status": ..., "off_angle_deg": ...}}` — passed through
-        untouched (no UI panel reads it yet; this is the wire carrier the
-        record layer's viewer and a future face panel both read).
+        `faces` is `run/machine.py`'s `_faces_display()` block —
+        `{name: {"status": ..., "off_angle_deg": ..., "pos": [x,y,z]?}}` —
+        passed through to the payload (the ActionsPanel's face row renders
+        from it), and every entry carrying `pos` additionally becomes a 3D
+        marker `views/face:<name>`. That node id is what a click hands back
+        (`pickCommand` strips `views/`), and `machine._normalize_target`
+        already parses `face:<name>` — scene clicks work like cell markers.
         """
         try:
             visited_set = {tuple(c) for c in visited}
@@ -452,6 +467,25 @@ class InspectionPublisher:
                         entry["image"] = url
                 cells.append(entry)
 
+            faces = dict(faces or {})
+            for name, st in faces.items():
+                pos = st.get("pos")
+                if pos is None:                 # settling — not addressable
+                    continue
+                state = st.get("status", "ready")
+                T = np.eye(4)
+                T[:3, 3] = np.asarray(pos, dtype=float)
+                markers.append(sphere_node(
+                    f"views/face:{name}",
+                    # Slightly larger than a cell at rest — a face is a
+                    # destination, not a shell sample; attention size when
+                    # it is the one being planned/approved, like cells.
+                    0.02 if state in ("pending", "previewing") else 0.014,
+                    T,
+                    color=FACE_STATE_COLOR.get(state, FACE_STATE_COLOR["ready"]),
+                    opacity=0.35 if state == "unreachable" else 0.95,
+                ))
+
             self._sections["views"] = markers
             self._publish_description()
 
@@ -461,7 +495,7 @@ class InspectionPublisher:
                 "current": list(current_cell) if current_cell else None,
                 "cells": cells,
                 "survey": {"state": survey},
-                "faces": faces or {},
+                "faces": faces,
             })
         except Exception:
             log.exception("publish_views failed")

@@ -1192,14 +1192,41 @@ class Supervisor:
         if self.sphere is None:
             self.pub.publish_survey_only(survey_state)
             return
-        cell_target = self.target if isinstance(self.target, tuple) else None
+        is_face = isinstance(self.target, tuple) and self.target[0] == "face"
+        cell_target = self.target if (isinstance(self.target, tuple)
+                                      and not is_face) else None
         pending = cell_target if self.phase == "planning" else None
         previewing = cell_target if self.phase == "previewing" else None
         self.pub.publish_views(
             self.sphere, self._reach, visited=self.visited, blocked=self.blocked,
             current=self.current, captures=self.captures, pending=pending,
             previewing=previewing, survey=survey_state,
-            faces=self._face_states())
+            faces=self._faces_display())
+
+    def _faces_display(self):
+        """`_face_states()` enriched for the UI: the in-flight face target
+        overlaid as pending/previewing (phase-derived, exactly like cells —
+        the gate vocabulary itself never holds transient states), and the
+        camera standoff point attached to every non-settling face so the
+        operator sees WHERE the arm would go before approving. `pos` is the
+        rung-1 exact endpoint; the ladder may settle elsewhere, and the
+        achieved θ comes back on the same block after resolution.
+        """
+        faces = self._face_states()
+        if (isinstance(self.target, tuple) and self.target[0] == "face"
+                and self.phase in ("planning", "previewing")):
+            faces[self.target[1]]["status"] = (
+                "pending" if self.phase == "planning" else "previewing")
+        if self._face_prim is not None:
+            from inspection.view.faceview import face_frame, face_radius
+            for f, st in faces.items():
+                if st["status"] == "settling":
+                    continue
+                c, n, ext = face_frame(self._face_prim, f)
+                r_f = face_radius(ext, self.rig.intr["fy"],
+                                  self.rig.intr["height"])
+                st["pos"] = [float(x) for x in (c + n * r_f)]
+        return faces
 
     def _survey_display_state(self):
         """`self.survey_state` only ever stores "available"/"visited" (F3) —

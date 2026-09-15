@@ -29,9 +29,22 @@ interface ViewCell {
    *  approving a re-visit or a replay-backed request. */
   image?: string;
 }
+/** The gate vocabulary (machine.py `_faces_display`), NOT the cell one:
+ *  `settling` = boxguard not stable yet, `ready` = requestable. The in-flight
+ *  face arrives as pending/previewing, phase-derived exactly like cells. */
+type FaceStatus =
+  | 'settling' | 'ready' | 'pending' | 'previewing' | 'visited' | 'unreachable';
+interface FaceState {
+  status: FaceStatus;
+  /** Achieved off-angle from the resolution ladder, once resolved. */
+  off_angle_deg?: number | null;
+  /** Camera standoff point, base frame — absent while settling. */
+  pos?: number[];
+}
 interface ViewsState {
   survey?: { state: ViewCellState };
   cells: ViewCell[];
+  faces?: Record<string, FaceState>;
 }
 interface RunStatus { phase?: string; target?: unknown }
 /** Only the kinds matter here; the trace panel owns the full shape. */
@@ -40,11 +53,22 @@ interface TraceState { events?: { kind: string }[] }
 interface RunMeta { source?: string }
 
 const ACTIONABLE: ViewCellState[] = ['available', 'blocked', 'pending', 'previewing'];
+/** `pending` stays clickable like cells: a re-request of the in-flight face
+ *  is deduped server-side. */
+const FACE_ACTIONABLE: FaceStatus[] = ['ready', 'pending', 'previewing'];
+/** Render order — machine.py faceview.FACES; payload keys are unordered. */
+const FACE_ORDER = ['x+', 'x-', 'y+', 'y-', 'top'];
 
-function label(state: ViewCellState): string {
+function label(state: ViewCellState | FaceStatus): string {
   if (state === 'pending') return '…';
   if (state === 'previewing') return 'preview';
   return '';
+}
+
+function faceLabel(name: string, face: FaceState): string {
+  const theta = face.off_angle_deg;
+  const deg = theta === null || theta === undefined ? '' : ` ${Math.round(theta)}°`;
+  return `${name}${deg} ${label(face.status)}`.trimEnd();
 }
 
 export function ActionsPanel(_props: PanelProps) {
@@ -74,9 +98,17 @@ export function ActionsPanel(_props: PanelProps) {
   const cells = views?.cells ?? [];
   const rows = [...new Set(cells.map((c) => c.v))].sort((a, b) => b - a);
   const survey = views?.survey?.state;
+  const faces = views?.faces ?? {};
+  const faceEntries = Object.entries(faces).sort(
+    ([a], [b]) => FACE_ORDER.indexOf(a) - FACE_ORDER.indexOf(b));
+  const pressFace = (name: string, status: FaceStatus) =>
+    send(status === 'previewing' ? 'view/confirm' : 'view/request', ['face', name]);
   // At most one cell is pending/previewing (machine.py: one target), so the
-  // first hit IS the AI's request.
+  // first hit IS the AI's request. Survey, cells and faces are mutually
+  // exclusive targets for the same reason.
   const requested = cells.find((c) => c.state === 'pending' || c.state === 'previewing');
+  const requestedFace = faceEntries.find(
+    ([, s]) => s.status === 'pending' || s.status === 'previewing');
   const surveyActive = survey === 'pending' || survey === 'previewing';
 
   return (
@@ -116,6 +148,16 @@ export function ActionsPanel(_props: PanelProps) {
                 {requested.h},{requested.v} {label(requested.state)}
               </button>
             </>
+          ) : requestedFace ? (
+            <button
+              className={`act act-${requestedFace[1].status}`}
+              data-testid={requestedFace[1].status === 'previewing'
+                ? 'confirm-button' : undefined}
+              disabled={requestedFace[1].status !== 'previewing'}
+              onClick={() => send('view/confirm', ['face', requestedFace[0]])}
+            >
+              face {faceLabel(requestedFace[0], requestedFace[1])}
+            </button>
           ) : (
             <div className="actions-status">—</div>
           )}
@@ -131,6 +173,26 @@ export function ActionsPanel(_props: PanelProps) {
             >
               survey {label(survey)}
             </button>
+          )}
+          {faceEntries.length > 0 && (
+            // The five orthogonal face targets, above the shell grid: a
+            // different address space, so a different row — never mixed
+            // into the h,v cells. Settling faces render disabled on
+            // purpose (the operator sees the gate hasn't opened yet).
+            <div className="actions-row actions-faces">
+              {faceEntries.map(([f, face]) => (
+                <button
+                  key={f}
+                  className={`act act-face act-${face.status}`}
+                  data-testid={face.status === 'previewing' ? 'confirm-button' : undefined}
+                  disabled={!FACE_ACTIONABLE.includes(face.status)}
+                  onClick={() => pressFace(f, face.status)}
+                  title={`face ${f}: ${face.status}`}
+                >
+                  {faceLabel(f, face)}
+                </button>
+              ))}
+            </div>
           )}
           <div className="actions-grid">
             {rows.map((v) => (

@@ -214,6 +214,13 @@
 .act-pending { background: #b0a0f0; color: var(--porthole-bg); }
 .act-previewing { background: #f08bd4; color: var(--porthole-bg); }
 
+/* Face-row states (gate vocabulary, no cell equivalent). Teal echoes the 3D
+   face markers (publisher.FACE_STATE_COLOR), so tab and scene agree on what
+   is a face. A face's unreachable is the teal-grey dim, not the cell red. */
+.act-ready { background: #33625f; }
+.act-settling { background: var(--porthole-surface); opacity: 0.45; }
+.act-face.act-unreachable { background: #3a5a58; }
+
 .act-stop {
   flex: none;
   min-width: 64px;
