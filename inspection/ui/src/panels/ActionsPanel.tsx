@@ -38,8 +38,11 @@ interface FaceState {
   status: FaceStatus;
   /** Achieved off-angle from the resolution ladder, once resolved. */
   off_angle_deg?: number | null;
-  /** Camera standoff point, base frame — absent while settling. */
+  /** Camera endpoint, base frame — absent while settling. The ladder's
+   *  exact point when `resolved`, else the rung-1 orthogonal estimate
+   *  (the 3D marker draws it dim). */
   pos?: number[];
+  resolved?: boolean;
 }
 interface ViewsState {
   survey?: { state: ViewCellState };

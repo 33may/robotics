@@ -107,8 +107,10 @@ cleared after every real move.
 Face markers use their own teal-shifted palette (`FACE_STATE_COLOR`) so the
 five orthogonal standoff points never read as viewsphere cells; `previewing`
 deliberately reuses the cell pink — one approve colour everywhere. A settling
-face has no marker (no stable box yet, so no honest position to draw). The
-node id `face:<name>` round-trips through the same `pickCommand` path as
+face has no marker (no stable box yet, so no honest position to draw), and an
+unresolved one draws dim (opacity 0.45): solid means the ladder ran and the
+marker IS the arm's endpoint, dim means rung-1 estimate. The node id
+`face:<name>` round-trips through the same `pickCommand` path as
 `h<HH>v<V>` — `machine._normalize_target` parses both.
 
 ---
@@ -166,10 +168,14 @@ cannot disagree.
   "faces": {                        # machine.py `_faces_display()`: the GATE
     "x+": {"status": "ready",       # vocabulary (settling|ready|pending|
            "off_angle_deg": 4.1,    # previewing|visited|unreachable), NOT the
-           "pos": [x, y, z]},       # cell one; the in-flight face arrives as
-    ...                             # pending/previewing, phase-derived like
-  }                                 # cells. `pos` = camera standoff point,
-                                    # base frame — absent while settling.
+           "pos": [x, y, z],        # cell one; the in-flight face arrives as
+           "resolved": true},       # pending/previewing, phase-derived like
+    ...                             # cells. `pos` = camera endpoint, base
+  }                                 # frame — absent while settling; the
+                                    # ladder's EXACT point when `resolved`
+                                    # (cleared with θ on gate regression),
+                                    # else the rung-1 orthogonal estimate,
+                                    # which the 3D marker draws dim.
 }
 ```
 

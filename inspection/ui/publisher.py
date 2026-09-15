@@ -475,6 +475,14 @@ class InspectionPublisher:
                 state = st.get("status", "ready")
                 T = np.eye(4)
                 T[:3, 3] = np.asarray(pos, dtype=float)
+                if state == "unreachable":
+                    opacity = 0.35
+                elif not st.get("resolved", True):
+                    # Rung-1 estimate, no ladder run yet: visibly a guess.
+                    # Solid means "the resolved endpoint — the arm goes HERE".
+                    opacity = 0.45
+                else:
+                    opacity = 0.95
                 markers.append(sphere_node(
                     f"views/face:{name}",
                     # Slightly larger than a cell at rest — a face is a
@@ -483,7 +491,7 @@ class InspectionPublisher:
                     0.02 if state in ("pending", "previewing") else 0.014,
                     T,
                     color=FACE_STATE_COLOR.get(state, FACE_STATE_COLOR["ready"]),
-                    opacity=0.35 if state == "unreachable" else 0.95,
+                    opacity=opacity,
                 ))
 
             self._sections["views"] = markers

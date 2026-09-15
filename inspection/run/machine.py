@@ -174,6 +174,7 @@ class Supervisor:
         self._face_prim = None      # freshest boxguard Primitive (or None)
         self._face_stable = 0       # consecutive small normal deltas (gate: >=2)
         self._face_theta = {}       # face -> achieved off-angle from resolution
+        self._face_pos = {}         # face -> resolved cam endpoint [x,y,z]
         self._face_unreachable = set()  # faces whose ladder returned None
         self.face_visited = set()   # face handles captured this run
         self._pose_ack = threading.Event()  # dispatcher -> exec worker: pose_active clear
@@ -456,6 +457,10 @@ class Supervisor:
         if face_theta is not None:
             name, theta = face_theta
             self._face_theta[name] = theta
+        face_pos = ev.get("face_pos")
+        if face_pos is not None:
+            name, pos = face_pos
+            self._face_pos[name] = pos
         face_unreachable = ev.get("face_unreachable")
         if face_unreachable is not None:
             self._face_unreachable.add(face_unreachable)
@@ -688,7 +693,7 @@ class Supervisor:
         # dispatcher is the only thread allowed to mutate it (module
         # docstring). `_on_plan_done` applies them, after its own
         # exit/supersede checks.
-        face_theta = face_unreachable = None
+        face_theta = face_pos = face_unreachable = None
         try:
             if self.sphere is not None:
                 self._reach = self.sphere.reachability(self.world, self.ik)
@@ -712,6 +717,9 @@ class Supervisor:
                     path, detail = None, "face unreachable within 60deg"
                 else:
                     face_theta = (face, res.theta_deg)
+                    # Where the ladder ACTUALLY put the camera — rung-1 sits
+                    # on the normal, zlift/cone do not. The marker snaps here.
+                    face_pos = (face, [float(x) for x in res.T_cam[:3, 3]])
                     path, rep = plan_viewpoint(self.world, self.ik, q_now,
                                                res.T_flange, seed=self.seed)
                     detail = (f"tier {rep['tier']} "
@@ -725,7 +733,7 @@ class Supervisor:
             path, detail = None, f"planner error: {e}"
         self.events.put({"ev": "plan_done", "gen": gen, "target": target,
                          "path": path, "detail": detail,
-                         "face_theta": face_theta,
+                         "face_theta": face_theta, "face_pos": face_pos,
                          "face_unreachable": face_unreachable})
 
     def _preview_worker(self, path, cancel):
@@ -1052,6 +1060,7 @@ class Supervisor:
         else:
             self._face_stable = 0
             self._face_theta.clear()
+            self._face_pos.clear()
             self._face_unreachable.clear()
         self._face_prim = prim
 
@@ -1207,10 +1216,12 @@ class Supervisor:
         """`_face_states()` enriched for the UI: the in-flight face target
         overlaid as pending/previewing (phase-derived, exactly like cells —
         the gate vocabulary itself never holds transient states), and the
-        camera standoff point attached to every non-settling face so the
-        operator sees WHERE the arm would go before approving. `pos` is the
-        rung-1 exact endpoint; the ladder may settle elsewhere, and the
-        achieved θ comes back on the same block after resolution.
+        camera endpoint attached to every non-settling face so the operator
+        sees WHERE the arm would go before approving. Once a plan has run
+        the ladder, `pos` is its resolved endpoint (`resolved: true` — the
+        exact point, cleared with θ on gate regression); before that it is
+        the rung-1 orthogonal estimate (`resolved: false`, drawn dim —
+        Anton, bench: never present a hypothetical point as the truth).
         """
         faces = self._face_states()
         if (isinstance(self.target, tuple) and self.target[0] == "face"
@@ -1222,10 +1233,16 @@ class Supervisor:
             for f, st in faces.items():
                 if st["status"] == "settling":
                     continue
+                resolved = self._face_pos.get(f)
+                if resolved is not None:
+                    st["pos"] = list(resolved)
+                    st["resolved"] = True
+                    continue
                 c, n, ext = face_frame(self._face_prim, f)
                 r_f = face_radius(ext, self.rig.intr["fy"],
                                   self.rig.intr["height"])
                 st["pos"] = [float(x) for x in (c + n * r_f)]
+                st["resolved"] = False
         return faces
 
     def _survey_display_state(self):

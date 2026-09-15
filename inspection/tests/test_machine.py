@@ -896,12 +896,17 @@ def test_views_payload_carries_faces():
         # The x+ standoff sits beyond the face plane (center 0.1 + half 0.05).
         assert pos[0] > 0.15
         assert abs(pos[1] - (-0.35)) < 1e-6 and abs(pos[2] - 0.05) < 1e-6
+        # No ladder has run yet, so this point is the rung-1 ESTIMATE and
+        # says so — the marker draws dim until a plan resolves the truth
+        # (Anton, bench: "the exact point, not hypothetical orthogonal").
+        assert views["faces"]["x+"]["resolved"] is False
         # And each non-settling face is a scene marker the panel can click.
         desc = bus.last("scene/description")
-        face_nodes = {n["path"] for n in desc["nodes"]
+        face_nodes = {n["path"]: n for n in desc["nodes"]
                       if n["path"].startswith("views/face:")}
         from inspection.view.faceview import FACES
-        assert face_nodes == {f"views/face:{f}" for f in FACES}
+        assert set(face_nodes) == {f"views/face:{f}" for f in FACES}
+        assert face_nodes["views/face:x+"]["material"]["opacity"] < 0.9
     finally:
         sup.request_shutdown(); th.join(10)
 
@@ -933,10 +938,16 @@ def test_face_request_previews_on_the_wire():
         hist = [p["faces"]["top"]["status"] for t, p in bus.published
                 if t == "views/state" and "top" in p.get("faces", {})]
         assert "pending" in hist, "the planning publish must say pending"
-        # The marker mirrors it: the previewing face is the enlarged sphere.
+        # At the approve moment the marker is the LADDER's endpoint, not the
+        # rung-1 estimate: the plan resolved where the arm will actually go.
+        face = bus.last("views/state")["faces"]["top"]
+        assert face["resolved"] is True
+        assert np.allclose(face["pos"], sup._face_pos["top"])
+        # The marker mirrors it: enlarged, and solid now that it is truth.
         desc = bus.last("scene/description")
         node = next(n for n in desc["nodes"] if n["path"] == "views/face:top")
         assert node["geometry"]["radius"] >= 0.02
+        assert node["material"]["opacity"] > 0.9
     finally:
         sup.request_shutdown(); th.join(10)
 
