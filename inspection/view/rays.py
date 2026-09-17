@@ -169,14 +169,59 @@ def resolve_cell(world, ik, t_flange_cam, center, aabb, h, v, q_near=None):
 
 def resolve_face(world, ik, t_flange_cam, prim, face, fy, height_px,
                  q_near=None):
-    """First family member (shifts ascending, then cone) with samples;
-    closest sample on it. None = the face is honestly inaccessible.
-    Each member's d_min (containment floor, per the 2026-09-17 ruling)
-    reaches sample_ray through clear_m: floor = clear_m + MIN_RANGE_M."""
-    for ray, shift, theta, d_min in face_family(prim, face, fy, height_px):
-        samples = sample_ray(world, ik, t_flange_cam, ray,
-                             clear_m=max(0.0, d_min - MIN_RANGE_M),
-                             q_near=q_near)
+    """Closest safe sample in the face's family, fronto-parallel first.
+
+    Two rungs, and the SHIFT rung is searched whole before the cone is
+    consulted at all:
+
+      1. every theta=0 member (the +z shift ladder; a single exact member
+         for the top face) is sampled, and the winner is the member whose
+         closest valid sample has the SMALLEST DEPTH — ties to the smaller
+         shift.
+      2. only if no theta=0 member has a sample: the cone members in family
+         order, first hit wins (unchanged).
+
+    AMENDED by ruling 2026-09-17 (bench amendment,
+    investigation/ray_views/ray_replay.py + task-4-report.md). This used to
+    return the FIRST shift with any valid sample, which is not the closest
+    one: on the 1709 demo box `x+` resolved at shift 0 / depth 0.30 while
+    shift 0.04 held a sample at 0.14 — 16 cm of standoff paid for ladder
+    predictability, and the same pattern in all four benched runs (12-20 cm).
+    A shift is optically free (a plane parallel to the sensor projects as a
+    pure similarity at any shift, so no keystone is traded away) and the
+    containment floor already keeps the face in frame, so closeness wins.
+    Cost of scanning the whole rung instead of stopping early: ~10-27 ms
+    measured. Tilt stays strictly later — a cone member is never preferred
+    to a fronto-parallel one, however close it is.
+
+    None = the face is honestly inaccessible. Each member's d_min
+    (containment floor, per the earlier 2026-09-17 ruling) reaches
+    sample_ray through clear_m: floor = clear_m + MIN_RANGE_M.
+    """
+    family = face_family(prim, face, fy, height_px)
+
+    def _sample(ray, d_min):
+        return sample_ray(world, ik, t_flange_cam, ray,
+                          clear_m=max(0.0, d_min - MIN_RANGE_M),
+                          q_near=q_near)
+
+    best = None                                   # rung 1: whole shift rung
+    for ray, shift, theta, d_min in family:
+        if theta != 0.0:
+            continue
+        samples = _sample(ray, d_min)
+        if not samples:
+            continue
+        key = (samples[0].depth, shift)
+        if best is None or key < best[0]:
+            best = (key, samples, shift, theta)
+    if best is not None:
+        return _resolution(best[1], best[2], best[3])
+
+    for ray, shift, theta, d_min in family:       # rung 2: cone, first hit
+        if theta == 0.0:
+            continue
+        samples = _sample(ray, d_min)
         if samples:
             return _resolution(samples, shift, theta)
     return None

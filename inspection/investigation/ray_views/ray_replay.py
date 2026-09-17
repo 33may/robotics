@@ -432,10 +432,13 @@ def timing_table(m):
 def face_table(m, prim):
     """All five faces: what the ladder returns vs what the family contains.
 
-    The gap between the two columns is the measured price of the settled
-    ladder order (shift ascending before depth) — a face whose member 0
-    only clears far out while member 3 clears close in reads as a large
-    positive gap.
+    The `price` column was the diagnosis that motivated the 2026-09-17
+    bench amendment: under the old "first shift with a sample wins" it read
+    +0.12 to +0.20 m on `x+` in every run. Now that `resolve_face` picks the
+    shallowest fronto-parallel sample it reads **+0.000 by construction**,
+    and that is exactly its value — a standing check that the amendment is
+    in force. `closest of any member` still shows what a tilt would buy,
+    which is deliberately NOT taken (tilt is a strictly later rung).
     """
     lines = [f"{'face':<5} {'ladder — first member with a sample':<45} "
              f"{'closest FRONTO-PARALLEL member':<32} {'price':>7}  "

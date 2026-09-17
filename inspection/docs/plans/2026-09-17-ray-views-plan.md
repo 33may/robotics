@@ -391,18 +391,44 @@ def resolve_cell(world, ik, t_flange_cam, center, aabb, h, v, q_near=None):
 
 def resolve_face(world, ik, t_flange_cam, prim, face, fy, height_px,
                  q_near=None):
-    """First family member (shifts ascending, then cone) with samples;
-    closest sample on it. None = the face is honestly inaccessible.
-    Each member's d_min (containment floor, per the 2026-09-17 ruling)
-    reaches sample_ray through clear_m: floor = clear_m + MIN_RANGE_M."""
-    for ray, shift, theta, d_min in face_family(prim, face, fy, height_px):
-        samples = sample_ray(world, ik, t_flange_cam, ray,
-                             clear_m=max(0.0, d_min - MIN_RANGE_M),
-                             q_near=q_near)
+    """Closest safe sample in the face's family, fronto-parallel first.
+    AMENDED by bench ruling 2026-09-17 (Task 4 measured 12-20 cm of
+    standoff lost on `x+` in all four runs): the SHIFT rung is scanned
+    WHOLE and the member whose closest valid sample is shallowest wins
+    (tie-break smaller shift) — it is no longer the first shift with any
+    valid sample. Tilt stays strictly later: cone members are consulted
+    only if no theta=0 member has a sample, first hit then wins.
+    Each member's d_min (containment floor, per the earlier 2026-09-17
+    ruling) reaches sample_ray through clear_m: floor = clear_m +
+    MIN_RANGE_M."""
+    family = face_family(prim, face, fy, height_px)
+    best = None                                   # rung 1: whole shift rung
+    for ray, shift, theta, d_min in family:
+        if theta != 0.0:
+            continue
+        samples = _sample(ray, d_min)
+        if samples and (best is None
+                        or (samples[0].depth, shift) < best[0]):
+            best = ((samples[0].depth, shift), samples, shift, theta)
+    if best is not None:
+        return _resolution(best[1], best[2], best[3])
+    for ray, shift, theta, d_min in family:       # rung 2: cone, first hit
+        if theta == 0.0:
+            continue
+        samples = _sample(ray, d_min)
         if samples:
             return _resolution(samples, shift, theta)
     return None
 ```
+
+**Ordering note (bench amendment 2026-09-17, ruling recorded):** within the
+shift rung the winner is the shallowest valid sample, tie-break smaller
+shift; tilt is strictly last. This replaces "shift ascending before depth
+(predictable ladder)" — the plan's original pick — because Task 4's bench
+measured that order costing 12–20 cm on `x+` in every run while a 2–6 cm
+shift held a θ=0, in-frame sample at 0.12–0.16 m. A shift trades away no
+keystone, so closeness wins. Measured cost of scanning the rung whole:
+52–67 ms per face family (vs 12–40 ms stopping early).
 
 - [ ] **Step 4: Run tests to verify pass** — `p inspection/tests/test_rays.py` → `OK test_rays`.
 

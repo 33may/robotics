@@ -52,8 +52,12 @@ by sampling.
     `RAY_STEP_M` steps, direction locked to the outward normal. A vertical
     plane parallel to the sensor projects as a pure similarity — zero
     keystone at any shift; the face rides lower in frame. Shift cap = FOV
-    containment, computed per depth, not a knob. Shifts walk ascending; the
-    first shift whose ray has any valid sample wins.
+    containment, computed per depth, not a knob. The whole shift rung is
+    scanned and the member whose closest valid sample is SHALLOWEST wins
+    (tie-break: smaller shift) — bench amendment 2026-09-17, replacing
+    "first shift with any valid sample wins", which cost 12–20 cm of
+    standoff on `x+` in all four benched runs. A shift is optically free,
+    so closeness wins.
   - **Rung 2 — tilt:** only when no shift works. The 5°..60° × 12-azimuth
     cone re-expressed as rays through the face center, sampled identically.
   - Views record `{shift, theta, depth}` — evidence states what kind of view
@@ -160,5 +164,6 @@ Branch: `ray-views`; test offline + live bench, then merge.
 
 `RAY_STEP_M = 0.02` (configurable constant, shared by depth and shift
 sampling) · hop entry = farthest valid sample · exit search
-current-depth-first · shift ascending before depth (predictable ladder) ·
+current-depth-first · shift family: shallowest valid sample wins, tie-break
+smaller shift (bench amendment 2026-09-17); tilt strictly last ·
 tilt keeps 12 azimuths · slides roll-locked, hop flips.
