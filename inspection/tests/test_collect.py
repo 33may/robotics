@@ -12,14 +12,19 @@ import numpy as np
 import pytest
 
 from inspection.brain.live import make_event_sink
+from inspection.cell.world import RobotCell
+from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import DEMO_PARK
 from inspection.record.run import Run
 from inspection.record.writer import RunWriter
 from inspection.run.app import config_snapshot, viewsphere_method
-from inspection.run.collect import SweepDriver, joint_l1, rank_candidates
+from inspection.run.collect import (SweepDriver, _default_planner, joint_l1,
+                                    rank_candidates)
 from inspection.run.rigs import FakeRig
 from inspection.run.segmenter import ObjectSegmenter
 from inspection.tests.test_flow_a import DirectPlanSupervisor, StubPub, wait_for
+from inspection.view.rays import RayResolution, resolve_cell
+from inspection.view.viewsphere import T_FLANGE_CAM
 
 
 def test_ranking_picks_cheapest_and_skips_unplannable():
@@ -36,6 +41,129 @@ def test_joint_l1():
 
 def test_joint_l1_single_waypoint_is_free():
     assert joint_l1(np.zeros((1, 6))) == 0.0
+
+
+# ---------------------------------------------------------------------------
+# `_default_planner`: ranks a candidate by the REAL ray transaction's cost —
+# `resolve_cell` + `plan_transaction`, both real, on a real collision world —
+# never the old shell distance the KNOWN-DEGRADED note used to carry.
+
+_BOX_CENTER = (0.05, -0.38, 0.0375)
+_BOX_AABB = ((-0.025, -0.455, 0.0), (0.125, -0.305, 0.075))
+
+
+def _transaction_world():
+    """Real IK, real collision world, real ray samples (the Stage A box
+    world, `test_transaction.py`'s fixture, copied) — the world
+    `_default_planner`'s planner is meant to run on."""
+    w = RobotCell()
+    w.set_object("object", [0.15, 0.15, 0.075],
+                 [0.05, -0.38, 0.0375, 0, 0, 0.17])
+    return w, UR5eIK()
+
+
+def _resolved(w, ik, h, v):
+    res = resolve_cell(w, ik, T_FLANGE_CAM, _BOX_CENTER, _BOX_AABB, h, v,
+                       fy=647.0, height_px=720)
+    assert res is not None, f"fixture cell {(h, v)} must be accessible"
+    return res
+
+
+class _RankSup:
+    """The three attributes `_default_planner` reads off a real
+    Supervisor — `acc.centroid`/`_object_aabb`/`rig.intr` — the exact
+    belief `machine._cell_map` feeds its OWN `resolve_cell` calls. Not a
+    `Supervisor`: this is `_default_planner`'s own narrow contract,
+    isolated from `StubSup` above (which the driver-loop tests own)."""
+
+    class _Acc:
+        def __init__(self, centroid):
+            self.centroid = (None if centroid is None
+                            else np.asarray(centroid, dtype=float))
+
+    class _Rig:
+        intr = {"fy": 647.0, "height": 720}
+
+    def __init__(self, centroid=_BOX_CENTER, aabb=_BOX_AABB):
+        self.acc = self._Acc(centroid)
+        self._object_aabb = aabb
+        self.rig = self._Rig()
+
+
+def _always_refuses(world, ik, q_from, T_target, seed=0, **kw):
+    """A hop planner that never finds a path — `plan_transaction`'s own
+    `planner=` hook (`test_transaction.py`'s `_StubPlanner` pattern),
+    stubbing only the hop so the transaction's real search and leg
+    assembly still run."""
+    return None, {"reason": "stub refusal"}
+
+
+def test_default_planner_costs_the_real_transaction():
+    """Cost is the transaction's joint-L1 over the WHOLE trip — q_now
+    through every leg — not a shell-distance guess, and the transaction's
+    own slide-in still lands on the resolved view pose."""
+    w, ik = _transaction_world()
+    q_now = np.asarray(_resolved(w, ik, 0, 2).q, dtype=float)
+    planner = _default_planner(_RankSup())
+
+    path, cost = planner(w, ik, q_now, (3, 2))
+
+    assert path is not None
+    assert np.allclose(path[0], q_now)
+    assert cost == pytest.approx(joint_l1(path))
+    target = _resolved(w, ik, 3, 2)
+    assert np.allclose(ik.fk(path[-1]), target.T_flange, atol=1e-6)
+
+
+def test_default_planner_ranks_cheaper_transaction_first():
+    """Two real, resolvable cells cost differently by real joint travel —
+    the whole point of replacing the shell-distance ranker — and a third,
+    unresolvable cell never enters the ranking at all."""
+    w, ik = _transaction_world()
+    q_now = np.asarray(_resolved(w, ik, 0, 2).q, dtype=float)
+    planner = _default_planner(_RankSup())
+    assert resolve_cell(w, ik, T_FLANGE_CAM, _BOX_CENTER, _BOX_AABB, 0, 0,
+                        fy=647.0, height_px=720) is None, \
+        "fixture cell (0, 0) must be the unresolvable one"
+
+    def cost_fn(cell):
+        return planner(w, ik, q_now, cell)[1]
+
+    ranked = rank_candidates([(6, 2), (3, 2), (0, 0)], cost_fn)
+
+    assert ranked == [(3, 2), (6, 2)], "cheapest real transaction first"
+
+
+def test_default_planner_drops_an_unresolvable_cell():
+    """A cell whose ray never resolves costs (None, None) — dropped by
+    `rank_candidates`, never crashed on."""
+    w, ik = _transaction_world()
+    q_now = np.asarray(_resolved(w, ik, 0, 2).q, dtype=float)
+    planner = _default_planner(_RankSup())
+
+    assert planner(w, ik, q_now, (0, 0)) == (None, None)
+
+
+def test_default_planner_drops_a_cell_whose_transaction_refuses():
+    """A cell that DOES resolve but whose transition cannot be planned —
+    the KNOWN-DEGRADED gap the shell ranker used to disagree on — also
+    costs (None, None): dropped, not crashed on."""
+    w, ik = _transaction_world()
+    q_now = np.asarray(_resolved(w, ik, 0, 2).q, dtype=float)
+    planner = _default_planner(_RankSup(), hop_planner=_always_refuses)
+
+    path, cost = planner(w, ik, q_now, (3, 2))     # (3, 2) resolves fine
+
+    assert (path, cost) == (None, None)
+
+
+def test_default_planner_needs_a_belief_to_rank_against():
+    """No object yet -> no centroid/aabb -> honestly nothing to rank
+    (`machine._cell_map`'s own guard, mirrored here) — never crashed on."""
+    w, ik = _transaction_world()
+    planner = _default_planner(_RankSup(centroid=None, aabb=None))
+
+    assert planner(w, ik, np.zeros(6), (3, 2)) == (None, None)
 
 
 class AutoApprove(threading.Thread):
@@ -117,7 +245,13 @@ class StubSup:
         self.sphere, self.seed = None, 0
         self.acc, self.rig = self._Acc(), self._Rig()
         self.visited, self.blocked = set(), set()
-        self._reach = {(h, 0): 0.0 for h in range(cells)}
+        # RayResolution-shaped (Task 4): these driver-loop tests only ever
+        # read `r is not None` off `_reach` — the fields below are never
+        # inspected — but the type must be real, not a float lookalike,
+        # now that `sup._reach` holds resolved rays everywhere else.
+        self._reach = {(h, 0): RayResolution(None, None, None, 0.0, 0.0,
+                                             0.0, 0.0, [])
+                       for h in range(cells)}
 
 
 class CountingMover:
@@ -353,5 +487,10 @@ if __name__ == "__main__":
     test_ranking_picks_cheapest_and_skips_unplannable()
     test_joint_l1()
     test_joint_l1_single_waypoint_is_free()
+    test_default_planner_costs_the_real_transaction()
+    test_default_planner_ranks_cheaper_transaction_first()
+    test_default_planner_drops_an_unresolvable_cell()
+    test_default_planner_drops_a_cell_whose_transaction_refuses()
+    test_default_planner_needs_a_belief_to_rank_against()
     test_sweep_driver_visits_every_reachable_cell(Path(tempfile.mkdtemp()))
     print("OK test_collect")

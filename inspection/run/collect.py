@@ -34,6 +34,10 @@ from inspection.brain.live import SupervisorMover
 from inspection.cell.geometry import object_box
 from inspection.cell.world import RobotCell
 from inspection.motion.ik import UR5eIK
+from inspection.motion.plan import plan_viewpoint
+from inspection.motion.transaction import plan_transaction
+from inspection.view.rays import resolve_cell
+from inspection.view.viewsphere import T_FLANGE_CAM
 
 #: Who this driver's mover tells the record chose the view. Rides every
 #: `view/request` via `SupervisorMover.decider` and lands in the step's
@@ -91,35 +95,57 @@ def _mirror_object_box(world, acc) -> None:
     world.set_object("object", dims.tolist(), pose, parent="base")
 
 
-def _default_planner(sup, seed: int = 0):
+def _default_planner(sup, seed: int = 0, hop_planner=plan_viewpoint):
     """The default `(world, ik, q_now, cell) -> (path | None, cost)`.
 
-    KNOWN-DEGRADED until Stage B task 4 (ray-views): cells are rays now and
-    `sup._reach` holds a resolved depth/`T_flange` per cell, while this
-    ranker still plans to `sphere.plan_to_cell`'s point on a shell whose
-    radius is merely the MEAN of those depths. The two criteria therefore
-    disagree by construction — `SweepDriver._candidates` opens a cell that
-    this may fail to plan, `rank_candidates` then drops it, and a pass where
-    every cell is dropped ends the sweep at `sweep_stuck`. Task 4 replaces
-    this whole function with `resolve_cell` + `plan_transaction` on the
-    sweep's private world; until then, do not read a refusal from here as a
-    statement about the cell.
+    Ranks a candidate the way the REAL move will be planned: `resolve_cell`
+    finds the cell's closest safe sample on THIS thread's own world (never
+    `sup.world`), then `plan_transaction` plans the three-leg move to it
+    from `q_now` — no slide-out (`current=None`): a ranking pass never
+    assumes the arm sits on a ray, only the real move at request time does.
+    Cost is `joint_l1` over the whole trip, `q_now` followed by every leg's
+    waypoints in order (`plan_transaction`'s own smoke test concatenates
+    a transaction the same way) — `hop`/`slide_in` each repeat the seam
+    they continue from, a zero-length edge that costs nothing.
 
-    Reads `sup.sphere` only — never `sup.world`/`sup.ik` — and only to ask
-    it for cell geometry. `sup.sphere` is safe to read from this thread
-    without a lock: `machine.py:_recenter` always REPLACES it wholesale
-    (`self.sphere = ViewSphere(...)`), never mutates one in place, so a
-    reference taken here cannot change underneath a single `plan_to_cell`
-    call. Planning itself runs entirely against the caller's `world`/`ik`.
+    Replaces the KNOWN-DEGRADED shell ranker (Stage B task 4, ray-views):
+    that one plans to `sphere.plan_to_cell`'s point on a shell radius that
+    is merely the MEAN of the rays' resolved depths, disagreeing by
+    construction with the accessibility gate now that cells are rays. A
+    cell whose ray does not resolve, or whose transition does not plan,
+    costs `(None, None)` — dropped by `rank_candidates`, never crashed on.
+
+    Reads `sup.acc.centroid`/`sup._object_aabb`/`sup.rig.intr` only — never
+    `sup.world`/`sup.ik` — the exact belief `machine._cell_map` feeds its
+    OWN `resolve_cell` calls (its no-fit fallback path; this ranker never
+    reads `sup._face_prim` — a boxguard fit tightens the accessibility
+    gate's bound only, sweeps rank cells, never faces). All three are
+    replaced wholesale (`machine._recenter`'s `_object_aabb` assignment,
+    `CloudAccumulator.add`'s `_points` reassignment on every fuse), never
+    mutated in place, so a snapshot taken here cannot change underneath one
+    `resolve_cell`/`plan_transaction` call — the same argument `sup.sphere`
+    relied on before. `hop_planner` rides straight through to
+    `plan_transaction`'s own `planner=` (default `plan_viewpoint`, the real
+    ladder) — injectable so a caller can stub the hop the way
+    `test_transaction.py`'s `_StubPlanner` does, without faking
+    `plan_transaction` itself.
     """
     def planner(world, ik, q_now, cell):
-        sphere = sup.sphere
-        if sphere is None:
+        center, aabb = sup.acc.centroid, sup._object_aabb
+        if center is None or aabb is None:
             return None, None
         h, v = cell
-        path, _rep, _roll = sphere.plan_to_cell(world, ik, q_now, h, v,
-                                                 seed=seed)
-        return path, (None if path is None else joint_l1(path))
+        target = resolve_cell(world, ik, T_FLANGE_CAM, center, aabb, h, v,
+                              sup.rig.intr["fy"], sup.rig.intr["height"])
+        if target is None:
+            return None, None
+        legs = plan_transaction(world, ik, T_FLANGE_CAM, None, target, q_now,
+                                seed=seed, planner=hop_planner)
+        if legs is None:
+            return None, None
+        path = [np.asarray(q_now, dtype=float), *legs.out, *legs.hop,
+               *legs.slide_in]
+        return path, joint_l1(path)
     return planner
 
 
@@ -154,8 +180,9 @@ class SweepDriver(threading.Thread):
     teardown, `run/app.py:collect`) and a Supervisor that has reached
     `fault`/`done`. Without them, a faulted run leaves this thread ranking
     an unchanged candidate set forever — every request refused instantly by
-    `SupervisorMover`'s own busy check — hammering `plan_to_cell` and
-    `rig.q()` on hardware the teardown is in the middle of closing.
+    `SupervisorMover`'s own busy check — hammering `resolve_cell`/
+    `plan_transaction` and `rig.q()` on hardware the teardown is in the
+    middle of closing.
     """
 
     def __init__(self, sup, run_dir, on_event=None, planner=None,
