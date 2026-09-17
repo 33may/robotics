@@ -340,15 +340,21 @@ def test_resolve_cell_picks_closest_sample():
     assert np.isclose(res.depth, raw[0].depth)
 
 
-def test_resolve_face_side_wins_fronto_parallel():
-    from inspection.view.rays import resolve_face
+def test_resolve_face_side_uses_shift_family():
+    # AMENDED by ruling 2026-09-17: execution proved no fixture lands in
+    # the "shift>0 wins" gap (tall box: exact clears; real-height box: the
+    # whole shift family is blocked and the cone wins). The unit contract
+    # is the FAMILY: theta==0 proves a fronto-parallel member won, and
+    # Task 2's ordering test already pins shifts-before-tilts.
+    from inspection.view.rays import MIN_RANGE_M, resolve_face
     w, ik = _box_world()
     p = _box_prim()
     res = resolve_face(w, ik, T_FLANGE_CAM, p, "y-", fy=647.0,
                        height_px=720)
     assert res is not None
-    assert res.theta_deg == 0.0, "shift rung must win before any tilt"
-    assert res.shift > 0.0, "side face of a 7.5cm box needs a lift"
+    assert res.theta_deg == 0.0, "shift family must win before any tilt"
+    assert res.shift >= 0.0
+    assert res.depth >= MIN_RANGE_M - 1e-9
 
 
 def test_resolve_face_buried_is_none():
