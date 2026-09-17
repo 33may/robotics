@@ -135,7 +135,7 @@ Decomposition, coverage, transcripts untouched.
 |--------------------------------------------|------------------------------|--------------------|
 | one ray validity                           | ~18 depths × 2 rolls × 8 br  | ~6 ms              |
 | full 36-cell refresh (per refit)           | 36 rays                      | ~230 ms            |
-| face family, typical (shift rung hits)     | 1–3 rays                     | ~20 ms             |
+| face family, typical (full shift scan)     | ~8–10 rays                   | ~60 ms (measured 52–67; re-quoted after the 2026-09-17 ordering amendment made the full-rung scan the typical path) |
 | face family, worst (full cone)             | ~8 + 144 rays                | ~1 s               |
 | slide-in resolve                           | segment validation only      | <1 ms              |
 | slide-out search                           | ≤18 plans, linear            | 30–60 ms typ.      |
