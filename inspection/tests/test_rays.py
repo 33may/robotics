@@ -136,6 +136,46 @@ def test_face_family_dmin_is_containment():
     assert np.isclose(d0, (2 * 647.0 / 720) * (ext_b / 2.0), atol=1e-9)
 
 
+def test_resolve_cell_picks_closest_sample():
+    from inspection.view.rays import (Ray, cell_ray, cell_clear_m,
+                                      resolve_cell, sample_ray)
+    w, ik = _box_world()
+    aabb = ((-0.025, -0.455, 0.0), (0.125, -0.305, 0.075))
+    res = resolve_cell(w, ik, T_FLANGE_CAM, (0.05, -0.38, 0.0375), aabb,
+                       h=3, v=1)
+    assert res is not None
+    raw = sample_ray(w, ik, T_FLANGE_CAM,
+                     cell_ray((0.05, -0.38, 0.0375), 3, 1),
+                     clear_m=cell_clear_m(
+                         aabb, cell_ray((0.05, -0.38, 0.0375), 3, 1)))
+    assert np.isclose(res.depth, raw[0].depth)
+
+
+def test_resolve_face_side_uses_shift_family():
+    # AMENDED by ruling 2026-09-17: execution proved no fixture lands in
+    # the "shift>0 wins" gap (tall box: exact clears; real-height box: the
+    # whole shift family is blocked and the cone wins). The unit contract
+    # is the FAMILY: theta==0 proves a fronto-parallel member won, and
+    # Task 2's ordering test already pins shifts-before-tilts.
+    from inspection.view.rays import MIN_RANGE_M, resolve_face
+    w, ik = _box_world()
+    p = _box_prim()
+    res = resolve_face(w, ik, T_FLANGE_CAM, p, "y-", fy=647.0,
+                       height_px=720)
+    assert res is not None
+    assert res.theta_deg == 0.0, "shift family must win before any tilt"
+    assert res.shift >= 0.0
+    assert res.depth >= MIN_RANGE_M - 1e-9
+
+
+def test_resolve_face_buried_is_none():
+    from inspection.view.rays import resolve_face
+    w, ik = _box_world()
+    p = _box_prim(center=(0.05, -0.38, -0.5))     # face underground
+    assert resolve_face(w, ik, T_FLANGE_CAM, p, "y-", fy=647.0,
+                        height_px=720) is None
+
+
 def main():
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

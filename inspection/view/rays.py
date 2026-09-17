@@ -146,3 +146,37 @@ def face_family(prim, face, fy, height_px):
                         MIN_RANGE_M))
         th += CONE_STEP_DEG
     return out
+
+
+RayResolution = namedtuple("RayResolution",
+                           ["T_cam", "T_flange", "q", "depth", "shift",
+                            "theta_deg", "roll", "samples"])
+
+
+def _resolution(samples, shift, theta):
+    s = samples[0]
+    return RayResolution(s.T_cam, s.T_flange, s.q, s.depth, shift, theta,
+                         s.roll, samples)
+
+
+def resolve_cell(world, ik, t_flange_cam, center, aabb, h, v, q_near=None):
+    """Closest safe sample on cell {h,v}'s ray, or None (inaccessible)."""
+    ray = cell_ray(center, h, v)
+    samples = sample_ray(world, ik, t_flange_cam, ray,
+                         clear_m=cell_clear_m(aabb, ray), q_near=q_near)
+    return _resolution(samples, 0.0, 0.0) if samples else None
+
+
+def resolve_face(world, ik, t_flange_cam, prim, face, fy, height_px,
+                 q_near=None):
+    """First family member (shifts ascending, then cone) with samples;
+    closest sample on it. None = the face is honestly inaccessible.
+    Each member's d_min (containment floor, per the 2026-09-17 ruling)
+    reaches sample_ray through clear_m: floor = clear_m + MIN_RANGE_M."""
+    for ray, shift, theta, d_min in face_family(prim, face, fy, height_px):
+        samples = sample_ray(world, ik, t_flange_cam, ray,
+                             clear_m=max(0.0, d_min - MIN_RANGE_M),
+                             q_near=q_near)
+        if samples:
+            return _resolution(samples, shift, theta)
+    return None
