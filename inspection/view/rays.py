@@ -17,6 +17,11 @@ from inspection.view.viewsphere import ROLLS
 RAY_STEP_M = 0.02
 #: D405 minimum depth range at 720p (datasheet + camera.py note).
 MIN_RANGE_M = 0.105
+#: Containment margin [px]: the principal point is NOT at the frame centre
+#: (D405 ppy≈356.7 vs 360 — measured -2 px corner cuts on the bench) plus
+#: numeric slack. Anton 2026-09-17: "check the whole face is actually in
+#: the frame" — containment must hold with the real sensor, not the ideal.
+FOV_MARGIN_PX = 14.0
 
 
 @dataclass(frozen=True)
@@ -92,11 +97,13 @@ def cell_clear_m(aabb, ray):
 
 def _d_contain(fy, height_px, half_span):
     """Closest depth at which a vertical half-span [m] stays inside the
-    frame — the inverse of shift_max(d) = d*height_px/(2*fy) - half_span.
-    FOV containment is a per-depth constraint (controller ruling,
-    task-2-report.md): it cannot cap a shift at a fixed MIN_RANGE_M depth,
-    it becomes each family member's own MINIMUM admissible depth instead."""
-    return (2.0 * fy / height_px) * half_span
+    frame — the inverse of shift_max(d) = d*(height_px/2-margin)/fy -
+    half_span. FOV containment is a per-depth constraint (controller
+    ruling, task-2-report.md): it cannot cap a shift at a fixed MIN_RANGE_M
+    depth, it becomes each family member's own MINIMUM admissible depth.
+    FOV_MARGIN_PX keeps the promise on the real sensor (asymmetric
+    principal point) instead of the ideal one."""
+    return fy * half_span / (height_px / 2.0 - FOV_MARGIN_PX)
 
 
 def face_family(prim, face, fy, height_px):
@@ -112,20 +119,32 @@ def face_family(prim, face, fy, height_px):
     member -> face inaccessible, honestly."""
     center, normal, (ext_a, ext_b) = face_frame(prim, face)
     out = []
+    # Horizontal containment: the face's width must also fit. D405 modes
+    # are 16:9 with fx≈fy (647.5 vs 646.9), so the width bound reuses fy.
+    width_px = height_px * 16.0 / 9.0
+    d_wide = fy * (ext_a / 2.0) / (width_px / 2.0 - FOV_MARGIN_PX)
     if abs(normal[2]) < 0.5:                      # side faces shift up
         # d_min <= R_MAX is the real cap now; equivalently
-        # s <= R_MAX*height_px/(2*fy) - ext_b/2 (same shape as the old cap,
-        # R_MAX in place of MIN_RANGE_M — enumerate while a depth exists).
-        cap = R_MAX * height_px / (2.0 * fy) - ext_b / 2.0
+        # s <= R_MAX*(height_px/2-margin)/fy - ext_b/2 (same shape as the
+        # old cap, R_MAX in place of MIN_RANGE_M — enumerate while a depth
+        # exists).
+        cap = R_MAX * (height_px / 2.0 - FOV_MARGIN_PX) / fy - ext_b / 2.0
         s = 0.0
         while s <= cap + 1e-9:
-            d_min = max(MIN_RANGE_M, _d_contain(fy, height_px, s + ext_b / 2.0))
+            d_min = max(MIN_RANGE_M, d_wide,
+                        _d_contain(fy, height_px, s + ext_b / 2.0))
             out.append((Ray(tuple(center + np.array([0, 0, s])),
                             tuple(normal)), float(s), 0.0, float(d_min)))
             s += RAY_STEP_M
     else:                                         # top face: exact only
-        d_min = max(MIN_RANGE_M,
-                    _d_contain(fy, height_px, max(ext_a, ext_b) / 2.0))
+        # The camera roll is pinned to {0, 180} while the box carries an
+        # arbitrary yaw, so the face's IMAGE footprint is the rotated
+        # rectangle — bound its half-DIAGONAL, which contains every yaw
+        # (demo1: the unrotated bound cut the top corners by 41 px).
+        # Rolling the top camera to the box yaw would buy those pixels
+        # back but is a design change (slides are roll-locked by ruling).
+        half_diag = float(np.hypot(ext_a, ext_b)) / 2.0
+        d_min = max(MIN_RANGE_M, _d_contain(fy, height_px, half_diag))
         out.append((Ray(tuple(center), tuple(normal)), 0.0, 0.0,
                     float(d_min)))
     a = np.array([0.0, 0.0, 1.0])

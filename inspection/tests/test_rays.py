@@ -133,7 +133,7 @@ def test_face_family_dmin_is_containment():
     # fixed-MIN_RANGE_M cap.
     s0, d0 = shifts[0]
     assert s0 == 0.0
-    assert np.isclose(d0, (2 * 647.0 / 720) * (ext_b / 2.0), atol=1e-9)
+    assert d0 >= _d_contain(647.0, 720, ext_b / 2.0) - 1e-9
 
 
 def test_resolve_cell_picks_closest_sample():
@@ -174,6 +174,43 @@ def test_resolve_face_buried_is_none():
     p = _box_prim(center=(0.05, -0.38, -0.5))     # face underground
     assert resolve_face(w, ik, T_FLANGE_CAM, p, "y-", fy=647.0,
                         height_px=720) is None
+
+
+def test_face_family_contains_whole_rotated_face():
+    """Anton 2026-09-17: 'check the whole face is actually in the frame' —
+    every SHIFT/TOP family member (the rungs that promise containment; the
+    cone is the declared degraded rung) must fit all four face corners
+    inside the frame at its own d_min, with the real sensor's asymmetric
+    principal point (D405 ppy≈356.7, not H/2) and the box yaw rotating the
+    top face's image footprint. The old bound used the unrotated extent and
+    cut demo1's top-face corners by 41 px."""
+    from inspection.view.faceview import _FACE_DEF, face_cam_pose
+    from inspection.view.rays import face_family
+    fy, H, W = 647.0, 720, 1280
+    K = np.array([[fy, 0.0, 633.0], [0.0, fy, 356.7], [0.0, 0.0, 1.0]])
+    p = _box_prim(l=0.1485, w=0.149, h=0.0753, yaw=np.deg2rad(10.0),
+                  center=(0.05, -0.376, 0.0465))      # demo1's belief box
+    T_p = np.array(p.pose)
+    he = np.asarray(p.params["extents"]) / 2.0
+    sgn = np.array([[a, b, c] for a in (-1, 1) for b in (-1, 1)
+                    for c in (-1, 1)])
+    corners8 = T_p[:3, 3] + (sgn * he) @ T_p[:3, :3].T
+    for face in ("top", "y-", "x+"):
+        ax, sg, _ = _FACE_DEF[face]
+        four = corners8[[i for i in range(8) if sgn[i][ax] == sg]]
+        for ray, s, theta, d_min in face_family(p, face, fy, H):
+            if theta != 0.0:
+                continue                              # cone: exempt by design
+            T = face_cam_pose(np.array(ray.anchor), np.array(ray.direction),
+                              float(d_min), 0.0)
+            R = np.column_stack([-T[:3, 1], -T[:3, 2], T[:3, 0]])
+            pc = (four - T[:3, 3]) @ R
+            assert np.all(pc[:, 2] > 0)
+            uv = (K @ (pc / pc[:, 2:3]).T).T[:, :2]
+            assert uv[:, 0].min() >= 0 and uv[:, 0].max() <= W, \
+                (face, s, d_min, uv[:, 0].min(), uv[:, 0].max())
+            assert uv[:, 1].min() >= 0 and uv[:, 1].max() <= H, \
+                (face, s, d_min, uv[:, 1].min(), uv[:, 1].max())
 
 
 def main():
