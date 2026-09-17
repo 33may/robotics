@@ -11,8 +11,8 @@ rejected, the resulting cloud extent (raw and trimmed), and how far the new
 points reached from the cloud that existed before them — the quantity
 `JUMP_GATE_M` is thresholding.
 
-    p inspection/investigation/cloud_replay.py --run 2408-cup2
-    p inspection/investigation/cloud_replay.py --run 2408-cup2 --gate 0.04
+    p inspection/investigation/run_replay/cloud_replay.py --run 2408-cup2
+    p inspection/investigation/run_replay/cloud_replay.py --run 2408-cup2 --gate 0.04
 """
 import argparse
 import json

@@ -54,9 +54,9 @@ OpenMP-parallel, seeding does not make it repeatable), and only there does
 exact. That is not fitting to the answer: `fused/cloud.npy` is never an
 input, only the verdict.
 
-    p inspection/investigation/step_replay.py 0809-box2
-    p inspection/investigation/step_replay.py --run 0809-box2
-    p inspection/investigation/step_replay.py --run 0809-box2 --nopin
+    p inspection/investigation/run_replay/step_replay.py 0809-box2
+    p inspection/investigation/run_replay/step_replay.py --run 0809-box2
+    p inspection/investigation/run_replay/step_replay.py --run 0809-box2 --nopin
 
 Everything it writes goes to /tmp/step_replay/<run>/ — step_NNN.ply/.npy
 (NNN is the steps/ dir the step fused), the three renders, summary.json.
@@ -162,7 +162,7 @@ class StoredMask:
     def __init__(self, stored):
         self.stored, self.calls, self.misses = stored, 0, 0
 
-    def mask_for(self, rgb, box, T_base_cam=None):
+    def mask_for(self, rgb, box, T_base_cam=None, src_px=None):
         self.calls += 1
         if rgb is None or box is None or self.stored is None:
             self.misses += 1

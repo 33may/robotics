@@ -12,8 +12,8 @@ Anything the USD does NOT contain (Anton's camera brackets, the blue plate,
 cables) is drawn from `cell.yaml`'s measured height only, and marked as
 unverified along X — that gap is the whole safety question.
 
-    p inspection/investigation/hull_blueprint.py
-    p inspection/investigation/hull_blueprint.py --refresh   # re-read the USD
+    p inspection/investigation/tool_hull/hull_blueprint.py
+    p inspection/investigation/tool_hull/hull_blueprint.py --refresh   # re-read the USD
 """
 import argparse
 import json
@@ -89,7 +89,7 @@ def usd_parts(refresh=False):
         return json.loads(CACHE.read_text())
     from pxr import Usd
     from inspection.cell.usd_preview import DEFAULT_USD
-    from inspection.investigation.tool_hull_from_usd import part_bounds
+    from inspection.investigation.tool_hull.tool_hull_from_usd import part_bounds
     stage = Usd.Stage.Open(str(DEFAULT_USD))
     parts = {k.rsplit("/", 1)[-1]: [(np.asarray(lo) * 1000).tolist(),
                                     (np.asarray(hi) * 1000).tolist()]

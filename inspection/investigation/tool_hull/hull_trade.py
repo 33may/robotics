@@ -17,7 +17,7 @@ position (X=+142.4, Z=-47.5 mm), then inflated. A hull that scores well by
 under-modelling the tool is how you crash one — score is not the objective,
 it only breaks ties between hulls that are all truthful.
 
-    p inspection/investigation/hull_trade.py --run 2408-cup1
+    p inspection/investigation/tool_hull/hull_trade.py --run 2408-cup1
 """
 import argparse
 import sys
@@ -30,7 +30,7 @@ import yaml
 
 import inspection.view.viewsphere as vs
 from inspection.cell.world import CELL_YAML, RobotCell
-from inspection.investigation.block_report import largest_component, probe
+from inspection.investigation.tool_hull.block_report import largest_component, probe
 from inspection.motion.ik import UR5eIK
 
 RUNS = Path(__file__).resolve().parents[1] / "data/runs"
@@ -38,7 +38,7 @@ RUNS = Path(__file__).resolve().parents[1] / "data/runs"
 #: (name, [(x0, x1, half_width, z0, z1), ...]) in millimetres, flange frame.
 #: The cross comes from `hull_blueprint`, which is also what verifies it covers
 #: every CAD part — one definition, checked in one place.
-from inspection.investigation.hull_blueprint import (CURRENT, PROPOSED,
+from inspection.investigation.tool_hull.hull_blueprint import (CURRENT, PROPOSED,
                                                      coverage_gaps, usd_parts,
                                                      MOUNT_STACK_MM)
 

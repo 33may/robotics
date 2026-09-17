@@ -7,8 +7,8 @@ REAL D405 intrinsics, and measure the pixel bounding box. Answers the question
 the design formula hand-waves: "object fills f of the frame" — which extent,
 measured how, and how much does it swing between cells?
 
-    p inspection/investigation/fill_probe.py --run 2408-seeded --r 0.35
-    p inspection/investigation/fill_probe.py --run 2408-seeded --fill 0.45
+    p inspection/investigation/view_framing/fill_probe.py --run 2408-seeded --r 0.35
+    p inspection/investigation/view_framing/fill_probe.py --run 2408-seeded --fill 0.45
 """
 import argparse
 import json
@@ -20,12 +20,13 @@ import numpy as np
 from inspection.view.viewsphere import ViewSphere
 from inspection.view.grid import H_BINS, V_ELEVATIONS
 
-RUNS = Path(__file__).resolve().parents[1] / "data/runs"
+RUNS = Path(__file__).resolve().parents[2] / "data/runs"
 
 
 def load_run(name):
     d = RUNS / name
-    cloud = np.load(d / "fused_cloud.npy")
+    p = d / "fused_cloud.npy"          # old layout; post-reorg: fused/cloud.npy
+    cloud = np.load(p if p.exists() else d / "fused" / "cloud.npy")
     intr = json.loads((d / "session.json").read_text())["intrinsics"]["color"]
     return cloud, intr
 
