@@ -114,9 +114,14 @@ def _slide(world, ik, samples, q_start, step):
 
 
 def _roll_locked(samples, roll):
-    """The leading run of `samples` that keeps `roll`. Stage A's sampler emits
-    ONE sample per depth (first roll that solves wins), so a sample list can
-    change roll partway out; a slide may not follow it there."""
+    """The leading run of `samples` that keeps `roll` — the safety filter on
+    the slide's roll lock.
+
+    `sample_ray` emits uniform-roll lists (task 2b), so today this passes the
+    whole list through. It stays because the invariant belongs to the SLIDE,
+    not to the sampler: a list that changes roll partway out would otherwise
+    put a wrist flip inside a radial approach, and that must not become
+    possible again through a sampler change nobody re-read this file for."""
     run = []
     for s in samples:
         if abs(s.roll - roll) > 1e-9:
@@ -169,7 +174,10 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
     # exists to prevent (ruled, task 2b). A corridor that is genuinely ONE
     # sample long keeps it as the honest last resort — refusing there would
     # mark cells transition-inaccessible that Stage A proved reachable.
-    entries = list(range(reach - 1, 0, -1))[:max_entries] or [0]
+    if max_entries < 1:
+        raise ValueError("max_entries must be >= 1")
+    wide = list(range(reach - 1, 0, -1)) or [0]      # reach 1: the last resort
+    entries = wide[:max_entries]
 
     # --- the slide-out corridor, walked once ------------------------------
     out_chain = []

@@ -60,33 +60,31 @@ def sample_ray(world, ik, t_flange_cam, ray, clear_m=0.0, q_near=None):
     first flip: on cell {3,1} of the bench box that left a ONE-sample
     corridor, and the hop then delivered the view pose laterally — the
     arrival mode hop-then-slide exists to prevent. Both rolls are now
-    evaluated at every depth under the same floors, and the winner's whole
-    run is returned. The ENDPOINT is unchanged by construction: element 0 is
+    candidates at every depth under the same floors, and ONE roll's whole run
+    is returned. The ENDPOINT is unchanged by construction: element 0 is
     still the closest valid sample on the ray.
 
-    Cost: both rolls are now checked at every depth (~2x the IK+collision
-    work of the old early-exit), which is the workload the design's ~6 ms/ray
-    estimate was written for.
+    Cost: both rolls are checked only until the winner is DECIDED — the first
+    valid (depth, roll) pair, scanning depths ascending and rolls in ROLLS
+    order, settles it, and from there out only the winning roll is evaluated.
+    The loser's remaining depths would be computed just to be discarded.
     """
     t_fc_inv = np.linalg.inv(np.asarray(t_flange_cam, dtype=float))
     lo = clear_m + MIN_RANGE_M
     d0 = float(np.ceil(lo / RAY_STEP_M)) * RAY_STEP_M
-    per_roll = {float(roll): [] for roll in ROLLS}
+    winner, out = None, []
     for d in np.arange(d0, R_MAX + 1e-9, RAY_STEP_M):
-        for roll in ROLLS:
+        for roll in (ROLLS if winner is None else (winner,)):
             T_cam = face_cam_pose(ray.anchor, ray.direction, float(d), roll)
             T_fl = T_cam @ t_fc_inv
             free = [q for q in ik.branches(T_fl, q_near=q_near)
                     if not world.is_colliding(q)]
             if free:
-                per_roll[float(roll)].append(
-                    Sample(float(d), float(roll), free[0], T_cam, T_fl))
-    best = []
-    for roll in ROLLS:                    # ROLLS order breaks a depth tie
-        run = per_roll[float(roll)]
-        if run and (not best or run[0].depth < best[0].depth):
-            best = run
-    return best
+                winner = roll             # the first valid pair decides
+                out.append(Sample(float(d), float(roll), free[0], T_cam, T_fl))
+                break                     # the other roll at this depth is
+                                          # the loser's list, never ours
+    return out
 
 
 CONE_STEP_DEG, CONE_MAX_DEG, CONE_AZIMUTHS = 5.0, 60.0, 12
@@ -281,11 +279,13 @@ def cell_map(world, ik, t_flange_cam, center, aabb, fy, height_px,
 
     A thin loop over `resolve_cell`; the belief `corners` are computed once
     by the caller and shared by every cell (they describe the OBJECT, not
-    the view). Cell order matches `ViewSphere.cells()`. Measured ~240-260 ms
-    for the 36-cell grid on the bench box (~180 ms before per-roll sample
-    lists, task 2b, which doubled the per-depth IK/collision work — the
-    design's own ~230 ms estimate assumed both rolls), which is the budget
-    the machine pays once per plan and once per fuse.
+    the view). Cell order matches `ViewSphere.cells()`. Measured ~140-150 ms
+    for the 36-cell grid on the bench box — below the design's ~230 ms
+    estimate and below Stage A's own ~175 ms, because per-roll sampling
+    (task 2b) pays both rolls only until the winning roll is decided and
+    then stops probing the loser, where Stage A re-tried roll 0 at every
+    depth of a roll-pi ray. This is the budget the machine pays once per
+    plan and once per fuse.
     """
     return {(h, v): resolve_cell(world, ik, t_flange_cam, center, aabb, h, v,
                                  fy, height_px, q_near=q_near,

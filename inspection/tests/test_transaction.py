@@ -407,6 +407,21 @@ def test_widening_never_arrives_laterally():
     assert np.allclose(stub.entries[0], target.samples[1].T_flange), \
         f"the one entry is the second sample at {d_entry:.2f} m"
 
+    # ...and the floor is not a slicing accident: a full corridor with room
+    # for exactly ONE entry still refuses to offer the view pose, and asking
+    # for zero entries is a caller error, not a licence to arrive laterally.
+    narrow = _StubPlanner(fail=lambda s, q, T: True)
+    assert plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
+                            planner=narrow, max_entries=1) is None
+    assert len(narrow.entries) == 1
+    assert not any(np.allclose(c.T, target.T_flange) for c in narrow.calls)
+    try:
+        plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
+                         planner=_StubPlanner(), max_entries=0)
+        raise AssertionError("max_entries=0 must be refused, not widened to 0")
+    except ValueError:
+        pass
+
 
 def test_one_sample_corridor_still_plans_laterally():
     """...and a GENUINELY one-sample corridor keeps `e == 0` as the honest
