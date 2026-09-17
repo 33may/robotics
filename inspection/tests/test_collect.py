@@ -13,6 +13,7 @@ import pytest
 
 from inspection.brain.live import make_event_sink
 from inspection.cell.world import RobotCell
+from inspection.fit.contract import Primitive
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import DEMO_PARK
 from inspection.record.run import Run
@@ -23,7 +24,7 @@ from inspection.run.collect import (SweepDriver, _default_planner, joint_l1,
 from inspection.run.rigs import FakeRig
 from inspection.run.segmenter import ObjectSegmenter
 from inspection.tests.test_flow_a import DirectPlanSupervisor, StubPub, wait_for
-from inspection.view.rays import RayResolution, resolve_cell
+from inspection.view.rays import RayResolution, box_corners, resolve_cell
 from inspection.view.viewsphere import T_FLANGE_CAM
 
 
@@ -70,11 +71,12 @@ def _resolved(w, ik, h, v):
 
 
 class _RankSup:
-    """The three attributes `_default_planner` reads off a real
-    Supervisor — `acc.centroid`/`_object_aabb`/`rig.intr` — the exact
-    belief `machine._cell_map` feeds its OWN `resolve_cell` calls. Not a
-    `Supervisor`: this is `_default_planner`'s own narrow contract,
-    isolated from `StubSup` above (which the driver-loop tests own)."""
+    """The four attributes `_default_planner` reads off a real
+    Supervisor — `acc.centroid`/`_object_aabb`/`_face_prim`/`rig.intr` —
+    the exact belief `machine._cell_map` feeds its OWN `resolve_cell`
+    calls. Not a `Supervisor`: this is `_default_planner`'s own narrow
+    contract, isolated from `StubSup` above (which the driver-loop tests
+    own)."""
 
     class _Acc:
         def __init__(self, centroid):
@@ -84,10 +86,25 @@ class _RankSup:
     class _Rig:
         intr = {"fy": 647.0, "height": 720}
 
-    def __init__(self, centroid=_BOX_CENTER, aabb=_BOX_AABB):
+    def __init__(self, centroid=_BOX_CENTER, aabb=_BOX_AABB, face_prim=None):
         self.acc = self._Acc(centroid)
         self._object_aabb = aabb
+        self._face_prim = face_prim
         self.rig = self._Rig()
+
+
+def _prim(dims, pose6):
+    """A synthetic boxguard `Primitive` at `(dims, pose6)` — a tighter,
+    UNPADDED hull than the world's padded collision box, the way a real
+    boxguard fit narrows `_object_aabb`'s margin (`test_machine.py`'s
+    `_acc_prim`, built directly instead of fit from points so the test
+    controls exactly how much tighter it is)."""
+    cx, cy, cz, rx, ry, yaw = pose6
+    c, s = np.cos(yaw), np.sin(yaw)
+    pose = [[c, -s, 0.0, cx], [s, c, 0.0, cy],
+           [0.0, 0.0, 1.0, cz], [0.0, 0.0, 0.0, 1.0]]
+    return Primitive(kind="box", pose=pose, params={"extents": dims},
+                     label="box")
 
 
 def _always_refuses(world, ik, q_from, T_target, seed=0, **kw):
@@ -164,6 +181,46 @@ def test_default_planner_needs_a_belief_to_rank_against():
     planner = _default_planner(_RankSup(centroid=None, aabb=None))
 
     assert planner(w, ik, np.zeros(6), (3, 2)) == (None, None)
+
+
+def test_default_planner_tightens_the_belief_with_a_boxguard_fit():
+    """Mirrors `machine._cell_map`'s ruled derivation exactly: `corners`
+    feeds `resolve_cell`'s containment floor for a grid CELL
+    unconditionally, so a fit tightens the belief this ranker measures too
+    — not merely a face's. With `_face_prim` set, the belief comes from
+    the prim's OWN unpadded hull; with none, the padded `_object_aabb`
+    fallback holds. On this fixture the difference is real and visible:
+    cell {3, 2} resolves 4 cm closer under the tighter hull, so ranking a
+    cell against the padded box used to cost every candidate standoff it
+    would not actually have to pay once a fit exists — the mismatch this
+    task exists to kill."""
+    w, ik = _transaction_world()
+    q_now = np.asarray(_resolved(w, ik, 0, 2).q, dtype=float)
+    prim = _prim([0.11, 0.11, 0.035], [*_BOX_CENTER, 0.0, 0.0, 0.17])
+    corners = box_corners(prim)
+    tight_hull = (corners.min(0), corners.max(0))
+
+    with_fit = _default_planner(_RankSup(face_prim=prim))
+    without_fit = _default_planner(_RankSup(face_prim=None))
+    path_tight, _ = with_fit(w, ik, q_now, (3, 2))
+    path_padded, _ = without_fit(w, ik, q_now, (3, 2))
+
+    want_tight = resolve_cell(w, ik, T_FLANGE_CAM, _BOX_CENTER, tight_hull,
+                              3, 2, fy=647.0, height_px=720, corners=corners)
+    want_padded = resolve_cell(w, ik, T_FLANGE_CAM, _BOX_CENTER, _BOX_AABB,
+                               3, 2, fy=647.0, height_px=720)
+
+    assert want_tight.depth < want_padded.depth, \
+        "fixture must make the tightened belief visibly closer"
+    # The transaction's own slide-in always ends on the target's view pose
+    # (proven by `test_default_planner_costs_the_real_transaction`), so the
+    # planner's landing pose IS the resolution it used — equality with a
+    # direct `resolve_cell` call proves which aabb/corners fed it.
+    assert np.allclose(ik.fk(path_tight[-1]), want_tight.T_flange, atol=1e-6)
+    assert np.allclose(ik.fk(path_padded[-1]), want_padded.T_flange,
+                       atol=1e-6)
+    assert not np.allclose(want_tight.T_flange, want_padded.T_flange), \
+        "the two beliefs must actually resolve different view poses"
 
 
 class AutoApprove(threading.Thread):
@@ -492,5 +549,6 @@ if __name__ == "__main__":
     test_default_planner_drops_an_unresolvable_cell()
     test_default_planner_drops_a_cell_whose_transaction_refuses()
     test_default_planner_needs_a_belief_to_rank_against()
+    test_default_planner_tightens_the_belief_with_a_boxguard_fit()
     test_sweep_driver_visits_every_reachable_cell(Path(tempfile.mkdtemp()))
     print("OK test_collect")
