@@ -215,7 +215,8 @@ def test_face_family_shifts_before_tilts():
     shifts = [(s, t) for _, s, t in fam if t == 0.0]
     tilts = [(s, t) for _, s, t in fam if t > 0.0]
     assert shifts and tilts
-    assert fam[:len(shifts)] == [f[1:] and f or f for f in fam[:len(shifts)]]
+    # the family is ordered: ALL shift entries strictly before ANY tilt
+    assert [t for _, _, t in fam[:len(shifts)]] == [0.0] * len(shifts)
     assert [s for s, _ in shifts] == sorted(s for s, _ in shifts)
     assert all(s == 0.0 for s, _ in tilts)
 
