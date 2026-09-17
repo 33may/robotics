@@ -22,8 +22,14 @@ def t_flange_cam() -> np.ndarray:
     from inspection.cell.geometry import load_T_flange_cam
     return load_T_flange_cam("cv")
 
-# 848x480 is the D405's optimal depth resolution (per Intel tuning guide).
-WIDTH, HEIGHT, FPS = 848, 480, 15
+# 1280x720 — the left imager's native colour mode (Anton, 2026-09-14). The
+# D405 has no RGB sensor: colour is the left stereo imager demosaiced by an
+# ISP, and at 848x480 that stream is decimated below native — measured chroma
+# fringing + unreadable label text on 1409-box-ai_bench1 vs a sharp ir_left of
+# the SAME frame. 848x480 remains Intel's stated depth optimum; the depth cost
+# of 720p is unmeasured (A/B on a known plane pending). Min-Z rises ~7->10.5cm,
+# safe at r=0.24 m viewpoints. All D405 streams must share one resolution.
+WIDTH, HEIGHT, FPS = 1280, 720, 15
 
 
 def open_camera(serial: str = WRIST_SERIAL, width: int = WIDTH,
