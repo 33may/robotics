@@ -134,6 +134,21 @@ def cell_d_contain(aabb, ray, fy, height_px, corners=None):
     return d_min
 
 
+def box_corners(prim):
+    """The 8 corners of a fitted box primitive, base frame (8x3).
+
+    The ORIENTED box, never its AABB: a yawed box's axis-aligned hull
+    inflates up to ~20%/dim and `cell_d_contain` would charge that
+    inflation as standoff. ONE copy, here — the live machine and the
+    offline replay bench (`investigation/ray_views/ray_replay.py`) must
+    bound the same object with the same eight points.
+    """
+    he = np.asarray(prim.params["extents"], dtype=float) / 2.0
+    sgn = np.array([[a, b, c] for a in (-1, 1) for b in (-1, 1)
+                    for c in (-1, 1)], dtype=float)
+    return prim.center + (sgn * he) @ prim.axes.T
+
+
 def _d_contain(fy, height_px, half_span):
     """Closest depth at which a vertical half-span [m] stays inside the
     frame — the inverse of shift_max(d) = d*(height_px/2-margin)/fy -
@@ -231,6 +246,28 @@ def resolve_cell(world, ik, t_flange_cam, center, aabb, h, v,
     samples = sample_ray(world, ik, t_flange_cam, ray,
                          clear_m=clear, q_near=q_near)
     return _resolution(samples, 0.0, 0.0) if samples else None
+
+
+def cell_map(world, ik, t_flange_cam, center, aabb, fy, height_px,
+             corners=None, q_near=None):
+    """Every viewsphere cell resolved: `{(h, v): RayResolution | None}`.
+
+    The WHOLE grid, always — an inaccessible cell is an explicit `None`,
+    not a missing key. That dict IS the machine's accessibility gate
+    (`machine.py:_reach`, read as `.get(cell) is None`), and a key that was
+    never asked must not be indistinguishable from a ray that was asked and
+    had nothing provably safe on it.
+
+    A thin loop over `resolve_cell`; the belief `corners` are computed once
+    by the caller and shared by every cell (they describe the OBJECT, not
+    the view). Cell order matches `ViewSphere.cells()`. Measured ~180 ms for
+    the 36-cell grid on the bench box, which is the budget the machine pays
+    once per plan and once per fuse.
+    """
+    return {(h, v): resolve_cell(world, ik, t_flange_cam, center, aabb, h, v,
+                                 fy, height_px, q_near=q_near,
+                                 corners=corners)
+            for v in range(len(V_ELEVATIONS)) for h in range(H_BINS)}
 
 
 def resolve_face(world, ik, t_flange_cam, prim, face, fy, height_px,

@@ -69,9 +69,9 @@ from inspection.record.catalog import DATASETS_ROOT, RUNS_ROOT
 from inspection.record.run import Run
 from inspection.view.faceview import FACES
 from inspection.view.grid import H_BINS, R_MAX, R_MIN, V_ELEVATIONS
-from inspection.view.rays import (MIN_RANGE_M, RAY_STEP_M, cell_clear_m,
-                                  cell_ray, face_family, resolve_cell,
-                                  resolve_face, sample_ray)
+from inspection.view.rays import (MIN_RANGE_M, RAY_STEP_M, box_corners,
+                                  cell_clear_m, cell_ray, face_family,
+                                  resolve_cell, resolve_face, sample_ray)
 from inspection.view.viewsphere import T_FLANGE_CAM
 
 OUT = Path("/tmp/ray_views")
@@ -226,14 +226,6 @@ def recorded_theta(step):
 
 
 # ------------------------------------------------------------------ resolution
-
-def box_corners(prim):
-    """8x3 belief-box corners for the cell containment bound."""
-    he = np.asarray(prim.params["extents"], dtype=float) / 2.0
-    sgn = np.array([[a, b, c] for a in (-1, 1) for b in (-1, 1)
-                    for c in (-1, 1)], dtype=float)
-    return prim.center + (sgn * he) @ prim.axes.T
-
 
 def resolve_step(world, ik, prim, aabb, step, fy, height_px):
     """(res, ms) for one executed step's address, or (None, ms) when the ray

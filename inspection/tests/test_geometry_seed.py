@@ -410,6 +410,24 @@ def test_prompt_box_clips_to_the_frame():
                            and box[2] <= 848 and box[3] <= 480)
 
 
+def test_box_aabb_hulls_the_yawed_box():
+    """`box_aabb` is what a cell ray measures against (`view/rays.py`), and
+    it must hull the SAME box `object_box` hands the planner — exactly, for
+    any yaw, corners included."""
+    from inspection.cell.geometry import box_aabb
+    dims = np.array([0.20, 0.10, 0.06])
+    for yaw in (0.0, np.radians(30.0), np.radians(90.0), -np.radians(75.0)):
+        pose = [0.1, -0.35, 0.03, 0.0, 0.0, yaw]
+        mn, mx = box_aabb(dims, pose)
+        c, s = np.cos(yaw), np.sin(yaw)
+        R = np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+        sgn = np.array([[a, b, d] for a in (-.5, .5) for b in (-.5, .5)
+                        for d in (-.5, .5)])
+        corners = (sgn * dims) @ R.T + np.asarray(pose[:3])
+        assert np.allclose(mn, corners.min(0)), yaw
+        assert np.allclose(mx, corners.max(0)), yaw
+
+
 def main():
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

@@ -249,6 +249,52 @@ def test_resolve_cell_contains_whole_aabb():
             (h, v, res.depth, uv[:, 1].min(), uv[:, 1].max())
 
 
+def test_cell_map_covers_grid_and_matches_resolve_cell():
+    """The map is the WHOLE grid, every time (Stage B task 1): a cell with
+    no provably-safe sample is an explicit `None` entry — never a missing
+    key, because the machine's request gate reads `_reach.get(cell) is
+    None` and a missing key would silently mean the same as inaccessible
+    without ever having been asked. Each entry is exactly what
+    `resolve_cell` returns for that cell, corners and all."""
+    from inspection.view.grid import H_BINS, V_ELEVATIONS
+    from inspection.view.rays import box_corners, cell_map, resolve_cell
+    w, ik = _box_world()
+    center, fy, H = (0.05, -0.38, 0.0375), 647.0, 720
+    aabb = ((-0.025, -0.455, 0.0), (0.125, -0.305, 0.075))
+    corners = box_corners(_box_prim(l=0.15, w=0.15, h=0.075, yaw=0.17,
+                                    center=center))
+    m = cell_map(w, ik, T_FLANGE_CAM, center, aabb, fy, H, corners=corners)
+    assert set(m) == {(h, v) for v in range(len(V_ELEVATIONS))
+                      for h in range(H_BINS)}
+    live = [c for c, r in m.items() if r is not None]
+    dead = [c for c, r in m.items() if r is None]
+    assert live and dead, "this fixture must exercise both outcomes"
+    for cell in (live[0], dead[0]):
+        ref = resolve_cell(w, ik, T_FLANGE_CAM, center, aabb, *cell, fy=fy,
+                           height_px=H, corners=corners)
+        got = m[cell]
+        assert (ref is None) == (got is None), cell
+        if ref is not None:
+            assert np.isclose(got.depth, ref.depth), cell
+            assert np.allclose(got.T_flange, ref.T_flange), cell
+            assert np.allclose(got.q, ref.q), cell
+
+
+def test_box_corners_are_the_oriented_box():
+    """`box_corners` is the ONE belief-box corner helper (it used to be a
+    private copy in investigation/ray_views/ray_replay.py): eight corners of
+    the ORIENTED box, so a yawed box's containment bound is not paid at its
+    inflated AABB."""
+    from inspection.view.rays import box_corners
+    p = _box_prim(l=0.2, w=0.1, h=0.15, yaw=np.deg2rad(30.0),
+                  center=(0.1, -0.35, 0.075))
+    c = box_corners(p)
+    assert c.shape == (8, 3)
+    local = (c - np.asarray(p.center)) @ p.axes          # into the box frame
+    assert np.allclose(np.abs(local).max(0),
+                       np.asarray(p.params["extents"]) / 2.0)
+
+
 def main():
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
