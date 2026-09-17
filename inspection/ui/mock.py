@@ -74,7 +74,8 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     writer = RunWriter.create(
         outdir.parent, run_id=outdir.name, name=outdir.name,
         source="live", rig="fake", question=None,
-        config=config_snapshot({"vlm": "stub", "segmenter": "stub"}),
+        config=config_snapshot({"vlm": "stub", "segmenter": "stub",
+                                "fit": "boxguard"}),
         view_methods=[viewsphere_method(), face_method()],
         q_survey=[float(v) for v in q_survey], tags=["mock"])
     pub.publish_run_meta(source="live", name=outdir.name, object=None,
@@ -82,9 +83,13 @@ def start_mock(bus, pub, outdir, seed: int = 0) -> Supervisor:
     # A STUB segmenter, not a real one: the mock must stay GPU-free and
     # offline, but the identity path — prompt box, mask, masked lift, chain
     # overlays — is then the same code a real run takes, so the frontend has
-    # something real to render and the checks can assert on it.
+    # something real to render and the checks can assert on it. The fitter
+    # is NOT stubbed: `fit="boxguard"` is the real per-step decomposition
+    # path (`machine.py:_fit_step`), because the mock is how the UI's live
+    # box rendering gets developed without hardware and a mock that skipped
+    # it would rehearse a different write path than the one it exists for.
     sup = Supervisor(rig, pub, writer, q_survey=q_survey, seed=seed,
-                     segmenter=_stub_segmenter())
+                     segmenter=_stub_segmenter(), fit="boxguard")
     pub.publish_world(sup.world)
 
     # Daemon threads, deliberately never joined/stopped when `sup` reaches
@@ -155,14 +160,16 @@ def start_mock_collect(bus, pub, outdir, seed: int = 0,
     writer = RunWriter.create(
         outdir.parent, run_id=outdir.name, name=outdir.name,
         source="data-engine", rig="fake", question=None,
-        config=config_snapshot({"segmenter": "stub"}),
+        config=config_snapshot({"segmenter": "stub", "fit": "boxguard"}),
         view_methods=[viewsphere_method(), face_method()],
         q_survey=[float(v) for v in q_survey],
         tags=["mock", "auto"] if auto else ["mock"])
     pub.publish_run_meta(source="data-engine", name=outdir.name, object=None,
                          question=None)
+    # `fit="boxguard"` for the same reason as `start_mock`: the sweep's mock
+    # must exercise the same live decomposition path a real collect records.
     sup = Supervisor(rig, pub, writer, q_survey=q_survey, seed=seed,
-                     segmenter=_stub_segmenter())
+                     segmenter=_stub_segmenter(), fit="boxguard")
     pub.publish_world(sup.world)
 
     camera = CameraWorker(grab=lambda: {"rgb": mock_frame(time.time())},

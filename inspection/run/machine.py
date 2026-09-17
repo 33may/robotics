@@ -61,7 +61,7 @@ from inspection.motion.plan import plan_viewpoint
 from inspection.record.schema import ViewCandidate, ViewState
 from inspection.run.settle import _plane_error, settle_capture
 from inspection.view.grid import object_extent, radius_for_extent
-from inspection.view.viewsphere import ViewSphere
+from inspection.view.viewsphere import ViewSphere, derive_r_floor
 
 log = logging.getLogger(__name__)
 
@@ -141,6 +141,28 @@ class Supervisor:
             self._floor_z = None    # a world with no probed table: old behavior
         self.ik = ik if ik is not None else UR5eIK()
         self.r, self.seed = r, seed
+        #: Per-run measured shell floor (derive_r_floor at survey). None
+        #: until derived — and forever on runs created with an explicit r,
+        #: where face_radius falls back to the static grid.R_MIN.
+        self.r_floor = None
+        #: Refit counter — every `_recenter()` box install bumps it, and
+        #: `_last_box_rev`/`_stance_box_rev` ride along with their boxes.
+        #: Pure diagnostics (1509-cam-ai_bench1: four silent failed retreats,
+        #: and the record could not say WHICH box the retreat validated
+        #: against). rev equality stance==live at retreat time is the
+        #: smoking gun for a poisoned stance box.
+        self._box_rev = 0
+        self._last_box_rev = 0
+        self._stance_box_rev = 0
+        #: The executed path that brought the arm to the CURRENT stance —
+        #: the retreat's retrace tier reverses it when radial-out has no IK
+        #: (far-side cells stand at the workspace boundary: cam_bench2's
+        #: [5,0] flange sat at 0.751 m and even +1 cm out had 0 branches).
+        #: Planned under exactly the stance-box world, so reversing it is
+        #: IK-valid by construction and consistent with the 2026-09-14
+        #: validation semantics. None until the first move; cleared after
+        #: any retreat motion (the arm is no longer where the path ends).
+        self._arrival_path = None
         self.events = queue.Queue()
         self.stop_event = getattr(rig, "stop_event", None) or threading.Event()
         rig.stop_event = self.stop_event
@@ -360,6 +382,14 @@ class Supervisor:
         self._cancel_preview()
         self.gen += 1
         self._decider = decider
+        # The brain client records its own requested/awaiting/approved rows
+        # (brain/live.py). Operator-originated requests had NO writer at all —
+        # 1509-cam-ai_bench1's step 3 appeared out of thin air in the record.
+        # The decider gates the write so brain rows are never duplicated.
+        if decider == "operator":
+            self._write("requested event", self.writer.event, "requested",
+                        detail=f"cell={self._target_json(target)} "
+                               f"decider=operator")
         self._set_phase("planning", target)
         self._publish_views()
         self._action_thread = threading.Thread(
@@ -389,6 +419,12 @@ class Supervisor:
         # written by the exec worker before it queues `settle_done`, and the
         # queue is processed before any next confirm can exist.
         self._stance_box = self._last_box
+        self._stance_box_rev = self._last_box_rev
+        self._arrival_path = [np.asarray(q, dtype=float) for q in self._path]
+        if self._decider == "operator":    # brain writes its own row
+            self._write("approved event", self.writer.event, "approved",
+                        detail=f"cell={self._target_json(self.target)} "
+                               f"decider=operator")
         self._set_phase("executing", self.target)
         self._action_thread = threading.Thread(
             target=self._exec_worker,
@@ -490,6 +526,11 @@ class Supervisor:
         # somewhere, so the refusals were about targets, not the start.
         self._plan_fails = 0
         self._path = path
+        if self._decider == "operator":    # brain writes its own row
+            self._write("awaiting event", self.writer.event,
+                        "awaiting_approval",
+                        detail=f"cell={self._target_json(target)} "
+                               f"decider=operator")
         self._set_phase("previewing", target)
         self._publish_views()
         self._preview_cancel = threading.Event()
@@ -618,18 +659,25 @@ class Supervisor:
         self.pub.log("warn", f"{RETREAT_AFTER_FAILS} plans refused from this "
                              f"stance — retreating {RETREAT_M * 100:.0f} cm "
                              f"to re-plan")
+        # In the RECORD, not just the UI bus: 1509-cam-ai_bench1 fired four
+        # retreats and the run kept no trace (pub.log reaches neither the
+        # terminal nor events.jsonl). The box revs are the stance-identity
+        # diagnostic: stance_rev == live rev means the retreat is about to
+        # validate against the very box that swallowed the stance.
+        self._write("retreat event", self.writer.event, "retreat",
+                    detail=f"start after {RETREAT_AFTER_FAILS} refusals — "
+                           f"stance_box rev {self._stance_box_rev}, "
+                           f"live box rev {self._box_rev}")
         self._action_thread = threading.Thread(
-            target=self._retreat_worker, args=(self.gen, self._stance_box),
+            target=self._retreat_worker,
+            args=(self.gen, self._stance_box, self._arrival_path),
             name="retreat", daemon=True)
         self._action_thread.start()
 
-    def _retreat_worker(self, gen, stance_box):
+    def _retreat_worker(self, gen, stance_box, arrival_path=None):
         try:
             q_now = self.rig.q()
             w = RobotCell()         # same cell.yaml the live world was built from
-            if stance_box is not None:
-                dims, pose = stance_box
-                w.set_object("object", dims, pose, parent="base")
             T = np.asarray(self.ik.fk(q_now))
             out = T[:3, 3] - np.asarray(self.sphere.center, dtype=float)
             n = float(np.linalg.norm(out))
@@ -637,23 +685,81 @@ class Supervisor:
                 raise RuntimeError("flange is at the sphere center")
             T_r = T.copy()
             T_r[:3, 3] = T[:3, 3] + out / n * RETREAT_M
-            free = [q for q in self.ik.branches(T_r, q_near=q_now)
-                    if not w.is_colliding(q)]
-            free.sort(key=lambda q: float(np.abs(q - q_now).sum()))
-            path = None
-            for q_goal in free:
-                path = direct_move(w, q_now, q_goal)
-                if path is not None:
-                    break
-            if path is None:
+            branches = self.ik.branches(T_r, q_near=q_now)
+            # Two validation tiers (Anton 2026-09-15, after cam_bench1's four
+            # no-motion retreats while the escape provably existed):
+            #   1. the stance box — the world that approved this stance
+            #      (the 2026-09-14 semantics, unchanged);
+            #   2. env-only — the object box removed. The move is radially
+            #      AWAY from the sphere center the object sits at, so object
+            #      clearance grows by construction; if the stance box is
+            #      poisoned (holds a post-refit box that already swallows
+            #      q_now), that box is exactly what must be ignored to leave.
+            # Cell keep-outs, table, and self-collision guard both tiers.
+            tiers = ([("stance-box", stance_box), ("env-only", None)]
+                     if stance_box is not None else [("env-only", None)])
+            tried = []
+            for tag, box in tiers:
+                if box is not None:
+                    dims, pose = box
+                    w.set_object("object", dims, pose, parent="base")
+                else:
+                    w.remove_object("object")
+                free = [q for q in branches if not w.is_colliding(q)]
+                free.sort(key=lambda q: float(np.abs(q - q_now).sum()))
+                path = None
+                for q_goal in free:
+                    path = direct_move(w, q_now, q_goal)
+                    if path is not None:
+                        break
+                if path is None:
+                    tried.append(f"{tag}: {len(free)}/{len(branches)} "
+                                 f"branch(es) free, no direct path")
+                    continue
+                # w carries this tier's box state — the rig's final gate must
+                # judge the motion by the world it was planned under, not the
+                # live world whose refit is what the arm is escaping.
+                rep = self.rig.move(path, world=w)
+                detail = f"via {tag}" if tag != "stance-box" else ""
+                if rep.get("stopped"):
+                    detail = (detail + " — " if detail else "") + \
+                        "stopped mid-retreat"
                 self.events.put({"ev": "retreat_done", "gen": gen,
-                                 "moved": False,
-                                 "detail": "no valid retreat move"})
+                                 "moved": True, "detail": detail})
                 return
-            rep = self.rig.move(path)
-            self.events.put({"ev": "retreat_done", "gen": gen, "moved": True,
-                             "detail": "stopped mid-retreat"
-                                       if rep.get("stopped") else ""})
+            # Retrace tier (Anton 2026-09-15, cam_bench2): far-side stances
+            # sit at the workspace boundary — radial-out can have ZERO IK
+            # branches ([5,0] flange at 0.751 m; +1 cm out: none). The path
+            # that brought the arm here was planned under the stance-box
+            # world and executed, so its reverse is IK-valid by construction;
+            # re-validated per tier on the throwaway cell all the same.
+            if arrival_path is not None and len(arrival_path) >= 2:
+                rev = [np.asarray(q, dtype=float)
+                       for q in reversed(arrival_path)]
+                rev[0] = q_now          # ≈ arrival end; honest start anyway
+                for tag, box in tiers:
+                    if box is not None:
+                        dims, pose = box
+                        w.set_object("object", dims, pose, parent="base")
+                    else:
+                        w.remove_object("object")
+                    ok, _info = w.path_valid(rev)
+                    if not ok:
+                        tried.append(f"retrace({tag}): path invalid")
+                        continue
+                    rep = self.rig.move(rev, world=w)
+                    detail = f"via retrace({tag})"
+                    if rep.get("stopped"):
+                        detail += " — stopped mid-retreat"
+                    self.events.put({"ev": "retreat_done", "gen": gen,
+                                     "moved": True, "detail": detail})
+                    return
+            else:
+                tried.append("retrace: no arrival path stored")
+            self.events.put({"ev": "retreat_done", "gen": gen,
+                             "moved": False,
+                             "detail": "no valid retreat move ("
+                                       + "; ".join(tried) + ")"})
         except Exception as e:
             log.exception("retreat worker failed")
             self.events.put({"ev": "retreat_done", "gen": gen, "moved": False,
@@ -667,11 +773,15 @@ class Supervisor:
         # after a failed attempt the next retreat must be re-earned by three
         # fresh refusals — never re-triggered per-refusal into a thrash loop.
         self._plan_fails = 0
+        self._write("retreat event", self.writer.event, "retreat",
+                    detail=(f"moved: {ev.get('detail') or 'ok'}" if ev["moved"]
+                            else f"FAILED: {ev.get('detail', '')}"))
         if ev["moved"]:
             # The stance the refusals were judged from is gone, and so is the
             # cell the camera was standing at.
             self.blocked.clear()
             self.current = None
+            self._arrival_path = None   # the arm no longer stands at its end
             detail = ev.get("detail", "")
             self.pub.log("warn" if detail else "info",
                          f"retreat: {detail}" if detail
@@ -709,7 +819,8 @@ class Supervisor:
                 face, prim = target[1], self._face_prim
                 _, _, ext = face_frame(prim, face)
                 r_f = face_radius(ext, self.rig.intr["fy"],
-                                  self.rig.intr["height"])
+                                  self.rig.intr["height"],
+                                  r_min=self.r_floor)
                 res = resolve_face_view(self.world, self.ik, T_FLANGE_CAM,
                                         prim, face, r_f, q_near=q_now)
                 if res is None:
@@ -934,6 +1045,12 @@ class Supervisor:
     # ------------------------------------------------------------- helpers
     def _recenter(self):
         center = self.acc.centroid
+        # Min-yaw box FIRST, one source of truth for margins — see
+        # `geometry.object_box`. The pose carries the yaw the UI also draws.
+        # Installed before the radius derivation below because the floor
+        # probe needs the object in the world as the hard obstacle it is.
+        dims, pose = object_box(self.acc.points)
+        self.world.set_object("object", dims.tolist(), pose, parent="base")
         if self.r is None:
             # pct-trimmed: raw min/max let 168 stray cable points (4.7% of
             # the cloud) grow the extent. See CloudAccumulator.aabb.
@@ -946,26 +1063,31 @@ class Supervisor:
             # VLM reads differs by ~1.6% in fy on the D405 — below the noise
             # in the extent itself.
             extent = object_extent(mn, mx)
-            self.r = radius_for_extent(extent, self.rig.intr["fy"],
-                                       self.rig.intr["height"])
+            r_want = radius_for_extent(extent, self.rig.intr["fy"],
+                                       self.rig.intr["height"], r_min=0.0)
+            # PER-RUN floor (Anton 2026-09-15): the static R_MIN is the demo
+            # cup's cliff; when CLOSENESS asks for less, measure what THIS
+            # object at THIS position actually allows before clamping.
+            self.r_floor = derive_r_floor(self.world, self.ik, center, r_want)
+            self.r = max(r_want, self.r_floor)
             self.pub.log("info", f"shell r={self.r:.3f} m derived from a "
-                                 f"{extent * 1000:.0f} mm object")
+                                 f"{extent * 1000:.0f} mm object "
+                                 f"(want {r_want:.3f}, floor {self.r_floor:.3f})")
             # The shell radius is a property of the RUN's view method, and it
             # only exists once the survey has seen the object — so the method
             # params are completed here, where it is derived, rather than
             # guessed at run creation.
-            self.writer.set_view_method_params(VIEW_METHOD, r=float(self.r))
+            self.writer.set_view_method_params(VIEW_METHOD, r=float(self.r),
+                                               r_floor=float(self.r_floor))
         self.sphere = ViewSphere(center, r=self.r)
-        # Min-yaw box, one source of truth for margins — see
-        # `geometry.object_box`. The pose carries the yaw the UI also draws.
-        dims, pose = object_box(self.acc.points)
-        self.world.set_object("object", dims.tolist(), pose, parent="base")
         # What this refit installed. `_on_view_confirm` copies it into
         # `_stance_box` when a move starts: the box a stance was APPROVED
         # under is the last one installed before its move executed — the
         # world a trapped arm may legally retreat through even after a newer
         # refit has swallowed its stance (see RETREAT_AFTER_FAILS).
+        self._box_rev += 1
         self._last_box = (dims.tolist(), pose)
+        self._last_box_rev = self._box_rev
 
     def _write(self, what, fn, *a, **kw):
         """Run one writer verb from the DISPATCHER; log and carry on if it
@@ -1138,7 +1260,8 @@ class Supervisor:
                     continue
                 c, n, ext = face_frame(self._face_prim, f)
                 r_f = face_radius(ext, self.rig.intr["fy"],
-                                  self.rig.intr["height"])
+                                  self.rig.intr["height"],
+                                  r_min=self.r_floor)
                 theta = st["off_angle_deg"]
                 cands.append(ViewCandidate(
                     address=["face", f],
@@ -1240,7 +1363,8 @@ class Supervisor:
                     continue
                 c, n, ext = face_frame(self._face_prim, f)
                 r_f = face_radius(ext, self.rig.intr["fy"],
-                                  self.rig.intr["height"])
+                                  self.rig.intr["height"],
+                                  r_min=self.r_floor)
                 st["pos"] = [float(x) for x in (c + n * r_f)]
                 st["resolved"] = False
         return faces

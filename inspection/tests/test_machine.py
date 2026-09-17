@@ -46,6 +46,11 @@ def make_sup(q_start=None, rig_cls=FakeRig, **kw):
     bus = BusSpy()
     sup = Supervisor(rig, InspectionPublisher(bus), make_writer(q_survey),
                      q_survey, **kw)
+    # Same final gate the REAL rig has: every move re-validated against the
+    # live world unless the caller passes its own. Without this the fake
+    # happily executed retreats the real rig refused ("world refuses path"
+    # at segment 0 — cam_bench1/4), and four dead runs passed the suite.
+    rig.world = sup.world
     th = threading.Thread(target=sup.run, daemon=True)
     th.start()
     return sup, rig, bus, th
@@ -749,6 +754,97 @@ def test_three_plan_refusals_trigger_retreat():
     assert sup.blocked == set(), "refusals were judged from a stance that is gone"
     assert sup.current is None, "the camera left the cell it was standing at"
     assert np.abs(rig.q() - q_trapped).max() > 0.005, "the arm actually moved"
+    sup.request_shutdown(); th.join(10)
+    assert not th.is_alive()
+
+
+def test_retreat_escapes_a_poisoned_stance_box():
+    """1509-cam-ai_bench1: four retreats fired and none moved, while the
+    escape provably existed — the stance box the worker validated against
+    already swallowed q_now, so tier-1 direct_move failed at config 0 every
+    time. The env-only fallback tier must still leave (the move is radially
+    away from the object by construction), and both the attempt and the
+    outcome must land in events.jsonl."""
+    import json
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    full_boot(sup)
+    q_trapped = rig.q()
+    p = np.asarray(sup.ik.fk(q_trapped))[:3, 3]
+    box = ([0.12, 0.12, 0.12],
+           [float(p[0]), float(p[1]), float(p[2]), 0.0, 0.0, 0.0])
+    sup.world.set_object("object", *box)
+    sup._stance_box = box           # poisoned: swallows the standing arm
+    tried = set()
+    for n in (1, 2, 3):
+        avail = [c for c, r in sup._reach.items()
+                 if r is not None and c not in sup.visited and c not in tried]
+        assert avail, f"no requestable cell left before refusal {n}"
+        cell = avail[0]
+        tried.add(cell)
+        sup.events.put({"cmd": "view/request", "target": list(cell)})
+        if n < 3:
+            wait_for(lambda n=n: sup._plan_fails == n and sup.phase == "idle",
+                     timeout=60, msg=f"refusal {n} counted")
+        else:
+            wait_for(lambda: len(rig.moves) == 2, timeout=60,
+                     msg="fallback retreat move")
+            wait_for(lambda: sup.phase == "idle", timeout=60,
+                     msg="idle after retreat")
+    assert np.abs(rig.q() - q_trapped).max() > 0.005, \
+        "the arm escaped despite the poisoned stance box"
+    rows = [json.loads(l) for l in
+            (sup.writer.dir / "events.jsonl").read_text().splitlines()]
+    retreats = [r for r in rows if r["kind"] == "retreat"]
+    assert len(retreats) == 2, "attempt + outcome rows recorded"
+    assert "stance_box rev" in retreats[0]["detail"]
+    assert retreats[1]["detail"].startswith("moved"), retreats[1]["detail"]
+    assert "env-only" in retreats[1]["detail"], \
+        "the record says WHICH tier saved the run"
+    sup.request_shutdown(); th.join(10)
+    assert not th.is_alive()
+
+
+def test_retreat_retraces_when_radial_has_no_ik(monkeypatch):
+    """1509-cam-ai_bench2: far-side stances stand at the workspace boundary —
+    the radial escape target has ZERO IK branches ([5,0] flange at 0.751 m,
+    +1 cm out: none), so both radial tiers die at '0/0 free' and the arm is
+    wedged. The retrace tier must reverse the executed arrival path instead.
+    Radial impossibility is forced here by a 5 m retreat distance — same
+    0-branch outcome as the real boundary, independent of the test cell."""
+    import json
+    import inspection.run.machine as machine_mod
+    monkeypatch.setattr(machine_mod, "RETREAT_M", 5.0)
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    full_boot(sup)
+    q_trapped = rig.q()
+    p = np.asarray(sup.ik.fk(q_trapped))[:3, 3]
+    sup.world.set_object("object", [0.12, 0.12, 0.12],
+                         [float(p[0]), float(p[1]), float(p[2]), 0.0, 0.0, 0.0])
+    assert sup._arrival_path is not None, "confirm stored the arrival path"
+    tried = set()
+    for n in (1, 2, 3):
+        avail = [c for c, r in sup._reach.items()
+                 if r is not None and c not in sup.visited and c not in tried]
+        assert avail, f"no requestable cell left before refusal {n}"
+        cell = avail[0]
+        tried.add(cell)
+        sup.events.put({"cmd": "view/request", "target": list(cell)})
+        if n < 3:
+            wait_for(lambda n=n: sup._plan_fails == n and sup.phase == "idle",
+                     timeout=60, msg=f"refusal {n} counted")
+        else:
+            wait_for(lambda: len(rig.moves) == 2, timeout=60,
+                     msg="retrace retreat move")
+            wait_for(lambda: sup.phase == "idle", timeout=60,
+                     msg="idle after retreat")
+    assert np.abs(rig.q() - q_trapped).max() > 0.005, "the arm actually moved"
+    assert sup._arrival_path is None, "stale arrival path cleared after moving"
+    rows = [json.loads(l) for l in
+            (sup.writer.dir / "events.jsonl").read_text().splitlines()]
+    outcome = [r for r in rows if r["kind"] == "retreat"][-1]
+    assert "retrace" in outcome["detail"], outcome["detail"]
     sup.request_shutdown(); th.join(10)
     assert not th.is_alive()
 

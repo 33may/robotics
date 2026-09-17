@@ -140,6 +140,70 @@ class CountingMover:
             else (False, "refused — the arm is faulted")
 
 
+class ApprovingMover:
+    """A mover that approves everything and plays the Supervisor's part of
+    the bargain: a successful request lands the cell in `visited`, which is
+    how the candidate set actually shrinks in a real run."""
+
+    def __init__(self, sup):
+        self.sup, self.asked = sup, []
+
+    def request(self, cell):
+        self.asked.append(cell)
+        if cell != "survey":
+            self.sup.visited.add(cell)
+        return True, "reached and captured"
+
+
+def test_random_mode_shuffles_and_records_its_own_decider(tmp_path):
+    """`--random` exists because nearest-first step order flatters
+    convergence analysis (2026-09-14): the walk must not be the ranked
+    order, must still exhaust the shell, and must say `sweep-random` in
+    every step's `ViewState.decider` — the on-disk statement of policy."""
+    sup = StubSup()
+    driver = SweepDriver(sup, tmp_path, planner=_stub_planner,
+                         random_order=True)
+    assert driver.mover.decider == "sweep-random"
+    driver.mover = ApprovingMover(sup)
+
+    driver.start()
+    driver.join(10)
+    assert not driver.is_alive()
+    assert driver.finished, "an approve-everything shell must be exhausted"
+    cells = driver.mover.asked[1:]                    # after the survey
+    assert set(cells) == set(sup._reach), "shuffling must not drop coverage"
+    ranked_order = sorted(sup._reach, key=lambda c: c[0] + 10 * c[1])
+    assert cells != ranked_order, "random order came out cheapest-first"
+
+    # Seeded: the same sup/seed walks the same order — reruns are comparable.
+    sup2 = StubSup()
+    d2 = SweepDriver(sup2, tmp_path, planner=_stub_planner, random_order=True)
+    d2.mover = ApprovingMover(sup2)
+    d2.start()
+    d2.join(10)
+    assert d2.mover.asked == driver.mover.asked
+
+
+def test_random_mode_retries_refused_passes_until_stopped(tmp_path):
+    """Refusals can be transient (a missed approval window), so a refused
+    pass retries from the top in random mode exactly as in cost mode — a
+    first cut that ended the sweep on an unchanged candidate set died on
+    that race. Hopeless runs end through `stop()`/fault, nothing else."""
+    sup = StubSup()
+    driver = SweepDriver(sup, tmp_path, planner=_stub_planner,
+                         random_order=True)
+    # Refuse everything; stop the driver mid-SECOND pass — proof it retried.
+    second_pass_call = 1 + len(sup._reach) + 3
+    driver.mover = CountingMover(
+        lambda n, cell: driver.stop() if n == second_pass_call else None)
+
+    driver.start()
+    driver.join(10)
+    assert not driver.is_alive()
+    assert driver.finished is False
+    assert driver.mover.calls == second_pass_call, driver.mover.asked
+
+
 def test_a_faulted_run_ends_the_sweep(tmp_path):
     """`phase == "fault"` is terminal for the whole run: no request can ever
     be accepted again, so ranking on would spin `plan_to_cell` and `rig.q()`

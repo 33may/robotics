@@ -36,16 +36,32 @@ class FakeRig:
         # Same key, so the settle leg needs no branch for the fake.
         self.intr_color = intr
         self.moves = []
+        #: Wired by the test harness to the Supervisor's live world so the
+        #: fake refuses paths EXACTLY like the real rig does (execute.py's
+        #: "world refuses path" guard). None = no validation (old behavior).
+        #: The guard's absence here is why four cam_bench runs of dead
+        #: retreats sailed through the unit tests (sim/real divergence).
+        self.world = None
 
     def q(self):
         """Return current joint configuration."""
         return self._q.copy()
 
-    def move(self, path):
+    def move(self, path, world="live"):
         """Interpolate through path, stop on stop_event.
+
+        `world` mirrors RealRig.move: "live" = validate against self.world
+        (when wired), an explicit world = validate against THAT (the caller
+        owns the validation semantics — the retreat's stance-box world),
+        None = skip validation.
 
         Returns: {"waypoints_done", "s", "final_err_deg", "stopped"}
         """
+        w = self.world if isinstance(world, str) and world == "live" else world
+        if w is not None:
+            ok, bad = w.path_valid([np.asarray(q, float) for q in path])
+            if not ok:
+                raise RuntimeError(f"world refuses path (segment {bad}) — replan")
         self.moves.append(len(path))
         t0, done = time.perf_counter(), 0
         for q_goal in [np.asarray(q, float) for q in path[1:]]:
@@ -255,8 +271,18 @@ class RealRig:
         self.camera = CameraWorker(self._grab, publish=pub.publish_frame, hz=hz)
         self.camera.start()
 
-    def move(self, path):
-        return self.arm.execute(path, world=self.world, stop_event=self.stop_event)
+    def move(self, path, world="live"):
+        """Execute a path. `world` picks the final-gate validation world:
+        "live" (default) re-checks against the rig's live world — right for
+        every normally-planned move. The retreat passes its OWN validation
+        world instead: its stance is legal under the STANCE box but often
+        in collision under the live post-refit box (the capture-refit trap),
+        and the live re-check here was the last gate that killed every
+        retreat flavor across cam_bench1/4 while the record said nothing.
+        The double-check stays — it now checks the world the motion was
+        actually planned under. None skips validation entirely."""
+        w = self.world if isinstance(world, str) and world == "live" else world
+        return self.arm.execute(path, world=w, stop_event=self.stop_event)
 
     def capture(self, pose_id, out_dir=None):
         """Grab a bundle and write its bytes into `out_dir` (the step dir).

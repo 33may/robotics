@@ -8,6 +8,10 @@ module docstring: `view/request` is the only door in). What is different is
 WHICH cell it asks for and in what order: every open candidate is costed by
 `planner` and the cheapest is requested first, so a sweep visits the whole
 shell in roughly the least total joint travel rather than in cell-id order.
+`--random` swaps that order for a seeded shuffle (`DECIDER_RANDOM` on every
+step): nearest-first grows the cloud from one side outward, which is its own
+special step ordering — random order is the baseline for reasoning about how
+per-step estimates converge in a real run.
 
 The driver never touches `sup.world`: that `RobotCell` is the dispatcher
 thread's alone (machine.py's docstring — "exactly one action worker alive
@@ -21,6 +25,7 @@ own plan is thrown away, it exists only to rank.
 from __future__ import annotations
 
 import logging
+import random
 import threading
 
 import numpy as np
@@ -35,6 +40,13 @@ from inspection.motion.ik import UR5eIK
 #: `ViewState.decider` — the only place on disk that says a sweep, not a
 #: human or the AI orchestrator, picked this cell.
 DECIDER = "sweep-shortest"
+
+#: `--random`'s decider string. A separate name, not a tag on the run: the
+#: per-step `ViewState.decider` is the on-disk statement of WHICH policy
+#: picked each cell, and convergence analysis over these datasets dispatches
+#: on it (Anton, 2026-09-14: shortest-path step order flatters the box
+#: estimate's convergence — random order is the honest baseline).
+DECIDER_RANDOM = "sweep-random"
 
 #: `--auto`'s dwell between "previewing" and the driver's own confirm: the
 #: 3D view shows the chosen cell and the planned path for this long before
@@ -106,7 +118,8 @@ class SweepDriver(threading.Thread):
     Survey first (`mover.request("survey")` — the object has to exist
     before there is a shell to sweep). Then, until no open candidate is
     left: rank every reachable/unvisited/unblocked cell by `planner`,
-    request the cheapest. A refusal (unreachable, unplannable, not
+    request the cheapest (or, with `random_order`, shuffle them and request
+    in that order — same pass structure, same refusal handling, no ranking). A refusal (unreachable, unplannable, not
     approved) tries the next-cheapest candidate from the SAME ranked pass —
     replanning every candidate again would be wasted work when only one of
     them was refused. A redirect (the operator approved a different cell
@@ -135,7 +148,7 @@ class SweepDriver(threading.Thread):
     """
 
     def __init__(self, sup, run_dir, on_event=None, planner=None,
-                 auto: bool = False):
+                 auto: bool = False, random_order: bool = False):
         super().__init__(name="sweep-driver", daemon=True)
         self.sup = sup
         self.run_dir = run_dir
@@ -146,6 +159,13 @@ class SweepDriver(threading.Thread):
         self._world = RobotCell()
         self._ik = UR5eIK()
         self.planner = planner or _default_planner(sup, seed=getattr(sup, "seed", 0))
+        #: `--random`: request cells in seeded-shuffled order instead of
+        #: cheapest-first. The ranking planner is skipped entirely — the
+        #: local plan exists only to rank (module docstring), and a shuffle
+        #: needs no rank; plannability is judged where it always is, by the
+        #: Supervisor's real planner behind `mover.request`.
+        self.random_order = random_order
+        self._rng = random.Random(getattr(sup, "seed", 0))
         self._redirected = False
 
         def _on_mover_event(state, **kw):
@@ -158,7 +178,8 @@ class SweepDriver(threading.Thread):
             self.on_event(state, **kw)
 
         self.mover = SupervisorMover(sup, run_dir, on_event=_on_mover_event,
-                                     decider=DECIDER,
+                                     decider=DECIDER_RANDOM if random_order
+                                     else DECIDER,
                                      auto_confirm_s=AUTO_DWELL_S if auto
                                      else None)
 
@@ -215,13 +236,20 @@ class SweepDriver(threading.Thread):
             if not cands:
                 self.finished = True
                 return
-            _mirror_object_box(self._world, self.sup.acc)
-            q_now = np.asarray(self.sup.rig.q(), dtype=float)
+            if self.random_order:
+                # No mirror, no costing, no rank: the local plan exists only
+                # to order candidates, and this mode's order is a seeded
+                # shuffle. The Supervisor still plans every request for real.
+                ranked = list(cands)
+                self._rng.shuffle(ranked)
+            else:
+                _mirror_object_box(self._world, self.sup.acc)
+                q_now = np.asarray(self.sup.rig.q(), dtype=float)
 
-            def cost_fn(cell):
-                return self.planner(self._world, self._ik, q_now, cell)[1]
+                def cost_fn(cell):
+                    return self.planner(self._world, self._ik, q_now, cell)[1]
 
-            ranked = rank_candidates(cands, cost_fn)
+                ranked = rank_candidates(cands, cost_fn)
             if not ranked:
                 # Every open candidate's plan refused this pass — nothing
                 # left this driver can usefully ask for from here.
@@ -237,3 +265,9 @@ class SweepDriver(threading.Thread):
                 ok, reason = self.mover.request(cell)
                 if ok or self._redirected:
                     break
+            # A pass where every request was refused retries from the top —
+            # in BOTH modes. Refusals can be transient (an approval window
+            # missed, a mover momentarily busy), and a first cut of --random
+            # (2026-09-14) that ended the sweep on an unchanged candidate
+            # set died on exactly that race. Hopeless runs are ended by the
+            # `_should_stop` checks above, not by second-guessing refusals.
