@@ -132,6 +132,42 @@ class ViewSphere:
         return None, rep, None
 
 
+def derive_r_floor(world, ik, center, r_want, r_ref=None, step=0.02,
+                   count_at=None):
+    """Measured shell floor for THIS object at THIS position [m].
+
+    The static grid.R_MIN is the demo cup's reachability cliff and taxes
+    every easier object (the flat bench box holds 23/36 cells down to 0.20,
+    its cliff is at 0.18 — block_report --rs, 2026-09-15). So when the fill
+    formula wants to go below the static floor, probe reachable-cell counts
+    downward from it and stop at the first radius that LOSES a cell: the
+    measured cliffs are sharp (cup -9, box -4 cells in one 0.02 step), so a
+    count drop is the signal and needs no tolerance. The object must already
+    be set in `world` (set_object) — it is the obstacle being measured.
+
+    Returns the smallest probed radius >= r_want that keeps the reference
+    count; r_want itself when the static floor is not in the way. Costs one
+    36-cell reachability sweep per probed radius, survey-time only.
+    """
+    from inspection.view.grid import R_MIN
+    r_ref = R_MIN if r_ref is None else r_ref
+    if r_want >= r_ref:
+        return r_want
+    if count_at is None:                      # injectable for tests
+        count_at = lambda r: sum(
+            roll is not None
+            for roll in ViewSphere(center, r=r).reachability(world, ik).values())
+    best = count_at(r_ref)
+    floor = r_ref
+    candidates = [round(r, 4) for r in
+                  np.arange(r_ref - step, r_want, -step)] + [float(r_want)]
+    for r in candidates:
+        if count_at(r) < best:
+            break
+        floor = r
+    return floor
+
+
 def map_str(reach, elevations=V_ELEVATIONS):
     """ASCII map: rows = v (top row highest), cols = h. #=reachable .=blocked"""
     lines = []

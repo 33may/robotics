@@ -70,9 +70,12 @@ def face_cam_pose(center, normal, r, roll=0.0):
     return T
 
 
-def face_radius(extent2d, fy, height_px):
-    """Per-face framing standoff; R_MIN clamp lives in radius_for_extent."""
-    return radius_for_extent(max(extent2d), fy, height_px)
+def face_radius(extent2d, fy, height_px, r_min=None):
+    """Per-face framing standoff; the floor clamp lives in radius_for_extent.
+    `r_min` carries the machine's per-run measured floor when it has one —
+    a too-low face standoff is not dangerous, it just makes the resolution
+    ladder walk more rungs before finding a reachable pose."""
+    return radius_for_extent(max(extent2d), fy, height_px, r_min=r_min)
 
 
 def normals_delta_deg(prim_a, prim_b):

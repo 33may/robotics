@@ -28,10 +28,20 @@ DEFAULT_R = 0.35                     # fallback only — the shell is DERIVED
 # smaller than nominal (fill_probe on 2408-seeded: nominal 0.43, measured
 # 0.20-0.36, mean 0.31). 0.62 nominal is therefore ~0.45 of frame height in
 # the actual images. Verify a change with:
-#   p inspection/investigation/fill_probe.py --run <run> --fill <f>
-#   p inspection/investigation/frame_preview.py --run <run>
+#   p inspection/investigation/view_framing/fill_probe.py --run <run> --fill <f>
+#   p inspection/investigation/view_framing/frame_preview.py --run <run>
 FILL_TARGET = 0.62        # nominal fill of frame height, on the diagonal
 EXTENT_RULE = "sphere"    # which dimension FILL_TARGET is measured against
+# ---- THE closeness slider (Anton 2026-09-15) -------------------------------
+# One knob for "move the camera in": the derived radius is divided by this.
+#   1.0 = the calibrated FILL_TARGET framing (bench runs came out 0.31-0.39 m)
+#   1.3 = 30% closer — for the bench box this already lands on the R_MIN floor
+# FILL_TARGET/EXTENT_RULE stay untouched: they are calibration (what the
+# formula means), this is preference (how tight Anton wants it). The R_MIN
+# clamp still has the last word — past it the slider silently stops paying,
+# and getting closer than R_MIN means reopening the padding contract
+# (the padding IS the standoff, Anton 2026-08-18).
+CLOSENESS = 1.3
 R_MIN = 0.24              # measured floor — see below; NOT a tool clearance
 R_MAX = 0.40              # past this reachability collapses (24/36 cells)
 # R_MIN was 0.22, taken from a sweep on the DEMO cup at the DEMO position. With
@@ -67,16 +77,26 @@ def object_extent(mn, mx, rule=EXTENT_RULE):
     raise ValueError(f"unknown extent rule {rule!r}")
 
 
-def radius_for_extent(extent, fy, height_px, fill=FILL_TARGET):
+def radius_for_extent(extent, fy, height_px, fill=FILL_TARGET,
+                      closeness=None, r_min=None):
     """Camera distance at which `extent` metres span `fill` of the frame.
 
     Pinhole similar triangles: a length L at distance r projects to fy*L/r
-    pixels, so r = fy*L / (fill*height_px). Clamped to the reachable band —
-    a clamped radius is an honest "as close as this cell allows", not a
-    failure, so it returns silently.
+    pixels, so r = fy*L / (fill*height_px), divided by the CLOSENESS slider.
+    Clamped to the reachable band — a clamped radius is an honest "as close
+    as this cell allows", not a failure, so it returns silently.
+
+    `r_min` overrides the static floor: the machine passes the PER-RUN floor
+    measured by `viewsphere.derive_r_floor` (Anton 2026-09-15 — the static
+    R_MIN is the cup's cliff and taxes easier objects; the flat bench box is
+    provably fine down to 0.20). Pass 0.0 to get the unfloored want.
     """
-    r = fy * float(extent) / (fill * height_px)
-    return float(np.clip(r, R_MIN, R_MAX))
+    if closeness is None:
+        closeness = CLOSENESS   # module lookup so editing the slider works
+    if r_min is None:
+        r_min = R_MIN
+    r = fy * float(extent) / (fill * height_px) / closeness
+    return float(np.clip(r, r_min, R_MAX))
 
 _WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
 
