@@ -44,17 +44,34 @@ Sample = namedtuple("Sample", ["depth", "roll", "q", "T_cam", "T_flange"])
 
 
 def sample_ray(world, ik, t_flange_cam, ray, clear_m=0.0, q_near=None):
-    """All provably-safe samples on `ray`, ascending depth.
+    """All provably-safe samples on `ray` AT ONE ROLL, ascending depth: the
+    roll whose closest valid sample is the closest of all (ties broken by
+    ROLLS order, which is what "first roll wins" used to decide).
 
     `clear_m` = camera-to-object-surface distance already consumed at depth
     0 (0 for a face ray — its anchor sits ON the wall; the anchor→surface
     run for a centroid ray). The sensor floor is surface distance, so a
     sample is admissible from depth clear_m + MIN_RANGE_M.
+
+    PER-ROLL LISTS (ruled amendment 2026-09-17, task 2b). This used to keep
+    ONE sample per depth — the first roll that solved there — which made the
+    list's roll change partway out. A slide is roll-locked (a wrist flip
+    belongs in the hop, in open space), so such a list has to be cut at the
+    first flip: on cell {3,1} of the bench box that left a ONE-sample
+    corridor, and the hop then delivered the view pose laterally — the
+    arrival mode hop-then-slide exists to prevent. Both rolls are now
+    evaluated at every depth under the same floors, and the winner's whole
+    run is returned. The ENDPOINT is unchanged by construction: element 0 is
+    still the closest valid sample on the ray.
+
+    Cost: both rolls are now checked at every depth (~2x the IK+collision
+    work of the old early-exit), which is the workload the design's ~6 ms/ray
+    estimate was written for.
     """
     t_fc_inv = np.linalg.inv(np.asarray(t_flange_cam, dtype=float))
     lo = clear_m + MIN_RANGE_M
     d0 = float(np.ceil(lo / RAY_STEP_M)) * RAY_STEP_M
-    out = []
+    per_roll = {float(roll): [] for roll in ROLLS}
     for d in np.arange(d0, R_MAX + 1e-9, RAY_STEP_M):
         for roll in ROLLS:
             T_cam = face_cam_pose(ray.anchor, ray.direction, float(d), roll)
@@ -62,10 +79,14 @@ def sample_ray(world, ik, t_flange_cam, ray, clear_m=0.0, q_near=None):
             free = [q for q in ik.branches(T_fl, q_near=q_near)
                     if not world.is_colliding(q)]
             if free:
-                out.append(Sample(float(d), float(roll), free[0],
-                                  T_cam, T_fl))
-                break                     # first roll wins at this depth
-    return out
+                per_roll[float(roll)].append(
+                    Sample(float(d), float(roll), free[0], T_cam, T_fl))
+    best = []
+    for roll in ROLLS:                    # ROLLS order breaks a depth tie
+        run = per_roll[float(roll)]
+        if run and (not best or run[0].depth < best[0].depth):
+            best = run
+    return best
 
 
 CONE_STEP_DEG, CONE_MAX_DEG, CONE_AZIMUTHS = 5.0, 60.0, 12
@@ -260,9 +281,11 @@ def cell_map(world, ik, t_flange_cam, center, aabb, fy, height_px,
 
     A thin loop over `resolve_cell`; the belief `corners` are computed once
     by the caller and shared by every cell (they describe the OBJECT, not
-    the view). Cell order matches `ViewSphere.cells()`. Measured ~180 ms for
-    the 36-cell grid on the bench box, which is the budget the machine pays
-    once per plan and once per fuse.
+    the view). Cell order matches `ViewSphere.cells()`. Measured ~240-260 ms
+    for the 36-cell grid on the bench box (~180 ms before per-roll sample
+    lists, task 2b, which doubled the per-depth IK/collision work — the
+    design's own ~230 ms estimate assumed both rolls), which is the budget
+    the machine pays once per plan and once per fuse.
     """
     return {(h, v): resolve_cell(world, ik, t_flange_cam, center, aabb, h, v,
                                  fy, height_px, q_near=q_near,

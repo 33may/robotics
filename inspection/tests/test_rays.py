@@ -295,11 +295,141 @@ def test_box_corners_are_the_oriented_box():
                        np.asarray(p.params["extents"]) / 2.0)
 
 
+def _cell_clear(aabb, ray):
+    """The clearance `resolve_cell` feeds the sampler for a cell ray."""
+    from inspection.view.rays import (MIN_RANGE_M, cell_clear_m,
+                                      cell_d_contain)
+    return max(cell_clear_m(aabb, ray),
+               cell_d_contain(aabb, ray, 647.0, 720) - MIN_RANGE_M)
+
+
+def _stage_a_samples(w, ik, ray, clear_m):
+    """Stage A's sampler, kept as the regression reference: ONE sample per
+    depth, FIRST valid roll wins. It is what this amendment replaced — a list
+    that changes roll partway out, which a roll-locked slide has to cut at the
+    first flip (task-2 concern #2)."""
+    from inspection.view.faceview import face_cam_pose
+    from inspection.view.rays import MIN_RANGE_M, RAY_STEP_M, R_MAX, Sample
+    from inspection.view.viewsphere import ROLLS
+    t_fc_inv = np.linalg.inv(np.asarray(T_FLANGE_CAM, dtype=float))
+    d0 = float(np.ceil((clear_m + MIN_RANGE_M) / RAY_STEP_M)) * RAY_STEP_M
+    out = []
+    for d in np.arange(d0, R_MAX + 1e-9, RAY_STEP_M):
+        for roll in ROLLS:
+            T_cam = face_cam_pose(ray.anchor, ray.direction, float(d), roll)
+            T_fl = T_cam @ t_fc_inv
+            free = [q for q in ik.branches(T_fl) if not w.is_colliding(q)]
+            if free:
+                out.append(Sample(float(d), float(roll), free[0], T_cam, T_fl))
+                break
+    return out
+
+
+def test_sample_ray_is_one_uniform_roll_list():
+    """Design: rolls are evaluated PER SAMPLE (per-roll sample lists). Cell
+    {3,1} is the fixture that broke Stage A's "first roll wins per depth":
+    roll pi solves at 0.20, roll 0 from 0.22 out, so the old list flipped roll
+    at its second entry. The list must now carry ONE roll, each depth once."""
+    from inspection.view.faceview import face_cam_pose
+    from inspection.view.rays import RAY_STEP_M, cell_ray, sample_ray
+    from inspection.view.viewsphere import ROLLS
+    w, ik = _box_world()
+    aabb = ((-0.025, -0.455, 0.0), (0.125, -0.305, 0.075))
+    ray = cell_ray((0.05, -0.38, 0.0375), 3, 1)
+    out = sample_ray(w, ik, T_FLANGE_CAM, ray, clear_m=_cell_clear(aabb, ray))
+
+    assert out
+    depths = [s.depth for s in out]
+    assert depths == sorted(depths)
+    assert len(depths) == len(set(depths)), "one sample per depth"
+    assert {s.roll for s in out} == {out[0].roll}, "uniform roll"
+    # the fixture must really exercise the tie, or it proves nothing: at this
+    # depth BOTH rolls solve, and the list holds it exactly once
+    d_both = out[0].depth + RAY_STEP_M
+    t_fc_inv = np.linalg.inv(np.asarray(T_FLANGE_CAM, dtype=float))
+    for roll in ROLLS:
+        T = face_cam_pose(ray.anchor, ray.direction, d_both, float(roll))
+        assert [q for q in ik.branches(T @ t_fc_inv)
+                if not w.is_colliding(q)], f"fixture: roll {roll} at {d_both}"
+    assert depths.count(d_both) == 1
+
+
+def test_per_roll_list_outlives_the_old_roll_cut():
+    """Same endpoint, longer corridor. The winner is still the closest valid
+    sample overall (Stage A's endpoint, unchanged), but the list behind it is
+    now that roll's whole valid run instead of a mixed list a slide must cut
+    at the first flip."""
+    from inspection.view.rays import cell_ray, sample_ray
+    w, ik = _box_world()
+    aabb = ((-0.025, -0.455, 0.0), (0.125, -0.305, 0.075))
+    ray = cell_ray((0.05, -0.38, 0.0375), 3, 1)
+    clear = _cell_clear(aabb, ray)
+
+    old = _stage_a_samples(w, ik, ray, clear)
+    new = sample_ray(w, ik, T_FLANGE_CAM, ray, clear_m=clear)
+
+    assert old and new
+    assert (new[0].depth, new[0].roll) == (old[0].depth, old[0].roll), \
+        "ENDPOINT INVARIANCE: the winner is still the closest valid sample"
+    assert np.allclose(new[0].q, old[0].q)
+    old_cut = [s for i, s in enumerate(old)
+               if all(x.roll == old[0].roll for x in old[:i + 1])]
+    assert len(old_cut) == 1, "fixture: Stage A's list flipped roll at once"
+    assert len(new) > len(old_cut), "the corridor outlives the old cut"
+    assert {s.roll for s in new} == {old[0].roll}
+
+
+def _roll_runs(w, ik, ray, clear_m):
+    """Both rolls' valid depth lists on one ray — the raw material the
+    sampler chooses between."""
+    from inspection.view.faceview import face_cam_pose
+    from inspection.view.rays import MIN_RANGE_M, RAY_STEP_M, R_MAX
+    from inspection.view.viewsphere import ROLLS
+    t_fc_inv = np.linalg.inv(np.asarray(T_FLANGE_CAM, dtype=float))
+    d0 = float(np.ceil((clear_m + MIN_RANGE_M) / RAY_STEP_M)) * RAY_STEP_M
+    runs = {float(r): [] for r in ROLLS}
+    for d in np.arange(d0, R_MAX + 1e-9, RAY_STEP_M):
+        for roll in ROLLS:
+            T = face_cam_pose(ray.anchor, ray.direction, float(d), float(roll))
+            if [q for q in ik.branches(T @ t_fc_inv)
+                    if not w.is_colliding(q)]:
+                runs[float(roll)].append(float(d))
+    return runs
+
+
+def test_winner_is_the_closest_sample_not_the_longest_list():
+    """ENDPOINT INVARIANCE, the gate on this amendment: the roll that wins is
+    the one holding the CLOSEST valid sample (ties by ROLLS order, which is
+    what Stage A's first-roll-wins decided), never the one holding the most
+    samples. Cell {0,2} is where the two criteria disagree — both rolls solve
+    at the closest depth, and the roll that LOSES the tie has the longer run,
+    so a "longest corridor wins" sampler would move this endpoint."""
+    from inspection.view.rays import cell_ray, sample_ray
+    from inspection.view.viewsphere import ROLLS
+    w, ik = _box_world()
+    aabb = ((-0.025, -0.455, 0.0), (0.125, -0.305, 0.075))
+    ray = cell_ray((0.05, -0.38, 0.0375), 0, 2)
+    clear = _cell_clear(aabb, ray)
+
+    runs = _roll_runs(w, ik, ray, clear)
+    first, second = float(ROLLS[0]), float(ROLLS[1])
+    assert runs[first] and runs[second]
+    assert runs[first][0] == runs[second][0], "fixture: the depths tie"
+    assert len(runs[second]) > len(runs[first]), "fixture: the loser is longer"
+
+    out = sample_ray(w, ik, T_FLANGE_CAM, ray, clear_m=clear)
+    assert out[0].roll == first, "the tie goes to ROLLS order, as always"
+    assert [s.depth for s in out] == runs[first]
+    assert out[0].depth == _stage_a_samples(w, ik, ray, clear)[0].depth
+
+
 def main():
+    n = 0
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
             fn()
-    print("OK test_rays")
+            n += 1
+    print(f"OK test_rays ({n} tests)")
 
 
 if __name__ == "__main__":

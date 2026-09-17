@@ -276,7 +276,7 @@ def test_roll_flip_lives_in_the_hop_only():
     target = _cell(w, ik, 9, 0)                 # roll pi at its closest sample
     assert abs(target.roll - current.roll) > 1e-9, "fixture must flip the roll"
     assert len(_roll_locked(target.samples, target.roll)) \
-        == len(target.samples) - 1, "fixture's corridor ends at a roll change"
+        == len(target.samples), "per-roll lists: nothing left to cut (T2b)"
     stub = _StubPlanner(fail=lambda s, q, T: len(s.calls) <= 2)
 
     legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
@@ -338,22 +338,93 @@ def test_slide_corridor_ends_where_a_segment_is_refused():
 
 
 def test_slide_out_stops_at_a_roll_change():
-    """Rolls are locked inside a slide, so a sample list that flips roll one
-    step out leaves exactly ONE out-depth: the one the camera is already at."""
-    from inspection.motion.transaction import _out_samples, plan_transaction
+    """The roll lock stays a SAFETY FILTER after task 2b. The sampler now
+    emits per-roll (uniform) lists, so no live fixture can feed a mixed one —
+    the guard is unit-tested on a synthetic list instead, because what it
+    defends against is a future sampler quietly sliding a wrist flip into a
+    corridor, and that must not become untested just because today's sampler
+    is well-behaved."""
+    from inspection.motion.transaction import RayState, _out_samples
+    from inspection.view.rays import Sample
     w, ik = _box_world()
-    current, q_now = _current(w, ik, h=3, v=1)     # roll pi, then roll 0 out
-    assert abs(current.samples[1].roll - current.roll) > 1e-9
-    assert len(_out_samples(current)) == 1
+    live, _q_now = _current(w, ik, h=3, v=1)
+    assert len({s.roll for s in live.samples}) == 1, "sampler emits one roll"
+
+    flipped = [live.samples[0]] + [
+        Sample(s.depth, s.roll + np.pi, s.q, s.T_cam, s.T_flange)
+        for s in live.samples[1:]]
+    mixed = RayState(live.ray, live.depth, live.roll, flipped)
+
+    assert len(_out_samples(mixed)) == 1, "a slide stops at the roll change"
+    assert len(_out_samples(live)) == len(live.samples), "uniform: all of it"
+
+
+def test_corridor_survives_the_roll_change():
+    """Task 2b: cell {3,1} used to resolve to a ONE-sample corridor (roll pi
+    at 0.20, roll 0 from 0.22 out), so the hop delivered the view pose
+    laterally — the arrival mode hop-then-slide exists to prevent. With
+    per-roll lists it slides in properly."""
+    from inspection.motion.transaction import plan_transaction
+    w, ik = _box_world()
+    current, q_now = _current(w, ik)
+    target = _cell(w, ik, 3, 1)
+    assert target.roll != current.roll, "fixture: the roll still flips"
+
+    legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
+                            planner=_StubPlanner())
+
+    assert legs is not None
+    assert len(legs.slide_in) > 1, "a real radial approach, not a lateral one"
+    ray = cell_ray(CENTER, 3, 1)
+    depths = [_ray_pose(ik, q, ray) for q in legs.slide_in]
+    assert all(roll == target.roll for _, roll in depths), "roll-locked"
+    assert [d for d, _ in depths] == sorted((d for d, _ in depths),
+                                            reverse=True)
+    assert np.isclose(depths[-1][0], target.depth)
+
+
+def test_widening_never_arrives_laterally():
+    """Ruled floor (task 2b): with a real corridor the entry never widens all
+    the way to the view pose itself — `e == 0` is the lateral arrival. Here a
+    keep-out leaves exactly two corridor samples, so the ONLY entry the search
+    may use is sample 1, and a total refusal must stay a refusal."""
+    from inspection.motion.transaction import plan_transaction
+    w, ik = _box_world()
+    current, q_now = _current(w, ik)
     target = _cell(w, ik, 6, 2)
+    ray = cell_ray(CENTER, 6, 2)
+    blocked = _Keepout(w, ik, ray, d_max=target.depth + 0.02)   # 2 samples
     stub = _StubPlanner(fail=lambda s, q, T: True)
 
-    assert plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
-                            planner=stub) is None
-    assert stub.probes, "the cheap sweep must have run"
-    for T in stub.entries:
-        n = sum(1 for c in stub.probes if np.allclose(c.T, T))
-        assert n == 1, "only the current depth is a roll-locked out-depth"
+    legs = plan_transaction(blocked, ik, T_FLANGE_CAM, current, target, q_now,
+                            planner=stub)
+
+    assert legs is None
+    assert len(stub.entries) == 1, "one corridor entry above the view pose"
+    assert not any(np.allclose(c.T, target.T_flange) for c in stub.calls), \
+        "e == 0 (the view pose itself) is never offered as an entry"
+    d_entry, _ = _ray_pose(ik, np.asarray(target.samples[1].q), ray)
+    assert np.allclose(stub.entries[0], target.samples[1].T_flange), \
+        f"the one entry is the second sample at {d_entry:.2f} m"
+
+
+def test_one_sample_corridor_still_plans_laterally():
+    """...and a GENUINELY one-sample corridor keeps `e == 0` as the honest
+    last resort: refusing it would mark cells transition-inaccessible that
+    Stage A proved reachable."""
+    from inspection.motion.transaction import plan_transaction
+    w, ik = _box_world()
+    current, q_now = _current(w, ik)
+    target = _cell(w, ik, 6, 2)
+    ray = cell_ray(CENTER, 6, 2)
+    blocked = _Keepout(w, ik, ray, d_max=target.depth)          # 1 sample
+
+    legs = plan_transaction(blocked, ik, T_FLANGE_CAM, current, target, q_now,
+                            planner=_StubPlanner())
+
+    assert legs is not None
+    assert len(legs.slide_in) == 1, "nothing to slide along"
+    assert np.allclose(ik.fk(legs.slide_in[0]), target.T_flange, atol=1e-6)
 
 
 def test_hop_that_cannot_slide_in_is_refused():

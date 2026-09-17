@@ -164,7 +164,12 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
     corridor = _roll_locked(target.samples, target.roll)
     reach = 1 + len(_slide(world, ik, corridor[1:],
                            np.asarray(target.q, dtype=float), step))
-    entries = list(range(reach - 1, -1, -1))[:max_entries]
+    # Widening stops one sample short of the view pose: `e == 0` means the
+    # hop lands ON the address, which is the lateral arrival hop-then-slide
+    # exists to prevent (ruled, task 2b). A corridor that is genuinely ONE
+    # sample long keeps it as the honest last resort — refusing there would
+    # mark cells transition-inaccessible that Stage A proved reachable.
+    entries = list(range(reach - 1, 0, -1))[:max_entries] or [0]
 
     # --- the slide-out corridor, walked once ------------------------------
     out_chain = []
