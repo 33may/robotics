@@ -20,6 +20,16 @@ ray's out-depths are walked current-depth-first, one plan each — ~18 plans,
 not the ~18x18 (~10 s) an out x entry product would cost. Only when that whole
 walk refuses does the entry widen inward, and only `MAX_ENTRY_TRIES` times.
 
+It is also TWO-PASS (controller ruling 2026-09-17). Linear was not cheap
+enough on the refusing side: when an entry pose has free IK branches but no
+path, every attempt escalates to tier 2 and pays ~620 ms before refusing —
+a measured 20.5 s refusal, against the design's ~2 s worst case. So the same
+candidate order is walked twice: pass 1 probes each candidate with TIER 1
+ONLY (a validated direct move, milliseconds), and only if that whole sweep
+refuses does pass 2 spend the full two-tier ladder on the first
+`MAX_LADDER_TRIES` candidates. A refusal now costs ~18 probes + 3 ladder
+plans, and the common case costs ONE direct move.
+
 `None` is the honest answer: the target address is transition-inaccessible and
 the caller marks it blocked. No fallback substitution.
 
@@ -50,6 +60,12 @@ Legs = namedtuple("Legs", ["out", "hop", "slide_in", "world"])
 #: MAX_ENTRY_TRIES x n_out_depths plans (~54 x 30 ms worst case) instead of
 #: the quadratic product the pinning exists to avoid.
 MAX_ENTRY_TRIES = 3
+
+#: How many candidates may spend the FULL ladder (tier 2, OMPL) once the
+#: tier-1 sweep has refused every one of them. Tier 2 costs ~620 ms per
+#: refusal here, so this number is the refusal's price tag: 3 x ~620 ms on
+#: top of the sweep, ~2.5 s worst case (controller ruling 2026-09-17).
+MAX_LADDER_TRIES = 3
 
 #: Largest per-joint step a slide may take between two consecutive ray samples
 #: [rad]. A slide is one IK branch by contract — no +-pi re-expression, no
@@ -118,7 +134,7 @@ def _out_samples(current):
 
 def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
                      planner=plan_viewpoint, max_entries=MAX_ENTRY_TRIES,
-                     step=DEFAULT_STEP):
+                     max_ladder=MAX_LADDER_TRIES, step=DEFAULT_STEP):
     """Plan the three legs from `q_now` to `target`'s view pose, or None.
 
     world:   the LIVE planner world at plan time (ruling) — every leg is
@@ -129,9 +145,11 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
     target:  a `RayResolution` from `resolve_cell` / `resolve_face`; its
              `samples` list (element 0 = closest = the view pose) is the
              slide-in corridor.
-    planner: the hop planner, `plan_viewpoint(world, ik, q_from, T, seed=)`
-             by default — injectable so the search can be exercised without
-             paying for real planning.
+    planner: the hop planner, `plan_viewpoint(world, ik, q_from, T, seed=,
+             tiers=)` by default — injectable so the search can be exercised
+             without paying for real planning. It MUST honour `tiers`: the
+             search asks for `(1,)` while it sweeps and `(1, 2)` only for the
+             few candidates it is willing to spend OMPL on.
 
     `t_flange_cam` is accepted for symmetry with the resolvers' call sites;
     the samples already carry their flange poses, so it is not needed here.
@@ -156,24 +174,33 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
             out = out[1:]                 # the arm is already at that sample
         out_chain = _slide(world, ik, out, q_now, step)
 
-    # --- pinned search: every out-depth against one entry, then widen -----
-    for e in entries:
-        T_entry = corridor[e].T_flange
-        for j in range(len(out_chain) + 1):
-            q_out = out_chain[j - 1] if j else q_now
-            path, _rep = planner(world, ik, q_out, T_entry, seed=seed)
-            if path is None:
-                continue
-            # The hop picks its own branch at the entry pose, so the slide-in
-            # is derived from where the hop actually LANDS, not from the probe
-            # above — that is what keeps it a single-branch approach.
-            slide = [np.asarray(path[-1], dtype=float)]
-            inward = _slide(world, ik, list(reversed(corridor[:e])),
-                            slide[0], step)
-            if len(inward) != e:
-                continue                  # arrival branch cannot slide in
-            slide.extend(inward)
-            return Legs(list(out_chain[:j]),
-                        [np.asarray(q, dtype=float) for q in path],
-                        slide, world)
+    # --- the candidate order: every out-depth against one entry, then widen
+    candidates = [(e, j) for e in entries for j in range(len(out_chain) + 1)]
+
+    def attempt(e, j, tiers):
+        """One hop-and-slide-in try, or None."""
+        q_out = out_chain[j - 1] if j else q_now
+        path, _rep = planner(world, ik, q_out, corridor[e].T_flange,
+                             seed=seed, tiers=tiers)
+        if path is None:
+            return None
+        # The hop picks its own branch at the entry pose, so the slide-in is
+        # derived from where the hop actually LANDS, not from the probe
+        # above — that is what keeps it a single-branch approach.
+        slide = [np.asarray(path[-1], dtype=float)]
+        inward = _slide(world, ik, list(reversed(corridor[:e])), slide[0],
+                        step)
+        if len(inward) != e:
+            return None                   # arrival branch cannot slide in
+        slide.extend(inward)
+        return Legs(list(out_chain[:j]),
+                    [np.asarray(q, dtype=float) for q in path], slide, world)
+
+    # --- pass 1: sweep every candidate on tier 1; pass 2: the capped ladder
+    for tiers, pool in (((1,), candidates),
+                        ((1, 2), candidates[:max_ladder])):
+        for e, j in pool:
+            legs = attempt(e, j, tiers)
+            if legs is not None:
+                return legs
     return None

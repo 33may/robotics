@@ -5,6 +5,8 @@ collision world, real ray samples. The HOP is the only leg that needs a
 planner, so it is stubbed: a counting stand-in proves the search is linear and
 entry-pinned without paying OMPL, and one smoke test runs the real ladder.
 """
+from collections import namedtuple
+
 import numpy as np
 
 from inspection.cell.world import RobotCell
@@ -77,10 +79,14 @@ class _Keepout:
         return self._w.path_valid(path, **kw)
 
 
+_Call = namedtuple("_Call", ["q_from", "T", "tiers"])
+
+
 class _StubPlanner:
-    """Counting stand-in for plan_viewpoint. Records every (q_from, T_target)
-    it is asked for and answers with a two-waypoint move to the nearest
-    collision-free branch; `fail(stub, q_from, T)` refuses instead."""
+    """Counting stand-in for plan_viewpoint. Records every call — start
+    config, entry pose and the RUNGS it was allowed to use — and answers with
+    a two-waypoint move to the nearest collision-free branch;
+    `fail(stub, q_from, T)` refuses instead."""
 
     def __init__(self, fail=None, worst=False):
         self.calls = []
@@ -90,7 +96,7 @@ class _StubPlanner:
     def __call__(self, world, ik, q_from, T_target, seed=0, **kw):
         q_from = np.asarray(q_from, dtype=float)
         T = np.asarray(T_target, dtype=float)
-        self.calls.append((q_from, T))
+        self.calls.append(_Call(q_from, T, tuple(kw.get("tiers", (1, 2)))))
         if self._fail(self, q_from, T):
             return None, {"reason": "stub refusal"}
         free = [q for q in ik.branches(T, q_near=q_from)
@@ -104,10 +110,20 @@ class _StubPlanner:
     def entries(self):
         """Distinct entry poses asked for, first-use order."""
         out = []
-        for _, T in self.calls:
-            if not any(np.allclose(T, s) for s in out):
-                out.append(T)
+        for c in self.calls:
+            if not any(np.allclose(c.T, s) for s in out):
+                out.append(c.T)
         return out
+
+    @property
+    def probes(self):
+        """Pass-1 calls: the cheap tier-1-only hop probes."""
+        return [c for c in self.calls if c.tiers == (1,)]
+
+    @property
+    def ladders(self):
+        """Pass-2 calls: the ones allowed to spend tier 2 (OMPL)."""
+        return [c for c in self.calls if 2 in c.tiers]
 
 
 def test_pinned_entry_search_is_linear_and_current_depth_first():
@@ -129,19 +145,24 @@ def test_pinned_entry_search_is_linear_and_current_depth_first():
     assert len(stub.entries) == 1, "entry stays pinned while out-depths remain"
     assert len(legs.out) == 3, "three failures = three steps outward"
     # each attempt hops from exactly the pose the slide-out walked to
-    assert np.allclose(stub.calls[0][0], q_now)
+    assert np.allclose(stub.calls[0].q_from, q_now)
     for k in range(1, 4):
-        assert np.allclose(stub.calls[k][0], legs.out[k - 1])
+        assert np.allclose(stub.calls[k].q_from, legs.out[k - 1])
     # the pinned entry is the FARTHEST sample of the target's slide corridor
     d_entry, _ = _ray_pose(ik, legs.slide_in[0], cell_ray(CENTER, 6, 2))
     assert d_entry > target.depth + 1e-9
-    assert np.allclose(stub.calls[0][1], ik.fk(legs.slide_in[0]))
+    assert np.allclose(stub.calls[0].T, ik.fk(legs.slide_in[0]))
 
 
 def test_no_out_depth_plans_is_none():
-    """No out-depth from which the transition plans -> honestly inaccessible,
-    and the widening that follows the pinned search stays bounded."""
-    from inspection.motion.transaction import MAX_ENTRY_TRIES, plan_transaction
+    """No out-depth from which the transition plans -> honestly inaccessible.
+    The refusal is the expensive path, so it is the one that must stay cheap:
+    the whole search sweeps on tier-1 probes and only MAX_LADDER_TRIES
+    attempts are ever allowed to spend tier 2 (controller ruling 2026-09-17 —
+    a refusal measured 20.5 s when every attempt escalated)."""
+    from inspection.motion.transaction import (MAX_ENTRY_TRIES,
+                                               MAX_LADDER_TRIES,
+                                               plan_transaction)
     w, ik = _box_world()
     current, q_now = _current(w, ik)
     target = _cell(w, ik, 6, 2)
@@ -152,7 +173,46 @@ def test_no_out_depth_plans_is_none():
 
     assert legs is None
     assert 1 < len(stub.entries) <= MAX_ENTRY_TRIES, "widen, but bounded"
-    assert len(stub.calls) <= MAX_ENTRY_TRIES * len(current.samples)
+    assert len(stub.probes) + len(stub.ladders) == len(stub.calls)
+    assert len(stub.probes) <= MAX_ENTRY_TRIES * len(current.samples)
+    assert len(stub.ladders) == MAX_LADDER_TRIES, "pass 2 is capped"
+    assert all(c.tiers == (1,) for c in stub.calls[:len(stub.probes)]), \
+        "pass 2 never starts before the cheap sweep is exhausted"
+
+
+def test_only_tier_two_hop_resolves_in_pass_two():
+    """A hop no direct move can make is still a transaction: the cheap sweep
+    exhausts, then the full ladder plans it."""
+    from inspection.motion.transaction import plan_transaction
+    w, ik = _box_world()
+    current, q_now = _current(w, ik)
+    target = _cell(w, ik, 6, 2)
+    stub = _StubPlanner(fail=lambda s, q, T: s.calls[-1].tiers == (1,))
+
+    legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
+                            planner=stub)
+
+    assert legs is not None
+    assert len(stub.probes) > 1, "the cheap sweep ran first, and whole"
+    assert all(c.tiers == (1,) for c in stub.calls[:-1])
+    assert len(stub.ladders) == 1, "the first full-ladder attempt wins"
+
+
+def test_pass_one_success_never_spends_tier_two():
+    """The common case pays for ONE direct-move probe — tier 2 is never even
+    offered the query."""
+    from inspection.motion.transaction import plan_transaction
+    w, ik = _box_world()
+    current, q_now = _current(w, ik)
+    target = _cell(w, ik, 6, 2)
+    stub = _StubPlanner()
+
+    legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
+                            planner=stub)
+
+    assert legs is not None
+    assert stub.ladders == [], "no tier-2 query on a pass-1 success"
+    assert len(stub.calls) == len(stub.probes) == 1
 
 
 def test_entry_widens_only_after_the_out_depths_exhaust():
@@ -164,17 +224,17 @@ def test_entry_widens_only_after_the_out_depths_exhaust():
     target = _cell(w, ik, 6, 2)
     # refuse the pinned entry forever; the next entry inward plans fine
     stub = _StubPlanner(
-        fail=lambda s, q, T: np.allclose(T, s.calls[0][1]))
+        fail=lambda s, q, T: np.allclose(T, s.calls[0].T))
 
     legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
                             planner=stub)
 
     assert legs is not None
     pinned = stub.entries[0]
-    n_pinned = sum(1 for _, T in stub.calls if np.allclose(T, pinned))
+    n_pinned = sum(1 for c in stub.calls if np.allclose(c.T, pinned))
     assert n_pinned >= 2, "the whole out-depth walk runs on the pinned entry"
-    first_widened = next(i for i, (_, T) in enumerate(stub.calls)
-                         if not np.allclose(T, pinned))
+    first_widened = next(i for i, c in enumerate(stub.calls)
+                         if not np.allclose(c.T, pinned))
     assert first_widened == n_pinned, "no interleaving: pinned, then wider"
     ray = cell_ray(CENTER, 6, 2)
     d_pinned, _ = _ray_pose(ik, target.samples[-1].q, ray)
@@ -265,8 +325,9 @@ def test_slide_out_stops_at_a_roll_change():
 
     assert plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
                             planner=stub) is None
+    assert stub.probes, "the cheap sweep must have run"
     for T in stub.entries:
-        n = sum(1 for _, t in stub.calls if np.allclose(t, T))
+        n = sum(1 for c in stub.probes if np.allclose(c.T, T))
         assert n == 1, "only the current depth is a roll-locked out-depth"
 
 
@@ -302,7 +363,7 @@ def test_no_current_ray_means_no_slide_out():
     assert legs is not None
     assert legs.out == []
     assert len(stub.calls) == 1
-    assert np.allclose(stub.calls[0][0], q_now)
+    assert np.allclose(stub.calls[0].q_from, q_now)
     assert np.allclose(legs.hop[0], q_now)
 
 
