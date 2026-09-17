@@ -25,7 +25,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from inspection.cell.geometry import (is_half_turn, object_in_base, prompt_box,
+from inspection.cell.geometry import (is_half_turn, object_in_base,
+                                      project_to_pixels, prompt_box,
                                       rotate180)
 
 log = logging.getLogger(__name__)
@@ -37,6 +38,21 @@ MIN_MASK_SCORE = 0.5
 #: A mask this small is not our object at 848x480 — the survey mask, the
 #: smallest of the run because it is the most distant view, was 7628 px.
 MIN_MASK_PX = 200
+#: The detect rung (investigation/partial_prompt/REPORT.md): a box prompt is
+#: an extent CEILING, so a partially reconstructed object yields a partial
+#: mask forever (1009-lan1: 15.9k px at 0.64 for views on end, vs the ~47k
+#: the switch measures). Sam3 detection is extent-blind to our cloud, so the
+#: rung asks it for instances and keeps the one the prior cloud is contained
+#: in. Generic concept on purpose — identity comes from the containment
+#: test, not the phrase.
+DETECT_PHRASE = "object"
+#: An instance containing less than this fraction of the projected prior
+#: cloud is not our object. Audited on 125 views: the detector confidently
+#: offered wrong instances (mouse 0.57, table blobs) 21 times and this gate
+#: rejected every one; 0 wrong picks accepted.
+MIN_CONTAINMENT = 0.5
+#: Raw detector queries below this are noise (always 200 come back).
+MIN_DET_SCORE = 0.2
 
 
 @dataclass(frozen=True)
@@ -70,6 +86,7 @@ class ObjectSegmenter:
         self._verbs = None
         self.min_score, self.min_px = float(min_score), int(min_px)
         self.calls = self.misses = 0
+        self.branches = []          # per accepted view: "detect" | "box"
 
     def _lazy(self):
         if self._verbs is None:
@@ -77,13 +94,50 @@ class ObjectSegmenter:
             self._verbs = LocalVerbs(self._backend or Sam3Backend())
         return self._verbs
 
-    def mask_for(self, rgb, box, T_base_cam=None) -> Segmentation | None:
-        """Segment the object inside `box`. None means "do not trust this".
+    def _pick_instance(self, frame, src_px):
+        """The detector's best instance CONTAINING the prior cloud, or None.
 
-        A miss is an ordinary outcome, not an error: the caller falls back to
-        the depth-only path rather than fusing a mask it cannot vouch for. A
-        backend that raises is treated the same way — a model failure must
-        never take the run down with it.
+        Containment — the fraction of projected prior-cloud pixels inside an
+        instance's mask — is what makes the rung safe: the detector sees the
+        mouse and table blobs too (score up to 0.95 on the lan bench), but
+        only the instance that explains what the arm already fused can be
+        the object. Any failure here is a step-down, never a miss.
+        """
+        if src_px is None or not len(src_px):
+            return None
+        try:
+            h, w = frame.shape[:2]
+            uv = np.round(np.asarray(src_px, dtype=float)).astype(int)
+            uv = uv[(uv[:, 0] >= 0) & (uv[:, 0] < w)
+                    & (uv[:, 1] >= 0) & (uv[:, 1] < h)]
+            if not len(uv):
+                return None
+            best, best_gain = None, 0.0
+            for inst in self._lazy().instances(_Frame(frame), DETECT_PHRASE):
+                if inst.score < MIN_DET_SCORE:
+                    continue
+                cont = float(inst.mask[uv[:, 1], uv[:, 0]].mean())
+                if cont < MIN_CONTAINMENT:
+                    continue
+                if inst.score * cont > best_gain:
+                    best, best_gain = inst.box, inst.score * cont
+            return best
+        except Exception:
+            log.exception("detect rung failed — stepping down to the box "
+                          "prompt")
+            return None
+
+    def mask_for(self, rgb, box, T_base_cam=None,
+                 src_px=None) -> Segmentation | None:
+        """Segment the object. None means "do not trust this".
+
+        Two rungs, gated identically: the detect rung (when `src_px`, the
+        projected prior cloud, is given) frees the mask from the box's
+        extent ceiling; the box prompt is the step-down. A miss is an
+        ordinary outcome, not an error: the caller falls back to the
+        depth-only path rather than fusing a mask it cannot vouch for, and
+        a backend that raises is treated the same way — a model failure
+        must never take the run down with it.
         """
         if rgb is None or box is None:
             return None
@@ -96,23 +150,37 @@ class ObjectSegmenter:
             # keeps the frame landscape (eyes/AGENTS.md, measured 2026-08-24).
             x0, y0, x1, y1 = box
             frame, prompt = rotate180(rgb), (w - x1, h - y1, w - x0, h - y0)
+            src = None if src_px is None else np.column_stack(
+                [w - 1 - np.asarray(src_px, dtype=float)[:, 0],
+                 h - 1 - np.asarray(src_px, dtype=float)[:, 1]])
         else:
-            frame, prompt = rgb, tuple(box)
-        try:
-            seg = self._lazy().segment(_Frame(frame), prompt)
-        except Exception:
-            log.exception("segmentation backend failed on box %s", prompt)
-            self.misses += 1
-            return None
-        mask = rotate180(seg.mask) if flip else seg.mask
-        n = int(mask.sum())
-        if seg.score < self.min_score or n < self.min_px:
-            log.warning("mask rejected: score %.2f (min %.2f), %d px (min %d)",
-                        seg.score, self.min_score, n, self.min_px)
-            self.misses += 1
-            return None
-        return Segmentation(np.asarray(mask, dtype=bool), tuple(box),
-                            float(seg.score))
+            frame, prompt, src = rgb, tuple(box), src_px
+        rungs = []
+        picked = self._pick_instance(frame, src)
+        if picked is not None:
+            rungs.append(("detect", picked))
+        rungs.append(("box", prompt))
+        for branch, b in rungs:
+            try:
+                seg = self._lazy().segment(_Frame(frame), b)
+            except Exception:
+                log.exception("segmentation backend failed on box %s", b)
+                continue
+            mask = rotate180(seg.mask) if flip else seg.mask
+            n = int(mask.sum())
+            if seg.score < self.min_score or n < self.min_px:
+                log.warning("%s mask rejected: score %.2f (min %.2f), %d px "
+                            "(min %d)", branch, seg.score, self.min_score, n,
+                            self.min_px)
+                continue
+            if flip:
+                bx0, by0, bx1, by1 = b
+                b = (w - bx1, h - by1, w - bx0, h - by0)
+            self.branches.append(branch)
+            return Segmentation(np.asarray(mask, dtype=bool),
+                                tuple(int(v) for v in b), float(seg.score))
+        self.misses += 1
+        return None
 
 
 def object_view(cap, intr, intr_color, depth_scale, seed, segmenter,
@@ -155,7 +223,11 @@ def object_view(cap, intr, intr_color, depth_scale, seed, segmenter,
     depth_view["prompt_source"], depth_view["prompt_box"] = source, box
     if box is None:
         return _fell_back("object not visible in frame — fell back to depth growth")
-    seg = segmenter.mask_for(rgb, box, cap["T_base_cam"])
+    # The RAW seen points, not the floor-extruded shadow `prompt_box` adds:
+    # shadow pixels land on the TABLE from side views and would dilute the
+    # detect rung's containment test.
+    src_px = project_to_pixels(source, cap["T_base_cam"], intr_color)
+    seg = segmenter.mask_for(rgb, box, cap["T_base_cam"], src_px=src_px)
     if seg is None:
         return _fell_back("no object mask — fell back to depth growth")
     # The mask is computed on rgb, so it must be applied to the depth sharing

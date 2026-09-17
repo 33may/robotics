@@ -45,11 +45,36 @@ class TextLine:
     quad: tuple         # 4 (x, y) corners as returned by the detector
 
 
+@dataclass(frozen=True)
+class Instance:
+    box: tuple          # (x0, y0, x1, y1), clipped to the frame
+    score: float
+    mask: np.ndarray    # (H, W) bool, frame-sized
+
+
 class LocalVerbs:
     """Verb policy over any backend. No torch here — see the backends."""
 
     def __init__(self, backend):
         self._b = backend
+
+    def instances(self, img, phrase):
+        """Detections WITH their masks, best first — `detect` for callers
+        that need to test pixel membership, not just draw boxes. The
+        segmenter's detect rung picks the instance CONTAINING the prior
+        cloud, which a box alone cannot decide (a table detection's box
+        contains everything)."""
+        h, w = img.rgb.shape[:2]
+        out = []
+        for box, score, mask in self._b.instances(img.rgb, phrase):
+            x0, y0, x1, y1 = box
+            box = (max(0, int(x0)), max(0, int(y0)),
+                   min(w, int(x1)), min(h, int(y1)))
+            if box[2] <= box[0] or box[3] <= box[1]:
+                continue
+            out.append(Instance(box, float(score),
+                                np.asarray(mask, dtype=bool)))
+        return sorted(out, key=lambda d: -d.score)
 
     def detect(self, img, phrase, min_score=0.3):
         """Boxes for a simple noun phrase, best first, clipped to the frame."""
@@ -109,6 +134,15 @@ class StubBackend:
     def detect(self, rgb, phrase):
         return list(self._boxes)
 
+    def instances(self, rgb, phrase):
+        out = []
+        for box, score, _label in self._boxes:
+            m = np.zeros(rgb.shape[:2], dtype=bool)
+            x0, y0, x1, y1 = box
+            m[y0:y1, x0:x1] = True
+            out.append((box, score, m))
+        return out
+
     def segment(self, rgb, box):
         mask = np.zeros(rgb.shape[:2], dtype=bool)
         x0, y0, x1, y1 = box
@@ -162,6 +196,20 @@ class Sam3Backend:
             out, threshold=0.0, target_sizes=[rgb.shape[:2]])[0]
         return [(tuple(b.tolist()), float(s), phrase)
                 for b, s in zip(res["boxes"], res["scores"])]
+
+    def instances(self, rgb, phrase):
+        """`detect` keeping the masks — the containment test needs pixel
+        membership, and post_process already produced the masks anyway."""
+        import torch
+        model, proc = self._load_detector()
+        inputs = proc(images=rgb, text=phrase, return_tensors="pt").to(self.device)
+        with torch.inference_mode():
+            out = model(**inputs)
+        res = proc.post_process_instance_segmentation(
+            out, threshold=0.0, target_sizes=[rgb.shape[:2]])[0]
+        return [(tuple(b.tolist()), float(s), m.cpu().numpy().astype(bool))
+                for b, s, m in zip(res["boxes"], res["scores"],
+                                   res["masks"])]
 
     def segment(self, rgb, box):
         import torch

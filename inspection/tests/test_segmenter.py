@@ -118,6 +118,132 @@ def test_backend_is_not_constructed_until_first_use():
     assert s._verbs is None
 
 
+# ── detect rung ─────────────────────────────────────────────────────────────
+# A box prompt is an extent ceiling (REPORT: investigation/partial_prompt/),
+# so when the prior cloud is partial the box is partial and the mask stops at
+# it. The rung anchors the prompt on Sam3 detection instead: instances the
+# prior cloud is CONTAINED in are our object; the best one's box goes to the
+# tracker; everything else steps down to today's box prompt.
+
+
+def _filled(box, shape=(480, 848)):
+    m = np.zeros(shape, dtype=bool)
+    x0, y0, x1, y1 = box
+    m[y0:y1, x0:x1] = True
+    return m
+
+
+class _InstStub:
+    """segment fills the prompted box (score per box, default 1.0);
+    `instances` returns the configured (box, score) list with filled masks."""
+
+    def __init__(self, instances=(), seg_scores=None):
+        self._instances = list(instances)
+        self._seg_scores = seg_scores or {}
+        self.instance_calls = 0
+
+    def instances(self, rgb, phrase):
+        self.instance_calls += 1
+        return [(box, score, _filled(box, rgb.shape[:2]))
+                for box, score in self._instances]
+
+    def segment(self, rgb, box):
+        return (_filled(box, rgb.shape[:2]),
+                self._seg_scores.get(tuple(box), 1.0))
+
+
+class _AngryInstances(_InstStub):
+    def instances(self, rgb, phrase):
+        raise RuntimeError("CUDA out of memory")
+
+
+#: prompt box on the SEEN half; src pixels inside it; the full object is FULL.
+_PARTIAL = (300, 150, 420, 350)
+_FULL = (280, 140, 560, 360)
+_DISTRACTOR = (700, 380, 840, 470)          # high score, contains no src
+_SRC = np.array([[320.0, 200.0], [360.0, 250.0], [400.0, 300.0]])
+
+
+def test_detect_rung_prefers_the_containing_instance():
+    """The distractor scores higher, but contains none of the prior cloud —
+    score alone must never pick the instance."""
+    s = _seg(_InstStub([(_DISTRACTOR, 0.95), (_FULL, 0.90)]))
+    out = s.mask_for(RGB, _PARTIAL, src_px=_SRC)
+    assert out is not None and out.box == _FULL
+    assert out.mask[140:360, 280:560].all()
+    assert s.branches == ["detect"]
+
+
+def test_low_containment_instances_fall_back_to_the_box_prompt():
+    s = _seg(_InstStub([(_DISTRACTOR, 0.95)]))
+    out = s.mask_for(RGB, _PARTIAL, src_px=_SRC)
+    assert out is not None and out.box == _PARTIAL
+    assert s.branches == ["box"]
+
+
+def test_no_src_px_never_calls_the_detector():
+    b = _InstStub([(_FULL, 0.9)])
+    s = _seg(b)
+    out = s.mask_for(RGB, _PARTIAL)
+    assert out is not None and out.box == _PARTIAL
+    assert b.instance_calls == 0
+
+
+def test_detector_exception_falls_back_to_the_box_prompt():
+    """A detector failure must degrade to today's behaviour, not to a miss."""
+    s = _seg(_AngryInstances([(_FULL, 0.9)]))
+    out = s.mask_for(RGB, _PARTIAL, src_px=_SRC)
+    assert out is not None and out.box == _PARTIAL
+
+
+def test_gated_detect_mask_steps_down_to_the_box_prompt():
+    """The shipped score gate applies PER RUNG: a bad tracker mask on the
+    detector's box must retry the box prompt, not give up."""
+    s = _seg(_InstStub([(_FULL, 0.9)], seg_scores={_FULL: 0.2}))
+    out = s.mask_for(RGB, _PARTIAL, src_px=_SRC)
+    assert out is not None and out.box == _PARTIAL
+    assert s.branches == ["box"] and s.misses == 0
+
+
+def test_detect_rung_flips_with_the_frame():
+    """Backend sees the upright frame on a half turn; the pick and its mask
+    must come back in the caller's frame like every other segmenter output."""
+    h, w = 480, 848
+    x0, y0, x1, y1 = _FULL
+    flipped_full = (w - x1, h - y1, w - x0, h - y0)
+    s = _seg(_InstStub([(flipped_full, 0.9)]))
+    out = s.mask_for(RGB, _PARTIAL, T_base_cam=_HALF_TURN, src_px=_SRC)
+    assert out is not None and out.box == _FULL
+    assert out.mask[140:360, 280:560].all()
+    assert s.branches == ["detect"]
+
+
+def test_object_view_hands_the_projected_source_to_the_segmenter():
+    """`object_view` owns the source cloud, so containment evidence must be
+    plumbed from there — the raw SEEN points, not the floor-extruded shadow
+    (table-level pixels would dilute containment from side views)."""
+    from inspection.cell.geometry import object_in_base, project_to_pixels
+    from inspection.run.segmenter import object_view
+    from inspection.tests.synth import synth_capture
+
+    depth, intr, scale, T_bc, _ = synth_capture()
+    seed = object_in_base(depth, intr, scale, T_bc)["points"]
+    cap = {"rgb": RGB, "depth_raw": depth, "depth_aligned": depth,
+           "T_base_cam": T_bc}
+    got = {}
+
+    class _Capture:
+        def mask_for(self, rgb, box, T_base_cam=None, src_px=None):
+            got["src_px"] = src_px
+            return None
+
+    object_view(cap, intr, intr, scale, seed, _Capture(),
+                floor_z=-0.005)
+    want = project_to_pixels(seed, T_bc, intr)
+    assert got["src_px"] is not None
+    assert np.allclose(got["src_px"], want)
+
+
 # ── chain overlays ──────────────────────────────────────────────────────────
 
 def test_chain_writes_only_the_stages_that_happened():
