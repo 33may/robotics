@@ -775,9 +775,11 @@ class Supervisor:
         self.gen += 1               # any stale worker event dies at the gate
         self.stop_event.clear()
         self.pose_active.set()      # the streamer shows the arm moving
-        # A retreat is not a transaction: drop the previewed plan's leg
-        # boundaries so the status strip cannot describe this move with them.
-        self._legs = self._leg_bounds = None
+        # A retreat is not a transaction: drop the previewed plan's legs,
+        # boundaries and resolution together, so the status strip cannot
+        # describe this move with them and no arrival can install a ray state
+        # out of a plan this move is not executing.
+        self._legs = self._leg_bounds = self._target_res = None
         self._set_phase("executing", None)
         self.pub.log("warn", f"{RETREAT_AFTER_FAILS} plans refused from this "
                              f"stance — retreating {RETREAT_M * 100:.0f} cm "
@@ -1114,10 +1116,21 @@ class Supervisor:
                     if len(move) < 2:
                         continue        # nothing to travel on this leg
                     self.events.put({"ev": "phase", "gen": gen, "phase": phase})
-                    # The world the LEGS were planned under, never the live
-                    # one: the retreat precedent (`rigs.py:move`) — a refit
-                    # that lands between plan and motion must not veto a path
-                    # that was legal when it was approved.
+                    # Each leg is judged by the world it was PLANNED under —
+                    # the retreat idiom (`rigs.py:move`), which is the one
+                    # place in this file that already names its own gate
+                    # world instead of taking the rig's "live".
+                    #
+                    # Today that buys no protection: `legs.world` IS
+                    # `self.world` IS `rig.world` (app.py wires one
+                    # `RobotCell` to all three), and `_recenter` refits it in
+                    # place, so a refit landing between plan and motion would
+                    # veto here exactly as the live gate would. What this
+                    # does buy is the SEAM: the leg carries the identity of
+                    # its own validation world, so giving the transaction a
+                    # world snapshot later is a change in one place rather
+                    # than a change to every move site. Snapshotting is a
+                    # design question, not this task's.
                     rep = self.rig.move(move, world=legs.world)
                     _extend_path(executed, move[1:1 + _done(rep, move)])
                     if rep.get("stopped"):
@@ -1474,11 +1487,19 @@ class Supervisor:
         `resolved: false` and drawn dim: it is the geometry's promise, not
         the sampler's answer, and it is replaced by `_face_find` the moment a
         plan resolves the face for real.
+
+        None when the family is empty — a geometry the sampler has nothing
+        to say about. This runs on the DISPATCHER for every non-settling
+        face on every publish, so it costs that face its marker and its
+        recorded pose rather than raising out of `_publish_views` and
+        wedging the loop with the arm on the table.
         """
         from inspection.view.faceview import face_cam_pose
         from inspection.view.rays import face_family
         family = face_family(self._face_prim, face, self.rig.intr["fy"],
                              self.rig.intr["height"])
+        if not family:
+            return None
         ray, _shift, _theta, d_min = next((m for m in family if m[2] == 0.0),
                                           family[0])
         return face_cam_pose(np.asarray(ray.anchor),
@@ -1569,6 +1590,9 @@ class Supervisor:
                 find = self._face_find.get(f)
                 T_f = self._face_nominal(f) if find is None else find["pose"]
                 theta = st["off_angle_deg"]
+                # `pose` is Optional in the schema precisely so an address
+                # with no pose to report can say so (a face whose ray family
+                # is empty) instead of recording an invented one.
                 cands.append(ViewCandidate(
                     address=["face", f],
                     # `_face_states()` speaks "ready"/"unreachable"/"visited";
@@ -1579,7 +1603,7 @@ class Supervisor:
                     # so it is recorded under that name rather than widening
                     # the schema for one new synonym.
                     status=_FACE_STATUS_TO_CANDIDATE[st["status"]],
-                    pose=_mat(T_f),
+                    pose=None if T_f is None else _mat(T_f),
                     scores={} if theta is None
                     else {"off_angle_deg": float(theta)}))
         mn_mx = self.acc.aabb(pct=BOX_PCT)
@@ -1598,10 +1622,13 @@ class Supervisor:
     def _set_phase(self, phase, target=None):
         self.phase, self.target = phase, target
         if phase in ("idle", "fault", "done"):
-            # Nothing is in flight, so there are no legs to describe — and a
+            # Nothing is in flight, so there is no plan to describe — and a
             # retained strip still carrying the last move's boundaries would
-            # describe the NEXT thing the UI drew with them.
-            self._legs = self._leg_bounds = None
+            # describe the NEXT thing the UI drew with them. `_target_res`
+            # rides with them rather than outliving them: it is what installs
+            # `_ray_state` on arrival, and a plan's three products must go
+            # stale together or a reader may assume the survivor is fresh.
+            self._legs = self._leg_bounds = self._target_res = None
         total = sum(1 for r in self._reach.values() if r is not None)
         self.pub.status(phase=phase, target=self._target_json(target),
                         visited=len(self.visited), total=total,
@@ -1677,7 +1704,10 @@ class Supervisor:
                     st["pos"] = list(find["pos"])
                     st["resolved"] = True
                     continue
-                st["pos"] = [float(x) for x in self._face_nominal(f)[:3, 3]]
+                T_f = self._face_nominal(f)
+                if T_f is None:     # no family, no point — and so no marker
+                    continue
+                st["pos"] = [float(x) for x in T_f[:3, 3]]
                 st["resolved"] = False
         return faces
 
@@ -1788,13 +1818,19 @@ class Supervisor:
 def _done(rep, move) -> int:
     """How many of `move`'s waypoints the rig reports as reached.
 
-    Defaulted to "all of them" for a rig that does not count (both rigs in
-    tree do — the default is there so the executed record is never silently
-    SHORT if one ever stops): a record one waypoint long retraces a
-    configuration the arm has already left, which is the one error the
-    retrace cannot survive.
+    A missing count is a FAULT, not a default. Both rigs in tree report it
+    (`rigs.py`, `motion/execute.py`), and there is no safe way to guess at
+    one that does not: this number is where the executed record — and so the
+    retreat's retrace — believes the arm is. Guess LOW and the retrace opens
+    with a segment from a configuration the arm has already left; guess HIGH
+    and it drives forward through the waypoint the stop existed to prevent.
+    Raising instead puts the run in `fault` with the reason on the record,
+    which is the outcome an operator can act on.
     """
-    return int(rep.get("waypoints_done", len(move) - 1))
+    if "waypoints_done" not in rep:
+        raise RuntimeError("rig report carries no waypoints_done — cannot "
+                           "say where the arm stopped")
+    return int(rep["waypoints_done"])
 
 
 def _extend_path(path, waypoints):

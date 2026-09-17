@@ -484,6 +484,10 @@ def test_capture_fail_not_visited():
     sup.events.put({"cmd": "view/confirm", "target": target})
     wait_for(lambda: sup.phase == "idle", timeout=60, msg="settle")
     assert tuple(target) not in sup.visited
+    # The move happened, but the view it was made for was refused — so the
+    # address is not one this run has served, and the next transaction plans
+    # its slide-out from nothing rather than from that ray.
+    assert sup._ray_state is None
     sup.request_shutdown(); th.join(10)
 
 
@@ -1240,6 +1244,32 @@ class StopMidLegRig(RecordingRig):
         return {**rep, "stopped": True}
 
 
+class FaultMidLegRig(RecordingRig):
+    """Refuses the `fault_at`-th move outright — the executor raising
+    (safety mode, a halted arm) part-way through a transaction, which is a
+    different outcome from a stop: no report comes back at all."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.fault_at, self.calls = 0, 0
+
+    def move(self, path, world="live"):
+        self.calls += 1
+        if self.calls == self.fault_at:
+            raise RuntimeError("safety mode changed mid-path")
+        return super().move(path, world=world)
+
+
+class MuteRig(RecordingRig):
+    """A rig that travels but will not say how far it got: `waypoints_done`
+    missing from the report."""
+
+    def move(self, path, world="live"):
+        rep = super().move(path, world=world)
+        rep.pop("waypoints_done", None)
+        return rep
+
+
 class _RefuseFirstHops:
     """The real two-tier ladder with its first `n` answers refused.
 
@@ -1334,9 +1364,16 @@ def test_first_move_after_a_survey_has_no_slide_out():
 def test_a_move_off_a_ray_slides_out_hops_and_slides_in():
     """The full three-leg lifecycle on the fake rig: each leg is its own
     `rig.move`, run under the phase the plan gives it (slides `adjusting`,
-    the hop `executing`) and re-validated against the world the LEGS were
-    planned under — never the live world, which the next refit will move.
-    The capture happens once, at the end of the slide-in."""
+    the hop `executing`), and each one names `legs.world` as its own
+    validation world rather than taking the rig's "live" default. That is
+    plumbing, not protection: the transaction is planned against the very
+    `RobotCell` the rig gates on, so today the two worlds are one object —
+    what is asserted here is that the leg carries its world's IDENTITY to
+    the gate, which is the seam a snapshot would land in.
+
+    The capture happens once, at the end of the slide-in, and the wire
+    carries the leg boundaries beside the phase for as long as the
+    transaction is in flight."""
     import inspection.run.machine as machine_mod
     real = machine_mod.plan_transaction
     sup, rig, bus, th = make_sup(rig_cls=RecordingRig,
@@ -1351,9 +1388,13 @@ def test_a_move_off_a_ray_slides_out_hops_and_slides_in():
         machine_mod.plan_transaction = _forced_slide_out()
         cell = [c for c in _available_cells(sup) if c != first][0]
         _at_previewing(sup, bus, cell)
-        legs = sup._legs
+        legs, bounds = sup._legs, list(sup._leg_bounds)
         assert len(legs.out) >= 1, "the fixture must force a slide-out"
         assert len(legs.hop) >= 2 and len(legs.slide_in) >= 2
+        # ON THE WIRE, beside the phase, while the plan is previewable: the
+        # boundaries slice `self._path` back into the three legs.
+        assert bus.last("run/status")["legs"] == bounds
+        assert bounds[0] > 0 and bounds[-1] == len(sup._path) - 1, bounds
         n_moves, n0 = len(rig.paths), len(bus.published)
         sup.events.put({"cmd": "view/confirm", "target": list(cell)})
         wait_for(lambda: cell in sup.visited and sup.phase == "idle",
@@ -1368,13 +1409,17 @@ def test_a_move_off_a_ray_slides_out_hops_and_slides_in():
         assert np.allclose(moved[0][1:], legs.out)
         assert np.allclose(moved[1], legs.hop)
         assert np.allclose(moved[2], legs.slide_in)
-        assert rig.worlds[n_moves:] == [legs.world] * 3, \
-            "each leg is judged by the world it was planned under"
+        # The world reached the gate BY IDENTITY — not the "live" default the
+        # rig would otherwise substitute for itself.
+        assert rig.worlds[n_moves:] == [legs.world] * 3
+        assert all(w is legs.world for w in rig.worlds[n_moves:])
         # The capture stands at the END of the slide-in, not at the hop's
         # landing: the step's stamped joints are the slide-in's last waypoint.
         step = json.load(open(sorted((sup.outdir / "steps").iterdir())[-1]
                               / "step.json"))
         assert np.allclose(step["joints_rad"], legs.slide_in[-1], atol=1e-6)
+        # ...and once nothing is in flight the strip stops describing legs.
+        assert bus.last("run/status")["legs"] is None
     finally:
         machine_mod.plan_transaction = real
         sup.request_shutdown(); th.join(10)
@@ -1473,6 +1518,105 @@ def test_a_stop_mid_slide_leaves_the_executed_waypoints_to_retrace():
         sup.request_shutdown(); th.join(10)
 
 
+def test_a_fault_mid_transaction_keeps_only_the_executed_waypoints():
+    """A leg the executor REFUSED contributes nothing to the record.
+
+    The stop path reports how far it got; a fault does not report at all, so
+    the waypoints of the faulting leg were never travelled and must not
+    appear in `_arrival_path` — the operator recovers from `fault` by hand,
+    and a record claiming the arm reached the hop's landing would send the
+    next retrace forward into the very motion that faulted. The ray state
+    goes with it: the arm is parked between rays."""
+    import inspection.run.machine as machine_mod
+    real = machine_mod.plan_transaction
+    sup, rig, bus, th = make_sup(rig_cls=FaultMidLegRig,
+                                 q_start=DEMO_PARK.copy() + np.radians(
+                                     [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        first = _available_cells(sup)[0]
+        _cell_move(sup, bus, first)
+        assert sup._ray_state is not None
+
+        machine_mod.plan_transaction = _forced_slide_out()
+        cell = [c for c in _available_cells(sup) if c != first][0]
+        _at_previewing(sup, bus, cell)
+        legs, bounds, path = sup._legs, list(sup._leg_bounds), list(sup._path)
+        assert len(legs.out) >= 1, "the fixture must force a slide-out"
+        rig.fault_at = rig.calls + 2          # the slide-out runs, the hop dies
+        n_moves = len(rig.paths)
+        sup.events.put({"cmd": "view/confirm", "target": list(cell)})
+        wait_for(lambda: sup.phase == "fault", timeout=60, msg="fault")
+
+        executed = path[:bounds[0] + 1]       # q_now + the whole slide-out
+        assert len(sup._arrival_path) == len(executed), \
+            (len(sup._arrival_path), len(executed))
+        assert np.allclose(sup._arrival_path, executed)
+        assert len(rig.paths) == n_moves + 1, "only the slide-out ever moved"
+        assert sup._ray_state is None, "a faulted move leaves no current ray"
+        assert cell not in sup.visited
+    finally:
+        machine_mod.plan_transaction = real
+        sup.events.put({"cmd": "run/exit"}); th.join(10)
+
+
+def test_a_rig_that_will_not_count_waypoints_faults_the_move():
+    """`waypoints_done` missing is a FAULT, never a guess.
+
+    The executed record is what the retreat retraces, and both guesses are
+    wrong in the same breath: assume none travelled and the retrace starts
+    from a configuration the arm has already left; assume all did and it
+    drives forward into the waypoint the stop prevented. A rig that cannot
+    say gets an honest halt instead."""
+    sup, rig, bus, th = make_sup(rig_cls=MuteRig,
+                                 q_start=DEMO_PARK.copy() + np.radians(
+                                     [0, 0, 0, 0, 0, 8]))
+    try:
+        sup.events.put({"cmd": "view/request", "target": "survey"})
+        wait_for(lambda: sup.phase == "previewing", msg="previewing")
+        sup.events.put({"cmd": "view/confirm", "target": "survey"})
+        wait_for(lambda: sup.phase == "fault", timeout=60, msg="fault")
+        assert sup.survey_state != "visited"
+        rows = [json.loads(l) for l in
+                (sup.writer.dir / "events.jsonl").read_text().splitlines()]
+        detail = [r for r in rows if r["kind"] == "fault"][-1]["detail"]
+        assert "waypoints_done" in detail, detail
+    finally:
+        sup.events.put({"cmd": "run/exit"}); th.join(10)
+
+
+def test_a_face_whose_ray_family_is_empty_draws_no_marker():
+    """`_face_nominal` runs on the DISPATCHER, for every non-settling face,
+    on every publish. A family with no members is a geometry the sampler has
+    nothing to say about — it must cost the face its marker and its recorded
+    pose, not raise out of `_publish_views` and wedge the loop with the arm
+    on the table."""
+    import inspection.view.rays as rays_mod
+    from inspection.fit.contract import Primitive
+    real = rays_mod.face_family
+    sup, rig, bus, th = make_sup()
+    try:
+        pose = [[1, 0, 0, 0.1], [0, 1, 0, -0.35], [0, 0, 1, 0.05],
+                [0, 0, 0, 1]]
+        prim = Primitive(kind="box", pose=pose,
+                         params={"extents": [0.1, 0.1, 0.1]}, label="box")
+        for _ in range(3):                      # open the gate
+            sup._update_face_gate(prim)
+        rays_mod.face_family = lambda *a, **kw: []
+        faces = sup._faces_display()
+        assert faces["x+"]["status"] == "ready"
+        assert "pos" not in faces["x+"], "an unresolvable face has no point"
+        cand = [c for c in sup._view_state(0, "survey").candidates
+                if c.address == ["face", "x+"]]
+        assert cand and cand[0].pose is None, "no pose beats an invented one"
+        sup._publish_views()                    # the dispatcher's own path
+        assert not [n for n in bus.last("scene/description")["nodes"]
+                    if n["path"] == "views/face:x+"]
+    finally:
+        rays_mod.face_family = real
+        sup.request_shutdown(); th.join(10)
+
+
 def test_a_retreat_clears_the_ray_state():
     """The retreat moves the arm OFF the ray it was standing on, so the ray
     state (leg 1's `current`) is no longer true of anything — leaving it set
@@ -1544,6 +1688,9 @@ def main():
     test_a_move_off_a_ray_slides_out_hops_and_slides_in()
     test_a_transition_inaccessible_cell_is_refused_and_nothing_moves()
     test_a_stop_mid_slide_leaves_the_executed_waypoints_to_retrace()
+    test_a_fault_mid_transaction_keeps_only_the_executed_waypoints()
+    test_a_rig_that_will_not_count_waypoints_faults_the_move()
+    test_a_face_whose_ray_family_is_empty_draws_no_marker()
     test_a_retreat_clears_the_ray_state()
     print("OK test_machine (task 5)")
 
