@@ -22,6 +22,33 @@ def test_samples_ascend_and_respect_sensor_floor():
     assert depths[0] - 0.075 >= MIN_RANGE_M - 1e-9
 
 
+def test_clear_m_raises_the_floor():
+    """The shallow oblique ray above never has a geometrically-free sample
+    under ~0.20-0.22 m regardless of clear_m, so depths[0] - clear_m >=
+    MIN_RANGE_M alone cannot tell a live sensor floor from a dead one
+    (reviewer finding on 9d6dc1d). Isolate it: same ray, two clearances,
+    and prove the floor — not geometry — is what moved the answer.
+
+    clear_m=0.25 here, not 0.30: clear_m + MIN_RANGE_M must stay <= R_MAX
+    (0.40 m) for ANY floor-bound sample to exist — 0.30 + MIN_RANGE_M
+    (0.405) exceeds R_MAX unconditionally, on every ray, so that clearance
+    can never come back non-empty. The ray direction is also steeper here
+    (45 deg vs the ~14 deg ray above): at 0.25 m clearance the admissible
+    floor (0.355 m) sits inside a band the arm can actually still reach —
+    verified empirically against this world model, not assumed.
+    """
+    from inspection.view.rays import Ray, sample_ray, MIN_RANGE_M
+    w, ik = _box_world()
+    ray = Ray((0.05, -0.38, 0.0375), (0.0, -0.7071, 0.7071))
+    near = sample_ray(w, ik, T_FLANGE_CAM, ray, clear_m=0.075)
+    far = sample_ray(w, ik, T_FLANGE_CAM, ray, clear_m=0.25)
+    assert far, "0.25 m clearance must still leave a reachable, in-range sample"
+    assert far[0].depth >= 0.25 + MIN_RANGE_M - 1e-9
+    # the two runs disagree BECAUSE of clear_m: near's first depth would be
+    # rejected as too-close by far's floor, proving the floor is binding.
+    assert near[0].depth < 0.25 + MIN_RANGE_M
+
+
 def test_no_sample_collides():
     from inspection.view.rays import Ray, sample_ray
     w, ik = _box_world()
