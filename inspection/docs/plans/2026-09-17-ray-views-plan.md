@@ -187,7 +187,7 @@ git commit -m "rays: Ray + sample_ray — distance is the closest provably-safe 
 - Consumes: Task 1 `Ray`; `H_BINS`, `V_ELEVATIONS` from `inspection.view.grid`; `face_frame(prim, face)` + `FACES` from `inspection.view.faceview`; boxguard `Primitive` (has `.center`, `.axes`, `.params["extents"]` — see `_box_prim()` in `inspection/tests/test_faceview.py`, copy that helper into the test file).
 - Produces:
   - `cell_ray(center, h, v) -> Ray` and `cell_clear_m(prim_or_aabb, ray) -> float` (anchor→padded-surface run along the ray, slab method on the object AABB).
-  - `face_family(prim, face, fy, height_px) -> list[tuple[Ray, float, float]]` — ordered `(ray, shift, theta_deg)` candidates: shift rung ascending (θ=0, shift cap = FOV containment at `MIN_RANGE_M` depth: `shift_max(d) = d*height_px/(2*fy) - ext_v/2`, evaluated at each candidate's minimum admissible depth), then cone rung (θ = 5..60 step 5, 12 azimuths, shift=0).
+  - `face_family(prim, face, fy, height_px) -> list[tuple[Ray, float, float, float]]` — ordered `(ray, shift, theta_deg, d_min)` candidates: shift rung ascending (θ=0), then cone rung (θ = 5..60 step 5, 12 azimuths, shift=0). **AMENDED by ruling 2026-09-17 (execution proved the original cap formula rejects all shifts for a 15 cm face):** FOV containment is per-depth, so each member carries its own minimum depth `d_min = max(MIN_RANGE_M, (2*fy/height_px)*(shift + ext_v/2))` for side faces (`_d_contain`), `max(MIN_RANGE_M, _d_contain(max(ext_a, ext_b)/2))` for the top face, and plain `MIN_RANGE_M` for cone members (tilted views don't promise containment). Shift enumeration is bounded by `d_min <= R_MAX`.
 
 - [ ] **Step 1: Write the failing tests** (append)
 
@@ -319,7 +319,7 @@ git commit -m "rays: cell rays + face family — shifts before tilts, FOV-comput
 - Test: `inspection/tests/test_rays.py` (append)
 
 **Interfaces:**
-- Consumes: Tasks 1–2 (`sample_ray`, `cell_ray`, `cell_clear_m`, `face_family`).
+- Consumes: Tasks 1–2 (`sample_ray`, `cell_ray`, `cell_clear_m`, `face_family` — the AMENDED 4-tuple form `(ray, shift, theta_deg, d_min)`).
 - Produces: `RayResolution = namedtuple("RayResolution", ["T_cam", "T_flange", "q", "depth", "shift", "theta_deg", "roll", "samples"])`; `resolve_cell(world, ik, t_flange_cam, center, aabb, h, v, q_near=None) -> RayResolution | None`; `resolve_face(world, ik, t_flange_cam, prim, face, fy, height_px, q_near=None) -> RayResolution | None`. `samples` carries the full valid list of the winning ray (Stage B's slide-out search needs it). Closest sample = element 0.
 
 - [ ] **Step 1: Write the failing tests** (append)
@@ -386,9 +386,13 @@ def resolve_cell(world, ik, t_flange_cam, center, aabb, h, v, q_near=None):
 def resolve_face(world, ik, t_flange_cam, prim, face, fy, height_px,
                  q_near=None):
     """First family member (shifts ascending, then cone) with samples;
-    closest sample on it. None = the face is honestly inaccessible."""
-    for ray, shift, theta in face_family(prim, face, fy, height_px):
-        samples = sample_ray(world, ik, t_flange_cam, ray, q_near=q_near)
+    closest sample on it. None = the face is honestly inaccessible.
+    Each member's d_min (containment floor, per the 2026-09-17 ruling)
+    reaches sample_ray through clear_m: floor = clear_m + MIN_RANGE_M."""
+    for ray, shift, theta, d_min in face_family(prim, face, fy, height_px):
+        samples = sample_ray(world, ik, t_flange_cam, ray,
+                             clear_m=max(0.0, d_min - MIN_RANGE_M),
+                             q_near=q_near)
         if samples:
             return _resolution(samples, shift, theta)
     return None
