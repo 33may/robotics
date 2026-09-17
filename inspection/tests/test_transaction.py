@@ -79,7 +79,7 @@ class _Keepout:
         return self._w.path_valid(path, **kw)
 
 
-_Call = namedtuple("_Call", ["q_from", "T", "tiers"])
+_Call = namedtuple("_Call", ["q_from", "T", "tiers", "step"])
 
 
 class _StubPlanner:
@@ -96,7 +96,9 @@ class _StubPlanner:
     def __call__(self, world, ik, q_from, T_target, seed=0, **kw):
         q_from = np.asarray(q_from, dtype=float)
         T = np.asarray(T_target, dtype=float)
-        self.calls.append(_Call(q_from, T, tuple(kw.get("tiers", (1, 2)))))
+        self.calls.append(_Call(q_from, T,
+                                tuple(kw.get("tiers", (1, 2))),
+                                kw.get("step")))
         if self._fail(self, q_from, T):
             return None, {"reason": "stub refusal"}
         free = [q for q in ik.branches(T, q_near=q_from)
@@ -122,7 +124,9 @@ class _StubPlanner:
 
     @property
     def ladders(self):
-        """Pass-2 calls: the ones allowed to spend tier 2 (OMPL)."""
+        """Pass-2 calls: any call offered tier 2 at all. Deliberately looser
+        than what pass 2 is allowed to ask for, so a regression to
+        `tiers=(1, 2)` still lands here and trips the equality assertions."""
         return [c for c in self.calls if 2 in c.tiers]
 
 
@@ -176,6 +180,9 @@ def test_no_out_depth_plans_is_none():
     assert len(stub.probes) + len(stub.ladders) == len(stub.calls)
     assert len(stub.probes) <= MAX_ENTRY_TRIES * len(current.samples)
     assert len(stub.ladders) == MAX_LADDER_TRIES, "pass 2 is capped"
+    assert all(c.tiers == (2,) for c in stub.ladders), \
+        "pass 2 asks for tier 2 ALONE — tier 1 is deterministic and already " \
+        "ran on every candidate, so replaying it burns a ladder slot"
     assert all(c.tiers == (1,) for c in stub.calls[:len(stub.probes)]), \
         "pass 2 never starts before the cheap sweep is exhausted"
 
@@ -196,6 +203,24 @@ def test_only_tier_two_hop_resolves_in_pass_two():
     assert len(stub.probes) > 1, "the cheap sweep ran first, and whole"
     assert all(c.tiers == (1,) for c in stub.calls[:-1])
     assert len(stub.ladders) == 1, "the first full-ladder attempt wins"
+    assert stub.ladders[0].tiers == (2,), "pass 2 spends tier 2 alone"
+
+
+def test_step_reaches_the_hop_as_well_as_the_slides():
+    """One collision resolution for the whole transaction: a caller tightening
+    `step` must not get slides validated at one resolution and a hop planned
+    at another (world.path_valid asserts step x lever < padding)."""
+    from inspection.motion.transaction import plan_transaction
+    w, ik = _box_world()
+    current, q_now = _current(w, ik)
+    target = _cell(w, ik, 6, 2)
+    stub = _StubPlanner(fail=lambda s, q, T: len(s.calls) <= 1)
+
+    legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
+                            planner=stub, step=0.008)
+
+    assert legs is not None and len(stub.calls) > 1
+    assert all(c.step == 0.008 for c in stub.calls)
 
 
 def test_pass_one_success_never_spends_tier_two():
@@ -368,8 +393,11 @@ def test_no_current_ray_means_no_slide_out():
 
 
 def test_slide_in_reverses_to_exactly_the_forward_list():
-    """The retreat retraces recorded waypoints in reverse — so the reverse of
-    the slide-in must be the same configs, and just as valid."""
+    """The retreat retraces recorded waypoints in reverse, so the reversed
+    slide-in must be the ray's own corridor walked outward: waypoint k sits on
+    sample k, ascending depth, and the whole reversal is still valid. The
+    sample poses are the independent reconstruction — the leg is never
+    compared against itself."""
     from inspection.motion.transaction import plan_transaction
     w, ik = _box_world()
     current, q_now = _current(w, ik)
@@ -380,9 +408,8 @@ def test_slide_in_reverses_to_exactly_the_forward_list():
 
     assert legs is not None and len(legs.slide_in) > 1
     rev = list(reversed(legs.slide_in))
-    assert len(rev) == len(legs.slide_in)
-    for i, q in enumerate(rev):
-        assert np.array_equal(q, legs.slide_in[-1 - i])
+    for q, s in zip(rev, target.samples[:len(rev)]):
+        assert np.allclose(ik.fk(q), s.T_flange, atol=1e-6)
     ok, info = w.path_valid(rev)
     assert ok, info
 
@@ -433,10 +460,12 @@ def test_real_ladder_plans_a_transaction():
 
 
 def main():
+    n = 0
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
             fn()
-    print("OK test_transaction")
+            n += 1
+    print(f"OK test_transaction ({n} tests)")
 
 
 if __name__ == "__main__":

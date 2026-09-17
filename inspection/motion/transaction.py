@@ -26,9 +26,9 @@ path, every attempt escalates to tier 2 and pays ~620 ms before refusing —
 a measured 20.5 s refusal, against the design's ~2 s worst case. So the same
 candidate order is walked twice: pass 1 probes each candidate with TIER 1
 ONLY (a validated direct move, milliseconds), and only if that whole sweep
-refuses does pass 2 spend the full two-tier ladder on the first
-`MAX_LADDER_TRIES` candidates. A refusal now costs ~18 probes + 3 ladder
-plans, and the common case costs ONE direct move.
+refuses does pass 2 spend TIER 2 ONLY (OMPL) on the first `MAX_LADDER_TRIES`
+candidates. A refusal now costs ~18 probes + 3 searches, and the common case
+costs ONE direct move.
 
 `None` is the honest answer: the target address is transition-inaccessible and
 the caller marks it blocked. No fallback substitution.
@@ -61,10 +61,10 @@ Legs = namedtuple("Legs", ["out", "hop", "slide_in", "world"])
 #: the quadratic product the pinning exists to avoid.
 MAX_ENTRY_TRIES = 3
 
-#: How many candidates may spend the FULL ladder (tier 2, OMPL) once the
-#: tier-1 sweep has refused every one of them. Tier 2 costs ~620 ms per
-#: refusal here, so this number is the refusal's price tag: 3 x ~620 ms on
-#: top of the sweep, ~2.5 s worst case (controller ruling 2026-09-17).
+#: How many candidates may spend tier 2 (OMPL) once the tier-1 sweep has
+#: refused every one of them. Tier 2 costs ~600 ms per refusal here, so this
+#: number is the refusal's price tag: 3 searches on top of the sweep, ~2 s
+#: worst case (controller ruling 2026-09-17).
 MAX_LADDER_TRIES = 3
 
 #: Largest per-joint step a slide may take between two consecutive ray samples
@@ -147,9 +147,9 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
              slide-in corridor.
     planner: the hop planner, `plan_viewpoint(world, ik, q_from, T, seed=,
              tiers=)` by default — injectable so the search can be exercised
-             without paying for real planning. It MUST honour `tiers`: the
-             search asks for `(1,)` while it sweeps and `(1, 2)` only for the
-             few candidates it is willing to spend OMPL on.
+             without paying for real planning. It MUST honour `tiers` and
+             `step`: the search asks for `(1,)` while it sweeps and `(2,)`
+             only for the few candidates it is willing to spend OMPL on.
 
     `t_flange_cam` is accepted for symmetry with the resolvers' call sites;
     the samples already carry their flange poses, so it is not needed here.
@@ -181,7 +181,7 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
         """One hop-and-slide-in try, or None."""
         q_out = out_chain[j - 1] if j else q_now
         path, _rep = planner(world, ik, q_out, corridor[e].T_flange,
-                             seed=seed, tiers=tiers)
+                             seed=seed, step=step, tiers=tiers)
         if path is None:
             return None
         # The hop picks its own branch at the entry pose, so the slide-in is
@@ -197,8 +197,14 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
                     [np.asarray(q, dtype=float) for q in path], slide, world)
 
     # --- pass 1: sweep every candidate on tier 1; pass 2: the capped ladder
+    # Pass 2 asks for tier 2 ALONE. Tier 1 is deterministic and pass 1 already
+    # ran it on every candidate, so offering it again would replay an
+    # identical refusal — and for a candidate whose pass-1 plan was thrown out
+    # at the landing-branch check below, an identical SUCCESS that is thrown
+    # out again, burning a ladder slot without ever reaching OMPL. The rungs
+    # are independent: tier 2 is not seeded by tier 1 (plan.py).
     for tiers, pool in (((1,), candidates),
-                        ((1, 2), candidates[:max_ladder])):
+                        ((2,), candidates[:max_ladder])):
         for e, j in pool:
             legs = attempt(e, j, tiers)
             if legs is not None:
