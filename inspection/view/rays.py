@@ -95,6 +95,45 @@ def cell_clear_m(aabb, ray):
     return max(t_exit, 0.0)
 
 
+def cell_d_contain(aabb, ray, fy, height_px, corners=None):
+    """Containment floor for a cell ray: the closest depth from which EVERY
+    belief-AABB corner stays inside the frame (Anton 2026-09-17, extending
+    the face ruling — a cell view's promise is the whole object).
+
+    Exact per corner: a corner offset `o` from the anchor sits at camera
+    depth d - o·dir with lateral spans |o·û|, |o·v̂| (both ⊥ dir, so
+    d-independent); solving f*lat/(d - o·dir) <= half_px - margin per
+    corner and axis gives d >= o·dir + lat*f/(half_px - margin); the floor
+    is the max over corners and both image axes. Width reuses fy (D405 is
+    16:9 with fx≈fy). This is the projected-support bound — it tracks the
+    bearing, so flat objects keep their close cells instead of paying a
+    bounding-sphere tax. `corners` (8x3, the belief BOX corners) tightens
+    the bound over the axis-aligned aabb — a yawed box's AABB inflates up
+    to ~20%/dim and that tax is centimetres of standoff."""
+    mn, mx = (np.asarray(v, dtype=float) for v in aabb)
+    o, d = np.asarray(ray.anchor), np.asarray(ray.direction)
+    x = -d                                        # boresight, cam pose rule
+    ref = np.array([0.0, 0.0, 1.0])
+    if abs(x @ ref) > 0.95:
+        ref = np.array([1.0, 0.0, 0.0])
+    u = np.cross(ref, x); u /= np.linalg.norm(u)  # image left
+    v_img = np.cross(x, u)                        # image up
+    half_v = height_px / 2.0 - FOV_MARGIN_PX
+    half_u = (height_px * 16.0 / 9.0) / 2.0 - FOV_MARGIN_PX
+    if corners is None:
+        corners = np.array([[cx, cy, cz] for cx in (mn[0], mx[0])
+                            for cy in (mn[1], mx[1])
+                            for cz in (mn[2], mx[2])])
+    d_min = 0.0
+    for c in np.asarray(corners, dtype=float):
+        off = c - o
+        fwd = float(off @ d)
+        d_min = max(d_min,
+                    fwd + abs(float(off @ v_img)) * fy / half_v,
+                    fwd + abs(float(off @ u)) * fy / half_u)
+    return d_min
+
+
 def _d_contain(fy, height_px, half_span):
     """Closest depth at which a vertical half-span [m] stays inside the
     frame — the inverse of shift_max(d) = d*(height_px/2-margin)/fy -
@@ -178,11 +217,19 @@ def _resolution(samples, shift, theta):
                          s.roll, samples)
 
 
-def resolve_cell(world, ik, t_flange_cam, center, aabb, h, v, q_near=None):
-    """Closest safe sample on cell {h,v}'s ray, or None (inaccessible)."""
+def resolve_cell(world, ik, t_flange_cam, center, aabb, h, v,
+                 fy, height_px, q_near=None, corners=None):
+    """Closest safe sample on cell {h,v}'s ray that keeps the WHOLE belief
+    AABB in frame, or None (inaccessible). The containment floor reaches
+    sample_ray through clear_m exactly as face members do:
+    floor = clear_m + MIN_RANGE_M, so clear_m carries whichever is larger —
+    the real surface run (sensor floor) or the containment depth."""
     ray = cell_ray(center, h, v)
+    clear = max(cell_clear_m(aabb, ray),
+                cell_d_contain(aabb, ray, fy, height_px, corners)
+                - MIN_RANGE_M)
     samples = sample_ray(world, ik, t_flange_cam, ray,
-                         clear_m=cell_clear_m(aabb, ray), q_near=q_near)
+                         clear_m=clear, q_near=q_near)
     return _resolution(samples, 0.0, 0.0) if samples else None
 
 

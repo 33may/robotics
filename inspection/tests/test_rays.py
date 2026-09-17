@@ -137,17 +137,21 @@ def test_face_family_dmin_is_containment():
 
 
 def test_resolve_cell_picks_closest_sample():
-    from inspection.view.rays import (Ray, cell_ray, cell_clear_m,
-                                      resolve_cell, sample_ray)
+    """The resolver returns the closest ADMISSIBLE sample — admissible now
+    includes the whole-object containment floor (2026-09-17), so the raw
+    comparison carries the same effective clearance resolve_cell uses."""
+    from inspection.view.rays import (MIN_RANGE_M, cell_clear_m,
+                                      cell_d_contain, cell_ray, resolve_cell,
+                                      sample_ray)
     w, ik = _box_world()
     aabb = ((-0.025, -0.455, 0.0), (0.125, -0.305, 0.075))
     res = resolve_cell(w, ik, T_FLANGE_CAM, (0.05, -0.38, 0.0375), aabb,
-                       h=3, v=1)
+                       h=3, v=1, fy=647.0, height_px=720)
     assert res is not None
-    raw = sample_ray(w, ik, T_FLANGE_CAM,
-                     cell_ray((0.05, -0.38, 0.0375), 3, 1),
-                     clear_m=cell_clear_m(
-                         aabb, cell_ray((0.05, -0.38, 0.0375), 3, 1)))
+    ray = cell_ray((0.05, -0.38, 0.0375), 3, 1)
+    clear = max(cell_clear_m(aabb, ray),
+                cell_d_contain(aabb, ray, 647.0, 720) - MIN_RANGE_M)
+    raw = sample_ray(w, ik, T_FLANGE_CAM, ray, clear_m=clear)
     assert np.isclose(res.depth, raw[0].depth)
 
 
@@ -211,6 +215,38 @@ def test_face_family_contains_whole_rotated_face():
                 (face, s, d_min, uv[:, 0].min(), uv[:, 0].max())
             assert uv[:, 1].min() >= 0 and uv[:, 1].max() <= H, \
                 (face, s, d_min, uv[:, 1].min(), uv[:, 1].max())
+
+
+def test_resolve_cell_contains_whole_aabb():
+    """Anton 2026-09-17 (extending the face ruling to cells): a cell view's
+    promise is the whole OBJECT in frame — the resolved sample must fit
+    every belief-AABB corner inside the image with the real sensor's
+    asymmetric principal point. Without a containment floor the closest
+    safe sample on a tall object crops it."""
+    from inspection.view.faceview import face_cam_pose
+    from inspection.view.rays import cell_ray, resolve_cell
+    fy, H, W = 647.0, 720, 1280
+    K = np.array([[fy, 0.0, 633.0], [0.0, fy, 356.7], [0.0, 0.0, 1.0]])
+    w, ik = _box_world()
+    center = (0.05, -0.38, 0.1)                  # tall object: AABB to 0.2 m
+    aabb = ((-0.05, -0.48, 0.0), (0.15, -0.28, 0.20))
+    mn, mx = (np.asarray(v) for v in aabb)
+    corners = np.array([[x, y, z] for x in (mn[0], mx[0])
+                        for y in (mn[1], mx[1]) for z in (mn[2], mx[2])])
+    for h, v in ((3, 1), (9, 1), (3, 2)):
+        res = resolve_cell(w, ik, T_FLANGE_CAM, center, aabb, h, v,
+                           fy=fy, height_px=H)
+        if res is None:
+            continue
+        T = np.asarray(res.T_cam)
+        R = np.column_stack([-T[:3, 1], -T[:3, 2], T[:3, 0]])
+        pc = (corners - T[:3, 3]) @ R
+        assert np.all(pc[:, 2] > 0), (h, v)
+        uv = (K @ (pc / pc[:, 2:3]).T).T[:, :2]
+        assert uv[:, 0].min() >= 0 and uv[:, 0].max() <= W, \
+            (h, v, res.depth, uv[:, 0].min(), uv[:, 0].max())
+        assert uv[:, 1].min() >= 0 and uv[:, 1].max() <= H, \
+            (h, v, res.depth, uv[:, 1].min(), uv[:, 1].max())
 
 
 def main():

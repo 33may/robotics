@@ -8,10 +8,10 @@ runs: pinned 1709-cam-ai-demo1; newest bench ['1509-cam-ai_bench5', '1509-cam-ai
 d_surf = Euclidean closest-point to box surface   |   along = along-ray from surface (depth - clear_m), sensor floor applies HERE
 address      old d_surf ray d_surf   along  old th    ray theta/shift/depth  roll  smp  verdict
 --------------------------------------------------------------------------------------------------------
-cell 3,1          0.175      0.101   0.121       -   th= 0.0d s=0.00 d=0.18   180   12  closer (-0.074 m)
-cell 9,1          0.162      0.101   0.121       -   th= 0.0d s=0.00 d=0.18   180   12  closer (-0.061 m)
-cell 4,1          0.158      0.092   0.121       -   th= 0.0d s=0.00 d=0.18   180    9  closer (-0.066 m)
-cell 6,1          0.167      0.100   0.121       -   th= 0.0d s=0.00 d=0.18   180    9  closer (-0.066 m)
+cell 3,1          0.175      0.120   0.141       -   th= 0.0d s=0.00 d=0.20   180   11  closer (-0.055 m)
+cell 9,1          0.162      0.120   0.141       -   th= 0.0d s=0.00 d=0.20   180   11  closer (-0.041 m)
+cell 4,1          0.158      0.147   0.181       -   th= 0.0d s=0.00 d=0.24     0    6  closer (-0.011 m)
+cell 6,1          0.167      0.120   0.141       -   th= 0.0d s=0.00 d=0.20   180    8  closer (-0.046 m)
 face y-           0.214      0.138   0.140   40.0d   th=10.0d s=0.00 d=0.14   180    1  closer (-0.076 m)
 cell 3,0          0.163      0.123   0.112       -   th= 0.0d s=0.00 d=0.20   180    3  closer (-0.041 m)
 cell 9,0          0.159      0.123   0.112       -   th= 0.0d s=0.00 d=0.20   180   11  closer (-0.036 m)
@@ -20,30 +20,30 @@ face x-           0.256      0.158   0.160   33.7d   th=10.0d s=0.00 d=0.16   18
 face y+           0.195      0.230   0.260   40.0d   th=30.0d s=0.00 d=0.26   180    8  farther (+0.035 m)
 face top          0.240      0.200   0.200    0.0d   th= 0.0d s=0.00 d=0.20     0   11  closer (-0.040 m)
 
-   10/11 views closer to the surface, 0 inaccessible; mean surface distance 0.194 -> 0.139 m
+   10/11 views closer to the surface, 0 inaccessible; mean surface distance 0.194 -> 0.149 m
    faces: 2/5 fronto-parallel (theta=0); old face theta y-=40d, x+=9d, x-=34d, y+=40d, top=0d
-   endpoints inside the box: 0 (min surface distance 0.092 m)
+   endpoints inside the box: 0 (min surface distance 0.120 m)
    sensor floor: all 11 executed rows along-ray >= 0.105 m OK (min 0.112 m); d_surf can legitimately read lower — oblique rays clear the box by less than they travel
 
 face  ladder — first member with a sample           closest FRONTO-PARALLEL member     price  closest of any member          scan
 --------------------------------------------------------------------------------------------------------------------------------
-x+    d_surf=0.160 theta= 0.0d shift=0.04 depth=0.16 (  52.9 ms) d_surf=0.160 shift=0.04 theta= 0.0d depth=0.16  +0.000  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 567 ms
-x-    d_surf=0.158 theta=10.0d shift=0.00 depth=0.16 ( 148.0 ms) -                                      -  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 836 ms
-y+    d_surf=0.230 theta=30.0d shift=0.00 depth=0.26 ( 257.8 ms) -                                      -  d_surf=0.115 shift=0.00 theta=60.0d depth=0.16 568 ms
-y-    d_surf=0.138 theta=10.0d shift=0.00 depth=0.14 (  15.1 ms) -                                      -  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 212 ms
-top   d_surf=0.200 theta= 0.0d shift=0.00 depth=0.20 (   4.6 ms) d_surf=0.200 shift=0.00 theta= 0.0d depth=0.20  +0.000  d_surf=0.064 shift=0.00 theta=60.0d depth=0.12 1038 ms
+x+    d_surf=0.160 theta= 0.0d shift=0.04 depth=0.16 (  51.6 ms) d_surf=0.160 shift=0.04 theta= 0.0d depth=0.16  +0.000  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 574 ms
+x-    d_surf=0.158 theta=10.0d shift=0.00 depth=0.16 ( 146.0 ms) -                                      -  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 846 ms
+y+    d_surf=0.230 theta=30.0d shift=0.00 depth=0.26 ( 263.9 ms) -                                      -  d_surf=0.115 shift=0.00 theta=60.0d depth=0.16 554 ms
+y-    d_surf=0.138 theta=10.0d shift=0.00 depth=0.14 (  14.4 ms) -                                      -  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 206 ms
+top   d_surf=0.200 theta= 0.0d shift=0.00 depth=0.20 (   4.8 ms) d_surf=0.200 shift=0.00 theta= 0.0d depth=0.20  +0.000  d_surf=0.064 shift=0.00 theta=60.0d depth=0.12 1014 ms
 
 computation                            measured   estimated   ratio  verdict
 ----------------------------------------------------------------------------------
-one ray validity (11.9 depths)         6.061 ms        6 ms    1.01  within 2x
-  same, per-depth x 18 depths          9.176 ms        6 ms    1.53  within 2x
-36-cell refresh                        218.4 ms      230 ms    0.95  under estimate
-face family, shift rung (1/4 side)     52.93 ms       20 ms    2.65  OVER 2x
-face family, side (67 members)         835.9 ms      441 ms     1.9  within 2x
-face family, top (145 members)          1038 ms      954 ms    1.09  within 2x
+one ray validity (11.9 depths)         4.959 ms        6 ms   0.826  under estimate
+  same, per-depth x 18 depths          7.507 ms        6 ms    1.25  within 2x
+36-cell refresh                        178.9 ms      230 ms   0.778  under estimate
+face family, shift rung (1/4 side)     51.59 ms       20 ms    2.58  OVER 2x
+face family, side (67 members)         845.9 ms      441 ms    1.92  within 2x
+face family, top (145 members)          1014 ms      954 ms    1.06  within 2x
 slide-in resolve                   not measured (Stage B: segment validation)
-per-ray spread: min 1.11 ms  median 5.71 ms  max 13.21 ms  (n=108); depths per ray 10-13, mean 11.9 vs the design's 18
-refresh repeats: 218.2 ms, 217.9 ms, 219.2 ms
+per-ray spread: min 1.11 ms  median 4.01 ms  max 13.72 ms  (n=108); depths per ray 10-13, mean 11.9 vs the design's 18
+refresh repeats: 185.5 ms, 175.8 ms, 175.2 ms
 
    timings: /tmp/ray_views/1709-cam-ai-demo1/timings.txt
    render:  /tmp/ray_views/1709-cam-ai-demo1/comparison.png
@@ -56,40 +56,40 @@ refresh repeats: 218.2 ms, 217.9 ms, 219.2 ms
 d_surf = Euclidean closest-point to box surface   |   along = along-ray from surface (depth - clear_m), sensor floor applies HERE
 address      old d_surf ray d_surf   along  old th    ray theta/shift/depth  roll  smp  verdict
 --------------------------------------------------------------------------------------------------------
-cell 6,1          0.168      0.102   0.121       -   th= 0.0d s=0.00 d=0.18   180    8  closer (-0.067 m)
-cell 11,1         0.161      0.088   0.121       -   th= 0.0d s=0.00 d=0.18   180   12  closer (-0.073 m)
+cell 6,1          0.168      0.121   0.141       -   th= 0.0d s=0.00 d=0.20   180    7  closer (-0.047 m)
+cell 11,1         0.161      0.144   0.181       -   th= 0.0d s=0.00 d=0.24     0    9  closer (-0.017 m)
 face x-           0.243      0.158   0.160   22.6d   th=10.0d s=0.00 d=0.16   180    4  closer (-0.085 m)
 face y-           0.205      0.135   0.140   40.0d   th=15.0d s=0.00 d=0.14   180    1  closer (-0.070 m)
-cell 9,1          0.168      0.102   0.121       -   th= 0.0d s=0.00 d=0.18   180   12  closer (-0.066 m)
+cell 9,1          0.168      0.121   0.141       -   th= 0.0d s=0.00 d=0.20   180   11  closer (-0.047 m)
 face y+           0.212      0.256   0.280   40.0d   th=25.0d s=0.00 d=0.28   180    7  farther (+0.044 m)
 cell 9,0          0.165      0.144   0.122       -   th= 0.0d s=0.00 d=0.22   180   10  closer (-0.021 m)
 face x+           0.234      0.160   0.160    9.5d   th= 0.0d s=0.04 d=0.16   180   13  closer (-0.074 m)
 cell 3,0          0.154      0.144   0.122       -   th= 0.0d s=0.00 d=0.22   180    5  closer (-0.011 m)
 
-   8/9 views closer to the surface, 0 inaccessible; mean surface distance 0.190 -> 0.143 m
+   8/9 views closer to the surface, 0 inaccessible; mean surface distance 0.190 -> 0.154 m
    faces: 1/4 fronto-parallel (theta=0); old face theta x-=23d, y-=40d, y+=40d, x+=9d
-   endpoints inside the box: 0 (min surface distance 0.088 m)
-   sensor floor: all 9 executed rows along-ray >= 0.105 m OK (min 0.121 m); d_surf can legitimately read lower — oblique rays clear the box by less than they travel
+   endpoints inside the box: 0 (min surface distance 0.121 m)
+   sensor floor: all 9 executed rows along-ray >= 0.105 m OK (min 0.122 m); d_surf can legitimately read lower — oblique rays clear the box by less than they travel
 
 face  ladder — first member with a sample           closest FRONTO-PARALLEL member     price  closest of any member          scan
 --------------------------------------------------------------------------------------------------------------------------------
-x+    d_surf=0.160 theta= 0.0d shift=0.04 depth=0.16 (  48.6 ms) d_surf=0.160 shift=0.04 theta= 0.0d depth=0.16  +0.000  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 564 ms
-x-    d_surf=0.158 theta=10.0d shift=0.00 depth=0.16 ( 148.8 ms) -                                      -  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 789 ms
-y+    d_surf=0.256 theta=25.0d shift=0.00 depth=0.28 ( 204.2 ms) -                                      -  d_surf=0.115 shift=0.00 theta=60.0d depth=0.16 538 ms
-y-    d_surf=0.135 theta=15.0d shift=0.00 depth=0.14 (  16.5 ms) -                                      -  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 171 ms
-top   d_surf=0.200 theta= 0.0d shift=0.00 depth=0.20 (   4.3 ms) d_surf=0.200 shift=0.00 theta= 0.0d depth=0.20  +0.000  d_surf=0.065 shift=0.00 theta=60.0d depth=0.12 975 ms
+x+    d_surf=0.160 theta= 0.0d shift=0.04 depth=0.16 (  48.1 ms) d_surf=0.160 shift=0.04 theta= 0.0d depth=0.16  +0.000  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 570 ms
+x-    d_surf=0.158 theta=10.0d shift=0.00 depth=0.16 ( 151.9 ms) -                                      -  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 800 ms
+y+    d_surf=0.256 theta=25.0d shift=0.00 depth=0.28 ( 204.0 ms) -                                      -  d_surf=0.115 shift=0.00 theta=60.0d depth=0.16 542 ms
+y-    d_surf=0.135 theta=15.0d shift=0.00 depth=0.14 (  16.9 ms) -                                      -  d_surf=0.089 shift=0.00 theta=60.0d depth=0.12 172 ms
+top   d_surf=0.200 theta= 0.0d shift=0.00 depth=0.20 (   4.3 ms) d_surf=0.200 shift=0.00 theta= 0.0d depth=0.20  +0.000  d_surf=0.065 shift=0.00 theta=60.0d depth=0.12 978 ms
 
 computation                            measured   estimated   ratio  verdict
 ----------------------------------------------------------------------------------
-one ray validity (11.6 depths)         5.481 ms        6 ms   0.913  under estimate
-  same, per-depth x 18 depths          8.538 ms        6 ms    1.42  within 2x
-36-cell refresh                        197.6 ms      230 ms   0.859  under estimate
-face family, shift rung (1/4 side)     48.63 ms       20 ms    2.43  OVER 2x
-face family, side (67 members)         788.9 ms      441 ms    1.79  within 2x
-face family, top (145 members)         975.5 ms      954 ms    1.02  within 2x
+one ray validity (11.6 depths)         4.421 ms        6 ms   0.737  under estimate
+  same, per-depth x 18 depths          6.887 ms        6 ms    1.15  within 2x
+36-cell refresh                        159.4 ms      230 ms   0.693  under estimate
+face family, shift rung (1/4 side)     48.11 ms       20 ms    2.41  OVER 2x
+face family, side (67 members)         800.4 ms      441 ms    1.82  within 2x
+face family, top (145 members)         977.6 ms      954 ms    1.02  within 2x
 slide-in resolve                   not measured (Stage B: segment validation)
-per-ray spread: min 0.51 ms  median 5.40 ms  max 13.97 ms  (n=108); depths per ray 9-13, mean 11.6 vs the design's 18
-refresh repeats: 197.1 ms, 196.4 ms, 199.1 ms
+per-ray spread: min 0.56 ms  median 3.92 ms  max 14.10 ms  (n=108); depths per ray 9-13, mean 11.6 vs the design's 18
+refresh repeats: 159.9 ms, 158.8 ms, 159.6 ms
 
    timings: /tmp/ray_views/1509-cam-ai_bench5/timings.txt
    render:  /tmp/ray_views/1509-cam-ai_bench5/comparison.png
@@ -102,31 +102,31 @@ refresh repeats: 197.1 ms, 196.4 ms, 199.1 ms
 d_surf = Euclidean closest-point to box surface   |   along = along-ray from surface (depth - clear_m), sensor floor applies HERE
 address      old d_surf ray d_surf   along  old th    ray theta/shift/depth  roll  smp  verdict
 --------------------------------------------------------------------------------------------------------
-cell 10,1         0.150      0.095   0.113       -   th= 0.0d s=0.00 d=0.18   180   12  closer (-0.055 m)
+cell 10,1         0.150      0.133   0.153       -   th= 0.0d s=0.00 d=0.22     0   10  closer (-0.017 m)
 
-   1/1 views closer to the surface, 0 inaccessible; mean surface distance 0.150 -> 0.095 m
-   endpoints inside the box: 0 (min surface distance 0.095 m)
-   sensor floor: all 1 executed rows along-ray >= 0.105 m OK (min 0.113 m); d_surf can legitimately read lower — oblique rays clear the box by less than they travel
+   1/1 views closer to the surface, 0 inaccessible; mean surface distance 0.150 -> 0.133 m
+   endpoints inside the box: 0 (min surface distance 0.133 m)
+   sensor floor: all 1 executed rows along-ray >= 0.105 m OK (min 0.153 m); d_surf can legitimately read lower — oblique rays clear the box by less than they travel
 
 face  ladder — first member with a sample           closest FRONTO-PARALLEL member     price  closest of any member          scan
 --------------------------------------------------------------------------------------------------------------------------------
-x+    d_surf=0.120 theta= 0.0d shift=0.02 depth=0.12 (  47.2 ms) d_surf=0.120 shift=0.02 theta= 0.0d depth=0.12  +0.000  d_surf=0.086 shift=0.00 theta=60.0d depth=0.12 553 ms
-x-    d_surf=0.120 theta= 0.0d shift=0.02 depth=0.12 (  62.7 ms) d_surf=0.120 shift=0.02 theta= 0.0d depth=0.12  +0.000  d_surf=0.086 shift=0.00 theta=60.0d depth=0.12 792 ms
-y+    d_surf=0.238 theta=25.0d shift=0.00 depth=0.26 ( 202.8 ms) -                                      -  d_surf=0.108 shift=0.00 theta=45.0d depth=0.14 534 ms
-y-    d_surf=0.138 theta=10.0d shift=0.00 depth=0.14 (  12.4 ms) -                                      -  d_surf=0.086 shift=0.00 theta=60.0d depth=0.12 194 ms
-top   d_surf=0.180 theta= 0.0d shift=0.00 depth=0.18 (   4.6 ms) d_surf=0.180 shift=0.00 theta= 0.0d depth=0.18  +0.000  d_surf=0.062 shift=0.00 theta=60.0d depth=0.12 952 ms
+x+    d_surf=0.120 theta= 0.0d shift=0.02 depth=0.12 (  47.7 ms) d_surf=0.120 shift=0.02 theta= 0.0d depth=0.12  +0.000  d_surf=0.086 shift=0.00 theta=60.0d depth=0.12 560 ms
+x-    d_surf=0.120 theta= 0.0d shift=0.02 depth=0.12 (  62.1 ms) d_surf=0.120 shift=0.02 theta= 0.0d depth=0.12  +0.000  d_surf=0.086 shift=0.00 theta=60.0d depth=0.12 793 ms
+y+    d_surf=0.238 theta=25.0d shift=0.00 depth=0.26 ( 211.5 ms) -                                      -  d_surf=0.108 shift=0.00 theta=45.0d depth=0.14 549 ms
+y-    d_surf=0.138 theta=10.0d shift=0.00 depth=0.14 (  13.2 ms) -                                      -  d_surf=0.086 shift=0.00 theta=60.0d depth=0.12 203 ms
+top   d_surf=0.180 theta= 0.0d shift=0.00 depth=0.18 (   4.7 ms) d_surf=0.180 shift=0.00 theta= 0.0d depth=0.18  +0.000  d_surf=0.062 shift=0.00 theta=60.0d depth=0.12 994 ms
 
 computation                            measured   estimated   ratio  verdict
 ----------------------------------------------------------------------------------
-one ray validity (11.8 depths)         5.641 ms        6 ms    0.94  under estimate
-  same, per-depth x 18 depths          8.621 ms        6 ms    1.44  within 2x
-36-cell refresh                        203.3 ms      230 ms   0.884  under estimate
-face family, shift rung (2/4 side)     54.92 ms       20 ms    2.75  OVER 2x
-face family, side (67 members)         792.1 ms      441 ms     1.8  within 2x
-face family, top (145 members)         951.9 ms      954 ms   0.998  under estimate
+one ray validity (11.8 depths)         4.909 ms        6 ms   0.818  under estimate
+  same, per-depth x 18 depths          7.503 ms        6 ms    1.25  within 2x
+36-cell refresh                          177 ms      230 ms    0.77  under estimate
+face family, shift rung (2/4 side)     54.95 ms       20 ms    2.75  OVER 2x
+face family, side (67 members)         793.5 ms      441 ms     1.8  within 2x
+face family, top (145 members)         994.5 ms      954 ms    1.04  within 2x
 slide-in resolve                   not measured (Stage B: segment validation)
-per-ray spread: min 0.68 ms  median 5.42 ms  max 15.23 ms  (n=108); depths per ray 9-13, mean 11.8 vs the design's 18
-refresh repeats: 204.6 ms, 202.5 ms, 202.9 ms
+per-ray spread: min 0.72 ms  median 4.30 ms  max 15.36 ms  (n=108); depths per ray 9-13, mean 11.8 vs the design's 18
+refresh repeats: 175.2 ms, 178.8 ms, 176.9 ms
 
    timings: /tmp/ray_views/1509-cam-ai_bench4/timings.txt
    render:  /tmp/ray_views/1509-cam-ai_bench4/comparison.png
@@ -139,41 +139,41 @@ refresh repeats: 204.6 ms, 202.5 ms, 202.9 ms
 d_surf = Euclidean closest-point to box surface   |   along = along-ray from surface (depth - clear_m), sensor floor applies HERE
 address      old d_surf ray d_surf   along  old th    ray theta/shift/depth  roll  smp  verdict
 --------------------------------------------------------------------------------------------------------
-cell 4,1          0.266      0.084   0.111       -   th= 0.0d s=0.00 d=0.14   180   11  closer (-0.183 m)
+cell 4,1          0.266      0.103   0.131       -   th= 0.0d s=0.00 d=0.16   180   10  closer (-0.164 m)
 cell 10,0         0.243      0.193   0.151       -   th= 0.0d s=0.00 d=0.26   180    8  closer (-0.050 m)
 cell 9,0          0.231      0.176   0.159       -   th= 0.0d s=0.00 d=0.26   180    8  closer (-0.055 m)
 face x-           0.238      0.153   0.160   30.0d   th=20.0d s=0.00 d=0.16   180    1  closer (-0.085 m)
 face x+           0.253      0.165   0.160    9.0d   th= 0.0d s=0.06 d=0.16   180   13  closer (-0.088 m)
-cell 3,1          0.250      0.080   0.111       -   th= 0.0d s=0.00 d=0.14   180   14  closer (-0.170 m)
-cell 5,1          0.241      0.075   0.111       -   th= 0.0d s=0.00 d=0.14   180   11  closer (-0.166 m)
+cell 3,1          0.250      0.135   0.171       -   th= 0.0d s=0.00 d=0.20   180   11  closer (-0.115 m)
+cell 5,1          0.241      0.142   0.191       -   th= 0.0d s=0.00 d=0.22     0    7  closer (-0.098 m)
 face top          0.253      0.220   0.220    0.0d   th= 0.0d s=0.00 d=0.22     0   10  closer (-0.033 m)
 face y+           0.259      0.394   0.400   30.3d   th=10.0d s=0.00 d=0.40   180    1  farther (+0.136 m)
-cell 10,1         0.253      0.084   0.111       -   th= 0.0d s=0.00 d=0.14   180   14  closer (-0.170 m)
+cell 10,1         0.253      0.103   0.131       -   th= 0.0d s=0.00 d=0.16   180   13  closer (-0.151 m)
 
-   9/10 views closer to the surface, 0 inaccessible; mean surface distance 0.249 -> 0.162 m
+   9/10 views closer to the surface, 0 inaccessible; mean surface distance 0.249 -> 0.178 m
    faces: 2/4 fronto-parallel (theta=0); old face theta x-=30d, x+=9d, top=0d, y+=30d
-   endpoints inside the box: 0 (min surface distance 0.075 m)
-   sensor floor: all 10 executed rows along-ray >= 0.105 m OK (min 0.111 m); d_surf can legitimately read lower — oblique rays clear the box by less than they travel
+   endpoints inside the box: 0 (min surface distance 0.103 m)
+   sensor floor: all 10 executed rows along-ray >= 0.105 m OK (min 0.131 m); d_surf can legitimately read lower — oblique rays clear the box by less than they travel
 
 face  ladder — first member with a sample           closest FRONTO-PARALLEL member     price  closest of any member          scan
 --------------------------------------------------------------------------------------------------------------------------------
-x+    d_surf=0.165 theta= 0.0d shift=0.06 depth=0.16 (  65.9 ms) d_surf=0.165 shift=0.06 theta= 0.0d depth=0.16  +0.000  d_surf=0.090 shift=0.00 theta=55.0d depth=0.14 637 ms
-x-    d_surf=0.153 theta=20.0d shift=0.00 depth=0.16 ( 176.9 ms) -                                      -  d_surf=0.083 shift=0.00 theta=60.0d depth=0.14 623 ms
-y+    d_surf=0.394 theta=10.0d shift=0.00 depth=0.40 (  99.3 ms) -                                      -  d_surf=0.111 shift=0.00 theta=60.0d depth=0.16 635 ms
-y-    d_surf=0.135 theta=20.0d shift=0.00 depth=0.14 (  24.6 ms) -                                      -  d_surf=0.092 shift=0.00 theta=60.0d depth=0.14 166 ms
-top   d_surf=0.220 theta= 0.0d shift=0.00 depth=0.22 (   4.4 ms) d_surf=0.220 shift=0.00 theta= 0.0d depth=0.22  +0.000  d_surf=0.062 shift=0.00 theta=60.0d depth=0.12 1065 ms
+x+    d_surf=0.165 theta= 0.0d shift=0.06 depth=0.16 (  67.3 ms) d_surf=0.165 shift=0.06 theta= 0.0d depth=0.16  +0.000  d_surf=0.090 shift=0.00 theta=55.0d depth=0.14 633 ms
+x-    d_surf=0.153 theta=20.0d shift=0.00 depth=0.16 ( 176.4 ms) -                                      -  d_surf=0.083 shift=0.00 theta=60.0d depth=0.14 616 ms
+y+    d_surf=0.394 theta=10.0d shift=0.00 depth=0.40 (  95.8 ms) -                                      -  d_surf=0.111 shift=0.00 theta=60.0d depth=0.16 619 ms
+y-    d_surf=0.135 theta=20.0d shift=0.00 depth=0.14 (  23.6 ms) -                                      -  d_surf=0.092 shift=0.00 theta=60.0d depth=0.14 164 ms
+top   d_surf=0.220 theta= 0.0d shift=0.00 depth=0.22 (   4.3 ms) d_surf=0.220 shift=0.00 theta= 0.0d depth=0.22  +0.000  d_surf=0.062 shift=0.00 theta=60.0d depth=0.12 1076 ms
 
 computation                            measured   estimated   ratio  verdict
 ----------------------------------------------------------------------------------
-one ray validity (12.7 depths)         6.507 ms        6 ms    1.08  within 2x
-  same, per-depth x 18 depths          9.247 ms        6 ms    1.54  within 2x
-36-cell refresh                        234.5 ms      230 ms    1.02  within 2x
-face family, shift rung (1/4 side)     65.94 ms       20 ms     3.3  OVER 2x
-face family, side (68 members)         636.5 ms      447 ms    1.42  within 2x
-face family, top (145 members)          1065 ms      954 ms    1.12  within 2x
+one ray validity (12.7 depths)         4.817 ms        6 ms   0.803  under estimate
+  same, per-depth x 18 depths          6.845 ms        6 ms    1.14  within 2x
+36-cell refresh                        173.7 ms      230 ms   0.755  under estimate
+face family, shift rung (1/4 side)     67.31 ms       20 ms    3.37  OVER 2x
+face family, side (68 members)         632.9 ms      447 ms    1.41  within 2x
+face family, top (145 members)          1076 ms      954 ms    1.13  within 2x
 slide-in resolve                   not measured (Stage B: segment validation)
-per-ray spread: min 0.58 ms  median 6.52 ms  max 14.53 ms  (n=108); depths per ray 10-14, mean 12.7 vs the design's 18
-refresh repeats: 233.4 ms, 232.6 ms, 237.5 ms
+per-ray spread: min 0.55 ms  median 4.23 ms  max 12.19 ms  (n=108); depths per ray 10-14, mean 12.7 vs the design's 18
+refresh repeats: 177.5 ms, 173.0 ms, 170.6 ms
 
    timings: /tmp/ray_views/1509-lan-ai_bench5/timings.txt
    render:  /tmp/ray_views/1509-lan-ai_bench5/comparison.png

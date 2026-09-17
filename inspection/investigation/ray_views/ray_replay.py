@@ -226,6 +226,15 @@ def recorded_theta(step):
 
 
 # ------------------------------------------------------------------ resolution
+
+def box_corners(prim):
+    """8x3 belief-box corners for the cell containment bound."""
+    he = np.asarray(prim.params["extents"], dtype=float) / 2.0
+    sgn = np.array([[a, b, c] for a in (-1, 1) for b in (-1, 1)
+                    for c in (-1, 1)], dtype=float)
+    return prim.center + (sgn * he) @ prim.axes.T
+
+
 def resolve_step(world, ik, prim, aabb, step, fy, height_px):
     """(res, ms) for one executed step's address, or (None, ms) when the ray
     (family) has no provably-safe sample — an honestly inaccessible address."""
@@ -237,7 +246,8 @@ def resolve_step(world, ik, prim, aabb, step, fy, height_px):
                            height_px)
     else:
         h, v = int(addr[0]), int(addr[1])
-        res = resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb, h, v)
+        res = resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb,
+                           h, v, fy, height_px, corners=box_corners(prim))
     return res, (time.perf_counter() - t0) * 1e3
 
 
@@ -330,14 +340,17 @@ def measure(world, ik, prim, aabb, fy, height_px, repeats=3):
     """The design's feasibility table, measured. Warmed up first: the very
     first IK/coal call carries import-time and data-alloc cost that would
     otherwise be charged to one unlucky ray."""
-    resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb, 0, 1)   # warmup
+    resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb, 0, 1,
+                 fy, height_px, corners=box_corners(prim))   # warmup
     refreshes, ray_ms, depths = [], [], []
     for rep in range(repeats):
         t0 = time.perf_counter()
         for h in range(H_BINS):
             for v in range(len(V_ELEVATIONS)):
                 t1 = time.perf_counter()
-                resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb, h, v)
+                resolve_cell(world, ik, T_FLANGE_CAM, prim.center,
+                             aabb, h, v, fy, height_px,
+                             corners=box_corners(prim))
                 ray_ms.append((time.perf_counter() - t1) * 1e3)
                 if rep == 0:
                     depths.append(n_depths(
@@ -636,7 +649,8 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
     # Warm up before the walk: without this the first address in the table
     # carries the cold-start cost of IK/coal data allocation and its ms
     # column is a lie about that address rather than a measurement.
-    resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb, 0, 1)
+    resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb, 0, 1,
+                 fy, height_px, corners=box_corners(prim))
     rows = walk(r, world, ik, prim, aabb, fy, height_px)
     if not rows:
         print("   no executed addressed steps — nothing to compare")
