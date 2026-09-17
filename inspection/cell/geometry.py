@@ -335,15 +335,20 @@ def object_box(points: np.ndarray, pct: float = BOX_PCT
     return dims, [*center.tolist(), 0.0, 0.0, yaw]
 
 
-def box_aabb(dims, pose6) -> tuple[np.ndarray, np.ndarray]:
+def pose_box_aabb(dims, pose6) -> tuple[np.ndarray, np.ndarray]:
     """Axis-aligned bounds `(mn, mx)` of the yawed box `object_box` returns.
 
-    The belief bound the ray resolver measures against (`view/rays.py:
-    resolve_cell` — the slab run that sets the sensor floor and the corner
-    containment floor) built from the SAME `(dims, pose6)` that goes into
-    `world.set_object`. Anton 2026-09-17: rays validate against the live
-    planner world, so the surface a cell ray clears and the obstacle it must
-    not hit have to be one object, not two slightly different ones.
+    The hull of the box that went into `world.set_object`, which is the ray
+    resolver's FALLBACK belief bound (`machine.py:_cell_map`) before any
+    boxguard fit exists. It is the COLLISION box, margins and all, so it
+    reads the object bigger than it is — a fit's own unpadded hull replaces
+    it the moment there is one, because over-padding pushes every cell ray's
+    sensor floor outward (`ray_replay.box_aabb`).
+
+    Named for its ARGUMENTS, not its result: `ray_replay.box_aabb(prim)`
+    hulls a fitted primitive and keeps that name; this one hulls a
+    `(dims, pose6)` pair, and two same-named helpers with different
+    contracts in one path is how a caller picks the wrong hull.
 
     Yaw-only, like the box itself: the AABB half-extents of a box turned by
     `yaw` are (|c|hx + |s|hy, |s|hx + |c|hy, hz).

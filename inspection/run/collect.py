@@ -94,6 +94,17 @@ def _mirror_object_box(world, acc) -> None:
 def _default_planner(sup, seed: int = 0):
     """The default `(world, ik, q_now, cell) -> (path | None, cost)`.
 
+    KNOWN-DEGRADED until Stage B task 4 (ray-views): cells are rays now and
+    `sup._reach` holds a resolved depth/`T_flange` per cell, while this
+    ranker still plans to `sphere.plan_to_cell`'s point on a shell whose
+    radius is merely the MEAN of those depths. The two criteria therefore
+    disagree by construction — `SweepDriver._candidates` opens a cell that
+    this may fail to plan, `rank_candidates` then drops it, and a pass where
+    every cell is dropped ends the sweep at `sweep_stuck`. Task 4 replaces
+    this whole function with `resolve_cell` + `plan_transaction` on the
+    sweep's private world; until then, do not read a refusal from here as a
+    statement about the cell.
+
     Reads `sup.sphere` only — never `sup.world`/`sup.ik` — and only to ask
     it for cell geometry. `sup.sphere` is safe to read from this thread
     without a lock: `machine.py:_recenter` always REPLACES it wholesale

@@ -1104,6 +1104,101 @@ def test_view_r_is_the_mean_resolved_cell_depth():
         sup.request_shutdown(); th.join(10)
 
 
+def _acc_prim(sup):
+    """A boxguard-shaped `Primitive` over the accumulator's own cloud — the
+    UNPADDED belief box, which is what a real `_fit_step` installs."""
+    from inspection.cell.geometry import BOX_PCT, min_yaw_aabb
+    from inspection.fit.contract import Primitive
+    center, dims, yaw = min_yaw_aabb(sup.acc.points, pct=BOX_PCT)
+    c, s = np.cos(yaw), np.sin(yaw)
+    pose = [[c, -s, 0.0, center[0]], [s, c, 0.0, center[1]],
+            [0.0, 0.0, 1.0, center[2]], [0.0, 0.0, 0.0, 1.0]]
+    return Primitive(kind="box", pose=pose,
+                     params={"extents": dims.tolist()}, label="box")
+
+
+def test_cell_map_measures_the_unpadded_belief_box():
+    """`object_box` pads (+2 cm per dim, 5 cm floor) because it is the
+    COLLISION box. Feeding that hull to the ray resolver pushes every cell's
+    `clear_m` — and so its resolved depth, the marker radius and the interim
+    plan target — outward from what the bench measured
+    (`ray_replay.box_aabb`: "over-padding it would push every cell ray's
+    sensor floor outward"). When a boxguard fit exists the map must measure
+    the SAME prim the containment corners already come from."""
+    import inspection.run.machine as machine_mod
+    from inspection.view.rays import box_corners, cell_map
+    from inspection.view.viewsphere import T_FLANGE_CAM
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    real, seen = machine_mod.cell_map, []
+
+    def spy(*a, **kw):
+        seen.append((a[4], kw.get("corners")))       # (aabb, corners)
+        return real(*a, **kw)
+
+    try:
+        full_boot(sup)
+        prim = _acc_prim(sup)
+        corners = box_corners(prim)
+        hull = (corners.min(0), corners.max(0))
+        padded = sup._object_aabb
+        # The two hulls really are different objects — the collision box's
+        # margins are what must not reach the resolver.
+        assert np.all(padded[0] <= hull[0] + 1e-9) and \
+            np.all(padded[1] >= hull[1] - 1e-9)
+        assert np.any(padded[1] - padded[0] > (hull[1] - hull[0]) + 1e-3)
+
+        machine_mod.cell_map = spy
+        sup._face_prim = prim
+        got = sup._cell_map()
+        aabb, passed_corners = seen[-1]
+        assert np.allclose(aabb[0], hull[0]) and np.allclose(aabb[1], hull[1])
+        assert passed_corners is not None
+        sup._face_prim = None                        # no fit: padded fallback
+        sup._cell_map()
+        aabb, passed_corners = seen[-1]
+        assert np.allclose(aabb[0], padded[0]) and np.allclose(aabb[1],
+                                                               padded[1])
+        assert passed_corners is None
+        machine_mod.cell_map = real
+
+        want = cell_map(sup.world, sup.ik, T_FLANGE_CAM, sup.acc.centroid,
+                        hull, sup.rig.intr["fy"], sup.rig.intr["height"],
+                        corners=corners)
+        assert {c: None if r is None else round(r.depth, 6)
+                for c, r in got.items()} == \
+            {c: None if r is None else round(r.depth, 6)
+             for c, r in want.items()}
+    finally:
+        machine_mod.cell_map = real
+        sup.request_shutdown(); th.join(10)
+
+
+def test_a_refit_that_resolves_nothing_reports_no_radius():
+    """`ViewState.r` is Optional: a refit where NO cell resolved has no mean
+    depth to report, and a constant dressed as a measurement would lie in
+    `run.json` and in the record alike. The marker sphere still needs some
+    radius to be drawn at all — it falls back to the grid default, and the
+    log says that is what happened."""
+    from inspection.view.grid import DEFAULT_R
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        cells = list(sup._reach)
+        sup._cell_map = lambda: {c: None for c in cells}
+        n0 = len(bus.published)
+        sup._recenter()
+        assert sup._reach and all(r is None for r in sup._reach.values())
+        assert sup._view_state(0, "survey").r is None
+        assert np.isclose(sup.sphere.r, DEFAULT_R), sup.sphere.r
+        msgs = [p["msg"] for _, p in bus.published[n0:]
+                if isinstance(p, dict) and "msg" in p]
+        assert any("no cell resolved" in m for m in msgs), msgs
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
@@ -1136,6 +1231,8 @@ def main():
     test_face_request_previews_on_the_wire()
     test_request_gate_refuses_an_inaccessible_cell()
     test_view_r_is_the_mean_resolved_cell_depth()
+    test_cell_map_measures_the_unpadded_belief_box()
+    test_a_refit_that_resolves_nothing_reports_no_radius()
     print("OK test_machine (task 5)")
 
 

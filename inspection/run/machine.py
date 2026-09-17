@@ -54,8 +54,8 @@ from pathlib import Path
 
 import numpy as np
 
-from inspection.cell.geometry import (BOX_PCT, CloudAccumulator, box_aabb,
-                                      object_box)
+from inspection.cell.geometry import (BOX_PCT, CloudAccumulator, object_box,
+                                      pose_box_aabb)
 from inspection.cell.world import DEFAULT_STEP, RobotCell
 from inspection.motion.direct import direct_move
 from inspection.motion.ik import UR5eIK
@@ -200,8 +200,14 @@ class Supervisor:
         #: refreshed (see the module docstring's second exception).
         self._reach = {}
         #: Axis-aligned bounds of the box `_recenter` installed as the world
-        #: obstacle — what the cell rays measure against. None until survey.
+        #: obstacle. The cell rays' FALLBACK belief bound, used only until a
+        #: boxguard fit gives an unpadded one. None until survey.
         self._object_aabb = None
+        #: Mean resolved cell depth [m] from the last refit, or None when no
+        #: cell resolved — the Stage B stopgap `ViewState.r` carries.
+        self._r_mean = None
+        #: One-shot: the static-face-floor notice (Stage B interim).
+        self._face_floor_noted = False
         self._exit_after = False    # run/exit arrived mid-action, shut down at its end
         self._shutting_down = False  # set by request_shutdown (signal thread)
         #: `run/finish`: the operator declared the run DONE, not abandoned.
@@ -849,7 +855,6 @@ class Supervisor:
             elif isinstance(target, tuple) and target[0] == "face":
                 from inspection.view.faceview import (face_frame, face_radius,
                                                       resolve_face_view)
-                from inspection.view.viewsphere import T_FLANGE_CAM
                 face, prim = target[1], self._face_prim
                 _, _, ext = face_frame(prim, face)
                 r_f = face_radius(ext, self.rig.intr["fy"],
@@ -1097,37 +1102,56 @@ class Supervisor:
         Anton's ruling (2026-09-17): rays validate against the same world
         the planner uses — the one carrying `geometry.object_box` — so an
         accessible cell is accessible to the thing that will actually move
-        the arm. `corners` are the freshest boxguard fit's eight belief-box
-        corners when a fit exists (the oriented box bounds containment far
-        tighter than its yaw-inflated AABB); with no fit the AABB is the
-        honest bound. Reading `_face_prim` here is a plain reference read of
-        a dispatcher-owned field, the same shape as the `_reach` exception.
+        the arm.
+
+        The BELIEF the rays measure (surface run + containment) is the
+        freshest boxguard fit when there is one: both the hull and the eight
+        corners come from that one prim. `object_box`'s hull is the
+        COLLISION box — 2 cm of margin per side, 5 cm floor — and feeding
+        those margins to the resolver would push every cell's `clear_m`, and
+        so its resolved depth, outward from what the bench measured
+        (`ray_replay.box_aabb`: "over-padding it would push every cell ray's
+        sensor floor outward"). With no fit yet, the padded hull is the only
+        bound there is and is used as the conservative fallback. Reading
+        `_face_prim` here is a plain reference read of a dispatcher-owned
+        field, the same shape as the `_reach` exception.
 
         `q_near` is deliberately NOT the arm's current configuration: the
         map is a fact about the CELL, and a stance-dependent one would make
         a cell's resolved depth flicker with wherever the arm happens to be
-        standing when the map is refreshed.
+        standing when the map is refreshed. The gate it feeds is therefore a
+        WEAKER promise than a plan is: "some safe q exists for this cell",
+        not "the arm can get there from where it stands". Reaching
+        `res.T_flange` from `q_now` is the planner's job, and the refusals
+        that promise gap produces are what `_plan_fails` counts (the input
+        `RETREAT_AFTER_FAILS` watches).
         """
         if self._object_aabb is None or self.acc.centroid is None:
             return {}
         prim = self._face_prim
+        corners = None if prim is None else box_corners(prim)
+        aabb = (self._object_aabb if corners is None
+                else (corners.min(0), corners.max(0)))
         return cell_map(self.world, self.ik, T_FLANGE_CAM, self.acc.centroid,
-                        self._object_aabb, self.rig.intr["fy"],
-                        self.rig.intr["height"],
-                        corners=None if prim is None else box_corners(prim))
+                        aabb, self.rig.intr["fy"], self.rig.intr["height"],
+                        corners=corners)
 
     def _mean_depth(self):
-        """Mean resolved depth over accessible cells [m].
+        """Mean resolved depth over accessible cells [m], or None.
 
         The Stage B honesty stopgap (plan Global Constraints): the schema
         keeps ONE radius float and the UI draws ONE marker shell, while
         cells now each resolve their own depth — so both carry the mean of
         what was actually resolved instead of a frozen fill-formula radius.
-        `DEFAULT_R` when nothing resolved: a sphere still needs a radius to
-        be drawn at all.
+
+        None when NOTHING resolved: there is no measurement to report, and
+        `ViewState.r` is Optional precisely so that case can say so. The
+        marker sphere still needs some radius to be drawn — `_recenter`
+        falls back to `DEFAULT_R` for the helper alone and says so in the
+        log; the record gets None.
         """
         d = [res.depth for res in self._reach.values() if res is not None]
-        return float(np.mean(d)) if d else float(DEFAULT_R)
+        return float(np.mean(d)) if d else None
 
     def _recenter(self):
         center = self.acc.centroid
@@ -1138,7 +1162,7 @@ class Supervisor:
         # both the obstacle they must clear and the belief they must frame.
         dims, pose = object_box(self.acc.points)
         self.world.set_object("object", dims.tolist(), pose, parent="base")
-        self._object_aabb = box_aabb(dims, pose)
+        self._object_aabb = pose_box_aabb(dims, pose)
         self._reach = self._cell_map()
         # No shell radius is DERIVED any more: a cell is a ray and carries
         # its own resolved depth, so `radius_for_extent`/`derive_r_floor`
@@ -1146,15 +1170,49 @@ class Supervisor:
         # frame helper (center, cell_dir, cam_pose) the UI draws markers
         # with, and its radius is the honest Stage B stopgap — the mean
         # depth the rays actually resolved.
-        r_mean = self._mean_depth()
-        self.sphere = ViewSphere(center, r=r_mean)
+        #
+        # SUCCESSOR to the invariant that died with the frozen shell: the
+        # old radius was derived once and frozen because "a shell that
+        # tightened as the cloud grew would silently re-point addresses that
+        # have already been visited and photographed". Cell POSES now do
+        # move on every refit — both the resolved `res.T_cam` and the
+        # nominal `cam_pose` at the new mean radius. Accepted for Stage B:
+        # a cell's IDENTITY is its (h, v) ray, which is fixed by the
+        # centroid and the grid, not by any radius; what moves is the depth
+        # along that ray, and each step's `ViewState` records the pose IT
+        # was chosen from, so coverage read across steps stays honest. What
+        # a reader must NOT do is compare a cell's pose between two steps
+        # and conclude the address changed.
+        self._r_mean = self._mean_depth()
+        self.sphere = ViewSphere(
+            center, r=DEFAULT_R if self._r_mean is None else self._r_mean)
         n_ok = sum(1 for res in self._reach.values() if res is not None)
-        self.pub.log("info", f"{n_ok}/{len(self._reach)} cells accessible, "
-                             f"mean resolved depth {r_mean:.3f} m")
+        if self._r_mean is None:
+            self.pub.log("warn", f"0/{len(self._reach)} cells accessible — "
+                                 f"no cell resolved, so there is no mean "
+                                 f"depth; markers drawn at the default "
+                                 f"{DEFAULT_R:.3f} m")
+        else:
+            self.pub.log("info", f"{n_ok}/{len(self._reach)} cells "
+                                 f"accessible, mean resolved depth "
+                                 f"{self._r_mean:.3f} m")
+        if not self._face_floor_noted:
+            # I3 (Stage B interim): faces still run the old ladder, and
+            # `derive_r_floor` no longer measures a per-run floor for it, so
+            # `face_radius` falls back to the static `grid.R_MIN`. Said once,
+            # out loud, because it is a standoff regression on a path the
+            # operator can still drive until the face path moves to rays.
+            self._face_floor_noted = True
+            log.info("face ladder on the STATIC floor (grid.R_MIN) for the "
+                     "Stage B interim — no per-run derive_r_floor")
+            self.pub.log("warn", "faces use the static standoff floor "
+                                 "(R_MIN) this run — no measured floor")
         # A property of the RUN's view method, refreshed with the belief it
         # is derived from. The schema still keeps one float (Stage C gives
-        # rays their own fields), so the stopgap is what it carries.
-        self.writer.set_view_method_params(VIEW_METHOD, r=float(r_mean))
+        # rays their own fields), so the stopgap is what it carries — and
+        # None when nothing resolved, never a constant dressed as a mean.
+        self.writer.set_view_method_params(
+            VIEW_METHOD, r=None if self._r_mean is None else float(self._r_mean))
         # What this refit installed. `_on_view_confirm` copies it into
         # `_stance_box` when a move starts: the box a stance was APPROVED
         # under is the last one installed before its move executed — the
@@ -1365,9 +1423,10 @@ class Supervisor:
             centroid=None if centroid is None else _floats(centroid),
             extent=None if mn_mx is None else _floats(mn_mx[1] - mn_mx[0]),
             # Stage B stopgap: the schema's one radius float carries the mean
-            # resolved cell depth (plan Global Constraints) — the same number
-            # the marker sphere is built with.
-            r=None if self.sphere is None else float(self.sphere.r),
+            # resolved cell depth (plan Global Constraints). None when the
+            # last refit resolved nothing — `sphere.r` would be the marker
+            # fallback there, which is not a measurement.
+            r=None if self._r_mean is None else float(self._r_mean),
             chosen=self._target_json(target), decider=self._decider)
 
     def _set_phase(self, phase, target=None):
