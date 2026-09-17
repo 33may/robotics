@@ -217,7 +217,15 @@ class SupervisorMover:
             return False, (f"the operator did not approve {_json(cell)} and "
                            f"selected {_json(target)} instead. Consider going "
                            f"there, or explain why {_json(cell)} matters.")
-        if phase != "executing":
+        # `adjusting` (Stage B) is a slide leg of the move transaction — the
+        # arm is under power just as much as during the hop's `executing`.
+        # This poll lands there far more often than not once a transaction
+        # has a slide leg (`_wait` samples every 50 ms; the dispatcher
+        # reaches `adjusting` in well under a millisecond of the confirm),
+        # so treating it as "not approved" told the orchestrator the arm had
+        # not moved while it was actively moving (ruled 2026-09-17, pinned by
+        # task-6's e2e).
+        if phase not in ("executing", "adjusting"):
             self.on_event("cancelled", cell=_json(cell), phase=phase)
             return False, (f"{_json(cell)} was not approved (run went to "
                            f"{phase}). The arm has not moved.")
