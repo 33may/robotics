@@ -6,7 +6,7 @@
     python cleanup.py
 
 This is the *verify* end of the loop in `README.md`, written against the
-workspace `inspection/investigation/rr/workspace.py` produces. Every action
+workspace `inspection/record/rr/workspace.py` produces. Every action
 is a real trusted mouse event through CDP; every assertion is a measurement
 on a screenshot, not on the SDK.
 

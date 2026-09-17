@@ -27,6 +27,7 @@ from typing import Any
 
 from inspection.record.schema import (
     ConfigSnapshot,
+    DecompositionRecord,
     FileEntry,
     GeometryStats,
     Manifest,
@@ -81,6 +82,23 @@ def _write_json(path: Path, model: RecordModel) -> None:
     tmp = path.parent / f".tmp-{path.name}-{os.getpid()}-{threading.get_ident()}"
     tmp.write_text(json.dumps(data, indent=1))
     os.replace(tmp, path)
+
+
+def write_step_decomposition(run_dir: Path, rec: DecompositionRecord) -> Path:
+    """steps/NNN/decomposition.json — the ONE write path for a step's fit.
+
+    Called by the live loop after fuse and by `fit/apply.py` backfill with
+    the same bytes-for-bytes result: which algorithm produced the record is
+    inside it (`method`), never in the mechanism. Module-level (not only a
+    RunWriter method) because backfill runs on CLOSED runs, where no
+    RunWriter exists — a decomposition is the step's belief, not part of
+    the capture close ritual, so writing it post-close is legal add-only.
+    """
+    p = Path(run_dir) / "steps" / f"{rec.step_id:03d}" / "decomposition.json"
+    if not p.parent.is_dir():
+        raise FileNotFoundError(f"no step dir for step {rec.step_id}: {p.parent}")
+    _write_json(p, rec)
+    return p
 
 
 def _write_npy(path: Path, arr) -> None:
@@ -229,6 +247,11 @@ class RunWriter:
         })
         self._write_step(rec)
         _write_json(self._step_dir(step_id) / "view_state.json", view_state)
+
+    def write_decomposition(self, rec: DecompositionRecord) -> Path:
+        """The live loop's door to `write_step_decomposition` (same file)."""
+        self._check_open()
+        return write_step_decomposition(self.dir, rec)
 
     def mark_step(self, step_id: int, *, outcome: str, detail: str) -> None:
         """Explicit failure entry — never a silent gap in the id space."""

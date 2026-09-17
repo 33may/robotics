@@ -217,6 +217,55 @@ class StepRecord(RecordModel):
         return self
 
 
+class PrimitiveShape(BaseModel):
+    """One shape in a step's decomposition — structurally validated only.
+
+    The closed kind vocabulary and per-kind params contract live with the
+    producer (`inspection/fit/contract.py`); the record layer stays generic
+    so a new fitting method needs no schema change here.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    kind: str
+    pose: Mat4
+    params: dict[str, Any] = Field(default_factory=dict)
+    label: str = ""
+    residual_mm: float = 0.0
+    support: int = 0
+    inliers: list[int] = Field(default_factory=list)
+
+
+class DecompositionRecord(RecordModel):
+    """steps/NNN/decomposition.json — the step's ONE belief about the object.
+
+    A single polymorphic slot (Anton, 2026-09-14): whichever fitting
+    algorithm ran — live in the loop or via `fit/apply.py` backfill —
+    declares itself in `method`, and every consumer dispatches on that name
+    (rendering, real-time compute, view derivation) plus on primitive
+    `kind` for drawing. New algorithms reuse this exact record; the schema
+    never learns their names. Abstain is a first-class answer.
+    """
+
+    VERSION: ClassVar[int] = 1
+    schema_version: int = 1
+
+    step_id: int = Field(ge=0)
+    source: str  # step-relative cloud the fitter ate, e.g. "fused/cloud.npy"
+    n_points: int = Field(ge=0)
+    method: str  # the dispatch key (== Decomposition.method of the producer)
+    method_version: str
+    abstain: bool = False
+    reason: str = ""
+    primitives: list[PrimitiveShape] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _abstain_carries_no_shapes(self) -> "DecompositionRecord":
+        if self.abstain and self.primitives:
+            raise ValueError("an abstaining decomposition carries no primitives")
+        return self
+
+
 class ViewCandidate(BaseModel):
     """One candidate view in a step's ViewState snapshot.
 
@@ -473,7 +522,7 @@ class OperatorEvent(BaseModel):
     t: float
     kind: Literal["requested", "awaiting_approval", "approved", "redirected",
                   "cancelled", "captured", "blocked", "stopped", "fault",
-                  "finished"]
+                  "finished", "retreat"]
     step_id: int | None = None
     detail: str | None = None
 
@@ -529,6 +578,8 @@ RELATIONS = [
     ("RunRecord", "||--o|", "AnswerRecord", "answer.json"),
     ("RunRecord", "||--o{", "OperatorEvent", "events.jsonl"),
     ("StepRecord", "||--||", "ViewState", "steps/NNN/view_state.json"),
+    ("StepRecord", "||--o|", "DecompositionRecord",
+     "steps/NNN/decomposition.json (fused steps; absent until fitted)"),
     ("AIRunRecord", "}o--||", "MenuDef", "ai/seq/menu/menu_def.json"),
     ("AIRunRecord", "||--o{", "MenuInput", "ai/seq/menu/inputs.jsonl"),
     ("AIRunRecord", "||--o{", "TranscriptRecord", "transcripts/tNNN.json"),

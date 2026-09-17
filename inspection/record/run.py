@@ -13,9 +13,9 @@ import numpy as np
 from inspection.cell.geometry import rotate180
 from inspection.record.legacy import adapt_run, is_legacy
 from inspection.record.schema import (AIRunRecord, AnswerRecord, ConfigSnapshot,
-                                      MenuDef, MenuInput, OperatorEvent, RunRecord,
-                                      SessionRecord, StepRecord, TranscriptRecord,
-                                      ViewState)
+                                      DecompositionRecord, MenuDef, MenuInput,
+                                      OperatorEvent, RunRecord, SessionRecord,
+                                      StepRecord, TranscriptRecord, ViewState)
 from inspection.record.validate import Report, validate_run
 
 
@@ -33,6 +33,13 @@ class Step:
     def view_state(self) -> ViewState | None:
         p = self.dir / "view_state.json"
         return ViewState.model_validate_json(p.read_text()) if p.exists() else None
+
+    @property
+    def decomposition(self) -> DecompositionRecord | None:
+        """The step's belief about the object — dispatch on `.method`."""
+        p = self.dir / "decomposition.json"
+        return (DecompositionRecord.model_validate_json(p.read_text())
+                if p.exists() else None)
 
     # binaries ----------------------------------------------------------------
     # Convention (schema.py:Conventions.rotated_artifacts + capture.py:45-59,

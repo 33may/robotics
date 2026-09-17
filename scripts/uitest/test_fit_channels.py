@@ -74,7 +74,7 @@ sys.path.insert(0, str(HERE))
 import cdp as C  # noqa: E402
 from imgdiff import diff as img_diff  # noqa: E402
 
-from inspection.investigation.rr import log as rr_log  # noqa: E402
+from inspection.record.rr import log as rr_log  # noqa: E402
 
 REPO = HERE.parents[1]
 DERIVED = REPO / "inspection" / "data" / "derived"

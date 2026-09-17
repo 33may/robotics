@@ -112,7 +112,7 @@ def _replay_dir(run: str) -> Path:
             return d
     raise SystemExit(f"no step clouds for {run} in {DERIVED / run / 'steps'} "
                      f"or {REPLAY / run} — run "
-                     f"inspection/investigation/step_replay.py --run {run}")
+                     f"inspection/investigation/run_replay/step_replay.py --run {run}")
 
 
 def _recorded_pair(step: Step) -> tuple[np.ndarray, np.ndarray | None] | None:
@@ -171,6 +171,25 @@ def _fit_channels(run: str) -> dict[str, dict[int, Path]]:
                  for f in sorted(d.glob("step_*.json"))}
         if files:
             out[d.name] = files
+    return out
+
+
+def _decomposition_channels(run_obj: Run) -> dict[str, dict[int, Path]]:
+    """Sweep `steps/NNN/decomposition.json` — the step's own belief slot.
+
+    Same shape as `_fit_channels` so both feed `_log_fits` unchanged. The
+    channel name comes from the `method` field INSIDE each file (the
+    polymorphism key, Anton 2026-09-14) — the mechanism never knows
+    algorithm names. A run whose steps were backfilled by different
+    methods simply grows one channel per method, like the derived tree.
+    """
+    out: dict[str, dict[int, Path]] = {}
+    for step in run_obj.steps:
+        f = step.dir / "decomposition.json"
+        if not f.exists():
+            continue
+        m = json.loads(f.read_text()).get("method", "?")
+        out.setdefault(m, {})[step.id] = f
     return out
 
 
@@ -277,6 +296,11 @@ def build(run: str, out_dir: Path | None = None, overlay: bool = False) -> Path:
     intr = session["intrinsics"]["color"]
     cache = IMG_CACHE / run
     fits = _fit_channels(run)
+    # The step's own decomposition.json wins over a same-method derived
+    # channel per step: the in-run slot is what the loop believed (or the
+    # blessed backfill), the derived tree is research sweeps.
+    for m, files in _decomposition_channels(run_obj).items():
+        fits.setdefault(m, {}).update(files)
 
     # The step walk: the replay summary's order when there is one (it is
     # what the fits were computed against), else the run's own fused steps.
@@ -397,7 +421,7 @@ def _log_fits(fits: dict[str, dict[int, Path]], pose_id: int,
         if f is not None:
             d = json.loads(f.read_text())
             prims = [dict(p, method=m) for p in d.get("primitives", [])]
-            meta = {"version": d.get("version", ""),
+            meta = {"version": d.get("version", d.get("method_version", "")),
                     "abstain": bool(d.get("abstain", False)),
                     "reason": d.get("reason", ""),
                     "coverage": float(d.get("coverage", 0.0)),

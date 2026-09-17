@@ -16,6 +16,7 @@ erDiagram
     RunRecord ||--o| AnswerRecord : "answer.json"
     RunRecord ||--o{ OperatorEvent : "events.jsonl"
     StepRecord ||--|| ViewState : "steps/NNN/view_state.json"
+    StepRecord ||--o| DecompositionRecord : "steps/NNN/decomposition.json (fused steps; absent until fitted)"
     AIRunRecord }o--|| MenuDef : "ai/seq/menu/menu_def.json"
     AIRunRecord ||--o{ MenuInput : "ai/seq/menu/inputs.jsonl"
     AIRunRecord ||--o{ TranscriptRecord : "transcripts/tNNN.json"
@@ -24,6 +25,7 @@ erDiagram
     StepRecord ||--|| ViewRef : "view"
     StepRecord ||--o| Segmentation : "segmentation"
     StepRecord ||--o| GeometryStats : "geometry"
+    DecompositionRecord ||--o{ PrimitiveShape : "primitives"
     ViewState ||--o{ ViewCandidate : "candidates"
     RunRecord ||--o{ ViewMethod : "view_methods"
     RunRecord ||--|| Conventions : "conventions"
@@ -76,6 +78,27 @@ erDiagram
         list T_base_flange
         list T_base_cam
         enum rgb_rotation_deg
+    }
+    PrimitiveShape {
+        str kind
+        list pose
+        dict params
+        str label
+        float residual_mm
+        int support
+        list inliers
+    }
+    DecompositionRecord {
+        int schema_version
+        enum provenance
+        list synthesized
+        int step_id
+        str source
+        int n_points
+        str method
+        str method_version
+        bool abstain
+        str reason
     }
     ViewCandidate {
         Any address
@@ -359,6 +382,49 @@ via replay into the derived tree, and validate must not demand the files.
 | `segmentation` | `Segmentation | None` | no | `None` |
 | `geometry` | `GeometryStats | None` | no | `None` |
 
+### PrimitiveShape
+
+One shape in a step's decomposition — structurally validated only.
+
+The closed kind vocabulary and per-kind params contract live with the
+producer (`inspection/fit/contract.py`); the record layer stays generic
+so a new fitting method needs no schema change here.
+
+| field | type | required | default |
+|---|---|---|---|
+| `kind` | `str` | yes | — |
+| `pose` | `list[list[float]]` | yes | — |
+| `params` | `dict[str, Any]` | no | `dict()` |
+| `label` | `str` | no | `''` |
+| `residual_mm` | `float` | no | `0.0` |
+| `support` | `int` | no | `0` |
+| `inliers` | `list[int]` | no | `list()` |
+
+### DecompositionRecord
+
+steps/NNN/decomposition.json — the step's ONE belief about the object.
+
+A single polymorphic slot (Anton, 2026-09-14): whichever fitting
+algorithm ran — live in the loop or via `fit/apply.py` backfill —
+declares itself in `method`, and every consumer dispatches on that name
+(rendering, real-time compute, view derivation) plus on primitive
+`kind` for drawing. New algorithms reuse this exact record; the schema
+never learns their names. Abstain is a first-class answer.
+
+| field | type | required | default |
+|---|---|---|---|
+| `schema_version` | `int` | no | `1` |
+| `provenance` | `'native' | 'legacy'` | no | `'native'` |
+| `synthesized` | `list[str]` | no | `list()` |
+| `step_id` | `int` | yes | — |
+| `source` | `str` | yes | — |
+| `n_points` | `int` | yes | — |
+| `method` | `str` | yes | — |
+| `method_version` | `str` | yes | — |
+| `abstain` | `bool` | no | `False` |
+| `reason` | `str` | no | `''` |
+| `primitives` | `list[PrimitiveShape]` | no | `list()` |
+
 ### ViewCandidate
 
 One candidate view in a step's ViewState snapshot.
@@ -622,7 +688,7 @@ answer.json — the verdict, with explicit back-references.
 | `evidence_images` | `list[EvidenceImage]` | no | `list()` |
 | `step_ids` | `list[int]` | no | `list()` |
 | `transcript_ids` | `list[str]` | no | `list()` |
-| `views_inspected` | `list[list[int]]` | no | `list()` |
+| `views_inspected` | `list[list[int | str]]` | no | `list()` |
 | `coverage` | `str | None` | no | `None` |
 
 ### OperatorEvent
@@ -634,7 +700,7 @@ No per-line schema_version: the run's version covers the file.
 | field | type | required | default |
 |---|---|---|---|
 | `t` | `float` | yes | — |
-| `kind` | `'requested' | 'awaiting_approval' | 'approved' | 'redirected' | 'cancelled' | 'captured' | 'blocked' | 'stopped' | 'fault' | 'finished'` | yes | — |
+| `kind` | `'requested' | 'awaiting_approval' | 'approved' | 'redirected' | 'cancelled' | 'captured' | 'blocked' | 'stopped' | 'fault' | 'finished' | 'retreat'` | yes | — |
 | `step_id` | `int | None` | no | `None` |
 | `detail` | `str | None` | no | `None` |
 

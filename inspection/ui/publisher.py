@@ -17,6 +17,7 @@ Typical use, from the dispatcher (`run/machine.py`'s `Supervisor`)::
     pub.publish_pose(world, q, colliding=...)        # preview replay / live mirror, 30 Hz
     pub.publish_capture(cap)                         # after rig.capture()
     pub.publish_object(acc.points, dims, mid)        # after _recenter()
+    pub.publish_decomposition(rec)                   # after the step's fit lands
     pub.publish_views(sphere, reach, visited=visited, blocked=blocked,
                       current=current, captures=captures,
                       pending=pending, previewing=previewing, survey=survey_state)
@@ -111,6 +112,12 @@ KEEPOUT_COLOR = "#c0392b"
 KEEPOUT_OPACITY = 0.22
 
 TOOL_COLOR = "#c8a24a"
+#: Primitive-fit solids. Orange on purpose: the review Rerun viewer draws
+#: boxguard orange, and the fit must never be confused with the yellow planner
+#: box `object/obb` — one is what the fitter believes, the other is what the
+#: planner was told.
+FIT_COLOR = "#ff8c00"
+FIT_OPACITY = 0.3
 COLLIDING_COLOR = "#dd2222"
 BACKGROUND_BAD = ["#5a2b2b", "#2a1414"]
 
@@ -177,6 +184,7 @@ class InspectionPublisher:
             "robot": [],
             "tool": [],
             "object": [],
+            "fit": [],
             "views": [],
         }
         self._pose_names: list[str] = []       # robot visual + tool, in publish order
@@ -379,6 +387,56 @@ class InspectionPublisher:
             self.bus.publish(TOPIC_CLOUD, {"points": self.bus.array_payload(array)})
         except Exception:
             log.exception("publish_cloud failed")
+
+    # ── primitive fit ──────────────────────────────────────────────────────
+
+    def publish_decomposition(self, rec) -> None:
+        """Per-step primitive fit — the boxguard cuboid — as translucent solids.
+
+        `rec` is the DecompositionRecord as a plain dict
+        (`steps/NNN/decomposition.json`, schema in `record/schema.py`): ONE
+        polymorphic slot per step (Anton, 2026-09-14) — whichever fitting
+        algorithm ran declares itself in `method`, and every consumer
+        dispatches on that name. This renderer knows how to draw `boxguard`
+        (a single cuboid prior, primitive kind "box"); a method it does not
+        recognise is skipped with a warning rather than guessed at — new
+        methods add a branch here, the record schema never changes.
+
+        Primitive poses are 4x4 in the robot base frame — the same frame the
+        rest of the description lives in — so they publish untouched.
+
+        Abstain, no primitives, or an unrenderable method all CLEAR the
+        section and republish: a stale box from the previous step is a lie
+        about the current belief, and the protocol removes nodes absent from
+        a new description.
+        """
+        try:
+            nodes: list[dict] = []
+            method = rec.get("method", "")
+            if rec.get("abstain") or not rec.get("primitives"):
+                pass                                   # cleared below
+            elif method != "boxguard":
+                log.warning("publish_decomposition: no renderer for method %r"
+                            " — fit not drawn", method)
+            else:
+                for i, prim in enumerate(rec["primitives"]):
+                    kind = prim.get("kind")
+                    if kind != "box":
+                        # boxguard draws cuboids; anything else in its output
+                        # is a producer bug worth hearing about, not drawing
+                        log.warning("publish_decomposition: skipping kind %r"
+                                    " (boxguard renders boxes)", kind)
+                        continue
+                    nodes.append(box_node(
+                        f"fit/{prim.get('label') or i}",
+                        prim["params"]["extents"],
+                        np.asarray(prim["pose"], dtype=float),
+                        color=FIT_COLOR, opacity=FIT_OPACITY, side="double",
+                    ))
+            self._sections["fit"] = nodes
+            self._publish_description()
+        except Exception:
+            log.exception("publish_decomposition failed")
 
     # ── viewsphere ─────────────────────────────────────────────────────────
 

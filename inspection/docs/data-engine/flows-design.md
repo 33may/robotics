@@ -67,6 +67,7 @@ run/app.py (composition root)
 | settle: capture ok (`_exec_worker`) | `begin_step` + `write_capture` | `steps/NNN/` + `step.json phase:"captured"` |
 | plane gate / capture crash | `mark_step(rejected\|failed, detail)` | pose-less step record |
 | fuse ok (`_on_settle_done` path) | `write_fused(geometry, view_state)` | `step.json phase:"fused"` + `view_state.json` |
+| fit lands (live loop after fuse, or `fit/apply.py` backfill on a closed run) | `write_decomposition` (live door to module-level `write_step_decomposition` — one path) | `steps/NNN/decomposition.json` |
 | stop / fault (`_on_exec_done`) | `event("stopped"\|"fault")` | `events.jsonl` |
 | brain inspects | `AIRunWriter.transcript` | `ai/transcripts/tNNN.json` (keyed `step_id`) |
 | menu rendered | `AIRunWriter.menu_def` (once/version) + `menu_input` (per turn) | `ai/menu/**` |
@@ -83,6 +84,13 @@ detect-on-read flags staleness).
 
 `ViewState.decider`: `"ai"` (flow A), `"sweep-shortest"` (flow B),
 `"operator"` (a redirect — the human drove).
+
+`decomposition.json` is the step's ONE belief slot about the object —
+polymorphic: `method` inside the file is the dispatch key; the schema never
+learns algorithm names. Abstain is a first-class record (`abstain` + `reason`,
+no primitives). Live loop and backfill share the one write path; backfill on
+closed runs is legal add-only (the slot is belief, not part of the close
+ritual — the manifest hashes immutable binaries only and is untouched).
 
 ## 4. The `Run` read object (`record/run.py`)
 
@@ -137,6 +145,7 @@ settle              steps/001/{rgb.png, depth_aligned.npy, mask.png, chain_*.png
   plane gate fail → step.json outcome:"rejected", detail — run continues
 fuse ok             step.json phase:"fused" + geometry
                     view_state.json{candidates, chosen:[3,0], decider:"ai"}
+                    decomposition.json{method:"boxguard", primitives | abstain}
                     events: captured
 brain inspects      ai/transcripts/tNNN.json (step_id:1) + menu_input
 ──────────────────────────────────────────────────────────────────────
