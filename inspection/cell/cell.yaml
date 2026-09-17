@@ -45,13 +45,15 @@ corners:
         point: [0.3849, -0.6164, 0.7096]
         normal: [-0.9997, -0.0230, -0.0101]
   corner2:                  # the tripod — 3-tap style, planes forced vertical
+    # apex moved by hand (Anton 2026-09-17): taught y -0.7982 -> -0.9298
+    # (corner4's y - 5 cm), x/z kept — wedge was biting into the front workspace.
     parent: base
     planes:
       a:
-        point: [0.2400, -0.7982, 0.6304]
+        point: [0.2400, -0.9298, 0.6304]
         normal: [-0.0675, 0.9977, 0.0]
       b:
-        point: [0.2400, -0.7982, 0.6304]
+        point: [0.2400, -0.9298, 0.6304]
         normal: [-0.9939, 0.1107, 0.0]
   corner3:                  # left-side corner, dihedral 71.7 deg — Anton: WRONG, reprobe pending
     parent: base
