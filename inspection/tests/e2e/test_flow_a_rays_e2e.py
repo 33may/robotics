@@ -182,6 +182,33 @@ class _NullPub:
         return lambda *a, **kw: None
 
 
+class _PhaseTrace(_NullPub):
+    """Records every `status(phase=...)` call — the dispatcher's own phase
+    announcement (`machine.py:_set_phase`), issued synchronously and
+    unconditionally on every transition, never polled.
+
+    This is the "bus phase trace" real observable (the same field
+    `ui/publisher.py` republishes onto the `run/status` topic). It is
+    deliberately NOT `sup.phase` sampling: `SupervisorMover`'s own 50 ms
+    poll of `sup.phase` can and does skip transitions (`_wait_for_gate`'s
+    docstring below has the measured evidence), so re-sampling `sup.phase`
+    here to check for an `adjusting` leg would just be a second copy of the
+    exact race this file already worked around once. Recording the
+    dispatcher's own announcement instead is not sampled at all — every
+    phase it ever set is in `self.phases`, in order, so a leg cannot be
+    missed by bad luck the way a poll can. Used as the machine's own `pub`
+    (never the mover's beat-handler pub, which stays a plain `_NullPub`),
+    so the main flow test can prove a move genuinely ran multiple legs
+    instead of only checking its outcome.
+    """
+
+    def __init__(self):
+        self.phases = []
+
+    def status(self, **kw):
+        self.phases.append(kw.get("phase"))
+
+
 def _wait_for_gate(run_dir, n0, timeout=ASSERT_TIMEOUT, msg=""):
     """Block until the mover's OWN thread has written its `awaiting_approval`
     beat (index >= n0) — proof it already observed `previewing` itself,
@@ -234,8 +261,17 @@ def test_flow_a_ray_transaction_with_a_face_and_a_scripted_fault():
     mid-move fault on a further move — leaving the run alive and answerable.
 
     Assertions are on real observables only: `Run.load(...)`'s step records
-    and events, and `SupervisorMover.nav()` — the live picture `brain/live.py`
-    itself hands the orchestrator — never `Supervisor` internals.
+    and events, `SupervisorMover.nav()` — the live picture `brain/live.py`
+    itself hands the orchestrator — and the dispatcher's own phase
+    announcements (`_PhaseTrace`, the "bus phase trace" observable) — never
+    `Supervisor` internals.
+
+    "Sweep step" (the brief's Step 1 wording) is these two AI-decider cell
+    moves: Flow A's `ask` path never touches `run/collect.py`'s
+    `SweepDriver`/sweep planner at all (that is Flow B's own driver, wired
+    only by `ui/mock.py:start_mock_collect`/`run/app.py:collect`) — the only
+    thing choosing an address here is `SupervisorMover.request()`, same as
+    the face move below, just with `decider="ai"` over a plain grid cell.
     """
     from inspection.record.run import Run
     from inspection.ui import mock
@@ -246,7 +282,11 @@ def test_flow_a_ray_transaction_with_a_face_and_a_scripted_fault():
 
     run_root = Path(tempfile.mkdtemp())
     run_dir = run_root / "0917-rays"
-    sup = mock.start_mock(_StubBus(), _NullPub(), run_dir)
+    # `_PhaseTrace` (not a plain `_NullPub`) as the MACHINE's own pub, so the
+    # face move's leg sequence can be read off the dispatcher's own
+    # announcements below rather than only inferred from its outcome.
+    phase_trace = _PhaseTrace()
+    sup = mock.start_mock(_StubBus(), phase_trace, run_dir)
     try:
         mover, ai, trace = _make_mover(sup, run_dir)
 
@@ -275,8 +315,23 @@ def test_flow_a_ray_transaction_with_a_face_and_a_scripted_fault():
         assert ready, f"no face ready after two moves: {faces}"
         face = ["face", ready[0]]
 
+        n_face0 = len(phase_trace.phases)
         ok, why = _ai_move(sup, mover, run_dir, face)
         assert ok, why
+
+        # --- the face move genuinely ran as a multi-leg ray transaction ----
+        # `_ai_move` above only proves the OUTCOME (approved, captured,
+        # atomic) — this proves the MECHANISM the brief names ("3-leg
+        # transaction"): at least one `adjusting` leg (a slide) actually
+        # ran, not just the `executing` hop. Read off `_PhaseTrace` (the
+        # dispatcher's own, unsampled announcements — see its docstring for
+        # why this is the least-flaky of the options the review named: a
+        # fresh `sup.phase` poll here would just reintroduce the exact race
+        # `_wait_for_gate` exists to avoid).
+        face_phases = phase_trace.phases[n_face0:]
+        assert "adjusting" in face_phases, (
+            f"the face move never announced an adjusting leg — not a "
+            f"multi-leg transaction: {face_phases}")
 
         # --- step record carries {method, address} unchanged ---------------
         run = Run.load(run_dir)
@@ -293,14 +348,18 @@ def test_flow_a_ray_transaction_with_a_face_and_a_scripted_fault():
             "the resolved face's off-angle never reached "
             "SupervisorMover.nav() — the one thing brain/loop.py's "
             "FACES block and _gate read")
-        # KNOWN GAP (flagged, not fixed here — see task-6 report): the same
-        # `RayResolution` also carries `shift` (machine.py's `_face_find`),
-        # but `Supervisor._face_states()` only ever forwards `theta` (as
-        # `off_angle_deg`) into `nav()`/`_staple_state`'s FACES text. No
-        # brain-observable path carries `shift` today. Closing that gap is a
-        # `machine.py`/`brain/loop.py` change outside this task's permitted
-        # edit (brain/live.py's one ruled line only) — pinned here as an
-        # explicit absence rather than silently dropped.
+        # KNOWN GAP, ruled deferred to STAGE C (flagged, not fixed here —
+        # see task-6 report): the same `RayResolution` also carries `shift`
+        # (machine.py's `_face_find`), but `Supervisor._face_states()` only
+        # ever forwards `theta` (as `off_angle_deg`) into
+        # `nav()`/`_staple_state`'s FACES text. No brain-observable path
+        # carries `shift` today. The ruling is that shift-to-brain is Stage
+        # C prompt-reality work (machine.py's `_face_states()`/
+        # `_view_state()` and brain/loop.py's FACES render both need it, and
+        # both are outside this task's permitted edit — brain/live.py's one
+        # ruled line only). Pinned here as an explicit absence rather than
+        # silently dropped, so Stage C's own task closes this assertion
+        # rather than discovering the gap cold.
         assert "shift" not in st, (
             "brain/live.py's nav()/_face_states() now carries 'shift' — "
             "task-6's report is stale, update it and this comment")
