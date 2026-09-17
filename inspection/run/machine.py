@@ -11,8 +11,9 @@ dispatcher drops anything whose gen has gone stale.
 Two narrow, deliberate exceptions to "only the dispatcher mutates run
 state" (both safe because exactly one action worker is alive at a time):
 the settle leg of `_exec_worker` calls `self.acc.add` and `self._recenter()`
-directly, and `_reach` (the reachability cache, expensive to compute) is
-refreshed by `_plan_worker`/`_exec_worker` rather than the dispatcher.
+directly, and `_reach` (the cell accessibility map — one resolved ray per
+cell, expensive to compute) is refreshed by `_plan_worker`/`_exec_worker`
+(inside `_recenter`) rather than by the dispatcher.
 
 "Exactly one action worker alive at a time" is enforced, not assumed:
 `plan_viewpoint`/OMPL cannot be cancelled mid-call, so a superseding
@@ -53,15 +54,17 @@ from pathlib import Path
 
 import numpy as np
 
-from inspection.cell.geometry import BOX_PCT, CloudAccumulator, object_box
+from inspection.cell.geometry import (BOX_PCT, CloudAccumulator, box_aabb,
+                                      object_box)
 from inspection.cell.world import DEFAULT_STEP, RobotCell
 from inspection.motion.direct import direct_move
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
 from inspection.record.schema import ViewCandidate, ViewState
 from inspection.run.settle import _plane_error, settle_capture
-from inspection.view.grid import object_extent, radius_for_extent
-from inspection.view.viewsphere import ViewSphere, derive_r_floor
+from inspection.view.grid import DEFAULT_R
+from inspection.view.rays import box_corners, cell_map
+from inspection.view.viewsphere import T_FLANGE_CAM, ViewSphere
 
 log = logging.getLogger(__name__)
 
@@ -140,10 +143,21 @@ class Supervisor:
         except Exception:
             self._floor_z = None    # a world with no probed table: old behavior
         self.ik = ik if ik is not None else UR5eIK()
-        self.r, self.seed = r, seed
-        #: Per-run measured shell floor (derive_r_floor at survey). None
-        #: until derived — and forever on runs created with an explicit r,
-        #: where face_radius falls back to the static grid.R_MIN.
+        self.seed = seed
+        if r is not None:
+            # Cells are RAYS now (Stage B): each one's distance is resolved
+            # per cell against the live world, so there is no one shell
+            # radius left to pin. Accepted (app.py still offers `--r`) and
+            # said out loud rather than silently ignored.
+            log.warning("--r %.3f ignored: cells are rays, each cell's "
+                        "distance is resolved on its own ray", float(r))
+            self.pub.log("warn", f"--r {float(r):.3f} ignored: cells are "
+                                 f"rays now, each resolves its own distance")
+        #: Per-run measured shell floor. NEVER derived any more (the ray
+        #: resolver has no shell to floor); it stays None for the run, which
+        #: is the value `face_radius` already documents as "no measured
+        #: floor, fall back to the static grid.R_MIN". The face ladder is
+        #: the one path still reading it — it moves to rays in task 3.
         self.r_floor = None
         #: Refit counter — every `_recenter()` box install bumps it, and
         #: `_last_box_rev`/`_stance_box_rev` ride along with their boxes.
@@ -181,7 +195,13 @@ class Supervisor:
         self._preview_thread = None  # joined before any new worker spawns
         self._action_thread = None   # the one live plan/exec worker, for join_workers
         self._path = None           # path of the current preview
-        self._reach = {}            # cached sphere.reachability(), worker-refreshed
+        #: The cell accessibility map — `{(h, v): RayResolution | None}`,
+        #: `None` = no provably-safe sample on that cell's ray. Worker-
+        #: refreshed (see the module docstring's second exception).
+        self._reach = {}
+        #: Axis-aligned bounds of the box `_recenter` installed as the world
+        #: obstacle — what the cell rays measure against. None until survey.
+        self._object_aabb = None
         self._exit_after = False    # run/exit arrived mid-action, shut down at its end
         self._shutting_down = False  # set by request_shutdown (signal thread)
         #: `run/finish`: the operator declared the run DONE, not abandoned.
@@ -348,11 +368,25 @@ class Supervisor:
                 self.pub.log("warn", f"face {target[1]} dropped: {st}")
                 return
         else:
-            if (self.sphere is None or self._reach.get(target) is None
-                    or target in self.visited):
-                log.info("view/request %s dropped: no sphere/unreachable/"
-                         "visited", target)
-                self.pub.log("warn", f"view/request {target} dropped")
+            # The cell map IS the gate (Stage B): `None` means the cell's ray
+            # carried no provably-safe sample. Say WHICH of the three facts
+            # refused the request — "dropped" alone left the operator (and
+            # the mover reading `pub.log`) guessing at a fact the machine
+            # already knows.
+            if self.sphere is None:
+                reason = "no object yet"
+            elif target not in self._reach:
+                reason = "not a cell on this grid"
+            elif self._reach[target] is None:
+                reason = "inaccessible: no safe sample on its ray"
+            elif target in self.visited:
+                reason = "already visited"
+            else:
+                reason = None
+            if reason is not None:
+                log.info("view/request %s dropped: %s", target, reason)
+                self.pub.log("warn", f"view/request {target} dropped — "
+                                     f"{reason}")
                 return
         if self.phase == "planning":
             # A planner is already running real OMPL against the one shared
@@ -805,8 +839,8 @@ class Supervisor:
         # exit/supersede checks.
         face_theta = face_pos = face_unreachable = None
         try:
-            if self.sphere is not None:
-                self._reach = self.sphere.reachability(self.world, self.ik)
+            if self._object_aabb is not None:
+                self._reach = self._cell_map()
             q_now = self.rig.q()
             if target == "survey":
                 path, rep = plan_viewpoint(self.world, self.ik, q_now,
@@ -837,9 +871,21 @@ class Supervisor:
                               f"{res.rung} {res.theta_deg:.0f}deg"
                               if path else "plan refused")
             else:
-                path, prep, roll = self.sphere.plan_to_cell(
-                    self.world, self.ik, q_now, *target, seed=self.seed)
-                detail = f"tier {prep['tier']}" if path else "plan refused"
+                # INTERIM (Stage B task 1, controller ruling): one leg
+                # straight to the flange pose the cell's ray resolved, off
+                # the map refreshed at the top of this worker. Task 3
+                # replaces it with the out/hop/slide-in transaction; until
+                # then this is what keeps cells plannable now that the shell
+                # radius `plan_to_cell` needed is gone.
+                res = self._reach.get(target)
+                if res is None:
+                    path, detail = None, ("cell inaccessible: no safe sample "
+                                          "on its ray")
+                else:
+                    path, prep = plan_viewpoint(self.world, self.ik, q_now,
+                                                res.T_flange, seed=self.seed)
+                    detail = (f"tier {prep['tier']} at {res.depth:.3f} m"
+                              if path else "plan refused")
         except Exception as e:
             path, detail = None, f"planner error: {e}"
         self.events.put({"ev": "plan_done", "gen": gen, "target": target,
@@ -1018,9 +1064,11 @@ class Supervisor:
             self.events.put({"ev": "phase", "gen": gen, "phase": "fusing"})
             if res.seg is not None:
                 self._save_mask(cap, res.seg)
+            # `_recenter` refits the object AND refreshes the cell map on the
+            # new belief box — it has to, the marker sphere's radius is the
+            # mean of what those rays resolved. This is the post-fuse
+            # refresh the module docstring's `_reach` exception covers.
             self._recenter()
-            if self.sphere is not None:
-                self._reach = self.sphere.reachability(self.world, self.ik)
             self._publish_chain(cap, res.view, res.seg, res.dropped)
             self.pub.publish_capture(cap)
             self._last_cap_dir = cap.get("dir")
@@ -1043,43 +1091,70 @@ class Supervisor:
                              "detail": f"capture failed: {e}"})
 
     # ------------------------------------------------------------- helpers
+    def _cell_map(self):
+        """Resolve every cell's ray against the LIVE planner world.
+
+        Anton's ruling (2026-09-17): rays validate against the same world
+        the planner uses — the one carrying `geometry.object_box` — so an
+        accessible cell is accessible to the thing that will actually move
+        the arm. `corners` are the freshest boxguard fit's eight belief-box
+        corners when a fit exists (the oriented box bounds containment far
+        tighter than its yaw-inflated AABB); with no fit the AABB is the
+        honest bound. Reading `_face_prim` here is a plain reference read of
+        a dispatcher-owned field, the same shape as the `_reach` exception.
+
+        `q_near` is deliberately NOT the arm's current configuration: the
+        map is a fact about the CELL, and a stance-dependent one would make
+        a cell's resolved depth flicker with wherever the arm happens to be
+        standing when the map is refreshed.
+        """
+        if self._object_aabb is None or self.acc.centroid is None:
+            return {}
+        prim = self._face_prim
+        return cell_map(self.world, self.ik, T_FLANGE_CAM, self.acc.centroid,
+                        self._object_aabb, self.rig.intr["fy"],
+                        self.rig.intr["height"],
+                        corners=None if prim is None else box_corners(prim))
+
+    def _mean_depth(self):
+        """Mean resolved depth over accessible cells [m].
+
+        The Stage B honesty stopgap (plan Global Constraints): the schema
+        keeps ONE radius float and the UI draws ONE marker shell, while
+        cells now each resolve their own depth — so both carry the mean of
+        what was actually resolved instead of a frozen fill-formula radius.
+        `DEFAULT_R` when nothing resolved: a sphere still needs a radius to
+        be drawn at all.
+        """
+        d = [res.depth for res in self._reach.values() if res is not None]
+        return float(np.mean(d)) if d else float(DEFAULT_R)
+
     def _recenter(self):
         center = self.acc.centroid
         # Min-yaw box FIRST, one source of truth for margins — see
         # `geometry.object_box`. The pose carries the yaw the UI also draws.
-        # Installed before the radius derivation below because the floor
-        # probe needs the object in the world as the hard obstacle it is.
+        # Installed before the cell map below because the rays are resolved
+        # against the LIVE planner world (Anton 2026-09-17) — this box is
+        # both the obstacle they must clear and the belief they must frame.
         dims, pose = object_box(self.acc.points)
         self.world.set_object("object", dims.tolist(), pose, parent="base")
-        if self.r is None:
-            # pct-trimmed: raw min/max let 168 stray cable points (4.7% of
-            # the cloud) grow the extent. See CloudAccumulator.aabb.
-            mn, mx = self.acc.aabb(pct=BOX_PCT)
-            # DERIVED ONCE, from the survey cloud, then frozen for the run.
-            # Frozen because cells are the keys for coverage and evidence: a
-            # shell that tightened as the cloud grew would silently re-point
-            # addresses that have already been visited and photographed.
-            # rig.intr is the IR-left/depth intrinsics; the colour frame the
-            # VLM reads differs by ~1.6% in fy on the D405 — below the noise
-            # in the extent itself.
-            extent = object_extent(mn, mx)
-            r_want = radius_for_extent(extent, self.rig.intr["fy"],
-                                       self.rig.intr["height"], r_min=0.0)
-            # PER-RUN floor (Anton 2026-09-15): the static R_MIN is the demo
-            # cup's cliff; when CLOSENESS asks for less, measure what THIS
-            # object at THIS position actually allows before clamping.
-            self.r_floor = derive_r_floor(self.world, self.ik, center, r_want)
-            self.r = max(r_want, self.r_floor)
-            self.pub.log("info", f"shell r={self.r:.3f} m derived from a "
-                                 f"{extent * 1000:.0f} mm object "
-                                 f"(want {r_want:.3f}, floor {self.r_floor:.3f})")
-            # The shell radius is a property of the RUN's view method, and it
-            # only exists once the survey has seen the object — so the method
-            # params are completed here, where it is derived, rather than
-            # guessed at run creation.
-            self.writer.set_view_method_params(VIEW_METHOD, r=float(self.r),
-                                               r_floor=float(self.r_floor))
-        self.sphere = ViewSphere(center, r=self.r)
+        self._object_aabb = box_aabb(dims, pose)
+        self._reach = self._cell_map()
+        # No shell radius is DERIVED any more: a cell is a ray and carries
+        # its own resolved depth, so `radius_for_extent`/`derive_r_floor`
+        # have no caller here. `self.sphere` survives purely as the cell-
+        # frame helper (center, cell_dir, cam_pose) the UI draws markers
+        # with, and its radius is the honest Stage B stopgap — the mean
+        # depth the rays actually resolved.
+        r_mean = self._mean_depth()
+        self.sphere = ViewSphere(center, r=r_mean)
+        n_ok = sum(1 for res in self._reach.values() if res is not None)
+        self.pub.log("info", f"{n_ok}/{len(self._reach)} cells accessible, "
+                             f"mean resolved depth {r_mean:.3f} m")
+        # A property of the RUN's view method, refreshed with the belief it
+        # is derived from. The schema still keeps one float (Stage C gives
+        # rays their own fields), so the stopgap is what it carries.
+        self.writer.set_view_method_params(VIEW_METHOD, r=float(r_mean))
         # What this refit installed. `_on_view_confirm` copies it into
         # `_stance_box` when a move starts: the box a stance was APPROVED
         # under is the last one installed before its move executed — the
@@ -1233,12 +1308,18 @@ class Supervisor:
         roll that made it reachable. `chosen`/`decider` say which of them this
         step went to and who picked it — the operator's button, the
         orchestrator, or a sweep.
+
+        An accessible cell's pose is now the RAY's resolved camera pose —
+        where the arm would actually stand, at that cell's own depth — not a
+        point on a shell of one radius. An inaccessible cell has no resolved
+        pose to record, so it keeps the nominal cell frame (marker radius),
+        flagged `unreachable` exactly as before.
         """
         cands = []
         if self.sphere is not None:
             for cell in self.sphere.cells():
-                roll = self._reach.get(cell)
-                if roll is None:
+                res = self._reach.get(cell)
+                if res is None:
                     status = "unreachable"
                 elif cell == self.current:
                     status = "current"
@@ -1250,8 +1331,9 @@ class Supervisor:
                     status = "available"
                 cands.append(ViewCandidate(
                     address=list(cell), status=status,
-                    pose=_mat(self.sphere.cam_pose(*cell, roll or 0.0)),
-                    roll=None if roll is None else float(roll)))
+                    pose=_mat(self.sphere.cam_pose(*cell, 0.0)
+                              if res is None else res.T_cam),
+                    roll=None if res is None else float(res.roll)))
         if self._face_prim is not None:
             from inspection.view.faceview import (face_cam_pose, face_frame,
                                                   face_radius)
@@ -1282,7 +1364,10 @@ class Supervisor:
             step_id=step_id, t=time.time(), candidates=cands,
             centroid=None if centroid is None else _floats(centroid),
             extent=None if mn_mx is None else _floats(mn_mx[1] - mn_mx[0]),
-            r=None if self.r is None else float(self.r),
+            # Stage B stopgap: the schema's one radius float carries the mean
+            # resolved cell depth (plan Global Constraints) — the same number
+            # the marker sphere is built with.
+            r=None if self.sphere is None else float(self.sphere.r),
             chosen=self._target_json(target), decider=self._decider)
 
     def _set_phase(self, phase, target=None):

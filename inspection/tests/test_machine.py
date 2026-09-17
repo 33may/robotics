@@ -1048,6 +1048,62 @@ def test_face_request_previews_on_the_wire():
         sup.request_shutdown(); th.join(10)
 
 
+def test_request_gate_refuses_an_inaccessible_cell():
+    """Stage B: `_reach` is the RAY cell map — a `RayResolution` per cell,
+    `None` where the cell's ray has no provably-safe sample. The request
+    gate reads exactly that key set, and a refusal says WHY: "inaccessible"
+    is a fact about the ray (nothing safe on it), not the shrug the old
+    "view/request (h, v) dropped" line was."""
+    from inspection.view.rays import RayResolution
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        vals = list(sup._reach.values())
+        assert vals, "the post-fuse refresh built no cell map"
+        assert all(v is None or isinstance(v, RayResolution) for v in vals), \
+            "_reach must hold ray resolutions, not shell rolls"
+        avail = [c for c, r in sup._reach.items() if r is not None]
+        assert avail, "no accessible cell after boot"
+        cell = avail[0]
+        sup._reach[cell] = None          # the ray resolved nothing safe
+        n0 = len(bus.published)
+        sup.events.put({"cmd": "view/request", "target": list(cell)})
+        wait_for(lambda: any("inaccessible" in p.get("msg", "")
+                             for _, p in bus.published[n0:]
+                             if isinstance(p, dict)),
+                 timeout=10, msg="honest refusal detail on the log topic")
+        time.sleep(0.1)
+        assert sup.phase == "idle" and sup.target is None
+        assert cell not in sup.visited
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
+def test_view_r_is_the_mean_resolved_cell_depth():
+    """The Stage B honesty stopgap (plan Global Constraints): the schema's
+    one `r` float, and the marker sphere built with it, carry the MEAN
+    RESOLVED cell depth — cells are rays with their own depths now, so the
+    old frozen fill-formula radius (`radius_for_extent`/`derive_r_floor`)
+    is gone along with `self.r`/`self.r_floor`."""
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        depths = [r.depth for r in sup._reach.values() if r is not None]
+        assert depths, "no accessible cell after boot"
+        mean = float(np.mean(depths))
+        assert sup.sphere is not None
+        assert np.isclose(sup.sphere.r, mean), (sup.sphere.r, mean)
+        assert np.isclose(sup._view_state(0, "survey").r, mean)
+        assert not hasattr(sup, "r"), "self.r died with the shell radius"
+        # `r_floor` is NOT derived any more (the face ladder still reads the
+        # attribute until Task 3 — its documented "no measured floor" value).
+        assert sup.r_floor is None
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
@@ -1078,6 +1134,8 @@ def main():
     test_face_refusal_does_not_enter_blocked()
     test_views_payload_carries_faces()
     test_face_request_previews_on_the_wire()
+    test_request_gate_refuses_an_inaccessible_cell()
+    test_view_r_is_the_mean_resolved_cell_depth()
     print("OK test_machine (task 5)")
 
 
