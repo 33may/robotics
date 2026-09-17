@@ -88,3 +88,41 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+def test_move_waits_out_a_busy_machine_instead_of_bouncing(tmp_path):
+    """Atomicity gate (Anton 2026-09-15): a move tool call during another
+    mover's transaction must WAIT for idle, not return an instant bounce —
+    the bounce gave the model a free turn mid-motion (bench3: it spat fresh
+    moves and inspected stale frames while the operator's move executed)."""
+    import queue
+    import threading
+    import time
+    from inspection.brain.live import SupervisorMover
+
+    class _BusySup:
+        _reach = {(0, 0): 0.0}
+        visited = set()
+        blocked = set()
+        phase = "executing"          # operator's move in flight
+        target = None
+        events = queue.Queue()
+
+    mover = SupervisorMover.__new__(SupervisorMover)
+    mover.sup = _BusySup()
+    mover.run_dir = tmp_path         # no run.json -> _captured_ids() == []
+    mover.decider = "test"
+    mover.on_event = lambda *a, **kw: None
+
+    def finish_operator_move():
+        time.sleep(0.3)
+        mover.sup.phase = "idle"     # transaction closes
+
+    t0 = time.monotonic()
+    threading.Thread(target=finish_operator_move, daemon=True).start()
+    ok, reason = mover.request((0, 0))
+    waited = time.monotonic() - t0
+
+    assert waited >= 0.3, "returned before the open transaction closed"
+    assert ok is False               # stub machine never ACKs the request
+    assert "was busy with another mover" in reason, reason
+    assert "request was not sent" not in reason, "the bounce is gone"

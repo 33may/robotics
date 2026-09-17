@@ -41,12 +41,12 @@ POLL_S = 0.05
 #: itself is NOT timed out — a human thinking is not a failure.
 PLAN_TIMEOUT_S = 90.0
 
-#: EXACTLY `Supervisor._BUSY_PHASES` (machine.py:63). `planning` and
-#: `previewing` are deliberately NOT here: the state machine accepts a request
-#: in both — a new one supersedes the pending plan — so refusing to send during
-#: them is a restriction we invented, and it made the orchestrator spin
-#: retrying a move it was never allowed to make.
-_BUSY = ("executing", "capturing", "fusing", "fault")
+#: There is deliberately no _BUSY bounce list anymore (Anton 2026-09-15):
+#: `request()` WAITS for the machine to return to idle instead of returning
+#: instantly when another mover's transaction is open — see the atomicity
+#: gate comment in `request()`. The old bounce handed the model a free turn
+#: mid-motion; waiting during planning/previewing also ended the model
+#: stomping an operator's pending plan via the supersede path.
 
 #: How long the dispatcher gets to pick a command off the queue before silence
 #: counts as a drop. The request lands on a queue read by another thread, so
@@ -148,9 +148,24 @@ class SupervisorMover:
         superseded. Returns `(ok: bool, reason: str)`."""
         cell = "survey" if cell == "survey" else tuple(cell)
 
-        if self.sup.phase in _BUSY:
-            return False, (f"the arm is {self.sup.phase} right now — the "
-                           f"request was not sent. Ask again once it settles.")
+        # Atomicity gate (Anton 2026-09-15): a move is one transaction —
+        # request, approval, execution, reasoning, answer — and a tool call
+        # may not return while somebody else's transaction is open. The old
+        # instant bounce ("the arm is executing — ask again") handed the
+        # model a free turn mid-motion, and it filled it: spat fresh moves,
+        # inspected stale frames (cam_bench1 step 3, bench3 [7,1]). Now the
+        # call WAITS for the machine to come back to idle — untimed, exactly
+        # like the human approval gate, because an operator mid-transaction
+        # is a participant, not an obstacle.
+        waited = self.sup.phase not in ("idle", "fault")
+        got = self._wait(lambda p, t: p in ("idle", "fault", "done"))
+        if got[0] == "fault":
+            return False, ("the run is halted in fault — check the pendant; "
+                           "no move was sent.")
+        if got[0] == "done":
+            return False, "the run is over; no move was sent."
+        note = ("(the arm was busy with another mover's action — waited for "
+                "it to finish, then sent your request) " if waited else "")
 
         before = self._captured_ids()
         self.on_event("requested", cell=_json(cell))
@@ -165,7 +180,7 @@ class SupervisorMover:
         #     Supervisor logs the reason on `log/events`.
         if self._wait(lambda p, t: p != "idle" or t is not None,
                       timeout=ACK_GRACE_S) is None:
-            return False, (f"{_json(cell)} was refused — unreachable, "
+            return False, (f"{note}{_json(cell)} was refused — unreachable, "
                            f"off-sphere, or already visited. The arm has not "
                            f"moved.")
 
@@ -179,8 +194,9 @@ class SupervisorMover:
             return False, "the planner did not answer in time; nothing moved."
         if got[0] != "previewing":
             # The honest statement is the class of failure, not a guess.
-            return False, (f"{_json(cell)} could not be planned — no collision-"
-                           f"free path was found. The arm has not moved.")
+            return False, (f"{note}{_json(cell)} could not be planned — no "
+                           f"collision-free path was found. The arm has not "
+                           f"moved.")
 
         # 2. the human gate. Deliberately un-timed — unless this mover was
         #    built with `auto_confirm_s`, in which case the gate is a dwell:
@@ -219,7 +235,7 @@ class SupervisorMover:
         # The step this move produced — the one id that makes the whole beat
         # chain joinable to the geometry it was about.
         self.on_event("captured", cell=_json(cell), step_id=after[-1])
-        return True, "reached and captured"
+        return True, f"{note}reached and captured"
 
 
 #: The mover beats that are also `OperatorEvent.kind` literals

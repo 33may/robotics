@@ -399,6 +399,11 @@ def test_the_brains_answer_validates_as_an_answer_record(tmp_path):
     w = _two_step_run(tmp_path)
     cog = stub_cognition()
     brain = Brain(w.dir, "is there a logo?", vlm=cog.vlm, verbs=cog.verbs)
+    # The loop entry must stay callable on an INSTANCE: `self.run` is the
+    # record, and it silently shadowed a method named `run` — the first live
+    # question died on "'Run' object is not callable" (2026-09-14) because
+    # no test ever called the entry point on a constructed Brain.
+    assert callable(brain.loop), "Brain.loop is shadowed by an attribute"
     ai = brain.ai.dir.relative_to(w.dir).as_posix()
     hit = {"cell": [3, 1], "find": "the wordmark", "found": True,
            "report": "yes, centred", "crop": f"{ai}/artifacts/001_03_crop.png",
