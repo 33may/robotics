@@ -1,0 +1,71 @@
+guard-world bench delta — boxguard-world endpoint vs guard-world endpoint
+(Anton's ruling 2026-09-17: live sampling validates against geometry.object_box(fused cloud), not the boxguard belief box)
+
+d_surf = Euclidean closest-point distance to the boxguard belief box SURFACE — the comparison metric is unchanged in both modes; only the COLLISION WORLD the ray resolver validates against differs.
+
+== 1709-cam-ai-demo1  (11 addressed views)
+address      old d_surf  ray-boxguard  ray-guard    delta  bg-verdict / gd-verdict
+--------------------------------------------------------------------------------------------
+cell 3,1          0.175         0.120      0.120   +0.000  closer / closer
+cell 9,1          0.162         0.120      0.120   +0.000  closer / closer
+cell 4,1          0.158         0.147      0.147   +0.000  closer / closer
+cell 6,1          0.167         0.120      0.120   +0.000  closer / closer
+face y-           0.214         0.138      0.155   +0.017  closer / closer
+cell 3,0          0.163         0.123      0.162   +0.039  closer / closer
+cell 9,0          0.159         0.123      0.162   +0.039  closer / farther
+face x+           0.244         0.160      0.160   +0.000  closer / closer
+face x-           0.256         0.158      0.158   +0.000  closer / closer
+face y+           0.195         0.230      0.230   +0.000  farther / farther
+face top          0.240         0.200      0.200   +0.000  closer / closer
+
+   boxguard-world: 10/11 closer to the surface, mean d_surf 0.149 m
+   guard-world:    9/11 closer to the surface, mean d_surf 0.158 m
+   give-back: mean d_surf +0.009 m, verdict count -1 (10/11 -> 9/11)
+
+== 1509-cam-ai_bench5  (9 addressed views)
+address      old d_surf  ray-boxguard  ray-guard    delta  bg-verdict / gd-verdict
+--------------------------------------------------------------------------------------------
+cell 6,1          0.168         0.121      0.121   +0.000  closer / closer
+cell 11,1         0.161         0.144      0.144   +0.000  closer / closer
+face x-           0.243         0.158      0.158   +0.000  closer / closer
+face y-           0.205         0.135      0.151   +0.016  closer / closer
+cell 9,1          0.168         0.121      0.121   +0.000  closer / closer
+face y+           0.212         0.256      0.256   +0.000  farther / farther
+cell 9,0          0.165         0.144      0.144   +0.000  closer / closer
+face x+           0.234         0.160      0.160   +0.000  closer / closer
+cell 3,0          0.154         0.144      0.163   +0.020  closer / farther
+
+   boxguard-world: 8/9 closer to the surface, mean d_surf 0.154 m
+   guard-world:    7/9 closer to the surface, mean d_surf 0.158 m
+   give-back: mean d_surf +0.004 m, verdict count -1 (8/9 -> 7/9)
+
+== 1509-cam-ai_bench4  (1 addressed views)
+address      old d_surf  ray-boxguard  ray-guard    delta  bg-verdict / gd-verdict
+--------------------------------------------------------------------------------------------
+cell 10,1         0.150         0.133      0.133   +0.000  closer / closer
+
+   boxguard-world: 1/1 closer to the surface, mean d_surf 0.133 m
+   guard-world:    1/1 closer to the surface, mean d_surf 0.133 m
+   give-back: mean d_surf +0.000 m, verdict count +0 (1/1 -> 1/1)
+
+== 1509-lan-ai_bench5  (10 addressed views)
+address      old d_surf  ray-boxguard  ray-guard    delta  bg-verdict / gd-verdict
+--------------------------------------------------------------------------------------------
+cell 4,1          0.266         0.103      0.122   +0.019  closer / closer
+cell 10,0         0.243         0.193      0.193   +0.000  closer / closer
+cell 9,0          0.231         0.176      0.176   +0.000  closer / closer
+face x-           0.238         0.153      0.170   +0.017  closer / closer
+face x+           0.253         0.165      0.165   +0.000  closer / closer
+cell 3,1          0.250         0.135      0.135   +0.000  closer / closer
+cell 5,1          0.241         0.142      0.142   +0.000  closer / closer
+face top          0.253         0.220      0.220   +0.000  closer / closer
+face y+           0.259         0.394      0.394   +0.000  farther / farther
+cell 10,1         0.253         0.103      0.122   +0.019  closer / closer
+
+   boxguard-world: 9/10 closer to the surface, mean d_surf 0.178 m
+   guard-world:    9/10 closer to the surface, mean d_surf 0.184 m
+   give-back: mean d_surf +0.006 m, verdict count +0 (9/10 -> 9/10)
+
+============================================================================================
+TOTAL across 4 runs: boxguard-world 28/31 closer (mean d_surf 0.159 m); guard-world 26/31 closer (mean d_surf 0.165 m)
+give-back: mean d_surf +0.006 m over 31 addressed views; verdict count -2 (every run still closer-than-old on the clear majority: gate holds)

@@ -49,9 +49,18 @@ is the raw decomposition box (margin 0), which is 2 cm per side more
 optimistic than the run's own world; `--margin 0.04` reproduces the live
 inflation, and the two numbers bracket the truth.
 
+Stage B, `--world guard` (Anton's ruling 2026-09-17): live sampling must
+validate against the world the motion planner actually collision-checks
+against — `geometry.object_box(fused cloud)`, installed exactly as
+`machine._recenter` does, not the boxguard belief box above. `--world
+boxguard` (default) is the unchanged Stage A world; `--margin` only applies
+there. Ray geometry (addresses, aabb, `box_corners`, the `d_surf` surface)
+stays the boxguard prim in BOTH modes — only the collision world differs.
+
     p inspection/investigation/ray_views/ray_replay.py --run 1709-cam-ai-demo1
     p inspection/investigation/ray_views/ray_replay.py --run 1509-cam-ai_bench5 --margin 0.04
     p inspection/investigation/ray_views/ray_replay.py --run all
+    p inspection/investigation/ray_views/ray_replay.py --run all --world guard
 
 Writes /tmp/ray_views/<run>/comparison.png (+ .../timings.txt) and prints
 the per-view table plus the measured-vs-estimated timing table. It never
@@ -62,6 +71,7 @@ from pathlib import Path
 
 import numpy as np
 
+from inspection.cell.geometry import object_box
 from inspection.cell.world import RobotCell
 from inspection.fit.contract import Primitive
 from inspection.motion.ik import UR5eIK
@@ -163,6 +173,27 @@ def box_world(prim: Primitive, margin: float, cell_yaml=None) -> RobotCell:
     world.set_object("object", dims,
                      list(map(float, prim.center)) + [0.0, 0.0, yaw])
     return world
+
+
+def guard_world(points: np.ndarray, cell_yaml=None):
+    """(RobotCell, dims, pose6) with the object installed EXACTLY the way
+    `machine._recenter` installs it — `geometry.object_box(points)` ->
+    `world.set_object("object", dims, pose6)` — the world the live planner
+    actually collision-checks the arm against.
+
+    Anton's ruling 2026-09-17: live sampling must validate against that
+    world, not the boxguard belief box `box_world` uses. `object_box`
+    carries its OWN inflation (pct-trimmed cloud AABB + 2 cm/side, 5 cm
+    floor) — there is no separate `margin` knob here, unlike `box_world`;
+    passing one would double-pad relative to what `_recenter` actually
+    installs. Ray geometry (addresses, aabb, `box_corners`) stays on the
+    UNCHANGED boxguard prim — only the collision world changes; see the
+    brief (task-5, ray-views Stage B).
+    """
+    world = RobotCell() if cell_yaml is None else RobotCell(yaml_path=cell_yaml)
+    dims, pose = object_box(np.asarray(points, dtype=float))
+    world.set_object("object", dims.tolist(), pose, parent="base")
+    return world, dims, pose
 
 
 def box_aabb(prim: Primitive):
@@ -491,7 +522,8 @@ def _ring(ax, center, r=R_MIN, **kw):
         ax.plot(center[0] + r * a, center[1] + r * b, center[2] + r * c, **kw)
 
 
-def render(out: Path, run_id: str, prim, rows, margin: float):
+def render(out: Path, run_id: str, prim, rows, margin: float,
+          world: str = "boxguard"):
     import matplotlib
     matplotlib.use("Agg")                      # headless: never open a window
     import matplotlib.pyplot as plt
@@ -545,9 +577,11 @@ def render(out: Path, run_id: str, prim, rows, margin: float):
             ax.set_zticklabels([])       # edge-on axis, pure clutter
             ax.set_zlabel("")
     closer = sum(r["verdict"] == "closer" for r in rows)
+    obstacle_label = (f"boxguard box +{margin * 100:.0f} cm" if world != "guard"
+                      else "guard world (geometry.object_box, fused cloud)")
     fig.suptitle(f"{run_id} — old endpoint vs ray endpoint  "
                  f"({closer}/{len(rows)} closer to the surface; "
-                 f"obstacle = boxguard box +{margin * 100:.0f} cm, "
+                 f"obstacle = {obstacle_label}, "
                  f"faint ring = old {R_MIN:.2f} m shell)", fontsize=11)
     # subplots_adjust, not tight_layout: `set_box_aspect` + tight_layout
     # collapses 3D panels to a fraction of the canvas for some data extents.
@@ -602,14 +636,25 @@ def invariant_line(rows):
 
 
 def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
-          repeats: int = 3, render_png: bool = True, cell_yaml: str = None):
+          repeats: int = 3, render_png: bool = True, cell_yaml: str = None,
+          world: str = "boxguard"):
     """Replay one run: old endpoints vs ray endpoints, plus measured timings.
 
     margin: metres added to every box dimension for the OBSTACLE only
     (0.04 = the live `geometry.object_box` inflation, 2 cm per side).
+    Ignored when `world='guard'` — `object_box` carries its own inflation.
     repeats: how many full 36-cell refreshes to time.
     cell_yaml: alternative cell.yaml (e.g. a pre-corner2-move copy).
+    world: 'boxguard' (default, unchanged) — obstacle = the boxguard belief
+    box + `margin`, the Stage A bench's world. 'guard' — obstacle =
+    `geometry.object_box(fused cloud)`, built exactly as `machine._recenter`
+    installs it: the world live sampling actually validates against (Anton's
+    ruling 2026-09-17). Ray geometry (addresses, aabb, `box_corners`, the
+    `d_surf` surface it is measured against) stays the boxguard prim in
+    BOTH modes — only the collision world changes.
     """
+    if world not in ("boxguard", "guard"):
+        raise SystemExit(f"--world must be 'boxguard' or 'guard' (got {world!r})")
     run_id = str(run)                 # fire literal-evals bare-int-ish ids
     rd = run_dir_for(run_id)
     r = Run.load(rd)
@@ -626,24 +671,36 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
     color = ses.intrinsics["color"]
     fy, height_px = float(color.fy), int(color.height)
 
-    world, ik = box_world(prim, margin, cell_yaml), UR5eIK()
+    guard_dims = None
+    if world == "guard":
+        fused = r.fused()
+        if fused is None:
+            raise SystemExit(f"{run_id}: --world guard needs a fused cloud "
+                             f"(fused/cloud.npy) and this run has none")
+        w, guard_dims, _ = guard_world(fused[0], cell_yaml)
+    else:
+        w = box_world(prim, margin, cell_yaml)
+    ik = UR5eIK()
     aabb = box_aabb(prim)
     ext = np.asarray(prim.params["extents"], float)
     print(f"== {run_id}  ({len(r.steps)} steps, provenance {r.provenance})")
     print(f"   belief: step {step_id:03d} boxguard box  extents "
           f"{np.round(ext * 1000, 1)} mm  centre {np.round(prim.center, 3)}  "
           f"yaw {np.degrees(np.arctan2(prim.axes[1, 0], prim.axes[0, 0])):.1f} deg")
-    print(f"   world:  obstacle = box + {margin * 100:.0f} cm/dim, coal "
-          f"padding {world.padding * 1000:.0f} mm; intrinsics fy={fy:.1f} "
+    obstacle_desc = (f"box + {margin * 100:.0f} cm/dim" if world != "guard" else
+                     "geometry.object_box(fused cloud) "
+                     f"{np.round(guard_dims * 1000, 1).tolist()} mm/dim")
+    print(f"   world:  obstacle = {obstacle_desc}, coal "
+          f"padding {w.padding * 1000:.0f} mm; intrinsics fy={fy:.1f} "
           f"h={height_px}px; RAY_STEP_M={RAY_STEP_M}")
     print(f"   keepouts: {'cell.yaml (current, post corner2 move c2f2e77)' if cell_yaml is None else cell_yaml}")
 
     # Warm up before the walk: without this the first address in the table
     # carries the cold-start cost of IK/coal data allocation and its ms
     # column is a lie about that address rather than a measurement.
-    resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb, 0, 1,
+    resolve_cell(w, ik, T_FLANGE_CAM, prim.center, aabb, 0, 1,
                  fy, height_px, corners=box_corners(prim))
-    rows = walk(r, world, ik, prim, aabb, fy, height_px)
+    rows = walk(r, w, ik, prim, aabb, fy, height_px)
     if not rows:
         print("   no executed addressed steps — nothing to compare")
         return None
@@ -669,7 +726,7 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
           f"(min surface distance {min(x['d_new'] for x in got):.3f} m)")
     print(invariant_line(rows))
 
-    m = measure(world, ik, prim, aabb, fy, height_px, repeats=repeats)
+    m = measure(w, ik, prim, aabb, fy, height_px, repeats=repeats)
     tl = timing_table(m)
     fl = face_table(m, prim)
     print()
@@ -681,8 +738,14 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
 
     odir = Path(out) / run_id
     odir.mkdir(parents=True, exist_ok=True)
-    body = [f"run {run_id}   belief step {step_id:03d}   "
-            f"obstacle margin {margin:.3f} m   RAY_STEP_M {RAY_STEP_M}",
+    header = (f"run {run_id}   belief step {step_id:03d}   "
+             f"obstacle margin {margin:.3f} m   RAY_STEP_M {RAY_STEP_M}"
+             if world != "guard" else
+             f"run {run_id}   belief step {step_id:03d}   "
+             f"world=guard obstacle=geometry.object_box(fused cloud) "
+             f"{np.round(guard_dims * 1000, 1).tolist()} mm/dim   "
+             f"RAY_STEP_M {RAY_STEP_M}")
+    body = [header,
             f"box extents {np.round(ext, 4).tolist()} m at "
             f"{np.round(prim.center, 4).tolist()}",
             f"keepouts: {'cell.yaml current (post corner2 move, c2f2e77)' if cell_yaml is None else cell_yaml}",
@@ -735,15 +798,19 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
     (odir / "timings.txt").write_text("\n".join(body) + "\n")
     print(f"\n   timings: {odir / 'timings.txt'}")
     if render_png:
-        print(f"   render:  {render(odir, run_id, prim, rows, margin)}")
+        print(f"   render:  {render(odir, run_id, prim, rows, margin, world=world)}")
     return {"run": run_id, "rows": rows, "timings": m}
 
 
 def main(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
-         repeats: int = 3, render_png: bool = True, cell_yaml: str = None):
+         repeats: int = 3, render_png: bool = True, cell_yaml: str = None,
+         world: str = "boxguard"):
     """`--run all` benches the pinned 1709 demo, the two most recent
     `*bench*` runs (by mtime, discovered now) and the explicit flat-object
-    extra; `--run a,b` benches a list; anything else is one run id."""
+    extra; `--run a,b` benches a list; anything else is one run id.
+
+    world: 'boxguard' (default) or 'guard' — see `bench`'s docstring.
+    """
     ids = (default_runs() if str(run) == "all"
            else [s for s in str(run).split(",") if s])
     if str(run) == "all":
@@ -752,7 +819,7 @@ def main(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
     done = []
     for run_id in ids:
         res = bench(run=run_id, out=out, margin=margin, repeats=repeats,
-                    render_png=render_png, cell_yaml=cell_yaml)
+                    render_png=render_png, cell_yaml=cell_yaml, world=world)
         if res is not None:
             done.append(res)
         print()
