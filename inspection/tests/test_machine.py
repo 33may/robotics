@@ -488,7 +488,7 @@ def test_capture_fail_not_visited():
 
 
 class FaultRig(FakeRig):
-    def move(self, path):
+    def move(self, path, world="live"):
         if getattr(self, "_boot_done", False):
             raise RuntimeError("safety mode changed mid-path")
         self._boot_done = True
@@ -902,7 +902,10 @@ def test_face_request_full_cycle():
         sup.events.put({"cmd": "view/confirm", "target": ["face", "top"]})
         wait_for(lambda: "top" in sup.face_visited, timeout=60,
                  msg="face visited")
-        assert sup._face_theta.get("top") is not None
+        find = sup._face_find.get("top")
+        assert find is not None and find["theta"] is not None
+        # The ray resolution's own findings, not a ladder rung name.
+        assert set(find) == {"theta", "shift", "depth", "pos", "pose"}
         # The record carries the face identity.
         import json as _json
         from pathlib import Path as _P
@@ -1038,7 +1041,7 @@ def test_face_request_previews_on_the_wire():
         # rung-1 estimate: the plan resolved where the arm will actually go.
         face = bus.last("views/state")["faces"]["top"]
         assert face["resolved"] is True
-        assert np.allclose(face["pos"], sup._face_pos["top"])
+        assert np.allclose(face["pos"], sup._face_find["top"]["pos"])
         # The marker mirrors it: enlarged, and solid now that it is truth.
         desc = bus.last("scene/description")
         node = next(n for n in desc["nodes"] if n["path"] == "views/face:top")
@@ -1097,9 +1100,9 @@ def test_view_r_is_the_mean_resolved_cell_depth():
         assert np.isclose(sup.sphere.r, mean), (sup.sphere.r, mean)
         assert np.isclose(sup._view_state(0, "survey").r, mean)
         assert not hasattr(sup, "r"), "self.r died with the shell radius"
-        # `r_floor` is NOT derived any more (the face ladder still reads the
-        # attribute until Task 3 — its documented "no measured floor" value).
-        assert sup.r_floor is None
+        # `r_floor` died with the face ladder that was its last reader (task
+        # 3): faces are rays now and carry their own resolved depth.
+        assert not hasattr(sup, "r_floor")
     finally:
         sup.request_shutdown(); th.join(10)
 
@@ -1199,6 +1202,310 @@ def test_a_refit_that_resolves_nothing_reports_no_radius():
         sup.request_shutdown(); th.join(10)
 
 
+# --- Stage B: the three-leg move transaction ---------------------------------
+
+
+class RecordingRig(FakeRig):
+    """A `FakeRig` that keeps every move's WAYPOINTS and validation world.
+
+    `FakeRig.moves` records path lengths only, and a transaction is exactly
+    the question of which waypoints travelled under which world."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.paths, self.worlds = [], []
+
+    def move(self, path, world="live"):
+        self.paths.append([np.asarray(q, float) for q in path])
+        self.worlds.append(world)
+        return super().move(path, world=world)
+
+
+class StopMidLegRig(RecordingRig):
+    """Halts ONE waypoint into the `stop_at`-th move — the scripted stand-in
+    for `run/stop` landing mid-slide, which is what leaves the arm parked
+    between two ray depths with a half-executed transaction behind it."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.stop_at, self.calls = 0, 0
+
+    def move(self, path, world="live"):
+        self.calls += 1
+        if self.calls != self.stop_at:
+            return super().move(path, world=world)
+        assert len(path) > 2, "the scripted stop needs a leg to stop INSIDE"
+        rep = super().move(path[:2], world=world)
+        self.stop_event.set()
+        return {**rep, "stopped": True}
+
+
+class _RefuseFirstHops:
+    """The real two-tier ladder with its first `n` answers refused.
+
+    `plan_transaction` walks the current ray's out-depths current-depth-
+    first, so "no slide-out at all" is always candidate 0 — and on this
+    world the hop wins it every time. Refusing the first answers is how a
+    test gets a THREE-leg transaction without inventing a world the arm is
+    boxed into."""
+
+    def __init__(self, n):
+        self.n, self.calls = n, 0
+
+    def __call__(self, *a, **kw):
+        from inspection.motion.plan import plan_viewpoint
+        self.calls += 1
+        if self.calls <= self.n:
+            return None, {"reason": "forced refusal", "tier": None}
+        return plan_viewpoint(*a, **kw)
+
+
+def _forced_slide_out(n=1):
+    """A `plan_transaction` stand-in whose hop refuses its first `n` tries."""
+    from inspection.motion.transaction import plan_transaction
+    return lambda *a, **kw: plan_transaction(
+        *a, planner=_RefuseFirstHops(n), **kw)
+
+
+def _available_cells(sup):
+    return [c for c, r in sup._reach.items()
+            if r is not None and c not in sup.visited]
+
+
+def _phases(bus, n0):
+    """The phase strip as it was published from `n0` on."""
+    return [p["phase"] for t, p in bus.published[n0:] if t == "run/status"]
+
+
+def _at_previewing(sup, bus, cell, timeout=60):
+    """Request `cell` and wait until the STATUS STRIP says previewing — not
+    merely until `sup.phase` flips, which happens one line earlier and would
+    let a phase-trace assertion anchor before its own publish."""
+    sup.events.put({"cmd": "view/request", "target": list(cell)})
+    wait_for(lambda: bus.last("run/status")["phase"] == "previewing",
+             timeout=timeout, msg=f"preview {cell}")
+
+
+def _cell_move(sup, bus, cell, timeout=60):
+    """One full operator turn to `cell`: request, approve, wait for the fuse."""
+    _at_previewing(sup, bus, cell, timeout)
+    sup.events.put({"cmd": "view/confirm", "target": list(cell)})
+    wait_for(lambda: sup.phase == "idle", timeout=timeout,
+             msg=f"settled {cell}")
+
+
+def test_first_move_after_a_survey_has_no_slide_out():
+    """Legs 2-3 only (design §Move transaction): a survey leaves the arm on
+    no ray, so there is nothing to slide out ALONG. Arrival then installs the
+    ray state the NEXT move's slide-out is planned from — reconstructed from
+    the resolution that was actually executed, never from the live cell map
+    (which the fuse has already moved under it)."""
+    from inspection.motion.transaction import RayState
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        assert sup._ray_state is None, "a survey leaves the arm on no ray"
+        cell = _available_cells(sup)[0]
+        _at_previewing(sup, bus, cell)
+        legs, bounds, res = sup._legs, list(sup._leg_bounds), sup._target_res
+        assert list(legs.out) == [], "no current ray, so no slide-out"
+        assert bounds[0] == 0, f"the empty out leg must end at the start: {bounds}"
+        assert bounds[-1] == len(sup._path) - 1, bounds
+        sup.events.put({"cmd": "view/confirm", "target": list(cell)})
+        wait_for(lambda: cell in sup.visited, timeout=60, msg="visited")
+
+        st = sup._ray_state
+        assert isinstance(st, RayState), st
+        assert st.depth == res.depth and st.roll == res.roll
+        assert st.samples is res.samples, "the slide-out corridor IS the ray's"
+        # The ray is read back off the executed resolution: +X of a camera
+        # pose looks AT the anchor (faceview.face_cam_pose), so anchor =
+        # endpoint - depth * direction.
+        T = np.asarray(res.T_cam, float)
+        assert np.allclose(st.ray.direction, -T[:3, 0], atol=1e-9)
+        assert np.allclose(np.asarray(st.ray.anchor)
+                           + np.asarray(st.ray.direction) * st.depth,
+                           T[:3, 3], atol=1e-9)
+    finally:
+        sup.request_shutdown(); th.join(10)
+
+
+def test_a_move_off_a_ray_slides_out_hops_and_slides_in():
+    """The full three-leg lifecycle on the fake rig: each leg is its own
+    `rig.move`, run under the phase the plan gives it (slides `adjusting`,
+    the hop `executing`) and re-validated against the world the LEGS were
+    planned under — never the live world, which the next refit will move.
+    The capture happens once, at the end of the slide-in."""
+    import inspection.run.machine as machine_mod
+    real = machine_mod.plan_transaction
+    sup, rig, bus, th = make_sup(rig_cls=RecordingRig,
+                                 q_start=DEMO_PARK.copy() + np.radians(
+                                     [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        first = _available_cells(sup)[0]
+        _cell_move(sup, bus, first)
+        assert sup._ray_state is not None, "the arm stands on a ray now"
+
+        machine_mod.plan_transaction = _forced_slide_out()
+        cell = [c for c in _available_cells(sup) if c != first][0]
+        _at_previewing(sup, bus, cell)
+        legs = sup._legs
+        assert len(legs.out) >= 1, "the fixture must force a slide-out"
+        assert len(legs.hop) >= 2 and len(legs.slide_in) >= 2
+        n_moves, n0 = len(rig.paths), len(bus.published)
+        sup.events.put({"cmd": "view/confirm", "target": list(cell)})
+        wait_for(lambda: cell in sup.visited and sup.phase == "idle",
+                 timeout=60, msg="visited")
+
+        phases = _phases(bus, n0)
+        assert phases[:4] == ["executing", "adjusting", "executing",
+                              "adjusting"], phases
+        assert "capturing" in phases and phases[-1] == "idle", phases
+        moved = rig.paths[n_moves:]
+        assert len(moved) == 3, f"one rig.move per leg, got {len(moved)}"
+        assert np.allclose(moved[0][1:], legs.out)
+        assert np.allclose(moved[1], legs.hop)
+        assert np.allclose(moved[2], legs.slide_in)
+        assert rig.worlds[n_moves:] == [legs.world] * 3, \
+            "each leg is judged by the world it was planned under"
+        # The capture stands at the END of the slide-in, not at the hop's
+        # landing: the step's stamped joints are the slide-in's last waypoint.
+        step = json.load(open(sorted((sup.outdir / "steps").iterdir())[-1]
+                              / "step.json"))
+        assert np.allclose(step["joints_rad"], legs.slide_in[-1], atol=1e-6)
+    finally:
+        machine_mod.plan_transaction = real
+        sup.request_shutdown(); th.join(10)
+
+
+def test_a_transition_inaccessible_cell_is_refused_and_nothing_moves():
+    """`plan_transaction` returning None is the honest answer "no out-depth
+    from which the hop plans" — a refusal that NAMES that class, blocks the
+    address, and never sends the arm anywhere (design §Failure semantics: no
+    fallback substitution)."""
+    import inspection.run.machine as machine_mod
+    real = machine_mod.plan_transaction
+    sup, rig, bus, th = make_sup(rig_cls=RecordingRig,
+                                 q_start=DEMO_PARK.copy() + np.radians(
+                                     [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        machine_mod.plan_transaction = lambda *a, **kw: None
+        cell = _available_cells(sup)[0]
+        n_moves, n0 = len(rig.paths), len(bus.published)
+        sup.events.put({"cmd": "view/request", "target": list(cell)})
+        wait_for(lambda: cell in sup.blocked and sup.phase == "idle",
+                 timeout=60, msg="refusal returned to idle")
+        msgs = [p["msg"] for _, p in bus.published[n0:]
+                if isinstance(p, dict) and "msg" in p]
+        assert any("transition-inaccessible" in m for m in msgs), msgs
+        assert len(rig.paths) == n_moves, "a refused transition moved the arm"
+        assert sup._ray_state is None and sup._legs is None
+    finally:
+        machine_mod.plan_transaction = real
+        sup.request_shutdown(); th.join(10)
+
+
+def test_a_stop_mid_slide_leaves_the_executed_waypoints_to_retrace():
+    """`_arrival_path` is the EXECUTED transaction, not the planned one.
+
+    A stop one waypoint into the slide-in leaves the arm between two ray
+    depths with a hop and a slide-out behind it; the retreat's retrace tier
+    reverses exactly those waypoints (design: the retreat machinery is the
+    executor of a normal state). Retracing the PLANNED path instead would
+    jump the arm from where it stopped to the second-to-last waypoint of a
+    leg it never finished."""
+    import inspection.run.machine as machine_mod
+    real, real_m = machine_mod.plan_transaction, machine_mod.RETREAT_M
+    sup, rig, bus, th = make_sup(rig_cls=StopMidLegRig,
+                                 q_start=DEMO_PARK.copy() + np.radians(
+                                     [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        first = _available_cells(sup)[0]
+        _cell_move(sup, bus, first)
+
+        machine_mod.plan_transaction = _forced_slide_out()
+        cell = [c for c in _available_cells(sup) if c != first][0]
+        _at_previewing(sup, bus, cell)
+        legs, bounds, path = sup._legs, list(sup._leg_bounds), list(sup._path)
+        assert len(legs.out) >= 1 and len(legs.slide_in) >= 3, \
+            "the fixture must give all three legs something to travel"
+        rig.stop_at = rig.calls + 3           # out, hop, then halt in slide-in
+        sup.events.put({"cmd": "view/confirm", "target": list(cell)})
+        wait_for(lambda: sup.phase == "idle", timeout=60, msg="stopped -> idle")
+
+        # One waypoint into the slide-in: the concatenated path up to and
+        # including the hop's landing, plus the one slide-in step travelled.
+        executed = path[:bounds[1] + 2]
+        assert len(sup._arrival_path) == len(executed), \
+            (len(sup._arrival_path), len(executed))
+        assert np.allclose(sup._arrival_path, executed)
+        assert cell not in sup.visited and sup._ray_state is None
+        assert np.allclose(rig.q(), executed[-1]), "the arm halted there"
+
+        # Three refusals from that half-way stance, then the retrace: radial
+        # escape is made impossible the way the workspace boundary makes it
+        # impossible (no IK branch 5 m out).
+        machine_mod.plan_transaction = lambda *a, **kw: None
+        machine_mod.RETREAT_M = 5.0
+        n_moves, tried = len(rig.paths), set()
+        for n in (1, 2, 3):
+            nxt = [c for c in _available_cells(sup) if c not in tried][0]
+            tried.add(nxt)
+            sup.events.put({"cmd": "view/request", "target": list(nxt)})
+            if n < 3:
+                wait_for(lambda n=n: sup._plan_fails == n and
+                         sup.phase == "idle", timeout=60, msg=f"refusal {n}")
+        wait_for(lambda: len(rig.paths) == n_moves + 1, timeout=60,
+                 msg="retreat move")
+        wait_for(lambda: sup.phase == "idle", timeout=60, msg="idle after")
+        assert np.allclose(rig.paths[-1], list(reversed(executed))), \
+            "the retreat must retrace exactly what was executed"
+        rows = [json.loads(l) for l in
+                (sup.writer.dir / "events.jsonl").read_text().splitlines()]
+        assert "retrace" in [r for r in rows if r["kind"] == "retreat"][-1] \
+            ["detail"]
+    finally:
+        machine_mod.plan_transaction, machine_mod.RETREAT_M = real, real_m
+        sup.request_shutdown(); th.join(10)
+
+
+def test_a_retreat_clears_the_ray_state():
+    """The retreat moves the arm OFF the ray it was standing on, so the ray
+    state (leg 1's `current`) is no longer true of anything — leaving it set
+    would plan the next move's slide-out along a ray the camera has left."""
+    import inspection.run.machine as machine_mod
+    real = machine_mod.plan_transaction
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        cell = _available_cells(sup)[0]
+        _cell_move(sup, bus, cell)
+        assert sup._ray_state is not None and sup._arrival_path is not None
+
+        machine_mod.plan_transaction = lambda *a, **kw: None
+        tried = set()
+        for n in (1, 2, 3):
+            nxt = [c for c in _available_cells(sup) if c not in tried][0]
+            tried.add(nxt)
+            sup.events.put({"cmd": "view/request", "target": list(nxt)})
+            if n < 3:
+                wait_for(lambda n=n: sup._plan_fails == n and
+                         sup.phase == "idle", timeout=60, msg=f"refusal {n}")
+            else:
+                wait_for(lambda: sup.phase == "idle" and sup._plan_fails == 0,
+                         timeout=60, msg="idle after retreat")
+        assert sup._ray_state is None, "the arm left the ray it stood on"
+        assert sup._arrival_path is None
+    finally:
+        machine_mod.plan_transaction = real
+        sup.request_shutdown(); th.join(10)
+
+
 def main():
     test_survey_request_reaches_previewing()
     test_invalid_commands_dropped()
@@ -1233,6 +1540,11 @@ def main():
     test_view_r_is_the_mean_resolved_cell_depth()
     test_cell_map_measures_the_unpadded_belief_box()
     test_a_refit_that_resolves_nothing_reports_no_radius()
+    test_first_move_after_a_survey_has_no_slide_out()
+    test_a_move_off_a_ray_slides_out_hops_and_slides_in()
+    test_a_transition_inaccessible_cell_is_refused_and_nothing_moves()
+    test_a_stop_mid_slide_leaves_the_executed_waypoints_to_retrace()
+    test_a_retreat_clears_the_ray_state()
     print("OK test_machine (task 5)")
 
 

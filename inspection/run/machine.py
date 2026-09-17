@@ -36,6 +36,16 @@ flight inside the publisher's cached geom_data). Both waits are bounded:
 a missed handoff degrades to the old timing-based behaviour and logs,
 rather than wedging a run with a robot in it.
 
+MOVES ARE TRANSACTIONS (Stage B, design 2026-09-17-ray-views-design.md
+§Move transaction). A cell or face move is never one plan any more: it is
+`motion/transaction.py`'s three legs — slide-out along the ray the camera
+stands on, hop through open space, slide-in along the target ray. The
+dispatcher keeps the ray the arm sits on (`_ray_state`, leg 1's `current`),
+the exec worker runs the legs one `rig.move` at a time under the phase each
+one earns (`adjusting` for a slide, `executing` for the hop) and records the
+waypoints it ACTUALLY travelled (`_arrival_path`) — which is what the
+retreat's retrace tier reverses when a move is stopped half-way.
+
 RECORDING (task-8). Every byte this machine puts on disk goes through the
 injected `RunWriter` — there is no second write path any more. The two
 threads that touch it are ordered by the same queue that orders everything
@@ -60,17 +70,31 @@ from inspection.cell.world import DEFAULT_STEP, RobotCell
 from inspection.motion.direct import direct_move
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
+from inspection.motion.transaction import RayState, plan_transaction
 from inspection.record.schema import ViewCandidate, ViewState
 from inspection.run.settle import _plane_error, settle_capture
 from inspection.view.grid import DEFAULT_R
-from inspection.view.rays import box_corners, cell_map
+from inspection.view.rays import Ray, box_corners, cell_map, resolve_face
 from inspection.view.viewsphere import T_FLANGE_CAM, ViewSphere
 
 log = logging.getLogger(__name__)
 
 # Phases in which the arm is either moving or unrecoverable without operator
 # action at the pendant — no new request may be accepted while in one of these.
-_BUSY_PHASES = ("executing", "capturing", "fusing", "fault")
+# `adjusting` is a slide leg of a move transaction: the arm is travelling
+# radially along a ray, so it is every bit as busy as it is during the hop.
+_BUSY_PHASES = ("adjusting", "executing", "capturing", "fusing", "fault")
+
+#: Phases in which the arm is under power on a planned path — the ones a
+#: `run/stop` must interrupt and a `run/exit` must wait out.
+_MOVING_PHASES = ("adjusting", "executing")
+
+#: The move transaction's legs in execution order, with the phase each runs
+#: under (plan §Task 3). A slide is a delicate radial approach that cannot
+#: laterally sweep the object; the hop is the ordinary free-space move, and
+#: keeps the phase name the loop has always used for it.
+_LEG_PHASES = (("out", "adjusting"), ("hop", "executing"),
+               ("slide_in", "adjusting"))
 
 #: The capture-refit self-trap (run 1409-lan-ai_bench1): `_recenter()` refits
 #: the object box from the grown cloud while the arm still STANDS at the
@@ -153,12 +177,6 @@ class Supervisor:
                         "distance is resolved on its own ray", float(r))
             self.pub.log("warn", f"--r {float(r):.3f} ignored: cells are "
                                  f"rays now, each resolves its own distance")
-        #: Per-run measured shell floor. NEVER derived any more (the ray
-        #: resolver has no shell to floor); it stays None for the run, which
-        #: is the value `face_radius` already documents as "no measured
-        #: floor, fall back to the static grid.R_MIN". The face ladder is
-        #: the one path still reading it — it moves to rays in task 3.
-        self.r_floor = None
         #: Refit counter — every `_recenter()` box install bumps it, and
         #: `_last_box_rev`/`_stance_box_rev` ride along with their boxes.
         #: Pure diagnostics (1509-cam-ai_bench1: four silent failed retreats,
@@ -168,15 +186,27 @@ class Supervisor:
         self._box_rev = 0
         self._last_box_rev = 0
         self._stance_box_rev = 0
-        #: The executed path that brought the arm to the CURRENT stance —
-        #: the retreat's retrace tier reverses it when radial-out has no IK
-        #: (far-side cells stand at the workspace boundary: cam_bench2's
-        #: [5,0] flange sat at 0.751 m and even +1 cm out had 0 branches).
-        #: Planned under exactly the stance-box world, so reversing it is
-        #: IK-valid by construction and consistent with the 2026-09-14
-        #: validation semantics. None until the first move; cleared after
-        #: any retreat motion (the arm is no longer where the path ends).
+        #: The waypoints the arm ACTUALLY travelled on its way to the stance
+        #: it is in — the retreat's retrace tier reverses them when radial-out
+        #: has no IK (far-side cells stand at the workspace boundary:
+        #: cam_bench2's [5,0] flange sat at 0.751 m and even +1 cm out had 0
+        #: branches). Planned under exactly the stance-box world, so reversing
+        #: it is IK-valid by construction and consistent with the 2026-09-14
+        #: validation semantics. EXECUTED, not planned (Stage B): a move
+        #: stopped half-way through its slide-in has a hop and a slide-out
+        #: behind it and nothing in front, and retracing the planned path
+        #: would jump the arm to the end of a leg it never finished. Written
+        #: by `_on_exec_done` from the worker's own count of what moved; None
+        #: until the first move; cleared after any retreat motion (the arm is
+        #: no longer where the path ends).
         self._arrival_path = None
+        #: The ray the camera stands on — `motion/transaction.RayState`, and
+        #: leg 1's `current`. Set on arrival from the resolution that was
+        #: actually executed, cleared whenever the arm leaves that ray without
+        #: arriving at another (stop, fault, retreat) or whenever the view it
+        #: was standing for turned out to be unusable (failed settle). None is
+        #: the honest "no current ray": the transaction then has no slide-out.
+        self._ray_state = None
         self.events = queue.Queue()
         self.stop_event = getattr(rig, "stop_event", None) or threading.Event()
         rig.stop_event = self.stop_event
@@ -195,6 +225,22 @@ class Supervisor:
         self._preview_thread = None  # joined before any new worker spawns
         self._action_thread = None   # the one live plan/exec worker, for join_workers
         self._path = None           # path of the current preview
+        #: The `Legs` behind `self._path`, or None for a plan that is one leg
+        #: (the survey). Handed to the exec worker at `view/confirm`, which is
+        #: the only thing that needs the legs apart; everything else — the
+        #: preview replay, the record, the retrace — reads the concatenation.
+        self._legs = None
+        #: Where each leg ENDS in `self._path`: `[out, hop, slide_in]`, so
+        #: `path[:b0+1]`, `path[b0:b1+1]`, `path[b1:b2+1]` are the three legs
+        #: and an empty slide-out is simply `b0 == 0`. Published on the status
+        #: strip beside the phase (plan §Task 3, additive payload field).
+        self._leg_bounds = None
+        #: The `RayResolution` `self._path` was planned to, or None when the
+        #: target is not a ray (the survey). It becomes `_ray_state` on
+        #: arrival, so the ray the arm sits on is the one it was actually
+        #: sent to — never re-read from the cell map, which the arrival's own
+        #: refit has already moved.
+        self._target_res = None
         #: The cell accessibility map — `{(h, v): RayResolution | None}`,
         #: `None` = no provably-safe sample on that cell's ray. Worker-
         #: refreshed (see the module docstring's second exception).
@@ -206,8 +252,6 @@ class Supervisor:
         #: Mean resolved cell depth [m] from the last refit, or None when no
         #: cell resolved — the Stage B stopgap `ViewState.r` carries.
         self._r_mean = None
-        #: One-shot: the static-face-floor notice (Stage B interim).
-        self._face_floor_noted = False
         self._exit_after = False    # run/exit arrived mid-action, shut down at its end
         self._shutting_down = False  # set by request_shutdown (signal thread)
         #: `run/finish`: the operator declared the run DONE, not abandoned.
@@ -221,9 +265,15 @@ class Supervisor:
         self._stance_box = None     # (dims, pose) the CURRENT stance was approved under
         self._face_prim = None      # freshest boxguard Primitive (or None)
         self._face_stable = 0       # consecutive small normal deltas (gate: >=2)
-        self._face_theta = {}       # face -> achieved off-angle from resolution
-        self._face_pos = {}         # face -> resolved cam endpoint [x,y,z]
-        self._face_unreachable = set()  # faces whose ladder returned None
+        #: What the last plan's `resolve_face` found, per face:
+        #: `{"theta", "shift", "depth", "pos", "pose"}` — the achieved
+        #: off-angle [deg], the fronto-parallel shift [m], the resolved depth
+        #: [m], the camera endpoint [x, y, z] and the camera pose it came
+        #: from. ONE dict, because one `RayResolution` produces all of it and
+        #: two dicts could disagree; `pos` is `pose`'s translation, kept
+        #: ready-made because the views payload publishes exactly that list.
+        self._face_find = {}
+        self._face_unreachable = set()  # faces whose ray family resolved None
         self.face_visited = set()   # face handles captured this run
         self._pose_ack = threading.Event()  # dispatcher -> exec worker: pose_active clear
         #: Who asked for the view now being planned/executed — it rides the
@@ -460,7 +510,9 @@ class Supervisor:
         # queue is processed before any next confirm can exist.
         self._stance_box = self._last_box
         self._stance_box_rev = self._last_box_rev
-        self._arrival_path = [np.asarray(q, dtype=float) for q in self._path]
+        # `_arrival_path` is NOT written here any more: the retrace needs the
+        # waypoints that were EXECUTED, and only the worker knows how far the
+        # transaction got. `_on_exec_done` writes it from the worker's count.
         if self._decider == "operator":    # brain writes its own row
             self._write("approved event", self.writer.event, "approved",
                         detail=f"cell={self._target_json(self.target)} "
@@ -468,12 +520,12 @@ class Supervisor:
         self._set_phase("executing", self.target)
         self._action_thread = threading.Thread(
             target=self._exec_worker,
-            args=(self.gen, self.target, self._path),
+            args=(self.gen, self.target, self._path, self._legs),
             name=f"exec-{self._target_json(self.target)}", daemon=True)
         self._action_thread.start()
 
     def _on_run_stop(self):
-        if self.phase == "executing":
+        if self.phase in _MOVING_PHASES:
             self.stop_event.set()
         else:
             log.info("run/stop no-op in phase %s", self.phase)
@@ -496,8 +548,8 @@ class Supervisor:
         # `_plan_worker` calls `rig.q()`, and `app.py`'s teardown would be
         # disconnecting that very RTDE interface underneath it (I2a).
         self._shutting_down = True      # no view command may start a motion now
-        if self.phase in ("planning", "executing", "capturing", "fusing"):
-            if self.phase == "executing":
+        if self.phase in ("planning", "capturing", "fusing") + _MOVING_PHASES:
+            if self.phase in _MOVING_PHASES:
                 self.stop_event.set()
             self._exit_after = True
             log.info("exit deferred: %s in flight", self.phase)
@@ -527,16 +579,12 @@ class Supervisor:
         # state (module docstring, "only the dispatcher mutates run state").
         # It carries a face plan's gate-state findings on the event instead;
         # applied HERE, AFTER the exit/supersede checks above, so a
-        # superseded plan's face_theta/face_unreachable never lands even
+        # superseded plan's face_find/face_unreachable never lands even
         # though its OWN result was just discarded.
-        face_theta = ev.get("face_theta")
-        if face_theta is not None:
-            name, theta = face_theta
-            self._face_theta[name] = theta
-        face_pos = ev.get("face_pos")
-        if face_pos is not None:
-            name, pos = face_pos
-            self._face_pos[name] = pos
+        face_find = ev.get("face_find")
+        if face_find is not None:
+            name, find = face_find
+            self._face_find[name] = find
         face_unreachable = ev.get("face_unreachable")
         if face_unreachable is not None:
             self._face_unreachable.add(face_unreachable)
@@ -545,7 +593,7 @@ class Supervisor:
                 self.survey_state = "available"
             elif isinstance(target, tuple) and target[0] == "face":
                 # I1: a face refusal already lives in `_face_unreachable`/
-                # `_face_theta` (applied above) — `blocked` stays cell-only
+                # `_face_find` (applied above) — `blocked` stays cell-only
                 # so `_menu_input`'s `sorted(map(list, v))` over it never
                 # meets a face tuple, and the menu never shows a face BOTH
                 # "blocked" and "ready" at once.
@@ -566,6 +614,13 @@ class Supervisor:
         # somewhere, so the refusals were about targets, not the start.
         self._plan_fails = 0
         self._path = path
+        # The transaction rides along with its concatenation: the legs for the
+        # executor, the boundaries for the status strip, the resolution for
+        # the ray state the arrival will install. All three are None for a
+        # survey, which is one plain leg and no ray at all.
+        self._legs = ev.get("legs")
+        self._leg_bounds = ev.get("bounds")
+        self._target_res = ev.get("resolution")
         if self._decider == "operator":    # brain writes its own row
             self._write("awaiting event", self.writer.event,
                         "awaiting_approval",
@@ -581,7 +636,12 @@ class Supervisor:
 
     def _on_worker_phase(self, ev):
         phase = ev.get("phase")
-        if phase not in ("capturing", "fusing"):
+        # `adjusting`/`executing` are the move transaction's own legs: the
+        # worker announces each one as it starts it, so the phase strip says
+        # which of the three the arm is on (`executing` is re-announced for
+        # the hop — the dispatcher set it at `view/confirm`, and a slide-out
+        # before it has since moved on).
+        if phase not in ("adjusting", "executing", "capturing", "fusing"):
             log.warning("unexpected worker phase event: %r", phase)
             return
         self._set_phase(phase, self.target)
@@ -593,6 +653,21 @@ class Supervisor:
         # "done" path it is the handoff, on stopped/fault nobody is waiting.
         self._pose_ack.set()
         target, outcome = ev["target"], ev["outcome"]
+        # What the arm TRAVELLED, whatever the outcome — the retrace tier's
+        # input, and the only record of where a half-executed transaction
+        # left it.
+        self._arrival_path = ev["executed"]
+        if outcome == "done":
+            # Arrival: the ray the executed resolution sits on becomes the
+            # ray the camera stands on, and leg 1's `current`. A survey
+            # resolves no ray, so arriving there says so with None.
+            self._ray_state = (None if self._target_res is None
+                               else _ray_state_of(self._target_res))
+        else:
+            # Stopped or faulted mid-transaction: the arm is parked between
+            # ray depths (or between rays), so there is no current ray to
+            # slide out along — exactly the reason `current` is cleared below.
+            self._ray_state = None
         if outcome == "stopped":
             # No step exists yet: the arm is stopped BEFORE `begin_step`, so
             # this turn leaves a run-level event and no step directory —
@@ -673,6 +748,11 @@ class Supervisor:
             self.blocked.clear()
             self._plan_fails = 0
             self.current = None
+            # The view the arm stood for was refused, so the address it was
+            # standing at is not one this run has served — the next move
+            # plans its slide-out from nothing rather than from a ray whose
+            # own view never counted.
+            self._ray_state = None
             self.pub.log("error", ev.get("detail", ""))
             # The step itself was already marked (rejected/failed) by the
             # worker that owns it — nothing to write here.
@@ -695,6 +775,9 @@ class Supervisor:
         self.gen += 1               # any stale worker event dies at the gate
         self.stop_event.clear()
         self.pose_active.set()      # the streamer shows the arm moving
+        # A retreat is not a transaction: drop the previewed plan's leg
+        # boundaries so the status strip cannot describe this move with them.
+        self._legs = self._leg_bounds = None
         self._set_phase("executing", None)
         self.pub.log("warn", f"{RETREAT_AFTER_FAILS} plans refused from this "
                              f"stance — retreating {RETREAT_M * 100:.0f} cm "
@@ -822,6 +905,7 @@ class Supervisor:
             self.blocked.clear()
             self.current = None
             self._arrival_path = None   # the arm no longer stands at its end
+            self._ray_state = None      # nor on the ray that end sat on
             detail = ev.get("detail", "")
             self.pub.log("warn" if detail else "info",
                          f"retreat: {detail}" if detail
@@ -837,66 +921,95 @@ class Supervisor:
 
     # ------------------------------------------------------------- workers
     def _plan_worker(self, gen, target):
-        # I3: this runs on a worker thread. `face_theta`/`face_unreachable`
-        # ride the `plan_done` event instead of touching `self._face_theta`/
+        # I3: this runs on a worker thread. `face_find`/`face_unreachable`
+        # ride the `plan_done` event instead of touching `self._face_find`/
         # `self._face_unreachable` directly — those are gate state, and the
         # dispatcher is the only thread allowed to mutate it (module
         # docstring). `_on_plan_done` applies them, after its own
-        # exit/supersede checks.
-        face_theta = face_pos = face_unreachable = None
+        # exit/supersede checks. `self._ray_state`/`self._face_prim` are read
+        # the other way round — plain reference reads of dispatcher-owned
+        # fields, the same shape as the `_reach` exception.
+        face_find = face_unreachable = None
+        legs = bounds = res = None
         try:
             if self._object_aabb is not None:
                 self._reach = self._cell_map()
             q_now = self.rig.q()
             if target == "survey":
+                # The one target that is not a ray: the survey pose is taught,
+                # not resolved, so it stays a single planned leg.
                 path, rep = plan_viewpoint(self.world, self.ik, q_now,
                                            self.ik.fk(self.q_survey), seed=self.seed)
                 detail = "" if path else str(rep.get("reason", rep))
             elif isinstance(target, tuple) and target[0] == "face":
-                from inspection.view.faceview import (face_frame, face_radius,
-                                                      resolve_face_view)
-                face, prim = target[1], self._face_prim
-                _, _, ext = face_frame(prim, face)
-                r_f = face_radius(ext, self.rig.intr["fy"],
-                                  self.rig.intr["height"],
-                                  r_min=self.r_floor)
-                res = resolve_face_view(self.world, self.ik, T_FLANGE_CAM,
-                                        prim, face, r_f, q_near=q_now)
+                face = target[1]
+                res = resolve_face(self.world, self.ik, T_FLANGE_CAM,
+                                   self._face_prim, face,
+                                   self.rig.intr["fy"], self.rig.intr["height"],
+                                   q_near=q_now)
                 if res is None:
                     face_unreachable = face
-                    path, detail = None, "face unreachable within 60deg"
+                    path, detail = None, ("face inaccessible: no safe sample "
+                                          "in its ray family")
                 else:
-                    face_theta = (face, res.theta_deg)
-                    # Where the ladder ACTUALLY put the camera — rung-1 sits
-                    # on the normal, zlift/cone do not. The marker snaps here.
-                    face_pos = (face, [float(x) for x in res.T_cam[:3, 3]])
-                    path, rep = plan_viewpoint(self.world, self.ik, q_now,
-                                               res.T_flange, seed=self.seed)
-                    detail = (f"tier {rep['tier']} "
-                              f"{res.rung} {res.theta_deg:.0f}deg"
-                              if path else "plan refused")
+                    # What the family ACTUALLY resolved — the shift rung and
+                    # the cone put the camera in different places, and the
+                    # marker, the record and (Stage C) the prompt all snap to
+                    # this one answer.
+                    face_find = (face, {
+                        "theta": res.theta_deg, "shift": res.shift,
+                        "depth": res.depth,
+                        "pos": [float(x) for x in res.T_cam[:3, 3]],
+                        "pose": np.asarray(res.T_cam, dtype=float)})
+                    legs, path, bounds, detail = self._transaction(res, q_now)
+                    if path is not None:
+                        detail = (f"shift {res.shift:.2f} m, "
+                                  f"{res.theta_deg:.0f}deg off, {detail}")
             else:
-                # INTERIM (Stage B task 1, controller ruling): one leg
-                # straight to the flange pose the cell's ray resolved, off
-                # the map refreshed at the top of this worker. Task 3
-                # replaces it with the out/hop/slide-in transaction; until
-                # then this is what keeps cells plannable now that the shell
-                # radius `plan_to_cell` needed is gone.
+                # The cell map refreshed at the top of this worker IS
+                # `resolve_cell` against the live planner world, run once for
+                # the whole grid — read it rather than resolve the one cell a
+                # second time, so the accessibility GATE and the plan can
+                # never disagree about the same ray.
                 res = self._reach.get(target)
                 if res is None:
                     path, detail = None, ("cell inaccessible: no safe sample "
                                           "on its ray")
                 else:
-                    path, prep = plan_viewpoint(self.world, self.ik, q_now,
-                                                res.T_flange, seed=self.seed)
-                    detail = (f"tier {prep['tier']} at {res.depth:.3f} m"
-                              if path else "plan refused")
+                    legs, path, bounds, detail = self._transaction(res, q_now)
         except Exception as e:
+            legs = bounds = res = None
             path, detail = None, f"planner error: {e}"
         self.events.put({"ev": "plan_done", "gen": gen, "target": target,
-                         "path": path, "detail": detail,
-                         "face_theta": face_theta, "face_pos": face_pos,
+                         "path": path, "detail": detail, "legs": legs,
+                         "bounds": bounds, "resolution": res,
+                         "face_find": face_find,
                          "face_unreachable": face_unreachable})
+
+    def _transaction(self, res, q_now):
+        """Plan the three-leg move to `res`. Returns (legs, path, bounds,
+        detail); `legs`/`path`/`bounds` are None when the address is
+        transition-inaccessible.
+
+        The legs are planned against the LIVE planner world (ruling
+        2026-09-17) and carry it home in `Legs.world`, which is the world the
+        executor re-validates each leg against. `self._ray_state` is leg 1's
+        `current`: the ray the camera stands on, or None after a survey, a
+        retreat or a halted move — then there is nothing to slide out along
+        and the transaction is legs 2-3.
+        """
+        legs = plan_transaction(self.world, self.ik, T_FLANGE_CAM,
+                                self._ray_state, res, q_now, seed=self.seed)
+        if legs is None:
+            # The honest class, named (design §Failure semantics): the ray
+            # itself resolved — there is just no out-depth from which the hop
+            # plans. No fallback substitution.
+            return None, None, None, ("transition-inaccessible: no out-depth "
+                                      "from which the hop plans")
+        path, bounds = _concat_legs(legs, q_now)
+        return legs, path, bounds, (f"{len(legs.out)}/{len(legs.hop)}/"
+                                    f"{len(legs.slide_in)} leg waypoints at "
+                                    f"{res.depth:.3f} m")
 
     def _preview_worker(self, path, cancel):
         try:
@@ -975,19 +1088,54 @@ class Supervisor:
         except Exception:
             log.exception("could not save object mask to %s", d)
 
-    def _exec_worker(self, gen, target, path):
+    def _exec_worker(self, gen, target, path, legs=None):
+        # What the arm has actually travelled so far. `path[0]` is where it
+        # started (every planner returns its own start config first), and the
+        # legs extend it as they complete — so a transaction halted half-way
+        # leaves an honest record of where the arm IS, which is what the
+        # retreat's retrace tier reverses.
+        executed = [np.asarray(path[0], dtype=float)]
         try:
-            rep = self.rig.move(path)
+            if legs is None:
+                # The survey: one leg, and the rig's own live-world gate,
+                # exactly as before rays.
+                rep = self.rig.move(path)
+                _extend_path(executed, path[1:1 + _done(rep, path)])
+                stopped = bool(rep.get("stopped"))
+            else:
+                stopped = False
+                for name, phase in _LEG_PHASES:
+                    leg = list(getattr(legs, name))
+                    # The slide-out is the one leg that does not carry its own
+                    # start: `Legs.out` is the waypoints AFTER q_now, while the
+                    # hop and the slide-in each begin on the pose the previous
+                    # leg ended at (transaction.py joins them that way).
+                    move = ([executed[-1]] + leg) if name == "out" else leg
+                    if len(move) < 2:
+                        continue        # nothing to travel on this leg
+                    self.events.put({"ev": "phase", "gen": gen, "phase": phase})
+                    # The world the LEGS were planned under, never the live
+                    # one: the retreat precedent (`rigs.py:move`) — a refit
+                    # that lands between plan and motion must not veto a path
+                    # that was legal when it was approved.
+                    rep = self.rig.move(move, world=legs.world)
+                    _extend_path(executed, move[1:1 + _done(rep, move)])
+                    if rep.get("stopped"):
+                        stopped = True
+                        break
         except Exception as e:
             self.events.put({"ev": "exec_done", "gen": gen, "target": target,
-                             "outcome": "fault", "detail": str(e)})
+                             "outcome": "fault", "detail": str(e),
+                             "executed": executed})
             return
-        if rep.get("stopped"):
+        if stopped:
             self.events.put({"ev": "exec_done", "gen": gen, "target": target,
-                             "outcome": "stopped", "detail": ""})
+                             "outcome": "stopped", "detail": "",
+                             "executed": executed})
             return
         self.events.put({"ev": "exec_done", "gen": gen, "target": target,
-                         "outcome": "done", "detail": ""})
+                         "outcome": "done", "detail": "",
+                         "executed": executed})
         # ---- pose-producer handoff, before anything touches the world (I4).
         # From here this thread runs `_recenter()` -> `world.set_object()`,
         # which resizes the pinocchio geom_model the publisher indexes into.
@@ -1042,10 +1190,15 @@ class Supervisor:
             # stood where we sent it, so the stamp cannot be the frozen-RTDE
             # failure the gate exists for. 0.02 rad (~1.1 deg) is far above
             # controller settle wobble and far below the >=30 deg between
-            # cells a stale q would show.
-            arrived = bool(path is not None and len(path) and
+            # cells a stale q would show. For a transaction the endpoint is
+            # the SLIDE-IN's last waypoint — the view pose the whole three
+            # legs exist to reach (it is also `path[-1]`, said out loud so a
+            # future leg order cannot silently re-point the check).
+            q_end = legs.slide_in[-1] if legs is not None else (
+                path[-1] if path is not None and len(path) else None)
+            arrived = bool(q_end is not None and
                            float(np.max(np.abs(np.asarray(cap["q"], float) -
-                                               np.asarray(path[-1], float))))
+                                               np.asarray(q_end, float))))
                            < 0.02)
             res = settle_capture(cap, self.rig, self.segmenter, self.acc,
                                  is_survey=(target == "survey"),
@@ -1196,17 +1349,6 @@ class Supervisor:
             self.pub.log("info", f"{n_ok}/{len(self._reach)} cells "
                                  f"accessible, mean resolved depth "
                                  f"{self._r_mean:.3f} m")
-        if not self._face_floor_noted:
-            # I3 (Stage B interim): faces still run the old ladder, and
-            # `derive_r_floor` no longer measures a per-run floor for it, so
-            # `face_radius` falls back to the static `grid.R_MIN`. Said once,
-            # out loud, because it is a standoff regression on a path the
-            # operator can still drive until the face path moves to rays.
-            self._face_floor_noted = True
-            log.info("face ladder on the STATIC floor (grid.R_MIN) for the "
-                     "Stage B interim — no per-run derive_r_floor")
-            self.pub.log("warn", "faces use the static standoff floor "
-                                 "(R_MIN) this run — no measured floor")
         # A property of the RUN's view method, refreshed with the belief it
         # is derived from. The schema still keeps one float (Stage C gives
         # rays their own fields), so the stopgap is what it carries — and
@@ -1314,10 +1456,33 @@ class Supervisor:
             self._face_stable = min(self._face_stable + 1, 2)
         else:
             self._face_stable = 0
-            self._face_theta.clear()
-            self._face_pos.clear()
+            self._face_find.clear()
             self._face_unreachable.clear()
         self._face_prim = prim
+
+    def _face_nominal(self, face):
+        """Where a face's camera would stand if nothing were in its way: the
+        closest depth on the face's fronto-parallel ray from which the WHOLE
+        face stays in frame (`face_family`'s theta=0 member and its own
+        containment floor).
+
+        NOT a standoff formula — `face_radius`/`radius_for_extent` died with
+        the rest of the fill-formula family (design §Dies). This is one of
+        the ray sampler's own stop conditions evaluated alone, with no IK and
+        no collision check, so it is a LOWER BOUND on where the arm could
+        stand. That is exactly why the marker it feeds is published
+        `resolved: false` and drawn dim: it is the geometry's promise, not
+        the sampler's answer, and it is replaced by `_face_find` the moment a
+        plan resolves the face for real.
+        """
+        from inspection.view.faceview import face_cam_pose
+        from inspection.view.rays import face_family
+        family = face_family(self._face_prim, face, self.rig.intr["fy"],
+                             self.rig.intr["height"])
+        ray, _shift, _theta, d_min = next((m for m in family if m[2] == 0.0),
+                                          family[0])
+        return face_cam_pose(np.asarray(ray.anchor),
+                             np.asarray(ray.direction), d_min)
 
     def _face_states(self):
         """Face menu block: {face: {status, off_angle_deg}} (design §menu)."""
@@ -1333,8 +1498,9 @@ class Supervisor:
                 status = "unreachable"
             else:
                 status = "ready"
+            find = self._face_find.get(f)
             out[f] = {"status": status,
-                      "off_angle_deg": self._face_theta.get(f)}
+                      "off_angle_deg": None if find is None else find["theta"]}
         return out
 
     def _geometry(self, res):
@@ -1393,15 +1559,15 @@ class Supervisor:
                               if res is None else res.T_cam),
                     roll=None if res is None else float(res.roll)))
         if self._face_prim is not None:
-            from inspection.view.faceview import (face_cam_pose, face_frame,
-                                                  face_radius)
             for f, st in self._face_states().items():
                 if st["status"] == "settling":
                     continue
-                c, n, ext = face_frame(self._face_prim, f)
-                r_f = face_radius(ext, self.rig.intr["fy"],
-                                  self.rig.intr["height"],
-                                  r_min=self.r_floor)
+                # The pose a face candidate records is the one the last plan
+                # RESOLVED for it; before any plan has run it is the ray's
+                # containment floor (`_face_nominal`), which is a bound, not
+                # a promise — the same distinction the UI draws dim.
+                find = self._face_find.get(f)
+                T_f = self._face_nominal(f) if find is None else find["pose"]
                 theta = st["off_angle_deg"]
                 cands.append(ViewCandidate(
                     address=["face", f],
@@ -1413,7 +1579,7 @@ class Supervisor:
                     # so it is recorded under that name rather than widening
                     # the schema for one new synonym.
                     status=_FACE_STATUS_TO_CANDIDATE[st["status"]],
-                    pose=_mat(face_cam_pose(c, n, r_f)),
+                    pose=_mat(T_f),
                     scores={} if theta is None
                     else {"off_angle_deg": float(theta)}))
         mn_mx = self.acc.aabb(pct=BOX_PCT)
@@ -1431,9 +1597,15 @@ class Supervisor:
 
     def _set_phase(self, phase, target=None):
         self.phase, self.target = phase, target
+        if phase in ("idle", "fault", "done"):
+            # Nothing is in flight, so there are no legs to describe — and a
+            # retained strip still carrying the last move's boundaries would
+            # describe the NEXT thing the UI drew with them.
+            self._legs = self._leg_bounds = None
         total = sum(1 for r in self._reach.values() if r is not None)
         self.pub.status(phase=phase, target=self._target_json(target),
-                        visited=len(self.visited), total=total)
+                        visited=len(self.visited), total=total,
+                        legs=self._leg_bounds)
         if phase in ("idle", "fault"):
             self._publish_real_pose()
 
@@ -1484,11 +1656,12 @@ class Supervisor:
         overlaid as pending/previewing (phase-derived, exactly like cells —
         the gate vocabulary itself never holds transient states), and the
         camera endpoint attached to every non-settling face so the operator
-        sees WHERE the arm would go before approving. Once a plan has run
-        the ladder, `pos` is its resolved endpoint (`resolved: true` — the
-        exact point, cleared with θ on gate regression); before that it is
-        the rung-1 orthogonal estimate (`resolved: false`, drawn dim —
-        Anton, bench: never present a hypothetical point as the truth).
+        sees WHERE the arm would go before approving. Once a plan has
+        resolved the face's ray family, `pos` is its resolved endpoint
+        (`resolved: true` — the exact point, cleared with θ on gate
+        regression); before that it is the ray's containment floor
+        (`_face_nominal`, `resolved: false`, drawn dim — Anton, bench: never
+        present a hypothetical point as the truth).
         """
         faces = self._face_states()
         if (isinstance(self.target, tuple) and self.target[0] == "face"
@@ -1496,20 +1669,15 @@ class Supervisor:
             faces[self.target[1]]["status"] = (
                 "pending" if self.phase == "planning" else "previewing")
         if self._face_prim is not None:
-            from inspection.view.faceview import face_frame, face_radius
             for f, st in faces.items():
                 if st["status"] == "settling":
                     continue
-                resolved = self._face_pos.get(f)
-                if resolved is not None:
-                    st["pos"] = list(resolved)
+                find = self._face_find.get(f)
+                if find is not None:
+                    st["pos"] = list(find["pos"])
                     st["resolved"] = True
                     continue
-                c, n, ext = face_frame(self._face_prim, f)
-                r_f = face_radius(ext, self.rig.intr["fy"],
-                                  self.rig.intr["height"],
-                                  r_min=self.r_floor)
-                st["pos"] = [float(x) for x in (c + n * r_f)]
+                st["pos"] = [float(x) for x in self._face_nominal(f)[:3, 3]]
                 st["resolved"] = False
         return faces
 
@@ -1613,6 +1781,66 @@ class Supervisor:
     @staticmethod
     def _target_json(target):
         return list(target) if isinstance(target, tuple) else target
+
+
+# --- the move transaction, in the machine's terms ---------------------------
+
+def _done(rep, move) -> int:
+    """How many of `move`'s waypoints the rig reports as reached.
+
+    Defaulted to "all of them" for a rig that does not count (both rigs in
+    tree do — the default is there so the executed record is never silently
+    SHORT if one ever stops): a record one waypoint long retraces a
+    configuration the arm has already left, which is the one error the
+    retrace cannot survive.
+    """
+    return int(rep.get("waypoints_done", len(move) - 1))
+
+
+def _extend_path(path, waypoints):
+    """Append `waypoints` to `path`, dropping any that repeat its last one."""
+    for q in waypoints:
+        q = np.asarray(q, dtype=float)
+        if not np.array_equal(q, path[-1]):
+            path.append(q)
+    return path
+
+
+def _concat_legs(legs, q_now):
+    """The transaction as ONE waypoint list, plus where each leg ends in it.
+
+    `transaction.py` joins its legs by repeating a waypoint: the hop starts
+    on the pose the slide-out ended at and the slide-in starts on the pose
+    the hop landed on. The repeats are dropped here, because this list is
+    what the preview replays and what the retreat retraces in reverse, and
+    in both a duplicated waypoint reads as the arm standing still.
+
+    Bounds are the INDEX OF EACH LEG'S LAST WAYPOINT, `[out, hop, slide_in]`,
+    so an empty slide-out is `bounds[0] == 0` and the legs slice back out as
+    `path[:b0+1]`, `path[b0:b1+1]`, `path[b1:b2+1]`.
+    """
+    path, bounds = [np.asarray(q_now, dtype=float)], []
+    for leg in (legs.out, legs.hop, legs.slide_in):
+        _extend_path(path, leg)
+        bounds.append(len(path) - 1)
+    return path, bounds
+
+
+def _ray_state_of(res):
+    """The `RayState` for the ray a `RayResolution` was resolved on.
+
+    The ray is read back off the resolution rather than rebuilt from the
+    grid: a cell ray's anchor is the centroid AT PLAN TIME, and by the time
+    this runs the arrival's own refit has moved it. `face_cam_pose` points a
+    camera's +X at the anchor, so the direction is `-T_cam[:3, 0]` and the
+    anchor is `depth` back along it — one reconstruction for cell rays and
+    face-family rays alike, because both are posed by that one helper.
+    """
+    T = np.asarray(res.T_cam, dtype=float)
+    direction = -T[:3, 0]
+    return RayState(Ray(tuple(T[:3, 3] - res.depth * direction),
+                        tuple(direction)),
+                    res.depth, res.roll, res.samples)
 
 
 # --- record shaping ---------------------------------------------------------

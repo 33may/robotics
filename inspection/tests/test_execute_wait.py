@@ -56,9 +56,27 @@ def test_unsafe():
     assert r == "unsafe"
 
 
+def test_stop_beats_a_move_that_has_already_finished():
+    """A stop that lands on the same poll as the move's completion reports
+    "stopped", never "done".
+
+    `execute()` counts a waypoint only when the poll says "done", and the
+    machine now RECONSTRUCTS where the arm is from that count: a three-leg
+    transaction's executed waypoints are what the retreat retraces in
+    reverse (`machine._exec_worker`). A poll that called a stopped waypoint
+    done would record a waypoint the arm never reached, and the retrace's
+    first segment would start from a configuration the arm is not in.
+    """
+    ev = threading.Event(); ev.set()
+    r = _wait_async(lambda: False, lambda: True, stop_event=ev, poll_s=0.001,
+                    grace_s=0.0)
+    assert r == "stopped"
+
+
 def main():
     test_done_after_motion(); test_grace_prevents_premature_done()
     test_never_ran_times_out_via_grace(); test_stopped(); test_unsafe()
+    test_stop_beats_a_move_that_has_already_finished()
     print("OK test_execute_wait")
 
 
