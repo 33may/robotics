@@ -17,6 +17,7 @@
 - Face handles are exactly `"x+", "x-", "y+", "y-", "top"` (box-frame, yaw-stable). Bottom face excluded.
 - Gate: opens after **2 consecutive** refit-to-refit comparisons with max face-normal delta ≤ `FACE_STABLE_TOL_DEG = 5.0`.
 - Ladder defaults: z-lift step 0.02 m capped at 45° implied off-angle; cone rings θ = 5°..60° step 5°, 12 azimuths/ring; standoff `face_radius` clamped to `R_MIN` (done inside `radius_for_extent`).
+- RULING (Anton 2026-09-14, supersedes Task 2's single-roll `_endpoint_ok`): every ladder candidate walks camera ROLLS (0°, 180° — `inspection.view.viewsphere.ROLLS`) about the boresight before being declared invalid; `face_cam_pose` takes an optional `roll` parameter (post-multiplied rotation about +X, as `ViewSphere.cam_pose` does); `FaceResolution` carries the winning roll.
 - Menu priority language is SOFT: "evidence mainly comes from face views" — never "only".
 - No UI panel work; the views payload just carries the faces block.
 
@@ -214,7 +215,7 @@ git commit -m "faceview: face frames, orthogonal cam poses, framing radius, stab
 def test_resolve_exact_when_clear():
     from inspection.cell.world import RobotCell
     from inspection.motion.ik import UR5eIK
-    from inspection.view.grid import T_FLANGE_CAM
+    from inspection.view.viewsphere import T_FLANGE_CAM
     from inspection.view.faceview import resolve_face_view
     w, ik = RobotCell(), UR5eIK()
     p = _box_prim(center=(0.10, -0.35, 0.075))
@@ -226,7 +227,7 @@ def test_resolve_exact_when_clear():
 def test_resolve_zlift_for_slim_object():
     from inspection.cell.world import RobotCell
     from inspection.motion.ik import UR5eIK
-    from inspection.view.grid import T_FLANGE_CAM
+    from inspection.view.viewsphere import T_FLANGE_CAM
     from inspection.view.faceview import resolve_face_view
     w, ik = RobotCell(), UR5eIK()
     # 2 cm tall: the side face's orthogonal camera sits AT the table.
@@ -241,7 +242,7 @@ def test_resolve_zlift_for_slim_object():
 def test_resolve_none_for_buried_face():
     from inspection.cell.world import RobotCell
     from inspection.motion.ik import UR5eIK
-    from inspection.view.grid import T_FLANGE_CAM
+    from inspection.view.viewsphere import T_FLANGE_CAM
     from inspection.view.faceview import resolve_face_view
     w, ik = RobotCell(), UR5eIK()
     p = _box_prim()
@@ -389,7 +390,7 @@ from inspection.motion.ik import UR5eIK
 from inspection.view.faceview import (FACES, FACE_STABLE_TOL_DEG_DEFAULT,
                                       face_frame, face_radius,
                                       normals_delta_deg, resolve_face_view)
-from inspection.view.grid import T_FLANGE_CAM
+from inspection.view.viewsphere import T_FLANGE_CAM
 
 RUNS = Path(__file__).resolve().parents[1] / "data" / "runs"
 FY_FALLBACK, HPX_FALLBACK = 430.0, 480    # D405-ish; stamped when used
@@ -599,7 +600,7 @@ git commit -m "machine: face stability gate — 2 consecutive stable boxguard fi
 - Test: `inspection/tests/test_machine.py` (append; register in `main()`)
 
 **Interfaces:**
-- Consumes: Task 2 `resolve_face_view(...) -> FaceResolution | None`, Task 4 state, `plan_viewpoint(world, ik, q_from, T_flange, seed)` (already imported), `self.rig.intr["fy"]`, `self.rig.intr["height"]`, `T_FLANGE_CAM` via `self.sphere._t_fc_inv` is PRIVATE — import `T_FLANGE_CAM` from `inspection.view.grid` instead.
+- Consumes: Task 2 `resolve_face_view(...) -> FaceResolution | None`, Task 4 state, `plan_viewpoint(world, ik, q_from, T_flange, seed)` (already imported), `self.rig.intr["fy"]`, `self.rig.intr["height"]`, `T_FLANGE_CAM` via `self.sphere._t_fc_inv` is PRIVATE — import `T_FLANGE_CAM` from `inspection.view.viewsphere` instead.
 - Produces: face targets flow end to end; steps record `{"method": "face", "address": [name]}`; achieved θ lands in `self._face_theta[name]` and in `ViewCandidate.scores` (Task 6's `_view_state` face entries).
 
 - [ ] **Step 1: Write the failing test (append to `test_machine.py`)**
@@ -699,7 +700,7 @@ regex (list `["face", "x+"]` from the bus, string `"face:x+"` from markers):
             elif isinstance(target, tuple) and target[0] == "face":
                 from inspection.view.faceview import (face_frame, face_radius,
                                                       resolve_face_view)
-                from inspection.view.grid import T_FLANGE_CAM
+                from inspection.view.viewsphere import T_FLANGE_CAM
                 face, prim = target[1], self._face_prim
                 _, _, ext = face_frame(prim, face)
                 r_f = face_radius(ext, self.rig.intr["fy"],
@@ -772,6 +773,28 @@ git commit -m "machine: ('face', name) target kind — gate-checked, ladder-reso
 **Interfaces:**
 - Consumes: Task 4 `_face_states()`, Task 1 `face_frame`/`face_cam_pose`/`face_radius`.
 - Produces: `views/state` bus payload gains `"faces": {name: {"status": ..., "off_angle_deg": ...}}`; `ViewState.candidates` gains one `ViewCandidate` per READY/VISITED face with `address=["face", name]` and `scores={"off_angle_deg": θ}` when known.
+
+
+**Visualization (Anton 2026-09-14, replaces any separate-rrd idea):** the ONE
+review surface is the record layer: `p inspection/record show <run>`. This task
+also adds face-view rendering there, reading what this task itself records:
+- `record/rr/log.py`: additive `log_face_views(faces)` where `faces` is a list
+  of `(name, pose_4x4_cam, status, off_angle_deg_or_None)` — draw a small
+  frustum or arrow at each face pose, colored by status (ready/orthogonal
+  green, degraded yellow, unreachable red, visited blue, settling gray),
+  labeled `name θ°`. Log ALL face views under one dedicated entity-path
+  root of their own — e.g. `world/faces/<name>` — NEVER under the capture
+  cameras' path (Anton: face cameras must be a separate group in the
+  viewer's entity tree so they can be toggled visible on their own).
+  Otherwise follow the file's existing conventions (`method_color`,
+  `log_camera`).
+- `record/show.py` (`show_run`): per step, if the step's ViewState carries
+  candidates with `address == ["face", <name>]`, call `log_face_views` with
+  them at that step's timeline position.
+- Steps with no face candidates (old runs, pre-gate steps) render exactly as
+  before — the addition must be a no-op for them.
+- Verify by regenerating `show` on the Task 5 test run fixture (or any run
+  where view_state has face entries) and eyeballing; state what you checked.
 
 - [ ] **Step 1: Write the failing test (append to `test_machine.py`)**
 

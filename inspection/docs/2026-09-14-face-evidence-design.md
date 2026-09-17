@@ -20,11 +20,15 @@ it, and the cited evidence is the orthogonal shot of the coded side.
   at *request time*. A repositioned box re-derives its views automatically.
 - Five faces, bottom excluded. Handles are box-frame stable under yaw:
   `+x, -x, +y, -y, top`.
-- Target pose per face: camera at `face_center + n̂ · r_f`, boresight `−n̂`,
-  roll from the existing sphere up-vector rule. `r_f` comes from
-  `radius_for_extent(face extent)` — per-face framing, same convention as the
-  survey — **clamped to R_MIN**: the padding-is-standoff rule keeps owning the
-  floor (see viewsphere-radius-reachability-cliff).
+- Target pose per face: camera at `face_center + n̂ · r_f`, boresight `−n̂`.
+  `r_f` comes from `radius_for_extent(face extent)` — per-face framing, same
+  convention as the survey — **clamped to R_MIN**: the padding-is-standoff
+  rule keeps owning the floor (see viewsphere-radius-reachability-cliff).
+- Roll about the boresight is a **searched DOF, not rule-fixed** (Anton
+  2026-09-14): the up-vector rule gives roll 0, and every ladder candidate
+  walks `ROLLS` (0°, 180° — the same set `cell_reachable`/`plan_to_cell`
+  use) before being declared invalid. The camera slab sits off-axis on the
+  tool cross, so the flipped roll clears collisions the upright roll cannot.
 - Face targets are a **second target kind** in the Supervisor:
   `("face", name)` next to cell tuples. The motion ladder already plans to
   arbitrary flange poses; the cell address was only ever a lookup in front
