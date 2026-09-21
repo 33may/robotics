@@ -47,6 +47,11 @@ ACC_RAD_S2 = 0.5
 SPEED_SLIDER = 1.0      # Anton: 0.25 -> 0.5 (08-24) -> 0.75 (08-25)
 
 START_TOL_RAD = 0.02    # current q must match path[0] within ~1.1 deg
+BLEND_M = 0.005         # TCP blend arc through interior path waypoints; must
+                        # undercut half the shortest adjacent TCP segment — a
+                        # slide step is RAY_STEP_M = 2 cm of travel, so 5 mm
+MIN_BLEND_SEG_RAD = 0.02  # a segment shorter than this (max joint delta)
+                          # cannot promise that arc: its waypoints don't blend
 
 ROBOT_MODE_RUNNING = 7
 SAFETY_MODE_NORMAL = 1
@@ -364,10 +369,11 @@ class UR5eArm:
         """Run a validated waypoint path. Returns an execution report.
 
         Refuses (raises, no motion) when: start mismatch, world says the
-        path is no longer valid, or safety is not NORMAL. Motion is
-        asynchronous per waypoint so it can be interrupted: stop_event set
-        -> stopJ deceleration, report {"stopped": True} (a normal outcome,
-        not an error). Safety change mid-path still raises.
+        path is no longer valid, or safety is not NORMAL. The whole path
+        runs as ONE asynchronous blended moveJ so it can be interrupted:
+        stop_event set -> stopJ deceleration, report {"stopped": True} (a
+        normal outcome, not an error). Safety is still polled every 50 ms
+        by the wait loop, and a change mid-path raises.
         """
         path = [np.asarray(q, dtype=float) for q in path]
         if len(path) < 2:
@@ -387,23 +393,47 @@ class UR5eArm:
                 raise RuntimeError(f"world refuses path (segment {bad}) — replan")
 
         t0 = time.perf_counter()
+        # One path-form moveJ for the whole leg: the controller blends
+        # through interior waypoints instead of decelerating to a stop at
+        # every sample (per-waypoint moveJ made a 2 cm-stepped slide visibly
+        # steppy on the live rig). Slide waypoints are collinear along the
+        # ray, so the blend cuts no corner off the validated path.
+        rows = [list(map(float, q)) + [self.speed, self.acc, BLEND_M]
+                for q in path[1:]]
+        for i, row in enumerate(rows):
+            d_prev = float(np.abs(path[i + 1] - path[i]).max())
+            d_next = (float(np.abs(path[i + 2] - path[i + 1]).max())
+                      if i + 2 < len(path) else None)
+            if d_prev < MIN_BLEND_SEG_RAD or (d_next is not None
+                                              and d_next < MIN_BLEND_SEG_RAD):
+                row[8] = 0.0
+        rows[-1][8] = 0.0               # the endpoint is reached exactly
         done, stopped = 0, False
+        prog = -1
+
+        def _running():
+            nonlocal prog
+            st = self.ctrl.getAsyncOperationProgressEx()
+            p = st.progress
+            if p is not None and p > prog:
+                prog = p
+            return st.isAsyncOperationRunning()
+
         try:
-            for q_goal in path[1:]:
-                if not self._safety_ok():
-                    raise RuntimeError("safety mode changed mid-path")
-                self.ctrl.moveJ(list(q_goal), self.speed, self.acc, True)
-                outcome = _wait_async(
-                    lambda: (self.ctrl.getAsyncOperationProgressEx()
-                             .isAsyncOperationRunning()),
-                    self._safety_ok, stop_event)
-                if outcome == "stopped":
-                    self.ctrl.stopJ(2.0)
-                    stopped = True
-                    break
-                if outcome == "unsafe":
-                    raise RuntimeError("safety mode changed mid-path")
-                done += 1
+            self.ctrl.moveJ(rows, True)
+            outcome = _wait_async(_running, self._safety_ok, stop_event)
+            if outcome == "stopped":
+                self.ctrl.stopJ(2.0)
+                stopped = True
+                # progress = the row in flight; only the rows before it are
+                # provably reached. Undercount by design: an overcount would
+                # make the retreat retrace forward through a waypoint the
+                # stop prevented.
+                done = max(prog, 0)
+            elif outcome == "unsafe":
+                raise RuntimeError("safety mode changed mid-path")
+            else:
+                done = len(rows)
         except Exception:
             self.stop()
             raise
