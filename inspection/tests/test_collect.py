@@ -551,4 +551,13 @@ if __name__ == "__main__":
     test_default_planner_needs_a_belief_to_rank_against()
     test_default_planner_tightens_the_belief_with_a_boxguard_fit()
     test_sweep_driver_visits_every_reachable_cell(Path(tempfile.mkdtemp()))
+    # The driver-loop tests take pytest's `tmp_path`; a fresh mkdtemp is the
+    # same contract, and without these four the script runner silently
+    # covered less than the pytest run did.
+    test_random_mode_shuffles_and_records_its_own_decider(
+        Path(tempfile.mkdtemp()))
+    test_random_mode_retries_refused_passes_until_stopped(
+        Path(tempfile.mkdtemp()))
+    test_a_faulted_run_ends_the_sweep(Path(tempfile.mkdtemp()))
+    test_stop_ends_the_sweep(Path(tempfile.mkdtemp()))
     print("OK test_collect")

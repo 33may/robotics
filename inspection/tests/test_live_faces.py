@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """Faces reach the orchestrator: nav block + prompt language.
 Run: p inspection/tests/test_live_faces.py"""
+from inspection.view.rays import RayResolution
+
+#: `sup._reach` holds resolved RAYS everywhere else (Stage B), and `nav()`
+#: only ever reads `r is not None` off it — but the type has to be the real
+#: one, not a float lookalike that would keep passing if the map's value
+#: contract changed underneath these stubs (the same fix task 4 made in
+#: test_collect.py). The fields are never inspected.
+_RESOLVED = RayResolution(None, None, None, 0.0, 0.0, 0.0, 0.0, [])
 
 
 class _SupStub:
-    _reach = {(0, 0): 0.0}
+    _reach = {(0, 0): _RESOLVED}
     visited = {(0, 0)}
     blocked = set()
     phase = "idle"
@@ -100,7 +108,7 @@ def test_move_waits_out_a_busy_machine_instead_of_bouncing(tmp_path):
     from inspection.brain.live import SupervisorMover
 
     class _BusySup:
-        _reach = {(0, 0): 0.0}
+        _reach = {(0, 0): _RESOLVED}
         visited = set()
         blocked = set()
         phase = "executing"          # operator's move in flight

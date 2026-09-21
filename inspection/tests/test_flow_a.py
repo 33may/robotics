@@ -442,6 +442,96 @@ def test_the_brains_answer_validates_as_an_answer_record(tmp_path):
     assert run.validate().ok, run.validate().problems
 
 
+# --- the one ruled brain/live.py line, pinned in the DEFAULT suite ----------
+#
+# `tests/e2e/` is excluded from the default pytest collection
+# (`pyproject.toml:norecursedirs`), so the cross-tier copy of this pin only
+# runs when someone asks for the e2e directory by name. The line it guards is
+# a one-line phase check that any future edit to `brain/live.py` could undo,
+# so it also lives HERE, where every run of the suite executes it. It needs no
+# rig, no planner and no browser: the phase sequence is scripted.
+
+
+class _PinSup:
+    """Just enough of `Supervisor` for `SupervisorMover.request()`: a phase/
+    target pair and a command queue nothing reads."""
+
+    def __init__(self):
+        import queue
+        self.phase, self.target = "idle", None
+        self.events = queue.Queue()
+
+
+def _pin_run_dir(tmp_path):
+    """A real, openable (never closed) run directory — `_captured_ids()` calls
+    `Run.load(...).captured` on every `request()`, and a run with no `run.json`
+    would raise before the phase check under test ever runs."""
+    from inspection.record.writer import RunWriter
+    from inspection.run.app import config_snapshot, viewsphere_method
+
+    RunWriter.create(tmp_path, run_id="pin-run", name="pin-run", source="live",
+                     rig="fake", config=config_snapshot(),
+                     view_methods=[viewsphere_method()], q_survey=[0.0] * 6)
+    return tmp_path / "pin-run"
+
+
+def _drive_scripted_adjusting_race(sup, cell, adjusting_hold=0.3):
+    """The dispatcher's side of the race, entirely scripted: previewing then
+    STRAIGHT to `adjusting` — the slide leg the real dispatcher also reaches
+    in well under a millisecond — held far longer than the mover's 50 ms poll
+    (`brain/live.py:POLL_S`), so the poll cannot help but land on it. Ends in
+    `idle`/no target, the honest "the move finished, nothing was captured"
+    terminal state for a run dir with no steps in it.
+
+    `sup.target` must be the TUPLE form: `request()` normalizes its argument
+    with `tuple(cell)` and compares by equality, exactly as the real
+    `Supervisor._normalize_target` does.
+    """
+    cell = tuple(cell)
+    time.sleep(0.05)
+    sup.phase, sup.target = "planning", cell
+    time.sleep(0.05)
+    sup.phase, sup.target = "previewing", cell
+    time.sleep(0.15)                      # let the mover reach its step-2 wait
+    sup.phase, sup.target = "adjusting", cell     # never "executing" at all
+    time.sleep(adjusting_hold)
+    sup.phase, sup.target = "idle", None
+
+
+def test_pin_brain_live_does_not_mistake_a_slide_leg_for_a_refusal(tmp_path):
+    """`brain/live.py` step 2 must accept `adjusting` (a slide leg) as proof
+    the move started, exactly like `executing` (the hop).
+
+    Stage B made this the NORMAL case, not an edge: the dispatcher sets
+    `executing` at the confirm and the exec worker announces the slide-out's
+    `adjusting` before its first `rig.move`, so the mover's 50 ms poll has a
+    sub-millisecond window in which `executing` is visible. Reading
+    `adjusting` as "not approved" made the mover tell the orchestrator "the
+    arm has not moved" while it was moving.
+    """
+    import threading
+
+    from inspection.brain.live import SupervisorMover
+
+    sup = _PinSup()
+    mover = SupervisorMover(sup, _pin_run_dir(tmp_path), decider="ai")
+    cell = [1, 0]
+
+    threading.Thread(target=_drive_scripted_adjusting_race,
+                     args=(sup, cell), daemon=True).start()
+    ok, why = mover.request(cell)
+
+    assert ok is False, why       # this run dir never captures anything either way
+    assert "not approved" not in why, (
+        "brain/live.py step 2 read a slide leg (adjusting) as a refusal — "
+        f"the arm was moving and the mover just told the orchestrator it "
+        f"was not: {why!r}")
+    assert "adjusting" not in why, why
+    assert "no frame was captured" in why, (
+        "expected the honest 'nothing was captured' outcome once the "
+        f"approval check correctly let `adjusting` through: {why!r}")
+
+
 if __name__ == "__main__":
     import tempfile
     from pathlib import Path
@@ -454,6 +544,8 @@ if __name__ == "__main__":
 
     test_one_approved_turn_writes_schema_run(Path(tempfile.mkdtemp()), _Patch())
     test_the_brains_answer_validates_as_an_answer_record(
+        Path(tempfile.mkdtemp()))
+    test_pin_brain_live_does_not_mistake_a_slide_leg_for_a_refusal(
         Path(tempfile.mkdtemp()))
     print("OK test_flow_a")
     del _mock

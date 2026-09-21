@@ -809,47 +809,59 @@ def test_retreat_escapes_a_poisoned_stance_box():
     assert not th.is_alive()
 
 
-def test_retreat_retraces_when_radial_has_no_ik(monkeypatch):
+def test_retreat_retraces_when_radial_has_no_ik():
     """1509-cam-ai_bench2: far-side stances stand at the workspace boundary —
     the radial escape target has ZERO IK branches ([5,0] flange at 0.751 m,
     +1 cm out: none), so both radial tiers die at '0/0 free' and the arm is
     wedged. The retrace tier must reverse the executed arrival path instead.
     Radial impossibility is forced here by a 5 m retreat distance — same
-    0-branch outcome as the real boundary, independent of the test cell."""
+    0-branch outcome as the real boundary, independent of the test cell.
+
+    `RETREAT_M` is swapped with a plain try/finally rather than pytest's
+    `monkeypatch`: this file's `main()` is how it runs as a script, and a
+    fixture argument made it invisible there (it was one of two tests the
+    script runner silently skipped)."""
     import json
     import inspection.run.machine as machine_mod
-    monkeypatch.setattr(machine_mod, "RETREAT_M", 5.0)
+    real_m = machine_mod.RETREAT_M
+    machine_mod.RETREAT_M = 5.0
     sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
         [0, 0, 0, 0, 0, 8]))
-    full_boot(sup)
-    q_trapped = rig.q()
-    p = np.asarray(sup.ik.fk(q_trapped))[:3, 3]
-    sup.world.set_object("object", [0.12, 0.12, 0.12],
-                         [float(p[0]), float(p[1]), float(p[2]), 0.0, 0.0, 0.0])
-    assert sup._arrival_path is not None, "confirm stored the arrival path"
-    tried = set()
-    for n in (1, 2, 3):
-        avail = [c for c, r in sup._reach.items()
-                 if r is not None and c not in sup.visited and c not in tried]
-        assert avail, f"no requestable cell left before refusal {n}"
-        cell = avail[0]
-        tried.add(cell)
-        sup.events.put({"cmd": "view/request", "target": list(cell)})
-        if n < 3:
-            wait_for(lambda n=n: sup._plan_fails == n and sup.phase == "idle",
-                     timeout=60, msg=f"refusal {n} counted")
-        else:
-            wait_for(lambda: len(rig.moves) == 2, timeout=60,
-                     msg="retrace retreat move")
-            wait_for(lambda: sup.phase == "idle", timeout=60,
-                     msg="idle after retreat")
-    assert np.abs(rig.q() - q_trapped).max() > 0.005, "the arm actually moved"
-    assert sup._arrival_path is None, "stale arrival path cleared after moving"
-    rows = [json.loads(l) for l in
-            (sup.writer.dir / "events.jsonl").read_text().splitlines()]
-    outcome = [r for r in rows if r["kind"] == "retreat"][-1]
-    assert "retrace" in outcome["detail"], outcome["detail"]
-    sup.request_shutdown(); th.join(10)
+    try:
+        full_boot(sup)
+        q_trapped = rig.q()
+        p = np.asarray(sup.ik.fk(q_trapped))[:3, 3]
+        sup.world.set_object("object", [0.12, 0.12, 0.12],
+                             [float(p[0]), float(p[1]), float(p[2]),
+                              0.0, 0.0, 0.0])
+        assert sup._arrival_path is not None, "the move stored its waypoints"
+        tried = set()
+        for n in (1, 2, 3):
+            avail = [c for c, r in sup._reach.items()
+                     if r is not None and c not in sup.visited
+                     and c not in tried]
+            assert avail, f"no requestable cell left before refusal {n}"
+            cell = avail[0]
+            tried.add(cell)
+            sup.events.put({"cmd": "view/request", "target": list(cell)})
+            if n < 3:
+                wait_for(lambda n=n: sup._plan_fails == n
+                         and sup.phase == "idle",
+                         timeout=60, msg=f"refusal {n} counted")
+            else:
+                wait_for(lambda: len(rig.moves) == 2, timeout=60,
+                         msg="retrace retreat move")
+                wait_for(lambda: sup.phase == "idle", timeout=60,
+                         msg="idle after retreat")
+        assert np.abs(rig.q() - q_trapped).max() > 0.005, "the arm moved"
+        assert sup._arrival_path is None, "stale waypoints cleared after moving"
+        rows = [json.loads(l) for l in
+                (sup.writer.dir / "events.jsonl").read_text().splitlines()]
+        outcome = [r for r in rows if r["kind"] == "retreat"][-1]
+        assert "retrace" in outcome["detail"], outcome["detail"]
+    finally:
+        machine_mod.RETREAT_M = real_m
+        sup.request_shutdown(); th.join(10)
     assert not th.is_alive()
 
 
@@ -1674,6 +1686,8 @@ def main():
     test_marker_id_target_from_a_3d_click()
     test_idle_publishes_the_real_pose()
     test_three_plan_refusals_trigger_retreat()
+    test_retreat_escapes_a_poisoned_stance_box()
+    test_retreat_retraces_when_radial_has_no_ik()
     test_sigint_saves_and_exits()
     test_face_gate_opens_after_two_stable_fits()
     test_face_request_full_cycle()
