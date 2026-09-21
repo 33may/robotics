@@ -127,6 +127,9 @@ export interface TraceEvent {
   readonly frame?: string | null;
   /** The final `answer` event: one record per cited hunt, misses included. */
   readonly evidence_images?: readonly EvidenceRec[];
+  /** The final `answer` event: the card's structured readout — codes,
+   *  serials, model numbers — as the model established them from pixels. */
+  readonly fields?: Readonly<Record<string, unknown>>;
 }
 
 interface TracePayload {
@@ -700,11 +703,110 @@ function SurveyBlock({
   );
 }
 
+/** One cited hunt as the answer tool call named it. */
+interface CitedHunt {
+  readonly cell?: readonly number[] | string;
+  readonly find?: string;
+}
+
+const huntKey = (cell: unknown, find: unknown): string =>
+  `${cellLabel(cell as readonly number[] | string | undefined)}|${str(find).toLowerCase()}`;
+
+/** The answer IN FLIGHT, as stages (Anton 2026-09-21): one row per cited
+ *  hunt, checked off as its evidence event lands, the active one carrying
+ *  the hunter's live step counter, then a closing "compose card" stage.
+ *  Deliberately NO verdict text and NO images here — the main stream shows
+ *  only that the answer is happening; the details are one click away in the
+ *  right pane, and the card renders once, complete, when the call ends. */
+function AnswerStages({ block }: { block: Block }) {
+  const cited: readonly CitedHunt[] =
+    (block.call?.args?.evidence_cells as readonly CitedHunt[] | undefined) ?? [];
+  const landed = block.evidence ?? [];
+  // A hunt cached from a bounced attempt emits no fresh `evidence` event —
+  // its row simply stays pending until the result swaps this for the card.
+  const done = new Set(landed.map((e) => huntKey(e.cell, e.find)));
+  const steps = block.steps ?? [];
+  const last = steps[steps.length - 1];
+  const active = last ? huntKey(last.cell, last.hunt) : null;
+  const rows = cited.length ? cited : landed.map((e) => ({ cell: e.cell, find: e.find }));
+  const allDone = rows.length > 0 && rows.every((h) => done.has(huntKey(h.cell, h.find)));
+  return (
+    <div className="trace-stages">
+      {rows.map((h, i) => {
+        const key = huntKey(h.cell, h.find);
+        const state = done.has(key) ? 'done' : key === active ? 'active' : 'pending';
+        return (
+          <div className="trace-stage" data-state={state} key={i}>
+            <span className="trace-stage-mark">
+              {state === 'done' ? '✓' : state === 'active' ? <span className="trace-pulse" /> : '·'}
+            </span>
+            <span className="trace-stage-cell">{cellLabel(h.cell)}</span>
+            <span className="trace-stage-find">{str(h.find)}</span>
+            {state === 'active' && last?.of ? (
+              <span className="trace-stage-n">{last.n}/{last.of}</span>
+            ) : null}
+          </div>
+        );
+      })}
+      <div className="trace-stage" data-state={allDone ? 'active' : 'pending'}>
+        <span className="trace-stage-mark">
+          {allDone ? <span className="trace-pulse" /> : '·'}
+        </span>
+        <span className="trace-stage-find">compose card</span>
+      </div>
+    </div>
+  );
+}
+
+/** The finished answer, rendered ONCE and whole: the verdict, the structured
+ *  fields (codes, serials, counts — the card's reason to exist), and the
+ *  evidence pictures. This is the terminal artifact of a run, so it renders
+ *  from the authoritative `answer` event, falling back to the call args and
+ *  the result's image strip for runs recorded before fields existed. */
+function AnswerCard({
+  block,
+  onOpenImage,
+}: {
+  block: Block;
+  onOpenImage: (src: string) => void;
+}) {
+  const a = block.call?.args ?? {};
+  const ansEv = block.answerEv;
+  const fields =
+    ansEv?.fields ?? (a.fields as Readonly<Record<string, unknown>> | undefined) ?? {};
+  const recs: readonly EvidenceRec[] = ansEv?.evidence_images ?? block.evidence ?? [];
+  const images = recs
+    .map((r) => (r.found !== false && r.crop ? r.crop : r.frame ?? r.crop))
+    .filter((s): s is string => Boolean(s));
+  const fallback = !images.length ? block.result?.images ?? [] : [];
+  return (
+    <div className="trace-card">
+      <div className="trace-answer-label">answer</div>
+      <div className="trace-answer-verdict">{str(ansEv?.verdict ?? a.verdict)}</div>
+      {Object.keys(fields).length ? (
+        <div className="trace-card-fields">
+          {Object.entries(fields).map(([k, v]) => (
+            <div className="trace-card-field" key={k}>
+              <span className="trace-card-field-k">{k}</span>
+              <span className="trace-card-field-v">
+                <Value v={v} />
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <Media images={images.length ? images : fallback} onOpen={onOpenImage} />
+    </div>
+  );
+}
+
 /** answer() is not instant: the cited evidence hunts run INSIDE the call and
- *  take tens of seconds each. Until the tool_result lands this card must read
- *  as running — the preceding prose already sounds concluded, and a silent
- *  gap here made the slowest part of a run look like a hang. A bounced
- *  answer (failed=true) is an attempt on record, never the verdict. */
+ *  take tens of seconds each. Until the tool_result lands this block reads
+ *  as stages in progress — no verdict text, no images (Anton 2026-09-21:
+ *  the text appearing before the evidence made the answer look done while
+ *  it was still being verified). The finished card renders only when the
+ *  call completes; a bounced answer (failed=true) is an attempt on record,
+ *  never the verdict. */
 function AnswerBlock({
   block,
   selected,
@@ -716,17 +818,8 @@ function AnswerBlock({
   onSelect: () => void;
   onOpenImage: (src: string) => void;
 }) {
-  const a = block.call?.args ?? {};
   const result = block.result;
   const failed = result?.failed === true;
-  // The answer event's evidence_images is authoritative — cached hunts from
-  // a bounced attempt re-appear there without emitting a fresh `evidence`
-  // event. The streamed events are what exists while it runs, and all a
-  // bounced attempt leaves behind.
-  const recs: readonly EvidenceRec[] =
-    block.answerEv?.evidence_images ?? block.evidence ?? [];
-  const steps = block.steps ?? [];
-  const last = steps[steps.length - 1];
   return (
     <div
       className="trace-answer"
@@ -740,29 +833,18 @@ function AnswerBlock({
         if (e.key === 'Enter') onSelect();
       }}
     >
-      <div className="trace-answer-label">{failed ? 'answer · bounced' : 'answer'}</div>
-      <div className="trace-answer-verdict">{str(a.verdict)}</div>
-      {recs.map((rec, i) => (
-        <EvidenceRow key={i} rec={rec} onOpenImage={onOpenImage} />
-      ))}
-      {result ? (
+      {!result ? (
         <>
-          {failed && result.text ? <Clamp text={result.text} /> : null}
-          {!recs.length && result.images?.length ? (
-            // Old runs traced no evidence records — the crops the result
-            // carries are still worth a strip.
-            <Media images={result.images} onOpen={onOpenImage} />
-          ) : null}
+          <div className="trace-answer-label">answer</div>
+          <AnswerStages block={block} />
+        </>
+      ) : failed ? (
+        <>
+          <div className="trace-answer-label">answer · bounced</div>
+          {result.text ? <Clamp text={result.text} /> : null}
         </>
       ) : (
-        <div className="trace-running">
-          <span className="trace-pulse" />
-          <span>
-            {last?.hunt
-              ? `collecting evidence · ${cellLabel(last.cell)} · ${last.n}/${last.of}`
-              : 'collecting evidence…'}
-          </span>
-        </div>
+        <AnswerCard block={block} onOpenImage={onOpenImage} />
       )}
     </div>
   );

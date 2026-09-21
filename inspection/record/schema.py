@@ -500,6 +500,11 @@ class AnswerRecord(RecordModel):
     verdict: str
     reasoning: str
     evidence: list[str] = Field(default_factory=list)
+    #: The structured readout on the answer CARD (Anton 2026-09-21): codes,
+    #: serials, model numbers, counts — flat key->value as the model read
+    #: them from pixels. Values stay JSON-typed; the UI renders them as the
+    #: card's field rows.
+    fields: dict[str, Any] = Field(default_factory=dict)
     evidence_images: list[EvidenceImage] = Field(default_factory=list)
     step_ids: list[int] = Field(default_factory=list)
     transcript_ids: list[str] = Field(default_factory=list)

@@ -122,6 +122,15 @@ an oblique cell where the face view read "MADE IN CHINA"). So:
 - Before grinding a partial or doubtful detail out of the view you are at,
   ask the cheap question first — inspect("where is this seen better?") —
   and go there.
+- A refused face is not a dead face: plans depend on where the arm
+  STANDS. Move to a numbered cell on that face's side of the sphere (its
+  azimuth, middle elevation), then request the face again — make at least
+  one such deliberate reposition before settling for less. If the face
+  still never resolves, take the numbered cell most nearly head-on to
+  that wall as the closest-to-orthogonal substitute, and say in the
+  answer how far off it was.
+- Labels, codes and serials are read at orthogonal or near-orthogonal, or
+  they are misread. Never cite text from a view you know is oblique.
 A face marked `settling` is not ready yet; `ready (N deg off)` means the
 closest reachable look is N degrees off head-on — still usually the best
 evidence available. Move to a face by requesting its address, exactly
@@ -447,6 +456,7 @@ class Brain:
         self.answer = {"reasoning": args["reasoning"],
                        "verdict": args["verdict"],
                        "evidence": args["evidence"],
+                       "fields": dict(args.get("fields") or {}),
                        "evidence_images": records,
                        "views_inspected": _sorted_addresses(self.agent_seen),
                        "coverage": self.tools.coverage(cur=self.cell)}
@@ -508,6 +518,7 @@ class Brain:
             "verdict": args["verdict"], "reasoning": args["reasoning"],
             "evidence": [evidence] if isinstance(evidence, str) and evidence
             else list(evidence or []),
+            "fields": dict(args.get("fields") or {}),
             "evidence_images": images,
             "step_ids": sorted(set(step_ids)),
             "transcript_ids": sorted(set(transcript_ids)),
@@ -607,9 +618,15 @@ class Brain:
                         sub=f.transcript)
 
         @tool("answer", "End the run with a verdict. Reasoning first. "
-                        "evidence_cells names where the proof is.",
+                        "evidence_cells names where the proof is. "
+                        "fields is the STRUCTURED readout for the answer "
+                        "card: every code, serial, model number, count or "
+                        "state you actually established, as flat JSON "
+                        "key->value (e.g. {\"model\": \"GS308EPP\", "
+                        "\"serial\": \"AAB0007-0001\"}). Only values read "
+                        "from pixels — omit anything you did not establish.",
               {"reasoning": str, "verdict": str, "evidence": str,
-               "evidence_cells": list})
+               "evidence_cells": list, "fields": dict})
         async def _answer(args):
             called("answer", args)
             # The hunts run INSIDE the answer: the planner cites where the
