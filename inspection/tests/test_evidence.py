@@ -138,6 +138,51 @@ def test_bounce_on_fresh_miss_then_recite_ships_the_gap():
         assert bounce3 and "no capture" in bounce3
 
 
+def test_malformed_citation_bounces_and_string_form_coerces():
+    """Demo11 (2026-09-21): a hunt crashed, the SDK fed the model a raw
+    error, its retry degraded evidence_cells to plain strings, every entry
+    was silently dropped, and the answer shipped with ZERO evidence images.
+    Now: the string form a real retry produced coerces into a citation
+    (and hits the hunt cache), anything unsalvageable bounces with the
+    exact shape quoted, and a crashed hunt bounces with the casualty named
+    — never a raw tool error."""
+    from inspection.brain.loop import Brain
+    with tempfile.TemporaryDirectory() as tmp:
+        _brain_rig(Path(tmp))
+        vlm = StubVlm([{"evidence": ["e"], "reasoning": "r",
+                        "answer": "found — the logo", "evidence_image": 0}])
+        brain = Brain(tmp, "is there a logo?", vlm=vlm,
+                      verbs=LocalVerbs(StubBackend()))
+        bounce, recs = brain._collect_evidence(
+            [{"cell": [3, 1], "find": "the logo"}])
+        assert bounce is None and recs[0]["found"] is True
+        # demo11's exact degradation, cell form: coerces, cache-hits (the
+        # stub is exhausted — a fresh hunt would crash it)
+        bounce2, recs2 = brain._collect_evidence(["3 1 : the logo"])
+        assert bounce2 is None and recs2[0] is recs[0]
+        # face form coerces too; that face was never captured -> categorical
+        bounce3, _ = brain._collect_evidence(["face x+ : the label"])
+        assert bounce3 and "no capture" in bounce3
+        # unsalvageable -> bounce that quotes the required shape
+        bounce4, _ = brain._collect_evidence(["no address in here"])
+        assert bounce4 and '"find"' in bounce4
+        # a hunt that CRASHES bounces, keeping the run and the model's
+        # citation format alive
+        import inspection.brain.loop as loop_mod
+        real = loop_mod.hunt_evidence
+
+        def boom(*a, **kw):
+            raise RuntimeError("vlm exploded")
+
+        loop_mod.hunt_evidence = boom
+        try:
+            bounce5, _ = brain._collect_evidence(
+                [{"cell": [3, 1], "find": "another find"}])
+        finally:
+            loop_mod.hunt_evidence = real
+        assert bounce5 and "failed" in bounce5 and "vlm exploded" in bounce5
+
+
 def main():
     test_citation_is_parsed_leniently()
     test_found_hunt_resolves_the_cited_crop()
@@ -145,6 +190,7 @@ def main():
     test_garbled_citation_falls_back_to_the_last_image()
     test_the_hunter_has_no_note_and_no_view()
     test_bounce_on_fresh_miss_then_recite_ships_the_gap()
+    test_malformed_citation_bounces_and_string_form_coerces()
     print("OK test_evidence")
 
 

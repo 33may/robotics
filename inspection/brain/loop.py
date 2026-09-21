@@ -30,6 +30,7 @@ at exactly one place — `_gate` — and the seam is marked.
 import asyncio
 import json
 import logging
+import re
 import sys
 import time
 from pathlib import Path
@@ -364,6 +365,33 @@ class Brain:
                 if turn.get("image")]
         return out
 
+    #: The one shape an evidence citation has, quoted verbatim in every
+    #: bounce so a retry cannot guess wrong twice.
+    _ENTRY_SHAPE = ('{"cell": [h, v] or ["face", "x+"|"x-"|"y+"|"y-"|"top"], '
+                    '"find": "what the picture must show"}')
+
+    @staticmethod
+    def _coerce_entry(e):
+        """An evidence_cells entry as a dict, coercing the string form a
+        model under retry pressure actually produced ("face x+ : the white
+        product label …", demo11 2026-09-21) — or None when there is
+        nothing to salvage."""
+        if isinstance(e, dict):
+            return e
+        if not isinstance(e, str) or ":" not in e:
+            return None
+        addr, find = e.split(":", 1)
+        toks = [t for t in re.split(r"[\s,\[\]()'\"]+", addr) if t]
+        if not toks or not find.strip():
+            return None
+        if toks[0].lower() == "face" and len(toks) == 2:
+            return {"cell": ["face", toks[1]], "find": find.strip()}
+        try:
+            h, v = (int(t) for t in toks[:2])
+        except ValueError:
+            return None
+        return {"cell": [h, v], "find": find.strip()}
+
     def _collect_evidence(self, entries):
         """Run the cited evidence hunts. Returns (bounce_text | None, records).
 
@@ -374,12 +402,19 @@ class Brain:
         while re-citing an already-missed hunt is the explicit "ship with the
         gap on record". All hunts run before any bounce, so a re-answer pays
         only for what it newly cites.
+
+        A malformed citation also BOUNCES, never silently drops: demo11
+        (2026-09-21) shipped an answer with ZERO evidence images because
+        every string-form entry was dropped on the floor and nothing was
+        left to miss — and the card's images are the point of the citation.
         """
         records, fresh_misses = [], []
-        for e in entries or []:
-            if not isinstance(e, dict) or "cell" not in e:
-                self.trace.event("text", text=f"dropped evidence entry {e!r}")
-                continue
+        for raw in entries or []:
+            e = self._coerce_entry(raw)
+            if e is None or "cell" not in e:
+                return (f"evidence entry {raw!r} is not a citation — each "
+                        f"entry is {self._ENTRY_SHAPE}. Answer again with "
+                        f"every citation in that shape.", records)
             raw_cell = e["cell"]
             if (isinstance(raw_cell, (list, tuple)) and len(raw_cell) == 2
                     and raw_cell[0] == "face"):
@@ -392,8 +427,9 @@ class Brain:
                 try:
                     cell = tuple(int(c) for c in raw_cell)
                 except (TypeError, ValueError):
-                    self.trace.event("text", text=f"dropped evidence entry {e!r}")
-                    continue
+                    return (f"evidence entry {raw!r} names no view — each "
+                            f"entry is {self._ENTRY_SHAPE}. Answer again "
+                            f"with every citation in that shape.", records)
             find = str(e.get("find") or "").strip() or self.question
             key = (cell, find.casefold())
             if key in self._hunts:
@@ -407,10 +443,23 @@ class Brain:
                 self.trace.event("sub_step", cell=list(cell), n=n, of=total,
                                  event=event, hunt=find, **fields)
 
-            rec = hunt_evidence(self.tools, self.verbs, self.finding_writer,
-                                self.vlm, cell, find, on_turn=on_turn)
-            self._hunts[key] = rec
-            self.trace.event("evidence", **rec)
+            try:
+                rec = hunt_evidence(self.tools, self.verbs,
+                                    self.finding_writer, self.vlm, cell,
+                                    find, on_turn=on_turn)
+                self._hunts[key] = rec
+                self.trace.event("evidence", **rec)
+            except Exception as exc:  # noqa: BLE001 — a crashed hunt bounces
+                # Demo11: a hunt died between its last step and its record,
+                # the SDK handed the model a raw error, and the model's
+                # retry degraded to string citations. The honest surface is
+                # a bounce that names the casualty and keeps the run alive
+                # — never an unexplained tool error.
+                self.trace.event("text", text=(f"evidence hunt at "
+                                               f"{list(cell)} crashed: "
+                                               f"{exc!r}"))
+                return (f"the evidence hunt at {list(cell)} failed ({exc}). "
+                        f"Cite it again, or cite another view.", records)
             records.append(rec)
             if not rec["found"]:
                 fresh_misses.append(rec)
@@ -618,7 +667,10 @@ class Brain:
                         sub=f.transcript)
 
         @tool("answer", "End the run with a verdict. Reasoning first. "
-                        "evidence_cells names where the proof is. "
+                        "evidence_cells names where the proof is: up to "
+                        "three entries, each EXACTLY {\"cell\": [h, v] or "
+                        "[\"face\", name], \"find\": \"what the picture "
+                        "must show\"} — never a plain string. "
                         "fields is the STRUCTURED readout for the answer "
                         "card: every code, serial, model number, count or "
                         "state you actually established, as flat JSON "
@@ -824,7 +876,19 @@ class Brain:
                 # If visible reasoning is wanted, it has to be narrated as
                 # text (a ReAct Thought field), not extracted from here.
                 ev = msg.event or {}
-                if ev.get("type") == "content_block_delta":
+                if ev.get("type") == "content_block_start":
+                    # The tool's NAME arrives the instant the model starts
+                    # writing the call — its args (a long verdict, the
+                    # fields) stream for seconds after. The UI's block
+                    # appears on this event and fills in on `tool_call`
+                    # (Anton 2026-09-21: the answer card must show the
+                    # moment the tool is invoked, not after its text).
+                    cb = ev.get("content_block") or {}
+                    if cb.get("type") == "tool_use":
+                        name = str(cb.get("name") or "")
+                        self.trace.event("tool_start",
+                                         tool=name.rsplit("__", 1)[-1])
+                elif ev.get("type") == "content_block_delta":
                     d = ev.get("delta") or {}
                     if d.get("type") == "thinking_delta":
                         thinking.append(d.get("thinking", "")

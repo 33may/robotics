@@ -244,6 +244,10 @@ interface Block {
   key: number;
   kind: 'run' | 'prose' | 'tool' | 'state' | 'answer' | 'approval' | 'survey';
   ev?: TraceEvent;
+  /** The `tool_start` stream event: the model has BEGUN writing this call —
+   *  its name is known, its args are still generating. The shell this
+   *  renders is replaced by the real call block when `tool_call` lands. */
+  start?: TraceEvent;
   call?: TraceEvent;
   result?: TraceEvent;
   write?: TraceEvent;
@@ -298,7 +302,22 @@ function toBlocks(events: readonly TraceEvent[]): Block[] {
         // Emitted only inside an answer() call and absorbed there; an
         // orphan's record rides the `answer` event too, so nothing is lost.
         return;
+      case 'tool_start':
+        // The model began writing a tool call: show its shell NOW. The args
+        // (an answer's whole verdict and fields) stream for seconds after,
+        // and until this event existed the answer block waited for them.
+        out.push({ key: ev.seq, kind: 'tool', start: ev });
+        return;
       case 'tool_call': {
+        // The call this start announced has arrived — the shell served its
+        // purpose and must not linger as a duplicate row.
+        for (let k = out.length - 1; k >= 0; k -= 1) {
+          const b = out[k];
+          if (b?.start && !b.call && b.start.tool === ev.tool) {
+            out.splice(k, 1);
+            break;
+          }
+        }
         const block: Block = { key: ev.seq, kind: 'tool', call: ev };
         // Scan forward for this call's result, absorbing the ledger write it
         // triggered. Stop at the next call — a missing result (crash, budget
@@ -699,6 +718,37 @@ function SurveyBlock({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** A tool call the model has STARTED writing (tool_start) whose args are
+ *  still streaming. The answer's shell is the card being born — the label
+ *  and a pulse the instant the tool is invoked (Anton 2026-09-21); other
+ *  tools get the same immediate acknowledgement in their own dress. */
+function StartBlock({ ev }: { ev: TraceEvent }) {
+  const tool = ev.tool ?? 'tool';
+  if (tool === 'answer') {
+    return (
+      <div className="trace-answer" data-running="yes">
+        <div className="trace-answer-label">answer</div>
+        <div className="trace-running">
+          <span className="trace-pulse" />
+          <span>writing the answer…</span>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="trace-tool" data-tool={tool} data-running="yes">
+      <div className="trace-tool-head">
+        <span className="trace-tool-icon">{ICON[tool] ?? ICON.answer}</span>
+        <span className="trace-tool-name">{tool}</span>
+      </div>
+      <div className="trace-running">
+        <span className="trace-pulse" />
+        <span>preparing…</span>
+      </div>
     </div>
   );
 }
@@ -1165,6 +1215,9 @@ export function TracePanel({ config }: PanelProps<TracePanelConfig>) {
                   onOpenImage={setLightbox}
                 />
               );
+            }
+            if (block.start && !block.call) {
+              return <StartBlock key={block.key} ev={block.start} />;
             }
             if (block.call?.tool === 'answer') {
               return (
