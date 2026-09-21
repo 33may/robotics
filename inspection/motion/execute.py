@@ -414,9 +414,8 @@ class UR5eArm:
         def _running():
             nonlocal prog
             st = self.ctrl.getAsyncOperationProgressEx()
-            p = st.progress
-            if p is not None and p > prog:
-                prog = p
+            p = st.progress()      # a METHOD on the binding (-> int), not a
+            prog = max(prog, p)    # property — demo4's survey faulted on that
             return st.isAsyncOperationRunning()
 
         try:

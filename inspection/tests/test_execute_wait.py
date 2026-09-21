@@ -85,9 +85,15 @@ from inspection.motion.execute import BLEND_M, UR5eArm
 
 
 class _Status:
+    """Mirrors rtde_control.AsyncOperationStatus: `progress` is a METHOD
+    returning int — the fake modeling it as an attribute is exactly how the
+    demo4 survey fault slipped past a green suite."""
+
     def __init__(self, running, progress):
-        self.progress = progress
-        self._r = running
+        self._r, self._p = running, progress
+
+    def progress(self):
+        return self._p
 
     def isAsyncOperationRunning(self):
         return self._r
@@ -174,6 +180,16 @@ def test_stop_mid_path_counts_only_reached_waypoints():
     assert ctrl.stops, "a stop must decelerate via stopJ"
 
 
+def test_binding_progress_is_a_method():
+    """Pin the REAL ur_rtde API shape the fake mirrors: AsyncOperationStatus
+    exposes progress() as a callable returning int. If an upstream release
+    turns it into a property, this fails instead of the live survey move."""
+    import rtde_control
+    st = rtde_control.AsyncOperationStatus
+    assert callable(st.progress), "progress became a property — update execute"
+    assert callable(st.isAsyncOperationRunning)
+
+
 def test_unsafe_mid_path_raises_and_stops():
     ctrl = _PathCtrl([_Status(True, 0), _Status(True, 1)])
     arm = _arm(ctrl, _path(4)[0])
@@ -194,6 +210,7 @@ def main():
     test_execute_is_one_blended_path_move()
     test_tiny_segment_zeroes_the_blend()
     test_stop_mid_path_counts_only_reached_waypoints()
+    test_binding_progress_is_a_method()
     test_unsafe_mid_path_raises_and_stops()
     print("OK test_execute_wait")
 
