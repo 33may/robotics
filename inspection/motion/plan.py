@@ -29,7 +29,7 @@ from inspection.motion.rrt import rrt_move
 
 
 def plan_viewpoint(world, ik, q_from, T_target, seed=0, n_branches=3,
-                   step=DEFAULT_STEP, tiers=(1, 2)):
+                   step=DEFAULT_STEP, tiers=(1, 2), q_goal=None):
     """Ladder-plan to a flange pose. Returns (path, report).
 
     path: list of joint waypoints (validated) or None.
@@ -38,19 +38,34 @@ def plan_viewpoint(world, ik, q_from, T_target, seed=0, n_branches=3,
     there but only badly".
     tiers: which rungs may run — (1, 2) is the ladder; a single tier isolates
     one rung for evaluation.
+    q_goal: land on EXACTLY this joint configuration instead of on any IK
+    branch of `T_target`. This is the move transaction's slide-in contract:
+    the corridor is validated on one branch, so the hop must arrive on it —
+    a pose goal lands on whatever branch is nearest, and demo5 (2026-09-21)
+    spent every attempt rejecting arrival branches the corridor could not
+    follow. `T_target` is the pose that config realizes, kept for reporting.
     """
     t0 = time.perf_counter()
     rep = {"enumerated": 0, "endpoint_free": 0, "tier": None, "ms": 0.0,
            "detour": None, "tries": 0, "reason": None}
-    branches = ik.branches(T_target, q_near=q_from)
-    rep["enumerated"] = len(branches)
-    free_all = [q for q in branches if not world.is_colliding(q)]
-    rep["endpoint_free"] = len(free_all)
-    if not free_all:
-        rep["ms"] = (time.perf_counter() - t0) * 1e3
-        rep["reason"] = "no collision-free IK branch"
-        return None, rep
-    free_all.sort(key=lambda q: np.abs(q - q_from).sum())
+    if q_goal is not None:
+        free_all = [np.asarray(q_goal, dtype=float)]
+        rep["enumerated"] = 1
+        if world.is_colliding(free_all[0]):
+            rep["ms"] = (time.perf_counter() - t0) * 1e3
+            rep["reason"] = "goal configuration in collision"
+            return None, rep
+        rep["endpoint_free"] = 1
+    else:
+        branches = ik.branches(T_target, q_near=q_from)
+        rep["enumerated"] = len(branches)
+        free_all = [q for q in branches if not world.is_colliding(q)]
+        rep["endpoint_free"] = len(free_all)
+        if not free_all:
+            rep["ms"] = (time.perf_counter() - t0) * 1e3
+            rep["reason"] = "no collision-free IK branch"
+            return None, rep
+        free_all.sort(key=lambda q: np.abs(q - q_from).sum())
     # tier 1 commits to one branch at a time, so try only the nearest few;
     # tier 2 takes the WHOLE set as an OMPL goal set and picks for itself.
     free = free_all[:n_branches]

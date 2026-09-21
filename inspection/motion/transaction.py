@@ -30,8 +30,17 @@ refuses does pass 2 spend TIER 2 ONLY (OMPL) on the first `MAX_LADDER_TRIES`
 candidates. A refusal now costs ~18 probes + 3 searches, and the common case
 costs ONE direct move.
 
-`None` is the honest answer: the target address is transition-inaccessible and
-the caller marks it blocked. No fallback substitution.
+The corridor is a HINT, not a gate (Anton's ruling, 2026-09-21, demo5): the
+whole hop-then-slide structure exists to make reaching the view EASIER —
+"we should not restrict it, we should encourage it only". So the hop is
+COMMANDED onto the corridor's own IK branch (the probe already computed the
+exact joint config at every corridor sample), which makes the slide-in the
+pre-validated probe chain walked inward. And when the whole corridor search
+still refuses, one plain full-ladder plan to the view pose itself is the
+last resort — the view any way it is reachable beats a refusal.
+
+`None` still means the honest answer, but a much stronger one now: not even
+a direct plan to the view pose exists. The caller marks it blocked.
 
 Every leg is validated against the world passed in, and that world travels
 with the legs (`Legs.world`) so execution can re-validate against the world
@@ -178,15 +187,40 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
 
     # --- the slide-in corridor, and with it the entry candidates ----------
     # Probe how far outward a valid roll-locked slide reaches on the target
-    # ray: that farthest sample IS the pinned entry.
+    # ray: that farthest sample IS the pinned entry. The chain it walks is
+    # KEPT: `chain[i]` is the corridor's own joint config at sample i — the
+    # branch every segment was validated on, the hop's commanded landing,
+    # and (reversed) the slide-in itself.
     corridor = _roll_locked(target.samples, target.roll)
-    reach = 1 + len(_slide(world, ik, corridor[1:],
-                           np.asarray(target.q, dtype=float), step))
+    chain = [np.asarray(target.q, dtype=float)]
+    chain += _slide(world, ik, corridor[1:], chain[0], step)
+    reach = len(chain)
+    # The map is stance-independent (machine: resolvers run q_near=None), so
+    # the chain may be expressed a full revolution away from a wound arm —
+    # the 2026-08-31 wound-wrist incident as a slide-in: commanding that
+    # goal verbatim would unwind ~380 deg through the collision belt.
+    # Aliasing a joint by 2*pi changes no link placement (FK- and
+    # collision-invariant), so shift the WHOLE chain uniformly into the
+    # arm's revolution, per joint, wherever every shifted config stays
+    # inside the joint limits. Only a GENUINE wind fires the shift: at
+    # |diff| >= 3*pi/2 the alias gains at least pi of travel. A marginal
+    # round-up at |diff| barely over pi is a different branch geometry, not
+    # a winding — demo5's [9,1] had wrist_2 3.25 rad away, and aliasing it
+    # produced a wound -5.2 rad goal nothing could plan to.
+    diff = q_now - chain[0]
+    shift = 2 * np.pi * np.round(diff / (2 * np.pi))
+    shift[np.abs(diff) < 1.5 * np.pi] = 0.0
+    if np.any(shift != 0.0):
+        shifted = np.asarray(chain) + shift
+        bad = ((shifted < world.model.lowerPositionLimit)
+               | (shifted > world.model.upperPositionLimit))
+        shift[np.any(bad, axis=0)] = 0.0
+        chain = list(np.asarray(chain) + shift)
     # Widening stops one sample short of the view pose: `e == 0` means the
     # hop lands ON the address, which is the lateral arrival hop-then-slide
-    # exists to prevent (ruled, task 2b). A corridor that is genuinely ONE
-    # sample long keeps it as the honest last resort — refusing there would
-    # mark cells transition-inaccessible that Stage A proved reachable.
+    # exists to prevent (ruled, task 2b) — a corridor that is genuinely ONE
+    # sample long keeps it as the corridor's own last resort. Lateral
+    # arrival otherwise lives only in the final fallback below.
     wide = list(range(reach - 1, 0, -1)) or [0]      # reach 1: the last resort
     entries = wide[:max_entries]
 
@@ -204,19 +238,20 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
     def attempt(e, j, tiers):
         """One hop-and-slide-in try, or None."""
         q_out = out_chain[j - 1] if j else q_now
+        # The hop is COMMANDED onto the corridor's own branch: `q_goal` is
+        # the exact config the probe validated at the entry, so the slide-in
+        # is the probe chain walked inward — single-branch by construction.
+        # A pose-goal hop lands on whatever branch is nearest instead, and
+        # demo5 (2026-09-21) rejected 21/21 such arrivals because the
+        # corridor could not be followed from the landed branch.
         path, _rep = planner(world, ik, q_out, corridor[e].T_flange,
-                             seed=seed, step=step, tiers=tiers)
+                             seed=seed, step=step, tiers=tiers,
+                             q_goal=chain[e])
         if path is None:
             return None
-        # The hop picks its own branch at the entry pose, so the slide-in is
-        # derived from where the hop actually LANDS, not from the probe
-        # above — that is what keeps it a single-branch approach.
-        slide = [np.asarray(path[-1], dtype=float)]
-        inward = _slide(world, ik, list(reversed(corridor[:e])), slide[0],
-                        step)
-        if len(inward) != e:
-            return None                   # arrival branch cannot slide in
-        slide.extend(inward)
+        if not np.allclose(np.asarray(path[-1], dtype=float), chain[e]):
+            return None               # planner ignored the commanded branch
+        slide = [np.asarray(chain[i], dtype=float) for i in range(e, -1, -1)]
         return Legs(list(out_chain[:j]),
                     [np.asarray(q, dtype=float) for q in path], slide, world)
 
@@ -233,4 +268,18 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
             legs = attempt(e, j, tiers)
             if legs is not None:
                 return legs
+
+    # --- last resort: the view any way it is reachable (Anton, 2026-09-21) -
+    # The corridor is a hint that buys a clean radial approach, never a
+    # reason to refuse a view the plain ladder can reach. Slide out to the
+    # most open stance the out-chain knows and spend ONE full ladder on the
+    # view pose itself, any branch; only when that refuses too is the
+    # address truly inaccessible.
+    q_start = out_chain[-1] if out_chain else q_now
+    path, _rep = planner(world, ik, q_start, corridor[0].T_flange,
+                         seed=seed, step=step, tiers=(1, 2))
+    if path is not None:
+        return Legs(list(out_chain),
+                    [np.asarray(q, dtype=float) for q in path],
+                    [np.asarray(path[-1], dtype=float)], world)
     return None

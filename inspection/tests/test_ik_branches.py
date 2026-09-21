@@ -75,9 +75,37 @@ def test_wound_wrist_survey_plans_tier1():
         f"expected the straight 20 deg move on tier 1, got {rep}")
 
 
+def test_joint_goal_lands_exactly_there():
+    """`q_goal` is the move transaction's slide-in contract (demo5,
+    2026-09-21): the hop must end on the corridor's own branch — EXACTLY,
+    in the revolution the caller commanded, because the slide-in continues
+    from that config. (Re-expressing a wound chain into the arm's
+    revolution is the transaction's job, before it commands the goal.)
+    A colliding goal config is an honest refusal, before any planning."""
+    from inspection.cell.world import RobotCell
+    from inspection.motion.plan import plan_viewpoint
+
+    world, ik = RobotCell(), UR5eIK()
+    T = ik.fk(Q_SURVEY)
+    q_goal = min(ik.branches(T, q_near=Q_WOUND),
+                 key=lambda q: np.abs(q - Q_WOUND).sum())
+    path, rep = plan_viewpoint(world, ik, Q_WOUND, T, seed=0, q_goal=q_goal)
+    assert path is not None, rep
+    assert np.allclose(path[-1], q_goal), "landed off the commanded config"
+    assert rep["enumerated"] == rep["endpoint_free"] == 1
+
+    q_bad = Q_SURVEY.copy()
+    q_bad[2] = 0.0                       # elbow straightened into the cell
+    assert world.is_colliding(q_bad), "fixture goal must collide"
+    path, rep = plan_viewpoint(world, ik, Q_WOUND, ik.fk(q_bad), q_goal=q_bad)
+    assert path is None
+    assert rep["reason"] == "goal configuration in collision"
+
+
 if __name__ == "__main__":
     test_default_stays_wrapped()
     test_alias_lands_in_the_arms_revolution()
     test_alias_never_crosses_a_hard_stop()
     test_wound_wrist_survey_plans_tier1()
+    test_joint_goal_lands_exactly_there()
     print("ok")

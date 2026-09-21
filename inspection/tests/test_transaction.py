@@ -79,28 +79,34 @@ class _Keepout:
         return self._w.path_valid(path, **kw)
 
 
-_Call = namedtuple("_Call", ["q_from", "T", "tiers", "step"])
+_Call = namedtuple("_Call", ["q_from", "T", "tiers", "step", "q_goal"])
 
 
 class _StubPlanner:
     """Counting stand-in for plan_viewpoint. Records every call — start
-    config, entry pose and the RUNGS it was allowed to use — and answers with
-    a two-waypoint move to the nearest collision-free branch;
-    `fail(stub, q_from, T)` refuses instead."""
+    config, entry pose, the RUNGS it was allowed to use and the commanded
+    landing config — and answers with a two-waypoint move onto `q_goal`
+    (the transaction's contract), or onto the nearest collision-free branch
+    when no config is commanded. `fail(stub, q_from, T)` refuses instead;
+    `worst=True` IGNORES the commanded config and lands on the ugliest
+    branch — a contract-violating planner, on purpose."""
 
     def __init__(self, fail=None, worst=False):
         self.calls = []
         self._fail = fail or (lambda stub, q_from, T: False)
-        self._worst = worst          # land on the UGLIEST branch on purpose
+        self._worst = worst          # ignore q_goal, land ugly — on purpose
 
     def __call__(self, world, ik, q_from, T_target, seed=0, **kw):
         q_from = np.asarray(q_from, dtype=float)
         T = np.asarray(T_target, dtype=float)
+        q_goal = kw.get("q_goal")
         self.calls.append(_Call(q_from, T,
                                 tuple(kw.get("tiers", (1, 2))),
-                                kw.get("step")))
+                                kw.get("step"), q_goal))
         if self._fail(self, q_from, T):
             return None, {"reason": "stub refusal"}
+        if q_goal is not None and not self._worst:
+            return [q_from, np.asarray(q_goal, dtype=float)], {"tier": 1}
         free = [q for q in ik.branches(T, q_near=q_from)
                 if not world.is_colliding(q)]
         if not free:
@@ -176,14 +182,22 @@ def test_no_out_depth_plans_is_none():
                             planner=stub)
 
     assert legs is None
-    assert 1 < len(stub.entries) <= MAX_ENTRY_TRIES, "widen, but bounded"
-    assert len(stub.probes) + len(stub.ladders) == len(stub.calls)
-    assert len(stub.probes) <= MAX_ENTRY_TRIES * len(current.samples)
-    assert len(stub.ladders) == MAX_LADDER_TRIES, "pass 2 is capped"
-    assert all(c.tiers == (2,) for c in stub.ladders), \
+    # the LAST call is the last resort: one full ladder at the view pose
+    # itself (Anton's ruling 2026-09-21 — the corridor is a hint, not a gate)
+    fallback, corridor_calls = stub.calls[-1], stub.calls[:-1]
+    assert fallback.tiers == (1, 2) and fallback.q_goal is None
+    assert np.allclose(fallback.T, target.samples[0].T_flange)
+    probes = [c for c in corridor_calls if c.tiers == (1,)]
+    ladders = [c for c in corridor_calls if 2 in c.tiers]
+    entries = {tuple(np.round(c.T[:3, 3], 9)) for c in corridor_calls}
+    assert 1 < len(entries) <= MAX_ENTRY_TRIES, "widen, but bounded"
+    assert len(probes) + len(ladders) == len(corridor_calls)
+    assert len(probes) <= MAX_ENTRY_TRIES * len(current.samples)
+    assert len(ladders) == MAX_LADDER_TRIES, "pass 2 is capped"
+    assert all(c.tiers == (2,) for c in ladders), \
         "pass 2 asks for tier 2 ALONE — tier 1 is deterministic and already " \
         "ran on every candidate, so replaying it burns a ladder slot"
-    assert all(c.tiers == (1,) for c in stub.calls[:len(stub.probes)]), \
+    assert all(c.tiers == (1,) for c in corridor_calls[:len(probes)]), \
         "pass 2 never starts before the cheap sweep is exhausted"
 
 
@@ -383,11 +397,14 @@ def test_corridor_survives_the_roll_change():
     assert np.isclose(depths[-1][0], target.depth)
 
 
-def test_widening_never_arrives_laterally():
-    """Ruled floor (task 2b): with a real corridor the entry never widens all
-    the way to the view pose itself — `e == 0` is the lateral arrival. Here a
-    keep-out leaves exactly two corridor samples, so the ONLY entry the search
-    may use is sample 1, and a total refusal must stay a refusal."""
+def test_the_view_pose_is_offered_only_as_the_last_resort():
+    """Ruled floor (task 2b): the corridor entry never widens all the way to
+    the view pose — `e == 0` is the lateral arrival. Since Anton's 2026-09-21
+    ruling (the corridor is a hint, not a gate) the view pose IS offered
+    once, but only as the FINAL fallback: a full-ladder plan with no
+    commanded branch, after every corridor entry refused. Here a keep-out
+    leaves exactly two corridor samples, so the only corridor entry is
+    sample 1."""
     from inspection.motion.transaction import plan_transaction
     w, ik = _box_world()
     current, q_now = _current(w, ik)
@@ -400,21 +417,28 @@ def test_widening_never_arrives_laterally():
                             planner=stub)
 
     assert legs is None
-    assert len(stub.entries) == 1, "one corridor entry above the view pose"
-    assert not any(np.allclose(c.T, target.T_flange) for c in stub.calls), \
-        "e == 0 (the view pose itself) is never offered as an entry"
+    view_calls = [i for i, c in enumerate(stub.calls)
+                  if np.allclose(c.T, target.T_flange)]
+    assert view_calls == [len(stub.calls) - 1], \
+        "the view pose is offered exactly once, as the last call"
+    assert stub.calls[-1].tiers == (1, 2) and stub.calls[-1].q_goal is None
+    corridor_calls = stub.calls[:-1]
+    assert all(c.q_goal is not None for c in corridor_calls), \
+        "every corridor entry commands its branch"
     d_entry, _ = _ray_pose(ik, np.asarray(target.samples[1].q), ray)
-    assert np.allclose(stub.entries[0], target.samples[1].T_flange), \
-        f"the one entry is the second sample at {d_entry:.2f} m"
+    assert all(np.allclose(c.T, target.samples[1].T_flange)
+               for c in corridor_calls), \
+        f"the one corridor entry is the second sample at {d_entry:.2f} m"
 
     # ...and the floor is not a slicing accident: a full corridor with room
-    # for exactly ONE entry still refuses to offer the view pose, and asking
-    # for zero entries is a caller error, not a licence to arrive laterally.
+    # for exactly ONE entry still keeps the view pose out of the corridor
+    # search, and asking for zero entries is a caller error.
     narrow = _StubPlanner(fail=lambda s, q, T: True)
     assert plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
                             planner=narrow, max_entries=1) is None
-    assert len(narrow.entries) == 1
-    assert not any(np.allclose(c.T, target.T_flange) for c in narrow.calls)
+    assert not any(np.allclose(c.T, target.T_flange)
+                   for c in narrow.calls[:-1])
+    assert np.allclose(narrow.calls[-1].T, target.T_flange)
     try:
         plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
                          planner=_StubPlanner(), max_entries=0)
@@ -442,11 +466,37 @@ def test_one_sample_corridor_still_plans_laterally():
     assert np.allclose(ik.fk(legs.slide_in[0]), target.T_flange, atol=1e-6)
 
 
-def test_hop_that_cannot_slide_in_is_refused():
-    """The slide-in is derived from the branch the hop LANDS on, and it must
-    reach the view pose. A hop that arrives on a branch no slide can follow
-    inward is not a transaction — it is an honest refusal, never a truncated
-    approach that stops short of the address."""
+def test_hop_is_commanded_onto_the_corridors_branch():
+    """The demo5 fix (2026-09-21): the corridor probe's own joint config at
+    the entry rides to the planner as `q_goal`, the winning hop ends exactly
+    there, and the slide-in is the probe chain walked inward. A pose-goal
+    hop landed on whatever branch was nearest and the slide-in re-derivation
+    rejected 21/21 arrivals in demo5."""
+    from inspection.motion.transaction import plan_transaction
+    w, ik = _box_world()
+    current, q_now = _current(w, ik)
+    target = _cell(w, ik, 6, 2)
+    stub = _StubPlanner()
+
+    legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
+                            planner=stub)
+
+    assert legs is not None
+    c = stub.calls[-1]                       # the one, winning attempt
+    assert c.q_goal is not None, "the corridor entry commands its branch"
+    assert np.allclose(ik.fk(np.asarray(c.q_goal)), c.T, atol=1e-6), \
+        "the commanded config realizes the entry pose"
+    assert np.array_equal(legs.hop[-1], legs.slide_in[0])
+    assert np.allclose(np.asarray(c.q_goal), legs.slide_in[0])
+
+
+def test_planner_that_ignores_the_commanded_branch_cannot_corrupt_the_slide():
+    """The slide-in is the corridor's pre-validated chain, so a hop that does
+    not end on the commanded config is rejected — a planner that ignores
+    `q_goal` can never smuggle a foreign branch into the slide. The
+    transaction still arrives, via the last resort: one plain plan onto the
+    view pose, lateral, on whatever branch it found (the ruling: a reachable
+    view beats a refusal)."""
     from inspection.motion.transaction import plan_transaction
     w, ik = _box_world()
     current, q_now = _current(w, ik)
@@ -456,8 +506,35 @@ def test_hop_that_cannot_slide_in_is_refused():
     legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_now,
                             planner=stub)
 
-    assert legs is None
-    assert len(stub.calls) > 1, "every out-depth and entry was actually tried"
+    assert legs is not None
+    assert len(stub.calls) > 1, "the corridor search really swept first"
+    assert stub.calls[-1].q_goal is None, "the last resort commands no branch"
+    assert len(legs.slide_in) == 1 and \
+        np.array_equal(legs.hop[-1], legs.slide_in[0]), "lateral last resort"
+    assert np.allclose(ik.fk(legs.slide_in[0]), target.T_flange, atol=1e-6)
+
+
+def test_chain_re_expresses_into_the_arms_revolution():
+    """The map is stance-independent (machine: resolvers run q_near=None),
+    so the corridor chain may live a full revolution away from a wound arm —
+    the 2026-08-31 wound-wrist incident as a slide-in. The chain is
+    alias-shifted into the arm's revolution before the hop is commanded onto
+    it: same link placements, no 380 deg unwind."""
+    from inspection.motion.transaction import plan_transaction
+    w, ik = _box_world()
+    current, q_now = _current(w, ik)
+    q_wound = q_now.copy()
+    q_wound[3] += 2 * np.pi              # same arm, wound wrist_1 revolution
+    assert not w.is_colliding(q_wound), "aliasing must not change collision"
+    target = _cell(w, ik, 6, 2)
+
+    legs = plan_transaction(w, ik, T_FLANGE_CAM, current, target, q_wound,
+                            planner=_StubPlanner())
+
+    assert legs is not None
+    assert abs(legs.slide_in[-1][3] - q_wound[3]) <= np.pi + 1e-9, \
+        "the commanded chain must live in the arm's revolution"
+    assert np.allclose(ik.fk(legs.slide_in[-1]), target.T_flange, atol=1e-6)
 
 
 def test_no_current_ray_means_no_slide_out():
