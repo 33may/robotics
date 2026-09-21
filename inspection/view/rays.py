@@ -9,7 +9,8 @@ from collections import namedtuple
 
 import numpy as np
 
-from inspection.view.faceview import face_cam_pose, face_frame, top_align_roll
+from inspection.view.faceview import (face_cam_pose, face_corners, face_frame,
+                                      top_align_roll)
 from inspection.view.grid import H_BINS, R_MAX, V_ELEVATIONS
 from inspection.view.viewsphere import ROLLS
 
@@ -216,8 +217,42 @@ def _d_contain(fy, height_px, half_span):
     ruling, task-2-report.md): it cannot cap a shift at a fixed MIN_RANGE_M
     depth, it becomes each family member's own MINIMUM admissible depth.
     FOV_MARGIN_PX keeps the promise on the real sensor (asymmetric
-    principal point) instead of the ideal one."""
+    principal point) instead of the ideal one.
+
+    Since 2026-09-21 this is the ANALYTIC REFERENCE (tests pin against it);
+    the face floors themselves come from `_contain_depth` — walked and
+    checked, not bounded."""
     return fy * half_span / (height_px / 2.0 - FOV_MARGIN_PX)
+
+
+def _contain_depth(corners, anchor, direction, roll, fy, height_px):
+    """Closest RAY_STEP_M grid depth whose frame contains every corner at
+    this roll, or None within R_MAX — containment found the tunnel-slide
+    way (Anton, 2026-09-21: "use the same tunnel slide idea to find the
+    closest orthogonal"): each candidate depth is CHECKED against the real
+    projection of the face's own corners, never bounded by an extent
+    formula. The half-diagonal bound this replaces stood ~10 cm too far
+    off an elongated box's top face. Containment is monotone in depth
+    (backing straight off shrinks the projection), so the first containing
+    grid depth is the floor, and the grid is `sample_ray`'s own, so the
+    floor names an actually samplable depth. FOV_MARGIN_PX absorbs the
+    real sensor's asymmetric principal point, as everywhere."""
+    corners = np.asarray(corners, dtype=float)
+    width_px = height_px * 16.0 / 9.0
+    d0 = float(np.ceil(MIN_RANGE_M / RAY_STEP_M)) * RAY_STEP_M
+    for d in np.arange(d0, R_MAX + 1e-9, RAY_STEP_M):
+        T = face_cam_pose(anchor, direction, float(d), roll)
+        pc = (corners - T[:3, 3]) @ np.column_stack(
+            [-T[:3, 1], -T[:3, 2], T[:3, 0]])
+        if np.any(pc[:, 2] <= 1e-9):
+            continue
+        u = fy * pc[:, 0] / pc[:, 2] + width_px / 2.0
+        v = fy * pc[:, 1] / pc[:, 2] + height_px / 2.0
+        if (u.min() >= FOV_MARGIN_PX and u.max() <= width_px - FOV_MARGIN_PX
+                and v.min() >= FOV_MARGIN_PX
+                and v.max() <= height_px - FOV_MARGIN_PX):
+            return float(d)
+    return None
 
 
 def face_family(prim, face, fy, height_px):
@@ -234,39 +269,40 @@ def face_family(prim, face, fy, height_px):
     First family member with samples (at its own d_min floor) wins; no
     member -> face inaccessible, honestly."""
     center, normal, (ext_a, ext_b) = face_frame(prim, face)
+    corners = face_corners(prim, face)
     out = []
-    # Horizontal containment: the face's width must also fit. D405 modes
-    # are 16:9 with fx≈fy (647.5 vs 646.9), so the width bound reuses fy.
-    width_px = height_px * 16.0 / 9.0
-    d_wide = fy * (ext_a / 2.0) / (width_px / 2.0 - FOV_MARGIN_PX)
     if abs(normal[2]) < 0.5:                      # side faces shift up
         # d_min <= R_MAX is the real cap now; equivalently
         # s <= R_MAX*(height_px/2-margin)/fy - ext_b/2 (same shape as the
         # old cap, R_MAX in place of MIN_RANGE_M — enumerate while a depth
-        # exists).
+        # exists). Both ROLLS see the same containment (a 180-deg image
+        # rotation under symmetric margins), so roll 0 checks for the pair.
         cap = R_MAX * (height_px / 2.0 - FOV_MARGIN_PX) / fy - ext_b / 2.0
         s = 0.0
         while s <= cap + 1e-9:
-            d_min = max(MIN_RANGE_M, d_wide,
-                        _d_contain(fy, height_px, s + ext_b / 2.0))
-            out.append((Ray(tuple(center + np.array([0, 0, s])),
-                            tuple(normal)), float(s), 0.0, float(d_min),
-                        tuple(ROLLS)))
+            anchor = center + np.array([0.0, 0.0, s])
+            d_min = _contain_depth(corners, anchor, normal, 0.0,
+                                   fy, height_px)
+            if d_min is None:
+                break                 # a taller shift only sees less
+            out.append((Ray(tuple(anchor), tuple(normal)), float(s), 0.0,
+                        float(d_min), tuple(ROLLS)))
             s += RAY_STEP_M
     else:                                         # top face: exact only
         # The camera ROLLS WITH THE BOX (Anton 2026-09-21, demo7: the yawed
         # box came back diagonal in the top capture): the exact member
         # carries the yaw-aligned roll pair, wider footprint side along the
         # image width axis — alignment holds mod pi, so the 180-deg
-        # collision flip keeps it. Containment still bounds the
-        # half-DIAGONAL, which is safe under any yaw-fit error (demo1: the
-        # unrotated bound cut the top corners by 41 px); tightening it to
-        # the aligned rectangle is a separate closeness decision.
-        half_diag = float(np.hypot(ext_a, ext_b)) / 2.0
-        d_min = max(MIN_RANGE_M, _d_contain(fy, height_px, half_diag))
+        # collision flip keeps it. The floor is the walked corner check at
+        # that aligned roll, so the elongated box's top camera stands where
+        # the ROTATED RECTANGLE fits, not where its diagonal would
+        # (~10 cm closer on demo7's 2.5:1 box). None = no depth within
+        # R_MAX contains the face: no exact member, the cone still offers.
         r0 = top_align_roll(prim)
-        out.append((Ray(tuple(center), tuple(normal)), 0.0, 0.0,
-                    float(d_min), (r0, r0 + np.pi)))
+        d_min = _contain_depth(corners, center, normal, r0, fy, height_px)
+        if d_min is not None:
+            out.append((Ray(tuple(center), tuple(normal)), 0.0, 0.0,
+                        float(d_min), (r0, r0 + np.pi)))
     a = np.array([0.0, 0.0, 1.0])
     if abs(normal @ a) > 0.95:
         a = np.array([1.0, 0.0, 0.0])

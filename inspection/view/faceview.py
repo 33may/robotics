@@ -70,6 +70,17 @@ def face_cam_pose(center, normal, r, roll=0.0):
     return T
 
 
+def face_corners(prim, face):
+    """The four corners of `face`'s wall, base frame — the geometry a
+    containment check projects, corner by corner, instead of bounding by
+    an extent formula."""
+    axis, sign, (i, j) = _FACE_DEF[face]
+    c, _n, (ea, eb) = face_frame(prim, face)
+    a1, a2 = prim.axes[:, i], prim.axes[:, j]
+    return np.array([c + sa * (ea / 2.0) * a1 + sb * (eb / 2.0) * a2
+                     for sa in (-1.0, 1.0) for sb in (-1.0, 1.0)])
+
+
 def top_align_roll(prim):
     """Roll about the top view's boresight that lays the box footprint's
     WIDER side along the image WIDTH axis (Anton's ruling, 2026-09-21,

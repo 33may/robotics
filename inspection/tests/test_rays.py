@@ -167,6 +167,39 @@ def test_top_family_rolls_align_image_width_with_the_wider_side():
         "side faces keep the horizon-locked ROLLS walk"
 
 
+def test_face_floor_is_walked_not_bounded():
+    """Anton 2026-09-21: "use the same tunnel slide idea to find the
+    closest orthogonal" — the containment floor is the first RAY_STEP_M
+    grid depth whose real projection contains the face's own four corners,
+    not an extent-formula bound. On an elongated box the top's old
+    half-diagonal bound stood ~13 cm too far out; and one grid step closer
+    than the walked floor must NOT contain the face (the floor is tight)."""
+    from inspection.view.faceview import face_cam_pose, face_corners
+    from inspection.view.rays import (FOV_MARGIN_PX, RAY_STEP_M, _d_contain,
+                                      face_family)
+    fy, H = 647.0, 720
+    p = _box_prim(l=0.30, w=0.083, h=0.06, yaw=0.35)
+    ray, s, theta, d_min, rolls = face_family(p, "top", fy, H)[0]
+    half_diag = float(np.hypot(0.30, 0.083)) / 2.0
+    assert d_min < _d_contain(fy, H, half_diag) - 0.05, \
+        "the walked floor must beat the diagonal bound by decimetres"
+    corners = face_corners(p, "top")
+
+    def contained(d):
+        T = face_cam_pose(np.array(ray.anchor), np.array(ray.direction),
+                          float(d), rolls[0])
+        pc = (corners - T[:3, 3]) @ np.column_stack(
+            [-T[:3, 1], -T[:3, 2], T[:3, 0]])
+        W = H * 16.0 / 9.0
+        u = fy * pc[:, 0] / pc[:, 2] + W / 2.0
+        v = fy * pc[:, 1] / pc[:, 2] + H / 2.0
+        return (u.min() >= FOV_MARGIN_PX and u.max() <= W - FOV_MARGIN_PX
+                and v.min() >= FOV_MARGIN_PX and v.max() <= H - FOV_MARGIN_PX)
+
+    assert contained(d_min)
+    assert not contained(d_min - RAY_STEP_M), "one sample closer clips"
+
+
 def test_resolve_cell_picks_closest_sample():
     """The resolver returns the closest ADMISSIBLE sample — admissible now
     includes the whole-object containment floor (2026-09-17), so the raw
