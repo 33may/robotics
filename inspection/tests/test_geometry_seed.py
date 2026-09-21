@@ -316,17 +316,19 @@ def test_min_yaw_aabb_recovers_a_rotated_box():
 
 
 def test_object_box_margins_and_floor():
-    """+4 cm per dim, 5 cm floor, pose carries the yaw — the contract all
-    three callers (planner box, UI box, sweep's ranking box) share."""
-    from inspection.cell.geometry import min_yaw_aabb, object_box
+    """BOX_MARGIN_M per side, 5 cm floor, pose carries the yaw — the contract
+    all three callers (planner box, UI box, sweep's ranking box) share. The
+    assertion pins the RELATION to the constant, not a number: the margin is
+    a tuning knob (2 cm -> 1 cm for the ray-views demo)."""
+    from inspection.cell.geometry import BOX_MARGIN_M, min_yaw_aabb, object_box
     rng = np.random.default_rng(4)
     pts = np.column_stack([rng.uniform(0, 0.1, 500),
                            rng.uniform(0, 0.1, 500),
                            rng.uniform(0, 0.005, 500)])   # near-flat slab
     _, raw, yaw = min_yaw_aabb(pts, pct=1.0)
     dims, pose = object_box(pts)
-    assert np.allclose(dims[:2], raw[:2] + 0.04, atol=1e-9)
-    assert dims[2] == 0.05                                # floor beats 5mm+4cm
+    assert np.allclose(dims[:2], raw[:2] + 2 * BOX_MARGIN_M, atol=1e-9)
+    assert dims[2] == 0.05                    # floor beats 5mm + 2*margin
     assert len(pose) == 6 and pose[5] == yaw
 
 

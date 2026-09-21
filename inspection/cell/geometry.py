@@ -63,6 +63,11 @@ JUMP_GATE_M = 0.08
 #: Percentile trimmed off each end when sizing the COLLISION box. Raw min/max
 #: let 4.7% of points triple the box on 2408-cup1 until it contained the arm.
 BOX_PCT = 1.0
+#: Collision-box inflation per side, on top of which the world's query-time
+#: padding (2 cm, floor of the step*lever contract) rides. 2 cm -> 1 cm for
+#: the ray-views demo (Anton 21-09): total object standoff 3 cm, still ~3x
+#: the measured 5-10 mm hand-eye/FK pose-error floor.
+BOX_MARGIN_M = 0.01
 MAX_RANGE_M = 0.60         # depth beyond this is noise for our cell
 MIN_RANGE_M = 0.13         # gripper fingers live at 70-120mm from the camera —
                            # cut them out of every cloud (crude arm mask, v1)
@@ -326,12 +331,12 @@ def object_box(points: np.ndarray, pct: float = BOX_PCT
     `collect._mirror_object_box` (the sweep's ranking world) must all say
     the same thing, and before this helper each carried its own copy of the
     margin math — the UI's had even drifted to an untrimmed AABB. Margins:
-    2 cm each side (+4 cm per dim), 5 cm floor — coal adds its own padding
-    per side on top, and the pct trim slightly under-reads the object,
-    which those two margins are sized to cover (see `aabb`).
+    `BOX_MARGIN_M` each side, 5 cm floor — the world's query-time padding
+    adds its own per side on top, and the pct trim slightly under-reads the
+    object, which those two margins are sized to cover (see `aabb`).
     """
     center, dims, yaw = min_yaw_aabb(points, pct=pct)
-    dims = np.maximum(dims + 0.04, 0.05)
+    dims = np.maximum(dims + 2 * BOX_MARGIN_M, 0.05)
     return dims, [*center.tolist(), 0.0, 0.0, yaw]
 
 
