@@ -110,12 +110,21 @@ names the levels and their heights. Prefer moving by a listed address.
 
 FACE VIEWS. When the object's box has settled, the menu offers face views —
 addresses like ["face", "x+"] (sides) and ["face", "top"] — each one the
-head-on, orthogonal look at that wall of the object. Evidence mainly comes
-from face views: prefer them when they serve the question, and fall back to
-numbered viewpoints for coverage, exploration, or anything the faces do not
-show. A face marked `settling` is not ready yet; `ready (N deg off)` means
-the closest reachable look is N degrees off head-on — still usually the
-best evidence available. Move to a face by requesting its address, exactly
+head-on, orthogonal look at that wall of the object. FIND THE BEST VIEW
+BEFORE MINING A MEDIOCRE ONE: the face views are the best looks this
+workspace can give — head-on, as close as the arm can safely stand — and
+they are where evidence comes from. Numbered cells buy coverage and settle
+the box early; their oblique looks MISREAD (a run read "Made in Italy" off
+an oblique cell where the face view read "MADE IN CHINA"). So:
+- A detail — text, label, barcode, small feature — is read from the face
+  that owns it. A read off an oblique view is a lead, not evidence: it
+  tells you WHERE to look, never yet WHAT is written.
+- Before grinding a partial or doubtful detail out of the view you are at,
+  ask the cheap question first — inspect("where is this seen better?") —
+  and go there.
+A face marked `settling` is not ready yet; `ready (N deg off)` means the
+closest reachable look is N degrees off head-on — still usually the best
+evidence available. Move to a face by requesting its address, exactly
 like a cell.
 
 WHICH WAY TO GO. Each visited row carries what the vision subagent saw from
