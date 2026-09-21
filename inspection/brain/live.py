@@ -193,10 +193,20 @@ class SupervisorMover:
         if got is None:
             return False, "the planner did not answer in time; nothing moved."
         if got[0] != "previewing":
-            # The honest statement is the class of failure, not a guess.
+            # The honest statement is the class of failure, not a guess —
+            # and the one fact the orchestrator cannot know on its own:
+            # plans are STANCE-DEPENDENT. Demo10 (2026-09-21) retried a
+            # refused face from wherever it happened to stand and then gave
+            # up on the view entirely; the message must teach the retry
+            # that actually works.
             return False, (f"{note}{_json(cell)} could not be planned — no "
-                           f"collision-free path was found. The arm has not "
-                           f"moved.")
+                           f"collision-free path was found from the arm's "
+                           f"current stance. The arm has not moved. Plans "
+                           f"are stance-dependent: the same view often "
+                           f"plans after standing somewhere else first. "
+                           f"For a face view, move to a numbered cell on "
+                           f"that face's side of the sphere, then request "
+                           f"the face again.")
 
         # 2. the human gate. Deliberately un-timed — unless this mover was
         #    built with `auto_confirm_s`, in which case the gate is a dwell:
