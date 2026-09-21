@@ -1519,10 +1519,12 @@ class Supervisor:
                              self.rig.intr["height"])
         if not family:
             return None
-        ray, _shift, _theta, d_min = next((m for m in family if m[2] == 0.0),
-                                          family[0])
+        ray, _shift, _theta, d_min, rolls = next(
+            (m for m in family if m[2] == 0.0), family[0])
+        # the member's own base roll, so the top face's dim marker previews
+        # the yaw-aligned camera the sampler will actually resolve
         return face_cam_pose(np.asarray(ray.anchor),
-                             np.asarray(ray.direction), d_min)
+                             np.asarray(ray.direction), d_min, rolls[0])
 
     def _face_states(self):
         """Face menu block: {face: {status, off_angle_deg}} (design §menu)."""

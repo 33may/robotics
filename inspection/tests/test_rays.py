@@ -104,11 +104,11 @@ def test_face_family_shifts_before_tilts():
     from inspection.view.rays import face_family
     p = _box_prim()                      # copied from test_faceview.py
     fam = face_family(p, "y-", fy=647.0, height_px=720)
-    shifts = [(s, t) for _, s, t, _ in fam if t == 0.0]
-    tilts = [(s, t) for _, s, t, _ in fam if t > 0.0]
+    shifts = [(s, t) for _, s, t, _, _ in fam if t == 0.0]
+    tilts = [(s, t) for _, s, t, _, _ in fam if t > 0.0]
     assert shifts and tilts
     # the family is ordered: ALL shift entries strictly before ANY tilt
-    assert [t for _, _, t, _ in fam[:len(shifts)]] == [0.0] * len(shifts)
+    assert [t for _, _, t, _, _ in fam[:len(shifts)]] == [0.0] * len(shifts)
     assert [s for s, _ in shifts] == sorted(s for s, _ in shifts)
     assert all(s == 0.0 for s, _ in tilts)
 
@@ -122,18 +122,49 @@ def test_face_family_dmin_is_containment():
     p = _box_prim()
     fam = face_family(p, "y-", fy=647.0, height_px=720)
     ext_b = p.params["extents"][2]
-    shifts = [(s, d_min) for _, s, t, d_min in fam if t == 0.0]
+    shifts = [(s, d_min) for _, s, t, d_min, _ in fam if t == 0.0]
     for s, d_min in shifts:
         assert d_min >= _d_contain(647.0, 720, s + ext_b / 2.0) - 1e-9
         assert d_min <= R_MAX + 1e-9
     assert [d for _, d in shifts] == sorted(d for _, d in shifts)
-    assert all(d_min >= MIN_RANGE_M - 1e-9 for _, _, _, d_min in fam)
+    assert all(d_min >= MIN_RANGE_M - 1e-9 for _, _, _, d_min, _ in fam)
     # the 15cm _box_prim face: s=0 is now a member with a *floor* depth
     # (not a rejection) — this is the exact number that broke the old
     # fixed-MIN_RANGE_M cap.
     s0, d0 = shifts[0]
     assert s0 == 0.0
     assert d0 >= _d_contain(647.0, 720, ext_b / 2.0) - 1e-9
+
+
+def test_top_family_rolls_align_image_width_with_the_wider_side():
+    """Anton 2026-09-21 (demo7): the top capture framed the yawed box
+    diagonally — the top view's camera must rotate WITH the box, wider
+    footprint side along the image width axis. The exact top member carries
+    the yaw-aligned roll pair (pi apart, so the collision flip keeps the
+    alignment); side faces keep the plain ROLLS walk — their roll is pinned
+    by the horizon."""
+    from inspection.view.faceview import face_cam_pose
+    from inspection.view.rays import face_family
+    from inspection.view.viewsphere import ROLLS
+    p = _box_prim(l=0.20, w=0.08, h=0.06, yaw=0.6)     # wider side = box x
+    fam = face_family(p, "top", fy=647.0, height_px=720)
+    ray, s, theta, d_min, rolls = fam[0]
+    assert theta == 0.0
+    assert len(rolls) == 2 and np.isclose(rolls[1] - rolls[0], np.pi)
+    wide = np.asarray(p.axes)[:, 0]
+    for r in rolls:
+        T = face_cam_pose(np.array(ray.anchor), np.array(ray.direction),
+                          float(d_min), r)
+        width_axis = T[:3, 1]                          # cam +Y: image width
+        assert abs(width_axis @ wide) > 0.999, \
+            f"roll {r:.2f} leaves the wider side {width_axis @ wide:.3f} off"
+    # ...and the alignment tracks the yaw, it is not a lucky constant
+    p2 = _box_prim(l=0.20, w=0.08, h=0.06, yaw=1.2)
+    r2 = face_family(p2, "top", fy=647.0, height_px=720)[0][4]
+    assert not np.isclose(rolls[0], r2[0])
+    side = face_family(p, "y-", fy=647.0, height_px=720)
+    assert all(np.allclose(m[4], ROLLS) for m in side), \
+        "side faces keep the horizon-locked ROLLS walk"
 
 
 def test_resolve_cell_picks_closest_sample():
@@ -202,11 +233,13 @@ def test_face_family_contains_whole_rotated_face():
     for face in ("top", "y-", "x+"):
         ax, sg, _ = _FACE_DEF[face]
         four = corners8[[i for i in range(8) if sgn[i][ax] == sg]]
-        for ray, s, theta, d_min in face_family(p, face, fy, H):
+        for ray, s, theta, d_min, rolls in face_family(p, face, fy, H):
             if theta != 0.0:
                 continue                              # cone: exempt by design
+            # containment must hold at the roll the sampler will actually
+            # use — the member's own base roll (top: the yaw-aligned one)
             T = face_cam_pose(np.array(ray.anchor), np.array(ray.direction),
-                              float(d_min), 0.0)
+                              float(d_min), rolls[0])
             R = np.column_stack([-T[:3, 1], -T[:3, 2], T[:3, 0]])
             pc = (four - T[:3, 3]) @ R
             assert np.all(pc[:, 2] > 0)

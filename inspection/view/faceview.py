@@ -70,6 +70,24 @@ def face_cam_pose(center, normal, r, roll=0.0):
     return T
 
 
+def top_align_roll(prim):
+    """Roll about the top view's boresight that lays the box footprint's
+    WIDER side along the image WIDTH axis (Anton's ruling, 2026-09-21,
+    demo7: the top capture framed the yawed box diagonally — the camera
+    must rotate with the box, not with the world axes).
+
+    Alignment is mod pi, so the 180-deg collision partner (the ROLLS walk)
+    is equally aligned: walk (r, r + pi) wherever ROLLS would be walked.
+    Only the top face gets this; a side view's roll is pinned by the
+    horizon (image-up must stay world-up)."""
+    center, normal, (ea, eb) = face_frame(prim, "top")
+    wide = prim.axes[:, 0] if ea >= eb else prim.axes[:, 1]
+    T0 = face_cam_pose(center, normal, 1.0, 0.0)
+    x, y0, z0 = T0[:3, 0], T0[:3, 1], T0[:3, 2]
+    w = wide - (wide @ x) * x              # project into the image plane
+    return float(np.arctan2(w @ z0, w @ y0))
+
+
 def face_radius(extent2d, fy, height_px, r_min=None):
     """Per-face framing standoff; the floor clamp lives in radius_for_extent.
     `r_min` carries the machine's per-run measured floor when it has one —

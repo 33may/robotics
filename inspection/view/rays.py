@@ -9,7 +9,7 @@ from collections import namedtuple
 
 import numpy as np
 
-from inspection.view.faceview import face_cam_pose, face_frame
+from inspection.view.faceview import face_cam_pose, face_frame, top_align_roll
 from inspection.view.grid import H_BINS, R_MAX, V_ELEVATIONS
 from inspection.view.viewsphere import ROLLS
 
@@ -43,10 +43,16 @@ class Ray:
 Sample = namedtuple("Sample", ["depth", "roll", "q", "T_cam", "T_flange"])
 
 
-def sample_ray(world, ik, t_flange_cam, ray, clear_m=0.0, q_near=None):
+def sample_ray(world, ik, t_flange_cam, ray, clear_m=0.0, q_near=None,
+               rolls=None):
     """All provably-safe samples on `ray` AT ONE ROLL, ascending depth: the
     roll whose closest valid sample is the closest of all (ties broken by
-    ROLLS order, which is what "first roll wins" used to decide).
+    `rolls` order, which is what "first roll wins" used to decide).
+
+    `rolls` is the candidate walk — ROLLS when None. A face member may carry
+    its own pair (the top face's yaw-aligned pair, Anton 2026-09-21); the
+    two candidates must stay pi apart so the flip keeps whatever alignment
+    the base roll establishes.
 
     `clear_m` = camera-to-object-surface distance already consumed at depth
     0 (0 for a face ray — its anchor sits ON the wall; the anchor→surface
@@ -78,11 +84,13 @@ def sample_ray(world, ik, t_flange_cam, ray, clear_m=0.0, q_near=None):
     rather than a list of poses that happen to be safe.
     """
     t_fc_inv = np.linalg.inv(np.asarray(t_flange_cam, dtype=float))
+    if rolls is None:
+        rolls = ROLLS
     lo = clear_m + MIN_RANGE_M
     d0 = float(np.ceil(lo / RAY_STEP_M)) * RAY_STEP_M
     winner, out = None, []
     for d in np.arange(d0, R_MAX + 1e-9, RAY_STEP_M):
-        for roll in (ROLLS if winner is None else (winner,)):
+        for roll in (rolls if winner is None else (winner,)):
             T_cam = face_cam_pose(ray.anchor, ray.direction, float(d), roll)
             T_fl = T_cam @ t_fc_inv
             free = [q for q in ik.branches(T_fl, q_near=q_near)
@@ -213,14 +221,16 @@ def _d_contain(fy, height_px, half_span):
 
 
 def face_family(prim, face, fy, height_px):
-    """Ordered (ray, shift, theta_deg, d_min) candidates for one boxguard
-    face: parallel +z shifts ascending (fronto-parallel — a plane parallel
-    to the sensor projects as a pure similarity, zero keystone), then the
-    classic cone. `d_min` is the closest depth this member may be sampled
-    from — MIN_RANGE_M for cone entries (tilted views never promised
+    """Ordered (ray, shift, theta_deg, d_min, rolls) candidates for one
+    boxguard face: parallel +z shifts ascending (fronto-parallel — a plane
+    parallel to the sensor projects as a pure similarity, zero keystone),
+    then the classic cone. `d_min` is the closest depth this member may be
+    sampled from — MIN_RANGE_M for cone entries (tilted views never promised
     containment, they are already the degraded rung), and
     max(MIN_RANGE_M, containment depth) for shift/top entries, so a taller
     shift only pushes its own floor out rather than being rejected outright.
+    `rolls` is the member's camera-roll walk for `sample_ray` — ROLLS,
+    except the top face's exact member, which carries the yaw-aligned pair.
     First family member with samples (at its own d_min floor) wins; no
     member -> face inaccessible, honestly."""
     center, normal, (ext_a, ext_b) = face_frame(prim, face)
@@ -240,19 +250,23 @@ def face_family(prim, face, fy, height_px):
             d_min = max(MIN_RANGE_M, d_wide,
                         _d_contain(fy, height_px, s + ext_b / 2.0))
             out.append((Ray(tuple(center + np.array([0, 0, s])),
-                            tuple(normal)), float(s), 0.0, float(d_min)))
+                            tuple(normal)), float(s), 0.0, float(d_min),
+                        tuple(ROLLS)))
             s += RAY_STEP_M
     else:                                         # top face: exact only
-        # The camera roll is pinned to {0, 180} while the box carries an
-        # arbitrary yaw, so the face's IMAGE footprint is the rotated
-        # rectangle — bound its half-DIAGONAL, which contains every yaw
-        # (demo1: the unrotated bound cut the top corners by 41 px).
-        # Rolling the top camera to the box yaw would buy those pixels
-        # back but is a design change (slides are roll-locked by ruling).
+        # The camera ROLLS WITH THE BOX (Anton 2026-09-21, demo7: the yawed
+        # box came back diagonal in the top capture): the exact member
+        # carries the yaw-aligned roll pair, wider footprint side along the
+        # image width axis — alignment holds mod pi, so the 180-deg
+        # collision flip keeps it. Containment still bounds the
+        # half-DIAGONAL, which is safe under any yaw-fit error (demo1: the
+        # unrotated bound cut the top corners by 41 px); tightening it to
+        # the aligned rectangle is a separate closeness decision.
         half_diag = float(np.hypot(ext_a, ext_b)) / 2.0
         d_min = max(MIN_RANGE_M, _d_contain(fy, height_px, half_diag))
+        r0 = top_align_roll(prim)
         out.append((Ray(tuple(center), tuple(normal)), 0.0, 0.0,
-                    float(d_min)))
+                    float(d_min), (r0, r0 + np.pi)))
     a = np.array([0.0, 0.0, 1.0])
     if abs(normal @ a) > 0.95:
         a = np.array([1.0, 0.0, 0.0])
@@ -268,7 +282,7 @@ def face_family(prim, face, fy, height_px):
             if d[2] < 0.05:               # never approach from under table
                 continue
             out.append((Ray(tuple(center), tuple(d)), 0.0, float(th),
-                        MIN_RANGE_M))
+                        MIN_RANGE_M, tuple(ROLLS)))
         th += CONE_STEP_DEG
     return out
 
@@ -359,16 +373,16 @@ def resolve_face(world, ik, t_flange_cam, prim, face, fy, height_px,
     """
     family = face_family(prim, face, fy, height_px)
 
-    def _sample(ray, d_min):
+    def _sample(ray, d_min, rolls):
         return sample_ray(world, ik, t_flange_cam, ray,
                           clear_m=max(0.0, d_min - MIN_RANGE_M),
-                          q_near=q_near)
+                          q_near=q_near, rolls=rolls)
 
     best = None                                   # rung 1: whole shift rung
-    for ray, shift, theta, d_min in family:
+    for ray, shift, theta, d_min, rolls in family:
         if theta != 0.0:
             continue
-        samples = _sample(ray, d_min)
+        samples = _sample(ray, d_min, rolls)
         if not samples:
             continue
         key = (samples[0].depth, shift)
@@ -377,10 +391,10 @@ def resolve_face(world, ik, t_flange_cam, prim, face, fy, height_px,
     if best is not None:
         return _resolution(best[1], best[2], best[3])
 
-    for ray, shift, theta, d_min in family:       # rung 2: cone, first hit
+    for ray, shift, theta, d_min, rolls in family:  # rung 2: cone, first hit
         if theta == 0.0:
             continue
-        samples = _sample(ray, d_min)
+        samples = _sample(ray, d_min, rolls)
         if samples:
             return _resolution(samples, shift, theta)
     return None
