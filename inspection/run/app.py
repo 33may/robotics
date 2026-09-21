@@ -245,13 +245,30 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
     # FIRST, before the arm: `real_cognition()` raises if GEMINI_API_KEY is
     # unset, and there is no stub fallback any more (Anton 2026-08-26). A key
     # discovered missing at the first `brain/ask` is a key discovered with the
-    # robot powered, the bus up and an operator waiting. Nothing loads here —
-    # SAM 3, OCR and the Gemini client are all lazy.
+    # robot powered, the bus up and an operator waiting. Nothing loads
+    # synchronously here — OCR and the Gemini client are lazy, and SAM 3 is
+    # warmed by the background thread below: it used to load at the first
+    # post-survey mask, which parked the run for the whole weight load with
+    # the arm already at the survey frame (Anton 21-09).
     # ONE SAM 3 on the GPU: this same instance goes to the segmenter below, so
     # the checkpoint is loaded once for both the subagent's detect/segment and
     # the identity mask, instead of twice (`run/segmenter.py:77`).
     sam3 = Sam3Backend()
     cognition = real_cognition(sam3=sam3)
+
+    def _warm_sam3():
+        import time
+        t0 = time.perf_counter()
+        try:
+            sam3.warm()
+            log.info("sam3 warm in %.1f s — the first mask won't stall",
+                     time.perf_counter() - t0)
+        except Exception:
+            # a failed warm-up must not kill the app: the lazy path retries
+            # at first use and surfaces the real error where it matters
+            log.exception("sam3 background warm-up failed; first use will "
+                          "load (and report) instead")
+    threading.Thread(target=_warm_sam3, name="sam3-warm", daemon=True).start()
 
     pf = preflight(ip)
     if not pf["go"]:

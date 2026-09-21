@@ -164,26 +164,47 @@ class Sam3Backend:
         self.device, self.dtype, self.repo = device, dtype, repo
         self._det = self._det_proc = None
         self._trk = self._trk_proc = None
+        import threading
+        self._load_lock = threading.Lock()
+
+    def warm(self):
+        """Load both checkpoints NOW. The app calls this from a background
+        thread at startup so the first post-survey mask does not stall on
+        weights; racing a real first use is safe — each load is
+        double-checked under one lock and runs once."""
+        self._load_detector()
+        self._load_tracker()
 
     # NOT AutoProcessor: for this repo it resolves to Sam3VideoProcessor, whose
     # image path rejects `text=` outright (Sam3ImageProcessorKwargs has no such
     # field). The still-image classes must be named explicitly.
     def _load_detector(self):
         if self._det is None:
-            import torch
-            from transformers import Sam3Model, Sam3Processor
-            self._det_proc = Sam3Processor.from_pretrained(self.repo)
-            self._det = Sam3Model.from_pretrained(
-                self.repo, dtype=getattr(torch, self.dtype)).to(self.device).eval()
+            with self._load_lock:
+                if self._det is None:
+                    import torch
+                    from transformers import Sam3Model, Sam3Processor
+                    proc = Sam3Processor.from_pretrained(self.repo)
+                    det = Sam3Model.from_pretrained(
+                        self.repo, dtype=getattr(torch, self.dtype)
+                    ).to(self.device).eval()
+                    # publish the model LAST: the lock-free fast path above
+                    # keys on _det, which must never be visible half-built
+                    self._det_proc, self._det = proc, det
         return self._det, self._det_proc
 
     def _load_tracker(self):
         if self._trk is None:
-            import torch
-            from transformers import Sam3TrackerModel, Sam3TrackerProcessor
-            self._trk_proc = Sam3TrackerProcessor.from_pretrained(self.repo)
-            self._trk = Sam3TrackerModel.from_pretrained(
-                self.repo, dtype=getattr(torch, self.dtype)).to(self.device).eval()
+            with self._load_lock:
+                if self._trk is None:
+                    import torch
+                    from transformers import (Sam3TrackerModel,
+                                              Sam3TrackerProcessor)
+                    proc = Sam3TrackerProcessor.from_pretrained(self.repo)
+                    trk = Sam3TrackerModel.from_pretrained(
+                        self.repo, dtype=getattr(torch, self.dtype)
+                    ).to(self.device).eval()
+                    self._trk_proc, self._trk = proc, trk
         return self._trk, self._trk_proc
 
     def detect(self, rgb, phrase):

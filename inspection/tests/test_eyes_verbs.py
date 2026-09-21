@@ -119,6 +119,63 @@ def test_sam_ocr_backend_builds_its_halves_without_loading_them():
     assert b.sam3._det is None and b.sam3._trk is None and b.ocr._det is None
 
 
+def test_warm_racing_first_use_loads_each_checkpoint_once():
+    """`Sam3Backend.warm()` runs in a background thread at app start; a
+    survey finishing mid-warm must not double-load (GPU memory x2) or see a
+    half-built pair. Fake transformers module, real lock, real race."""
+    import sys
+    import threading
+    import time
+    import types
+
+    class _Fake:
+        calls = 0
+        _gate = threading.Lock()
+
+        @classmethod
+        def from_pretrained(cls, repo, **kw):
+            with cls._gate:
+                cls.calls += 1
+            time.sleep(0.05)          # wide window for the race
+            return cls()
+
+        def to(self, device):
+            return self
+
+        def eval(self):
+            return self
+
+    fakes = {}
+    mod = types.ModuleType("transformers")
+    for name in ("Sam3Model", "Sam3Processor",
+                 "Sam3TrackerModel", "Sam3TrackerProcessor"):
+        fakes[name] = type(name, (_Fake,), {"calls": 0})
+        setattr(mod, name, fakes[name])
+    real = sys.modules.get("transformers")
+    sys.modules["transformers"] = mod
+    try:
+        backend = Sam3Backend(device="cpu", dtype="float32")
+        threads = [threading.Thread(target=backend.warm),
+                   threading.Thread(target=backend._load_detector),
+                   threading.Thread(target=backend._load_tracker)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        for name, cls in fakes.items():
+            assert cls.calls == 1, f"{name} loaded {cls.calls}x under race"
+        det, det_proc = backend._load_detector()
+        trk, trk_proc = backend._load_tracker()
+        assert det is not None and det_proc is not None
+        assert trk is not None and trk_proc is not None
+        assert fakes["Sam3Model"].calls == 1    # the re-read loaded nothing
+    finally:
+        if real is not None:
+            sys.modules["transformers"] = real
+        else:
+            del sys.modules["transformers"]
+
+
 def main():
     test_detect_sorts_and_clips(); test_detect_drops_low_scores()
     test_segment_returns_mask_of_frame_size()
@@ -128,6 +185,7 @@ def main():
     test_sam_ocr_backend_routes_each_verb_to_its_half()
     test_sam_ocr_backend_reuses_an_injected_sam3()
     test_sam_ocr_backend_builds_its_halves_without_loading_them()
+    test_warm_racing_first_use_loads_each_checkpoint_once()
     print("OK test_eyes_verbs")
 
 
