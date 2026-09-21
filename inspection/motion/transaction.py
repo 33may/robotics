@@ -48,6 +48,13 @@ from inspection.motion.plan import plan_viewpoint
 #: Where the arm is now: the ray it sits on, the depth/roll of that sample,
 #: and the ray's full valid sample list (the slide-out corridor). `None`
 #: instead of a RayState = the first move after a survey or a retreat.
+#:
+#: `ray` is a READER-FACING SEAM, not a planner input: `plan_transaction`
+#: reads only `depth`/`roll`/`samples` (the corridor and the lock), and the
+#: samples already carry their own poses. It is carried so a caller, a test
+#: or a record can say WHICH ray a state describes without reconstructing it
+#: from a camera pose — keep it filled, but do not assume the search
+#: consults it.
 RayState = namedtuple("RayState", ["ray", "depth", "roll", "samples"])
 
 #: The planned transaction. `out` may be empty (no slide-out needed / no
@@ -159,6 +166,12 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
     `t_flange_cam` is accepted for symmetry with the resolvers' call sites;
     the samples already carry their flange poses, so it is not needed here.
     """
+    if max_entries < 1:
+        # Argument validation, before any work: a caller who asked for zero
+        # entries gets told so, not a corridor probe's worth of IK first and
+        # then the same error (a stub planner's call count would have
+        # recorded a search that was never allowed to happen).
+        raise ValueError("max_entries must be >= 1")
     if not target.samples:
         return None
     q_now = np.asarray(q_now, dtype=float)
@@ -174,8 +187,6 @@ def plan_transaction(world, ik, t_flange_cam, current, target, q_now, seed=0,
     # exists to prevent (ruled, task 2b). A corridor that is genuinely ONE
     # sample long keeps it as the honest last resort — refusing there would
     # mark cells transition-inaccessible that Stage A proved reachable.
-    if max_entries < 1:
-        raise ValueError("max_entries must be >= 1")
     wide = list(range(reach - 1, 0, -1)) or [0]      # reach 1: the last resort
     entries = wide[:max_entries]
 

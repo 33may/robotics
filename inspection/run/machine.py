@@ -74,7 +74,8 @@ from inspection.motion.transaction import RayState, plan_transaction
 from inspection.record.schema import ViewCandidate, ViewState
 from inspection.run.settle import _plane_error, settle_capture
 from inspection.view.grid import DEFAULT_R
-from inspection.view.rays import Ray, box_corners, cell_map, resolve_face
+from inspection.view.rays import (Ray, belief_bounds, cell_map,
+                                  resolve_face)
 from inspection.view.viewsphere import T_FLANGE_CAM, ViewSphere
 
 log = logging.getLogger(__name__)
@@ -657,17 +658,20 @@ class Supervisor:
         # input, and the only record of where a half-executed transaction
         # left it.
         self._arrival_path = ev["executed"]
+        # Cleared FIRST, in every outcome, and only then re-earned on
+        # arrival: if `_ray_state_of` ever threw, an assignment written the
+        # other way round would leave the PREVIOUS move's ray in place and
+        # the next transaction would slide out along a ray the camera has
+        # left. Stopped or faulted needs no re-earning at all — the arm is
+        # parked between ray depths (or between rays), which is the same
+        # reason `current` is cleared below.
+        self._ray_state = None
         if outcome == "done":
             # Arrival: the ray the executed resolution sits on becomes the
             # ray the camera stands on, and leg 1's `current`. A survey
             # resolves no ray, so arriving there says so with None.
-            self._ray_state = (None if self._target_res is None
-                               else _ray_state_of(self._target_res))
-        else:
-            # Stopped or faulted mid-transaction: the arm is parked between
-            # ray depths (or between rays), so there is no current ray to
-            # slide out along — exactly the reason `current` is cleared below.
-            self._ray_state = None
+            if self._target_res is not None:
+                self._ray_state = _ray_state_of(self._target_res)
         if outcome == "stopped":
             # No step exists yet: the arm is stopped BEFORE `begin_step`, so
             # this turn leaves a run-level event and no step directory —
@@ -771,6 +775,14 @@ class Supervisor:
         throwaway RobotCell — never against the live world, whose refit is
         exactly what swallowed the stance; and never ON the live world, so
         no pose handoff is needed and nothing races the streamer.
+
+        A FAULTED move can never reach here, and that is load-bearing:
+        `_arrival_path` then holds a half-executed transaction, and the
+        retrace tier would drive the arm back through legs whose executor
+        just refused. What prevents it is `"fault" in _BUSY_PHASES` — the
+        request gate drops every `view/request` from `fault`, so
+        `_plan_fails` can never climb to RETREAT_AFTER_FAILS once the run
+        is halted. Said out loud because nothing here would stop it.
         """
         self.gen += 1               # any stale worker event dies at the gate
         self.stop_event.clear()
@@ -1115,6 +1127,16 @@ class Supervisor:
                     move = ([executed[-1]] + leg) if name == "out" else leg
                     if len(move) < 2:
                         continue        # nothing to travel on this leg
+                    # The joins are a CONTRACT, not a convention: a planner
+                    # that stopped returning its own start config verbatim
+                    # would silently drop the waypoint between two legs —
+                    # `_extend_path` would keep both, but the rig would be
+                    # commanded from a pose it is not in, and the executed
+                    # record would claim a segment nothing travelled. Fail
+                    # here, loudly, rather than there.
+                    assert np.allclose(move[0], executed[-1]), (
+                        f"leg {name!r} starts at {np.asarray(move[0])}, but "
+                        f"the arm is at {executed[-1]} — the legs do not join")
                     self.events.put({"ev": "phase", "gen": gen, "phase": phase})
                     # Each leg is judged by the world it was PLANNED under —
                     # the retreat idiom (`rigs.py:move`), which is the one
@@ -1294,10 +1316,7 @@ class Supervisor:
         """
         if self._object_aabb is None or self.acc.centroid is None:
             return {}
-        prim = self._face_prim
-        corners = None if prim is None else box_corners(prim)
-        aabb = (self._object_aabb if corners is None
-                else (corners.min(0), corners.max(0)))
+        aabb, corners = belief_bounds(self._face_prim, self._object_aabb)
         return cell_map(self.world, self.ik, T_FLANGE_CAM, self.acc.centroid,
                         aabb, self.rig.intr["fy"], self.rig.intr["height"],
                         corners=corners)

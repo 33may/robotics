@@ -284,7 +284,12 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
             config=config_snapshot({"vlm": cognition.label,
                                     "segmenter": "sam3",
                                     "fit": fit or "none"}),
-            view_methods=[viewsphere_method(r), face_method()],
+            # No `r`: cells are RAYS now, and the Supervisor stamps the
+            # measured mean depth itself once the survey resolves one
+            # (`_recenter` -> `set_view_method_params`). Passing the
+            # already-ignored `--r` wrote an operator's WISH into run.json
+            # as a property of the method (`mock.py` omits it likewise).
+            view_methods=[viewsphere_method(), face_method()],
             q_survey=[float(v) for v in q_survey])
         # Retained, so a UI window opened at any moment knows which flow it
         # is rendering (data-engine runs drop the AI panel).
@@ -445,7 +450,12 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
             source="data-engine", rig="real", object=object, question=None,
             config=config_snapshot({"segmenter": "sam3",
                                     "fit": fit or "none"}),
-            view_methods=[viewsphere_method(r), face_method()],
+            # No `r`: cells are RAYS now, and the Supervisor stamps the
+            # measured mean depth itself once the survey resolves one
+            # (`_recenter` -> `set_view_method_params`). Passing the
+            # already-ignored `--r` wrote an operator's WISH into run.json
+            # as a property of the method (`mock.py` omits it likewise).
+            view_methods=[viewsphere_method(), face_method()],
             q_survey=[float(v) for v in q_survey],
             tags=(["auto"] if auto else []) + (["random"] if random else []))
         pub.publish_run_meta(source="data-engine", name=name or outdir.name,

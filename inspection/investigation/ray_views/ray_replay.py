@@ -79,9 +79,10 @@ from inspection.record.catalog import DATASETS_ROOT, RUNS_ROOT
 from inspection.record.run import Run
 from inspection.view.faceview import FACES
 from inspection.view.grid import H_BINS, R_MAX, R_MIN, V_ELEVATIONS
-from inspection.view.rays import (MIN_RANGE_M, RAY_STEP_M, box_corners,
-                                  cell_clear_m, cell_ray, face_family,
-                                  resolve_cell, resolve_face, sample_ray)
+from inspection.view.rays import (MIN_RANGE_M, RAY_STEP_M, belief_bounds,
+                                  box_corners, cell_clear_m, cell_ray,
+                                  face_family, resolve_cell, resolve_face,
+                                  sample_ray)
 from inspection.view.viewsphere import T_FLANGE_CAM
 
 OUT = Path("/tmp/ray_views")
@@ -199,12 +200,13 @@ def guard_world(points: np.ndarray, cell_yaml=None):
 def box_aabb(prim: Primitive):
     """Axis-aligned bounds of the ORIENTED box, padded 0 — `resolve_cell`'s
     slab test only needs the anchor->surface run, and over-padding it would
-    push every cell ray's sensor floor outward."""
-    e = np.asarray(prim.params["extents"], float)
-    signs = np.array([[a, b, c] for a in (-.5, .5) for b in (-.5, .5)
-                      for c in (-.5, .5)])
-    corners = (prim.axes @ (signs * e).T).T + prim.center
-    return corners.min(0), corners.max(0)
+    push every cell ray's sensor floor outward.
+
+    Delegates to `rays.belief_bounds`, the one reduction the live machine
+    and the sweep also call: a bench that hulls the prim its own way is a
+    bench measuring a belief the machine does not hold.
+    """
+    return belief_bounds(prim)[0]
 
 
 #: Two distances appear in every table and they are NOT the same number:

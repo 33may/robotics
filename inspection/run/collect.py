@@ -36,7 +36,7 @@ from inspection.cell.world import RobotCell
 from inspection.motion.ik import UR5eIK
 from inspection.motion.plan import plan_viewpoint
 from inspection.motion.transaction import plan_transaction
-from inspection.view.rays import box_corners, resolve_cell
+from inspection.view.rays import belief_bounds, resolve_cell
 from inspection.view.viewsphere import T_FLANGE_CAM
 
 #: Who this driver's mover tells the record chose the view. Rides every
@@ -101,8 +101,13 @@ def _default_planner(sup, seed: int = 0, hop_planner=plan_viewpoint):
     Ranks a candidate the way the REAL move will be planned: `resolve_cell`
     finds the cell's closest safe sample on THIS thread's own world (never
     `sup.world`), then `plan_transaction` plans the three-leg move to it
-    from `q_now` — no slide-out (`current=None`): a ranking pass never
-    assumes the arm sits on a ray, only the real move at request time does.
+    from `q_now` — slide-out included, `current=sup._ray_state`, the same
+    ray the dispatcher hands `machine._transaction` at request time. That
+    docstring claim used to be false: passing `current=None` ranked a
+    DIFFERENT search (candidates `entries x 1` instead of
+    `entries x (1 + out_chain)`) at a cost missing the slide-out leg, and a
+    cell that only transacts once the arm has slid outward ranked
+    unplannable — enough to call a coverable shell stuck.
     Cost is `joint_l1` over the whole trip, `q_now` followed by every leg's
     waypoints in order (`plan_transaction`'s own smoke test concatenates
     a transaction the same way) — `hop`/`slide_in` each repeat the seam
@@ -116,11 +121,11 @@ def _default_planner(sup, seed: int = 0, hop_planner=plan_viewpoint):
     costs `(None, None)` — dropped by `rank_candidates`, never crashed on.
 
     Reads `sup.acc.centroid`/`sup._object_aabb`/`sup._face_prim`/
-    `sup.rig.intr` only — never `sup.world`/`sup.ik` — and derives the
-    belief EXACTLY the way `machine._cell_map` does: the freshest boxguard
-    fit when there is one (`corners = box_corners(prim)`, `aabb =
-    (corners.min(0), corners.max(0))` — the prim's own UNPADDED hull), the
-    padded `_object_aabb` fallback with `corners=None` when there is not.
+    `sup._ray_state`/`sup.rig.intr` only — never `sup.world`/`sup.ik` — and
+    derives the belief through `rays.belief_bounds`, the ONE reduction
+    `machine._cell_map` also calls: the freshest boxguard fit's own
+    UNPADDED hull when there is one, the padded `_object_aabb` fallback
+    with `corners=None` when there is not.
     `corners` feeds `resolve_cell`'s containment floor for a grid CELL
     unconditionally — a fit tightens exactly the belief this ranker
     measures, not merely a face's. Skipping it (as this used to) costs
@@ -128,9 +133,11 @@ def _default_planner(sup, seed: int = 0, hop_planner=plan_viewpoint):
     actually have to pay — real ranking/execution mismatch, the same
     shape as the shell-vs-ray one this task replaces.
 
-    All four fields are replaced wholesale (`machine._recenter`'s
+    All five fields are replaced wholesale (`machine._recenter`'s
     `_object_aabb` assignment, `_update_face_gate`'s `self._face_prim =
-    prim`, `CloudAccumulator.add`'s `_points` reassignment on every fuse),
+    prim`, `_on_exec_done`'s `self._ray_state = ...` — a `RayState`
+    namedtuple, immutable, never edited in place — and
+    `CloudAccumulator.add`'s `_points` reassignment on every fuse),
     never mutated in place, so a snapshot taken here cannot change
     underneath one `resolve_cell`/`plan_transaction` call. Reading
     `_face_prim` off the dispatcher from this thread is sanctioned the
@@ -143,21 +150,19 @@ def _default_planner(sup, seed: int = 0, hop_planner=plan_viewpoint):
     `_StubPlanner` does, without faking `plan_transaction` itself.
     """
     def planner(world, ik, q_now, cell):
-        center, aabb = sup.acc.centroid, sup._object_aabb
-        if center is None or aabb is None:
+        center, fallback = sup.acc.centroid, sup._object_aabb
+        if center is None or fallback is None:
             return None, None
-        prim = sup._face_prim
-        corners = None if prim is None else box_corners(prim)
-        if corners is not None:
-            aabb = (corners.min(0), corners.max(0))
+        aabb, corners = belief_bounds(sup._face_prim, fallback)
         h, v = cell
         target = resolve_cell(world, ik, T_FLANGE_CAM, center, aabb, h, v,
                               sup.rig.intr["fy"], sup.rig.intr["height"],
                               corners=corners)
         if target is None:
             return None, None
-        legs = plan_transaction(world, ik, T_FLANGE_CAM, None, target, q_now,
-                                seed=seed, planner=hop_planner)
+        legs = plan_transaction(world, ik, T_FLANGE_CAM, sup._ray_state,
+                                target, q_now, seed=seed,
+                                planner=hop_planner)
         if legs is None:
             return None, None
         path = [np.asarray(q_now, dtype=float), *legs.out, *legs.hop,

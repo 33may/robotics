@@ -68,6 +68,14 @@ def sample_ray(world, ik, t_flange_cam, ray, clear_m=0.0, q_near=None):
     valid (depth, roll) pair, scanning depths ascending and rolls in ROLLS
     order, settles it, and from there out only the winning roll is evaluated.
     The loser's remaining depths would be computed just to be discarded.
+
+    NOT necessarily contiguous in depth. A depth the winning roll cannot
+    solve is SKIPPED, not terminated on, so the returned list can carry a
+    gap — an obstacle the ray grazes at one depth and clears again further
+    out. Callers that need a contiguous corridor must build it themselves:
+    `transaction._slide` does, by validating each segment and stopping at
+    the first one the world refuses, which is what makes a slide a slide
+    rather than a list of poses that happen to be safe.
     """
     t_fc_inv = np.linalg.inv(np.asarray(t_flange_cam, dtype=float))
     lo = clear_m + MIN_RANGE_M
@@ -166,6 +174,31 @@ def box_corners(prim):
     sgn = np.array([[a, b, c] for a in (-1, 1) for b in (-1, 1)
                     for c in (-1, 1)], dtype=float)
     return prim.center + (sgn * he) @ prim.axes.T
+
+
+def belief_bounds(prim, fallback=None):
+    """`(aabb, corners)` for the belief a cell ray is measured against.
+
+    ONE reduction, three callers: `machine._cell_map` (the live map),
+    `collect._default_planner` (the sweep's ranking) and the replay bench.
+    They were three verified-identical copies, which is a coincidence with
+    an expiry date — a cell's resolved depth must not depend on WHICH of
+    them asked.
+
+    With a boxguard `prim`, both come from that one fit: the corners are
+    the ORIENTED box's (`box_corners`) and the aabb is their hull —
+    UNPADDED. `geometry.object_box`'s hull is the COLLISION box (2 cm of
+    margin per side, 5 cm floor) and feeding those margins here would push
+    every cell's `clear_m`, and so its resolved depth, outward from what
+    the bench measured. With no fit yet, `fallback` (that padded hull) is
+    the only bound there is and is used as the conservative stand-in, with
+    `corners=None` — `cell_d_contain` then derives the eight axis-aligned
+    corners itself.
+    """
+    if prim is None:
+        return fallback, None
+    corners = box_corners(prim)
+    return (corners.min(0), corners.max(0)), corners
 
 
 def _d_contain(fy, height_px, half_span):

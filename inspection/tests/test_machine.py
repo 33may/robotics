@@ -1629,6 +1629,83 @@ def test_a_face_whose_ray_family_is_empty_draws_no_marker():
         sup.request_shutdown(); th.join(10)
 
 
+def test_legs_that_do_not_join_fault_instead_of_dropping_a_waypoint():
+    """The leg joins are a contract, and a broken one must be LOUD.
+
+    Every leg but the slide-out begins on the pose the previous one ended
+    at (`transaction.py` builds them that way, `_concat_legs` drops the
+    repeat). A planner that stopped honouring it would have the rig
+    commanded from a pose the arm is not in, and the executed record would
+    claim a segment nothing travelled — a silent corruption of exactly the
+    list the retreat retraces. The assert turns it into an ordinary fault."""
+    import inspection.run.machine as machine_mod
+    real = machine_mod.plan_transaction
+
+    def disjoint(*a, **kw):
+        legs = real(*a, **kw)
+        if legs is None:
+            return None
+        # The slide-in no longer starts where the hop landed.
+        moved = np.asarray(legs.slide_in[0], dtype=float) + 0.05
+        return legs._replace(slide_in=[moved] + list(legs.slide_in[1:]))
+
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        machine_mod.plan_transaction = disjoint
+        cell = _available_cells(sup)[0]
+        _at_previewing(sup, bus, cell)
+        sup.events.put({"cmd": "view/confirm", "target": list(cell)})
+        wait_for(lambda: sup.phase == "fault", timeout=60, msg="fault")
+        rows = [json.loads(l) for l in
+                (sup.writer.dir / "events.jsonl").read_text().splitlines()]
+        detail = [r for r in rows if r["kind"] == "fault"][-1]["detail"]
+        assert "do not join" in detail, detail
+        assert cell not in sup.visited
+    finally:
+        machine_mod.plan_transaction = real
+        sup.events.put({"cmd": "run/exit"}); th.join(10)
+
+
+def test_a_ray_state_that_cannot_be_built_leaves_none_behind():
+    """`_ray_state` is cleared BEFORE the arrival tries to re-earn it.
+
+    Written the other way round — one conditional assignment — a throw
+    inside `_ray_state_of` would escape into the dispatcher's blanket
+    handler with the PREVIOUS move's ray still installed, and the next
+    transaction would plan its slide-out along a ray the camera has left.
+    Theoretical today (the helper is pure arithmetic on a namedtuple), and
+    one line either way; this is the line."""
+    import inspection.run.machine as machine_mod
+    from inspection.motion.transaction import RayState
+    from inspection.view.rays import Ray
+    real = machine_mod._ray_state_of
+    sup, rig, bus, th = make_sup(q_start=DEMO_PARK.copy() + np.radians(
+        [0, 0, 0, 0, 0, 8]))
+    try:
+        full_boot(sup)
+        # Test-only pokes: the state an arrival would be landing on top of.
+        stale = RayState(Ray((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)), 0.3, 0.0, [])
+        sup._ray_state = stale
+        sup._target_res = [r for r in sup._reach.values() if r is not None][0]
+
+        def boom(res):
+            raise RuntimeError("synthetic ray-state failure")
+
+        machine_mod._ray_state_of = boom
+        q = rig.q()
+        sup.events.put({"ev": "exec_done", "gen": sup.gen, "target": "survey",
+                        "outcome": "done", "detail": "", "executed": [q, q]})
+        wait_for(lambda: sup._ray_state is not stale, timeout=10,
+                 msg="the arrival never touched the ray state")
+        assert sup._ray_state is None, \
+            "a failed ray-state build left the previous move's ray installed"
+    finally:
+        machine_mod._ray_state_of = real
+        sup.request_shutdown(); th.join(10)
+
+
 def test_a_retreat_clears_the_ray_state():
     """The retreat moves the arm OFF the ray it was standing on, so the ray
     state (leg 1's `current`) is no longer true of anything — leaving it set
@@ -1705,6 +1782,8 @@ def main():
     test_a_fault_mid_transaction_keeps_only_the_executed_waypoints()
     test_a_rig_that_will_not_count_waypoints_faults_the_move()
     test_a_face_whose_ray_family_is_empty_draws_no_marker()
+    test_legs_that_do_not_join_fault_instead_of_dropping_a_waypoint()
+    test_a_ray_state_that_cannot_be_built_leaves_none_behind()
     test_a_retreat_clears_the_ray_state()
     print("OK test_machine (task 5)")
 

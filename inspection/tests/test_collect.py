@@ -15,7 +15,7 @@ from inspection.brain.live import make_event_sink
 from inspection.cell.world import RobotCell
 from inspection.fit.contract import Primitive
 from inspection.motion.ik import UR5eIK
-from inspection.motion.plan import DEMO_PARK
+from inspection.motion.plan import DEMO_PARK, plan_viewpoint
 from inspection.record.run import Run
 from inspection.record.writer import RunWriter
 from inspection.run.app import config_snapshot, viewsphere_method
@@ -86,10 +86,12 @@ class _RankSup:
     class _Rig:
         intr = {"fy": 647.0, "height": 720}
 
-    def __init__(self, centroid=_BOX_CENTER, aabb=_BOX_AABB, face_prim=None):
+    def __init__(self, centroid=_BOX_CENTER, aabb=_BOX_AABB, face_prim=None,
+                 ray_state=None):
         self.acc = self._Acc(centroid)
         self._object_aabb = aabb
         self._face_prim = face_prim
+        self._ray_state = ray_state
         self.rig = self._Rig()
 
 
@@ -130,6 +132,64 @@ def test_default_planner_costs_the_real_transaction():
     assert cost == pytest.approx(joint_l1(path))
     target = _resolved(w, ik, 3, 2)
     assert np.allclose(ik.fk(path[-1]), target.T_flange, atol=1e-6)
+
+
+def test_default_planner_ranks_from_the_ray_the_arm_stands_on():
+    """The ranker plans what the REAL move will plan — slide-out included.
+
+    `_default_planner`'s docstring claims it "ranks a candidate the way the
+    REAL move will be planned", and the real move passes
+    `sup._ray_state` as `plan_transaction`'s `current` (`machine._transaction`).
+    Omitting it here ranked a DIFFERENT search: no out-chain, so a candidate
+    set of `entries x 1` instead of `entries x (1 + out_chain)`, and a cost
+    missing the slide-out leg. Worse, a cell that only transacts WITH a
+    slide-out ranked as unplannable — the sweep could call a coverable shell
+    stuck.
+    """
+    from inspection.motion.transaction import RayState
+    from inspection.view.rays import cell_ray
+    w, ik = _transaction_world()
+    here = _resolved(w, ik, 3, 2)
+    q_now = np.asarray(here.q, dtype=float)
+    state = RayState(cell_ray(_BOX_CENTER, 3, 2), here.depth, here.roll,
+                     here.samples)
+
+    def spy():
+        """The real ladder, with its FIRST answer refused, recording every
+        start config it was offered. `plan_transaction` walks candidates
+        current-depth-first, so "no slide-out" is always candidate 0 and
+        this world's hops win it outright — refusing once is what makes the
+        search reveal whether an out-chain exists behind it at all."""
+        seen = []
+
+        def hop(world, ik_, q_from, T_target, seed=0, **kw):
+            seen.append(np.asarray(q_from, dtype=float))
+            if len(seen) == 1:
+                return None, {"reason": "forced refusal"}
+            return plan_viewpoint(world, ik_, q_from, T_target, seed=seed, **kw)
+        return hop, seen
+
+    hop, seen = spy()
+    path, cost = _default_planner(_RankSup(ray_state=state),
+                                  hop_planner=hop)(w, ik, q_now, (6, 2))
+
+    assert path is not None
+    # Candidate 1 is the next OUT-DEPTH on the current ray — a start config
+    # that only exists because `current` was threaded.
+    assert not np.allclose(seen[1], q_now), \
+        "the second hop started at q_now again — there was no out-chain"
+    # ...and that slide-out waypoint is in the ranked path, so the cost
+    # covers the leg the real move will actually travel.
+    assert np.allclose(path[1], seen[1])
+    assert cost == pytest.approx(joint_l1(path))
+
+    # With no ray state the same refusal widens the ENTRY instead: every
+    # hop still starts where the arm already is.
+    hop, seen = spy()
+    plain, _ = _default_planner(_RankSup(), hop_planner=hop)(w, ik, q_now,
+                                                             (6, 2))
+    assert plain is not None
+    assert all(np.allclose(q, q_now) for q in seen), seen
 
 
 def test_default_planner_ranks_cheaper_transaction_first():
@@ -545,6 +605,7 @@ if __name__ == "__main__":
     test_joint_l1()
     test_joint_l1_single_waypoint_is_free()
     test_default_planner_costs_the_real_transaction()
+    test_default_planner_ranks_from_the_ray_the_arm_stands_on()
     test_default_planner_ranks_cheaper_transaction_first()
     test_default_planner_drops_an_unresolvable_cell()
     test_default_planner_drops_a_cell_whose_transaction_refuses()
