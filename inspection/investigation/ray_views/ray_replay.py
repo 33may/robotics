@@ -55,7 +55,11 @@ against — `geometry.object_box(fused cloud)`, installed exactly as
 `machine._recenter` does, not the boxguard belief box above. `--world
 boxguard` (default) is the unchanged Stage A world; `--margin` only applies
 there. Ray geometry (addresses, aabb, `box_corners`, the `d_surf` surface)
-stays the boxguard prim in BOTH modes — only the collision world differs.
+stays the boxguard prim in BOTH modes — only the collision world and the
+CELL-RAY ANCHOR differ: guard mode anchors cell rays at the fused cloud's
+mean, which is where `machine._cell_map`/`collect._default_planner` anchor
+them (`cell_anchor`). Boxguard mode keeps the box centre, unchanged — it is
+the committed Stage A record, not a thing to re-measure.
 
     p inspection/investigation/ray_views/ray_replay.py --run 1709-cam-ai-demo1
     p inspection/investigation/ray_views/ray_replay.py --run 1509-cam-ai_bench5 --margin 0.04
@@ -197,6 +201,30 @@ def guard_world(points: np.ndarray, cell_yaml=None):
     return world, dims, pose
 
 
+def cell_anchor(prim: Primitive, points=None):
+    """Where a CELL ray is anchored — the live machine's own choice.
+
+    `machine._cell_map` passes `self.acc.centroid`, the mean of the fused
+    cloud, and `collect._default_planner` passes the same; neither passes
+    the boxguard box's centre. The two are NOT the same point: measured
+    7.6-14.7 mm apart on the four benched runs, against a guard-world
+    give-back the gate reads in single millimetres. A bench anchored at
+    `prim.center` therefore measures rays the machine never casts.
+
+    So guard mode — which already loads the fused cloud to build its
+    obstacle — anchors at that cloud's mean, exactly as the machine does.
+    The BELIEF stays the prim in both modes (`aabb`, `box_corners`, the
+    `d_surf` surface the comparison is measured against): only the anchor
+    moves, which is the machine's own split.
+
+    `points=None` keeps the Stage A default (the box centre) byte-identical
+    — that record is committed evidence and is not being re-measured here.
+    """
+    if points is None:
+        return np.asarray(prim.center, dtype=float)
+    return np.asarray(points, dtype=float).mean(axis=0)
+
+
 def box_aabb(prim: Primitive):
     """Axis-aligned bounds of the ORIENTED box, padded 0 — `resolve_cell`'s
     slab test only needs the anchor->surface run, and over-padding it would
@@ -260,9 +288,20 @@ def recorded_theta(step):
 
 # ------------------------------------------------------------------ resolution
 
-def resolve_step(world, ik, prim, aabb, step, fy, height_px):
+def resolve_step(world, ik, prim, aabb, step, fy, height_px, center):
     """(res, ms) for one executed step's address, or (None, ms) when the ray
-    (family) has no provably-safe sample — an honestly inaccessible address."""
+    (family) has no provably-safe sample — an honestly inaccessible address.
+
+    `center` is the CELL-RAY ANCHOR and is passed in rather than taken from
+    `prim`: the live machine anchors cell rays at `acc.centroid`
+    (`machine._cell_map`), which is not the boxguard box's centre. See
+    `cell_anchor`.
+
+    `q_near` is deliberately omitted, matching `machine._cell_map`'s own
+    `q_near=None`: it only picks WHICH IK branch a sample carries, never
+    whether the sample exists, so no endpoint, depth or verdict in this
+    table depends on it.
+    """
     view = step.record.view
     addr = view.address
     t0 = time.perf_counter()
@@ -271,7 +310,7 @@ def resolve_step(world, ik, prim, aabb, step, fy, height_px):
                            height_px)
     else:
         h, v = int(addr[0]), int(addr[1])
-        res = resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb,
+        res = resolve_cell(world, ik, T_FLANGE_CAM, center, aabb,
                            h, v, fy, height_px, corners=box_corners(prim))
     return res, (time.perf_counter() - t0) * 1e3
 
@@ -285,7 +324,7 @@ def addr_label(view) -> str:
     return f"cell {int(a[0])},{int(a[1])}"
 
 
-def walk(run: Run, world, ik, prim, aabb, fy, height_px):
+def walk(run: Run, world, ik, prim, aabb, fy, height_px, center):
     """One row per executed, addressed step: old vs new endpoint."""
     rows = []
     for step in run.steps:
@@ -294,7 +333,8 @@ def walk(run: Run, world, ik, prim, aabb, fy, height_px):
         if step.record.view.address is None:
             continue                      # survey: a fixed pose, not an address
         old = step.T_base_cam[:3, 3]
-        res, ms = resolve_step(world, ik, prim, aabb, step, fy, height_px)
+        res, ms = resolve_step(world, ik, prim, aabb, step, fy, height_px,
+                               center)
         d_old = surface_dist(prim, old)
         d_new = None if res is None else surface_dist(prim, res.T_cam[:3, 3])
         # along-ray travel from where the ray leaves the object: for a cell
@@ -303,7 +343,7 @@ def walk(run: Run, world, ik, prim, aabb, fy, height_px):
         clear = 0.0
         if res is not None and step.record.view.method != "face":
             a = step.record.view.address
-            clear = cell_clear_m(aabb, cell_ray(prim.center, int(a[0]),
+            clear = cell_clear_m(aabb, cell_ray(center, int(a[0]),
                                                 int(a[1])))
         rows.append({
             "step": step.id, "label": addr_label(step.record.view),
@@ -361,11 +401,12 @@ def family_scan(world, ik, prim, face, fy, height_px):
 
 
 # --------------------------------------------------------------------- timings
-def measure(world, ik, prim, aabb, fy, height_px, repeats=3):
+def measure(world, ik, prim, aabb, fy, height_px, center, repeats=3):
     """The design's feasibility table, measured. Warmed up first: the very
     first IK/coal call carries import-time and data-alloc cost that would
-    otherwise be charged to one unlucky ray."""
-    resolve_cell(world, ik, T_FLANGE_CAM, prim.center, aabb, 0, 1,
+    otherwise be charged to one unlucky ray. `center` is the cell-ray
+    anchor (`cell_anchor`), not necessarily the box centre."""
+    resolve_cell(world, ik, T_FLANGE_CAM, center, aabb, 0, 1,
                  fy, height_px, corners=box_corners(prim))   # warmup
     refreshes, ray_ms, depths = [], [], []
     for rep in range(repeats):
@@ -373,13 +414,13 @@ def measure(world, ik, prim, aabb, fy, height_px, repeats=3):
         for h in range(H_BINS):
             for v in range(len(V_ELEVATIONS)):
                 t1 = time.perf_counter()
-                resolve_cell(world, ik, T_FLANGE_CAM, prim.center,
+                resolve_cell(world, ik, T_FLANGE_CAM, center,
                              aabb, h, v, fy, height_px,
                              corners=box_corners(prim))
                 ray_ms.append((time.perf_counter() - t1) * 1e3)
                 if rep == 0:
                     depths.append(n_depths(
-                        cell_clear_m(aabb, cell_ray(prim.center, h, v))))
+                        cell_clear_m(aabb, cell_ray(center, h, v))))
         refreshes.append((time.perf_counter() - t0) * 1e3)
     faces, scans, members = {}, {}, {}
     for face in FACES:
@@ -673,17 +714,21 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
     color = ses.intrinsics["color"]
     fy, height_px = float(color.fy), int(color.height)
 
-    guard_dims = None
+    guard_dims, points = None, None
     if world == "guard":
         fused = r.fused()
         if fused is None:
             raise SystemExit(f"{run_id}: --world guard needs a fused cloud "
                              f"(fused/cloud.npy) and this run has none")
-        w, guard_dims, _ = guard_world(fused[0], cell_yaml)
+        points = fused[0]
+        w, guard_dims, _ = guard_world(points, cell_yaml)
     else:
         w = box_world(prim, margin, cell_yaml)
     ik = UR5eIK()
     aabb = box_aabb(prim)
+    # Guard mode is the LIVE-fidelity mode, so it anchors cell rays where the
+    # machine anchors them: at the fused cloud's mean, not the box centre.
+    center = cell_anchor(prim, points)
     ext = np.asarray(prim.params["extents"], float)
     print(f"== {run_id}  ({len(r.steps)} steps, provenance {r.provenance})")
     print(f"   belief: step {step_id:03d} boxguard box  extents "
@@ -692,6 +737,13 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
     obstacle_desc = (f"box + {margin * 100:.0f} cm/dim" if world != "guard" else
                      "geometry.object_box(fused cloud) "
                      f"{np.round(guard_dims * 1000, 1).tolist()} mm/dim")
+    anchor_src = ("fused-cloud mean, as machine._cell_map casts them"
+                  if points is not None
+                  else "boxguard box centre (Stage A default)")
+    print(f"   cell-ray anchor: {np.round(center, 4).tolist()} "
+          f"({anchor_src}; "
+          f"{np.linalg.norm(center - prim.center) * 1000:.1f} mm from the "
+          f"box centre)")
     print(f"   world:  obstacle = {obstacle_desc}, coal "
           f"padding {w.padding * 1000:.0f} mm; intrinsics fy={fy:.1f} "
           f"h={height_px}px; RAY_STEP_M={RAY_STEP_M}")
@@ -700,9 +752,9 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
     # Warm up before the walk: without this the first address in the table
     # carries the cold-start cost of IK/coal data allocation and its ms
     # column is a lie about that address rather than a measurement.
-    resolve_cell(w, ik, T_FLANGE_CAM, prim.center, aabb, 0, 1,
+    resolve_cell(w, ik, T_FLANGE_CAM, center, aabb, 0, 1,
                  fy, height_px, corners=box_corners(prim))
-    rows = walk(r, w, ik, prim, aabb, fy, height_px)
+    rows = walk(r, w, ik, prim, aabb, fy, height_px, center)
     if not rows:
         print("   no executed addressed steps — nothing to compare")
         return None
@@ -728,7 +780,7 @@ def bench(run: str = PINNED_RUN, out: str = str(OUT), margin: float = 0.0,
           f"(min surface distance {min(x['d_new'] for x in got):.3f} m)")
     print(invariant_line(rows))
 
-    m = measure(w, ik, prim, aabb, fy, height_px, repeats=repeats)
+    m = measure(w, ik, prim, aabb, fy, height_px, center, repeats=repeats)
     tl = timing_table(m)
     fl = face_table(m, prim)
     print()

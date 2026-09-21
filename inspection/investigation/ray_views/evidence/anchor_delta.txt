@@ -1,0 +1,126 @@
+p inspection/investigation/ray_views/ray_replay.py --run all --world guard
+Final whole-branch review, F2 (gate fidelity) — CELL-RAY ANCHOR.
+
+The bench anchored cell rays at the boxguard box's centre (`prim.center`).
+The machine does not: `machine._cell_map` and `collect._default_planner`
+both anchor at `acc.centroid`, the fused cloud's mean. Measured gap on the
+four benched runs: 7.6-14.7 mm — roughly 2x the +6 mm mean give-back the
+Stage B gate was read on. So the bench was measuring rays the machine never
+casts.
+
+FIX: guard mode (which already loads the fused cloud to build its obstacle)
+now anchors cell rays at that cloud's mean — exactly the machine's split,
+with the BELIEF (aabb, box_corners, and the d_surf surface the comparison
+is measured against) still the boxguard prim. Boxguard default mode is
+unchanged and stays the committed Stage A record.
+
+THIS FILE IS ADDITIVE. evidence/bench_summary.txt and
+evidence/guard_world_delta.txt are the committed gate evidence and were not
+touched; the "anchor=box centre" column below reproduces them exactly
+(1709-cam-ai-demo1: 9/11 closer, mean d_surf 0.158 m, per-row d_new
+identical), which is also the check that threading the anchor through
+changed nothing else.
+
+STOP RULE (controller): if the live anchor flips any run's closer-majority,
+the Stage B gate reopens for the architect.
+RESULT: no run flipped. See the verdict line at the foot of this file.
+
+anchor delta — cell-ray anchor at the boxguard BOX CENTRE vs at the FUSED-CLOUD MEAN
+(final-review F2: `machine._cell_map`/`collect._default_planner` anchor cell rays at `acc.centroid`;
+ the guard-world bench anchored them at `prim.center`. Guard world in both columns — only the anchor moves.)
+
+d_surf = Euclidean closest-point distance to the boxguard belief box SURFACE (unchanged metric).
+Face rays are anchored on the box WALLS in both columns and cannot move; only cell rows can differ.
+
+== 1709-cam-ai-demo1  (11 addressed views)   anchor gap 14.7 mm
+   box centre  [0.0499, -0.3763, 0.0464]
+   cloud mean  [0.0431, -0.3709, 0.0583]
+address       old d_surf   anchor=box  anchor=cloud    delta   box-verdict / cloud-verdict
+----------------------------------------------------------------------------------------------------
+cell 3,1      0.175        0.120       0.133     +0.013   closer / closer
+cell 9,1      0.162        0.120       0.145     +0.025   closer / closer
+cell 4,1      0.158        0.147       0.160     +0.013   closer / farther
+cell 6,1      0.167        0.120       0.145     +0.025   closer / closer
+face y-       0.214        0.155       0.155     +0.000   closer / closer
+cell 3,0      0.163        0.162       0.148     -0.014   closer / closer
+cell 9,0      0.159        0.162       0.157     -0.005   farther / closer
+face x+       0.244        0.160       0.160     +0.000   closer / closer
+face x-       0.256        0.158       0.158     +0.000   closer / closer
+face y+       0.195        0.230       0.230     +0.000   farther / farther
+face top      0.240        0.200       0.200     +0.000   closer / closer
+
+   anchor=box centre : 9/11 closer, mean d_surf 0.158 m
+   anchor=cloud mean : 9/11 closer, mean d_surf 0.163 m
+   closer-MAJORITY   : True -> True   [HELD]   (count 9/11 -> 9/11, mean d_surf +0.005 m)
+
+== 1509-cam-ai_bench5  (9 addressed views)   anchor gap 11.1 mm
+   box centre  [0.105, -0.3855, 0.0442]
+   cloud mean  [0.1057, -0.3813, 0.0545]
+address       old d_surf   anchor=box  anchor=cloud    delta   box-verdict / cloud-verdict
+----------------------------------------------------------------------------------------------------
+cell 6,1      0.168        0.121       0.127     +0.006   closer / closer
+cell 11,1     0.161        0.144       0.155     +0.011   closer / closer
+face x-       0.243        0.158       0.158     +0.000   closer / closer
+face y-       0.205        0.151       0.151     +0.000   closer / closer
+cell 9,1      0.168        0.121       0.130     +0.009   closer / closer
+face y+       0.212        0.256       0.256     +0.000   farther / farther
+cell 9,0      0.165        0.144       0.146     +0.003   closer / closer
+face x+       0.234        0.160       0.160     +0.000   closer / closer
+cell 3,0      0.154        0.163       0.162     -0.001   farther / farther
+
+   anchor=box centre : 7/9 closer, mean d_surf 0.158 m
+   anchor=cloud mean : 7/9 closer, mean d_surf 0.161 m
+   closer-MAJORITY   : True -> True   [HELD]   (count 7/9 -> 7/9, mean d_surf +0.003 m)
+
+== 1509-cam-ai_bench4  (1 addressed views)   anchor gap 14.7 mm
+   box centre  [0.1022, -0.376, 0.0511]
+   cloud mean  [0.1094, -0.3687, 0.0616]
+address       old d_surf   anchor=box  anchor=cloud    delta   box-verdict / cloud-verdict
+----------------------------------------------------------------------------------------------------
+cell 10,1     0.150        0.133       0.127     -0.006   closer / closer
+
+   anchor=box centre : 1/1 closer, mean d_surf 0.133 m
+   anchor=cloud mean : 1/1 closer, mean d_surf 0.127 m
+   closer-MAJORITY   : True -> True   [HELD]   (count 1/1 -> 1/1, mean d_surf -0.006 m)
+
+== 1509-lan-ai_bench5  (10 addressed views)   anchor gap 7.6 mm
+   box centre  [0.0525, -0.4093, 0.0276]
+   cloud mean  [0.0487, -0.413, 0.033]
+address       old d_surf   anchor=box  anchor=cloud    delta   box-verdict / cloud-verdict
+----------------------------------------------------------------------------------------------------
+cell 4,1      0.266        0.122       0.110     -0.012   closer / closer
+cell 10,0     0.243        0.193       0.169     -0.024   closer / closer
+cell 9,0      0.231        0.176       0.152     -0.024   closer / closer
+face x-       0.238        0.170       0.170     +0.000   closer / closer
+face x+       0.253        0.165       0.165     +0.000   closer / closer
+cell 3,1      0.250        0.135       0.142     +0.007   closer / closer
+cell 5,1      0.241        0.142       0.150     +0.008   closer / closer
+face top      0.253        0.220       0.220     +0.000   closer / closer
+face y+       0.259        0.394       0.394     +0.000   farther / farther
+cell 10,1     0.253        0.122       0.124     +0.002   closer / closer
+
+   anchor=box centre : 9/10 closer, mean d_surf 0.184 m
+   anchor=cloud mean : 9/10 closer, mean d_surf 0.180 m
+   closer-MAJORITY   : True -> True   [HELD]   (count 9/10 -> 9/10, mean d_surf -0.004 m)
+
+====================================================================================================
+Every run's closer-majority HELD under the live anchor. The gate's verdicts stand.
+
+Reading the per-view deltas. Face rows are all +0.000 by construction: a
+face ray is anchored on the box WALL, which this change does not move. Only
+cell rows can differ, and they move both ways — the cloud mean sits ~1 cm
+higher in z than the box centre on every run (the fused cloud is a
+top-biased sample of a box the fit centres), so v=1 cells look slightly
+DOWN and lose a little, while v=0 cells and the flat LAN block gain.
+
+Two per-view verdicts do change sign on 1709-cam-ai-demo1 — cell 4,1
+closer -> farther (+0.013) and cell 9,0 farther -> closer (-0.005) — and
+they cancel: the count stays 9/11. Both sit within 5 mm of the old
+endpoint, which is the band where "closer" and "farther" are a coin toss
+rather than a finding. Recorded because a reader comparing this table to
+bench_summary.txt row by row will meet them.
+
+Per-run mean d_surf moves by -0.006 to +0.005 m. The gate's claim — the ray
+sampler puts the clear majority of executed views closer to the surface
+than the run actually got — holds on all four runs under the anchor the
+machine actually uses.
