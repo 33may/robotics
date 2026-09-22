@@ -200,6 +200,47 @@ def test_exhaustion_is_a_flag_not_a_string_match():
         assert f.transcript_rel and (store.path / f.transcript_rel).exists()
 
 
+def test_a_garbled_evidence_item_never_breaks_the_summary():
+    # Lenient parsing, the same standing decision as `normalise_evidence_image`
+    # in the evidence agent: a good hunt is never discarded over a garbled
+    # citation, and a garbled `evidence` SHAPE must not crash one either.
+    f = vlm_agent.Finding((3, 1), "found — a blank face",
+                          [["blank brown cardboard", "no print"],
+                           "no legible text", None, {"read": "ACME"}],
+                          "r", {})
+    assert all(isinstance(e, str) for e in f.evidence)
+    assert isinstance(f.summary, str)
+    assert "blank brown cardboard, no print" in f.summary   # list -> joined
+    assert "no legible text" in f.summary
+    assert "ACME" in f.summary                              # dict -> json
+    assert len(f.evidence) == 3                             # None dropped
+
+
+def test_a_nested_evidence_list_does_not_bounce_a_finished_hunt():
+    # 2209-box-ray-demo4: the hunt at ["face", "y+"] ANSWERED ("found —
+    # blank cardboard face…", evidence_image 1, trace seq 150), then
+    # `Finding.summary` joined an evidence list whose item 0 was a list —
+    # TypeError, the answer bounced, and the transcript (written after) was
+    # never persisted. The hunt is finished; only the summary was garbled.
+    import json
+    spec = VlmAgent(rules="r")
+    with tempfile.TemporaryDirectory() as tmp:
+        store, f = _run(tmp, spec, [
+            {"evidence": [["blank brown cardboard", "no print"],
+                          "no legible text"],
+             "reasoning": "r", "answer": "found — blank cardboard face"}])
+        assert f.answer == "found — blank cardboard face"
+        assert isinstance(f.summary, str)
+        assert "blank brown cardboard, no print" in f.summary
+        rel = store.findings()[0]["transcript"]
+        assert f.transcript_rel == rel and (store.path / rel).exists()
+        disk = json.loads((store.path / rel).read_text())
+        # The model's emit stays VERBATIM on disk — only the Finding's own
+        # copy is normalised.
+        assert disk["turns"][0]["evidence"][0] == ["blank brown cardboard",
+                                                   "no print"]
+
+
 def main():
     test_the_loop_is_never_given_a_way_to_move()
     test_a_broken_spec_dies_at_import_time_not_at_2am()
@@ -210,6 +251,8 @@ def main():
     test_read_text_takes_a_region_and_each_box_is_its_own_call()
     test_failure_messages_speak_the_models_convention()
     test_exhaustion_is_a_flag_not_a_string_match()
+    test_a_garbled_evidence_item_never_breaks_the_summary()
+    test_a_nested_evidence_list_does_not_bounce_a_finished_hunt()
     print("OK test_vlm_agent")
 
 

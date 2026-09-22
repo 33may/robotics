@@ -51,6 +51,43 @@ TOOLS = frozenset({"detect", "segment", "read_text", "crop", "note"})
 EMIT_CORE = ("evidence", "reasoning", "answer")
 
 
+def _evidence_text(item):
+    """One raw `evidence` item -> one string. Never raises.
+
+    The emit contract says a list of strings and models sometimes answer with
+    something else — 2209-box-ray-demo4 got `[["blank brown cardboard",
+    "no print"], ...]` back from a hunt that had already succeeded. A nested
+    list reads as one citation stated in pieces, so it is joined, not dropped.
+    """
+    if isinstance(item, str):
+        return item.strip()
+    if item is None:
+        return ""
+    if isinstance(item, (list, tuple)):
+        return ", ".join(t for t in map(_evidence_text, item) if t)
+    if isinstance(item, dict):
+        try:
+            return json.dumps(item, sort_keys=True, default=str,
+                              separators=(",", ":"))
+        except Exception:                            # noqa: BLE001
+            return str(item)
+    return str(item)
+
+
+def _normalise_evidence(raw):
+    """A model's `evidence` emit -> the list of strings the tier promises.
+
+    Same standing decision as `evidence_agent.normalise_evidence_image`
+    (2026-08-26): lenient at the parse boundary, because a finished hunt must
+    never be discarded over the shape of its citation. In 2209-box-ray-demo4 a
+    nested item reached `Finding.summary`, whose join raised TypeError AFTER
+    the `done` tick — the answer bounced and the transcript, written on
+    the next line, was lost. Normalise once, here, where the raw emit is taken.
+    """
+    items = raw if isinstance(raw, (list, tuple)) else [raw]
+    return [t for t in map(_evidence_text, items) if t]
+
+
 class Finding:
     """What comes back from one run. The summary is what travels."""
 
@@ -58,7 +95,9 @@ class Finding:
                  extras=None, exhausted=False):
         self.cell = cell
         self.answer = answer
-        self.evidence = list(evidence)
+        #: Normalised to strings — the raw emit stays verbatim in the
+        #: transcript's turns.
+        self.evidence = _normalise_evidence(evidence)
         self.reasoning = reasoning
         self.transcript = transcript
         #: Normalised appendix fields, keyed by their emit name. What a
