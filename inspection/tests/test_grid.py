@@ -49,38 +49,6 @@ def test_moves_from_nearest_first():
     assert mv[-1].cell == (11, 2)                # farthest last
 
 
-def test_radius_for_extent_is_the_pinhole_formula_between_its_clamps():
-    """The fill formula Stage B stopped calling, tested DIRECTLY.
-
-    `radius_for_extent` survives the ray-views rebuild as an importable
-    (ray-views Stage B plan, Global Constraints) and its only remaining
-    exercise was `test_faceview`'s indirect R_MIN-clamp assert through
-    `face_radius` — which cannot tell a correct formula from a constant
-    that happens to clamp. So: the similar-triangles value itself, and both
-    clamps it is held between.
-    """
-    from inspection.view.grid import (CLOSENESS, FILL_TARGET, R_MAX, R_MIN,
-                                      radius_for_extent)
-    fy, height_px = 430.0, 480
-
-    # r = fy*L / (fill*height) / closeness — pick an extent that lands
-    # strictly INSIDE [R_MIN, R_MAX] so neither clamp can hide the maths.
-    want = 0.30
-    extent = want * FILL_TARGET * height_px * CLOSENESS / fy
-    assert R_MIN < want < R_MAX, "fixture must exercise the unclamped band"
-    assert np.isclose(radius_for_extent(extent, fy, height_px), want)
-
-    # Both clamps, and the documented `r_min=0.0` escape from the floor.
-    assert radius_for_extent(1e-6, fy, height_px) == R_MIN
-    assert radius_for_extent(10.0, fy, height_px) == R_MAX
-    assert radius_for_extent(1e-6, fy, height_px, r_min=0.0) < R_MIN
-    # `closeness` divides: asking for 2x closer halves the distance — read
-    # unfloored, because half of this fixture's want lands under R_MIN and
-    # the clamp would otherwise answer for the slider.
-    assert np.isclose(radius_for_extent(extent, fy, height_px, r_min=0.0,
-                                        closeness=CLOSENESS * 2), want / 2)
-
-
 def test_grid_is_light():
     import inspection.view.grid as g
     src = Path(g.__file__).read_text()
@@ -100,7 +68,6 @@ def main():
     test_step_delta_wraps(); test_cell_gloss_matches_decider_wording()
     test_neighbors_wrap_in_h_clamp_in_v(); test_coverage_map_ascii()
     test_moves_from_nearest_first()
-    test_radius_for_extent_is_the_pinhole_formula_between_its_clamps()
     test_grid_is_light()
     print("OK test_grid")
 

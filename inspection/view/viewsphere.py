@@ -1,39 +1,27 @@
-"""Viewsphere around the inspected object — cells, reachability, planning (v2, UR5e).
+"""Cell frame around the inspected object — {h, v} directions, camera poses.
 
-Keeps the SO-101 addressing scheme (Anton, 2026-08-18): cells are {h, v} on
-ONE shell of configurable radius r — 12 azimuth bins of 30 deg with h=0
-facing the robot base, elevations [20, 45, 70] deg. Roll about the camera
-boresight is a FREE parameter: each cell tries the upright roll first, then
-rolled variants — image rotation is acceptable, unreachability is not.
+Keeps the addressing scheme (Anton, 2026-08-18): cells are {h, v} — 12
+azimuth bins of 30 deg with h=0 facing the robot base, elevations from
+`grid.V_ELEVATIONS`, azimuth computed from the actual center.
 
-The camera pose is derived from the flange via a NOMINAL hand-eye guess
-(top camera, boresight along the tool axis) — replace T_FLANGE_CAM after
-the real hand-eye calibration.
+A cell's DISTANCE is no longer a property of this helper. A view is a ray
+and its depth is the closest provably-safe sample on it (`view/rays.py`,
+docs/2026-09-17-ray-views-design.md) — the reachability map, the roll
+search and the shell-radius derivation died with Stage D. `r` here is only
+the radius the cell frame is DRAWN at: the UI's cell markers and the
+nominal `cam_pose` behind them. `run/machine.py:_recenter` feeds it the
+mean depth the rays actually resolved, falling back to `grid.DEFAULT_R`
+before anything has resolved.
 
-The object itself is a HARD obstacle in the world (set_object) — cells whose
-every branch/roll collides are honestly blocked; there is no separate
-standoff (endpoint validity at env padding IS the standoff). Radius must
-respect the tool: the closed tip rides ~19 cm AHEAD of the camera.
-
-Usage (from repo root, robo env active):
-    p inspection/view/viewsphere.py             # reachability map for the demo cup
-    p inspection/view/viewsphere.py --r 0.40    # different shell radius
-    p inspection/view/viewsphere.py --demo      # meshcat: cells colored, tour them
+`T_FLANGE_CAM` and `ROLLS` live here and are imported by `view/rays.py`,
+`view/faceview.py`, `run/collect.py` and `run/machine.py`.
 """
-
-import argparse
-import sys
-import time
 
 import numpy as np
 
 from inspection.cell.geometry import load_T_flange_cam
-from inspection.cell.world import RobotCell, DEFAULT_STEP
-from inspection.motion.ik import UR5eIK
-from inspection.motion.plan import plan_viewpoint, CUP_POS, CUP_DIMS, DEMO_PARK
 # Cell addressing lives in the light half (grid.py) so the AI tiers can speak
-# about cells without importing IK/motion. Re-exported here: callers that
-# already say `from ...viewsphere import H_BINS` keep working.
+# about cells without importing IK/motion.
 from inspection.view.grid import H_BINS, V_ELEVATIONS, DEFAULT_R
 
 # CALIBRATED hand-eye (2026-08-19, calib/T_flange_cam_*.npy): left eye at
@@ -57,14 +45,16 @@ def _rot_x(a):
 
 
 class ViewSphere:
-    """One shell of {h, v} camera cells around a center point (base frame)."""
+    """The {h, v} cell frame around a center point (base frame).
 
-    def __init__(self, center, r=DEFAULT_R, elevations=V_ELEVATIONS,
-                 t_flange_cam=T_FLANGE_CAM):
+    `r` is a DRAWING radius, not a standoff: cell depth is resolved per ray
+    by `view/rays.py`.
+    """
+
+    def __init__(self, center, r=DEFAULT_R, elevations=V_ELEVATIONS):
         self.center = np.asarray(center, dtype=float)
         self.r = float(r)
         self.elevations = tuple(elevations)   # deg ABOVE THE TABLE PLANE
-        self._t_fc_inv = np.linalg.inv(t_flange_cam)
         # h=0 faces the base: azimuth of the center->base direction
         d = -self.center[:2]
         self._az0 = np.arctan2(d[1], d[0])
@@ -95,161 +85,3 @@ class ViewSphere:
         T[:3, 0], T[:3, 1], T[:3, 2], T[:3, 3] = x, y, z, pos
         T[:3, :3] = T[:3, :3] @ _rot_x(roll)
         return T
-
-    def flange_pose(self, h, v, roll=0.0):
-        """Where the FLANGE must be so the camera sits at cell {h, v}."""
-        return self.cam_pose(h, v, roll) @ self._t_fc_inv
-
-    # ------------------------------------------------------------ queries
-    def cell_reachable(self, world, ik, h, v):
-        """First roll whose flange pose has a collision-free IK branch.
-        Returns (roll, configs) or (None, [])."""
-        for roll in ROLLS:
-            T = self.flange_pose(h, v, roll)
-            free = [q for q in ik.branches(T) if not world.is_colliding(q)]
-            if free:
-                return roll, free
-        return None, []
-
-    def reachability(self, world, ik):
-        """{(h, v): roll | None} over all cells."""
-        return {(h, v): self.cell_reachable(world, ik, h, v)[0]
-                for h, v in self.cells()}
-
-    def plan_to_cell(self, world, ik, q_now, h, v, seed=0, step=DEFAULT_STEP):
-        """Ladder-plan to cell {h, v}, walking the roll preferences.
-        Returns (path, report, roll) — path None if every roll fails."""
-        rep = None
-        for roll in ROLLS:
-            T = self.flange_pose(h, v, roll)
-            free = [q for q in ik.branches(T) if not world.is_colliding(q)]
-            if not free:
-                continue
-            path, rep = plan_viewpoint(world, ik, q_now, T,
-                                       seed=seed, step=step)
-            if path is not None:
-                return path, rep, roll
-        return None, rep, None
-
-
-def derive_r_floor(world, ik, center, r_want, r_ref=None, step=0.02,
-                   count_at=None):
-    """Measured shell floor for THIS object at THIS position [m].
-
-    The static grid.R_MIN is the demo cup's reachability cliff and taxes
-    every easier object (the flat bench box holds 23/36 cells down to 0.20,
-    its cliff is at 0.18 — block_report --rs, 2026-09-15). So when the fill
-    formula wants to go below the static floor, probe reachable-cell counts
-    downward from it and stop at the first radius that LOSES a cell: the
-    measured cliffs are sharp (cup -9, box -4 cells in one 0.02 step), so a
-    count drop is the signal and needs no tolerance. The object must already
-    be set in `world` (set_object) — it is the obstacle being measured.
-
-    Returns the smallest probed radius >= r_want that keeps the reference
-    count; r_want itself when the static floor is not in the way. Costs one
-    36-cell reachability sweep per probed radius, survey-time only.
-    """
-    from inspection.view.grid import R_MIN
-    r_ref = R_MIN if r_ref is None else r_ref
-    if r_want >= r_ref:
-        return r_want
-    if count_at is None:                      # injectable for tests
-        count_at = lambda r: sum(
-            roll is not None
-            for roll in ViewSphere(center, r=r).reachability(world, ik).values())
-    best = count_at(r_ref)
-    floor = r_ref
-    candidates = [round(r, 4) for r in
-                  np.arange(r_ref - step, r_want, -step)] + [float(r_want)]
-    for r in candidates:
-        if count_at(r) < best:
-            break
-        floor = r
-    return floor
-
-
-def map_str(reach, elevations=V_ELEVATIONS):
-    """ASCII map: rows = v (top row highest), cols = h. #=reachable .=blocked"""
-    lines = []
-    n_v = len(elevations)
-    for v in reversed(range(n_v)):
-        row = "".join("#" if reach[(h, v)] is not None else "."
-                      for h in range(H_BINS))
-        lines.append(f"v{v} ({elevations[v]:.0f}deg)  {row}")
-    lines.append(f"            {''.join(str(h % 10) for h in range(H_BINS))}"
-                 "  (h0 faces base)")
-    return "\n".join(lines)
-
-
-# ------------------------------------------------------------------ demo
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--r", type=float, default=DEFAULT_R, help="shell radius [m]")
-    ap.add_argument("--elev", type=float, nargs="+", default=list(V_ELEVATIONS),
-                    help="ring elevations, deg ABOVE the table plane (default 20 45 70)")
-    ap.add_argument("--demo", action="store_true", help="meshcat cell tour")
-    ap.add_argument("--seed", type=int, default=0)
-    args = ap.parse_args()
-
-    world, ik = RobotCell(), UR5eIK()
-    world.set_object("cup", CUP_DIMS, [*CUP_POS, 0, 0, 0], parent="base")
-    center = CUP_POS + np.array([0.0, 0.0, CUP_DIMS[2] / 2])
-    sphere = ViewSphere(center, r=args.r, elevations=args.elev)
-
-    t0 = time.perf_counter()
-    reach = sphere.reachability(world, ik)
-    n_ok = sum(1 for r in reach.values() if r is not None)
-    print(f"shell r={args.r:.2f} m around the cup — reachability "
-          f"({(time.perf_counter() - t0) * 1e3:.0f} ms):")
-    print(map_str(reach, sphere.elevations))
-    print(f"{n_ok}/{len(reach)} cells reachable")
-
-    if not args.demo:
-        return 0
-
-    import meshcat.geometry as g
-    world.init_viewer()
-    world.show(DEMO_PARK, label="park")
-    # paint every cell on the sphere
-    for (h, v), roll in reach.items():
-        node = world._viz.viewer["sphere"][f"h{h}v{v}"]
-        node.set_object(g.Sphere(0.012), g.MeshLambertMaterial(
-            color=0x22CC44 if roll is not None else 0xDD2222))
-        M = np.eye(4)
-        M[:3, 3] = sphere.center + sphere.r * sphere.cell_dir(h, v)
-        node.set_transform(M)
-
-    # tour: RANDOM cell order — consecutive hops show real reorientation
-    q_now = DEMO_PARK.copy()
-    visited = failed = 0
-    tally = {1: 0, 2: 0, 3: 0}
-    order = [c for c in sphere.cells() if reach[c] is not None]
-    np.random.default_rng(args.seed).shuffle(order)
-    try:
-        for h, v in order:
-            if True:
-                path, rep, roll = sphere.plan_to_cell(
-                    world, ik, q_now, h, v, seed=args.seed)
-                if path is None:
-                    failed += 1
-                    print(f"cell h{h} v{v}: REFUSED (no tier found a path)")
-                    continue
-                visited += 1
-                tally[rep["tier"]] += 1
-                print(f"cell h{h} v{v}: tier {rep['tier']}, "
-                      f"roll {np.rad2deg(roll):+.0f} deg, "
-                      f"{len(path)} waypoints ({rep['ms']:.0f} ms)")
-                world._viz.viewer["sphere"][f"h{h}v{v}"].set_object(
-                    g.Sphere(0.014), g.MeshLambertMaterial(color=0x2288DD))
-                world.replay(path)
-                q_now = path[-1]
-                time.sleep(0.5)
-        print(f"\ntour: {visited} cells visited "
-              f"(t1/t2/t3 {tally[1]}/{tally[2]}/{tally[3]}), {failed} refused")
-    except KeyboardInterrupt:
-        pass
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
