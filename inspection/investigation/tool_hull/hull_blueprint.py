@@ -57,7 +57,10 @@ CURRENT = [(-18, 240, 74.5, -100, 70)]
 # front, which is the exact failure this hull exists to remove.
 GRIPPER_BASE = (-18, 40, 45, -42, 37)      # mount stack + base casting
 GRIPPER_BODY = (40, 240, 74.5, -25, 25)    # slender body -> closed fingertips
-CAMERA_BOX = (LENS[0] - 17, LENS[0] + 17, 40, -100, 70)
+# 2026-09-22: the +Z half of the slab (the blue angled bracket, up to +70) is
+# gone — Anton unscrewed it. Only the D405 + black bracket remain on the -Z
+# face: 6 cm below the body face (Anton, tape, 2026-09-22) -> Z -85..-25.
+CAMERA_BOX = (LENS[0] - 17, LENS[0] + 17, 40, -85, -25)
 PROPOSED = [GRIPPER_BASE, GRIPPER_BODY, CAMERA_BOX]
 
 

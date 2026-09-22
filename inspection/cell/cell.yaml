@@ -146,11 +146,16 @@ tool:
     pose: [0.1400, 0.0, 0.0, 0, 0, 0]
 
   cam_stack:
-    # Camera + brackets: a THIN VERTICAL slab at the lens station, 17 mm to
-    # either side. This is the piece that is tall, and it is 34 mm thick — not
-    # 258 mm long as the old single box implied.
-    dims: [0.0340, 0.0800, 0.1700]          # X 125.4..159.4, |Y| 40, Z -100..+70
-    pose: [0.1424, 0.0, -0.0150, 0, 0, 0]
+    # Camera + bracket: a THIN VERTICAL slab at the lens station, 17 mm to
+    # either side, 34 mm thick — not 258 mm long as the old single box implied.
+    # ONE-SIDED since 2026-09-22: the slab used to span Z -100..+70 because
+    # the blue angled bracket on the +Z face of the gripper was part of the
+    # stack. Anton unscrewed it; only the D405 + its black bracket remain,
+    # hanging off the -Z face: lens at Z -47.5, bracket bottom 6 cm below the
+    # body face (Anton, tape, 2026-09-22) -> Z -85. The slab starts where the
+    # body box ends (Z -25) — union, no gap.
+    dims: [0.0340, 0.0800, 0.0600]          # X 125.4..159.4, |Y| 40, Z -85..-25
+    pose: [0.1424, 0.0, -0.0550, 0, 0, 0]
 
   cable_loop:
     # the classic forgotten sweep — generous slack envelope around the wrist
