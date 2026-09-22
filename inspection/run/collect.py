@@ -113,10 +113,11 @@ def _default_planner(sup, seed: int = 0, hop_planner=plan_viewpoint):
     a transaction the same way) — `hop`/`slide_in` each repeat the seam
     they continue from, a zero-length edge that costs nothing.
 
-    Replaces the KNOWN-DEGRADED shell ranker (Stage B task 4, ray-views):
-    that one plans to `sphere.plan_to_cell`'s point on a shell radius that
-    is merely the MEAN of the rays' resolved depths, disagreeing by
-    construction with the accessibility gate now that cells are rays. A
+    Replaced the KNOWN-DEGRADED shell ranker (Stage B task 4, ray-views;
+    deleted in Stage D): that one planned a ladder move to a point on a
+    shell radius that is merely the MEAN of the rays' resolved depths,
+    disagreeing by construction with the accessibility gate now that cells
+    are rays. A
     cell whose ray does not resolve, or whose transition does not plan,
     costs `(None, None)` — dropped by `rank_candidates`, never crashed on.
 

@@ -1350,8 +1350,9 @@ class Supervisor:
         self._object_aabb = pose_box_aabb(dims, pose)
         self._reach = self._cell_map()
         # No shell radius is DERIVED any more: a cell is a ray and carries
-        # its own resolved depth, so `radius_for_extent`/`derive_r_floor`
-        # have no caller here. `self.sphere` survives purely as the cell-
+        # its own resolved depth. The fill formula and the per-run shell
+        # floor that used to answer here are gone from the package entirely
+        # (Stage D). `self.sphere` survives purely as the cell-
         # frame helper (center, cell_dir, cam_pose) the UI draws markers
         # with, and its radius is the honest Stage B stopgap — the mean
         # depth the rays actually resolved.
@@ -1498,8 +1499,9 @@ class Supervisor:
         face stays in frame (`face_family`'s theta=0 member and its own
         containment floor).
 
-        NOT a standoff formula — `face_radius`/`radius_for_extent` died with
-        the rest of the fill-formula family (design §Dies). This is one of
+        NOT a standoff formula — the per-face framing radius and the fill
+        formula under it died with the rest of that family (design §Dies,
+        deleted in Stage D). This is one of
         the ray sampler's own stop conditions evaluated alone, with no IK and
         no collision check, so it is a LOWER BOUND on where the arm could
         stand. That is exactly why the marker it feeds is published

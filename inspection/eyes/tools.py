@@ -235,7 +235,7 @@ class ViewTools:
         centre -> None; a missing bearing must not stop a run.
 
         h = 0 faces the base: the reference direction is -centre_xy
-        (view/viewsphere.py:68-69).
+        (`ViewSphere.__init__`'s `_az0`, view/viewsphere.py).
         """
         if centre is None:
             fused = self._run.fused()

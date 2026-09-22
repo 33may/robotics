@@ -41,7 +41,7 @@ def main() -> int:
 
     # Same two swaps as the unit tests, applied before any Supervisor or
     # SweepDriver gets constructed: the dispatcher's own plan_viewpoint/
-    # plan_to_cell calls (Supervisor._plan_worker) and the sweep's ranking
+    # plan_transaction calls (Supervisor._plan_worker) and the sweep's ranking
     # planner (run/collect.py's `_default_planner` factory, looked up by
     # bare name at SweepDriver.__init__ time — patching the module
     # attribute here is enough, no call-site changes needed).

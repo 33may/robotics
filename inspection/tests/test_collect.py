@@ -323,7 +323,7 @@ def _stub_planner(world, ik, q_now, cell):
     """Stand-in for `SweepDriver`'s default planner.
 
     The taught `cell.yaml` keep-outs make the demo park pose collide (see
-    `test_flow_a.py:DirectPlanSupervisor`), so real `plan_to_cell` refuses
+    `test_flow_a.py:DirectPlanSupervisor`), so real transaction planning refuses
     from wherever this sandbox's `FakeRig` starts — exactly the workaround
     `test_flow_a.py` uses for the Supervisor's own planner, applied here to
     the driver's independent ranking planner. Cost is deterministic (by
@@ -457,7 +457,7 @@ def test_random_mode_retries_refused_passes_until_stopped(tmp_path):
 
 def test_a_faulted_run_ends_the_sweep(tmp_path):
     """`phase == "fault"` is terminal for the whole run: no request can ever
-    be accepted again, so ranking on would spin `plan_to_cell` and `rig.q()`
+    be accepted again, so ranking on would spin the ranking planner and `rig.q()`
     against hardware the teardown is already closing."""
     sup = StubSup()
     driver = SweepDriver(sup, tmp_path, planner=_stub_planner)

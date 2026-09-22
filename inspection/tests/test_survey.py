@@ -33,7 +33,7 @@ def _pose(az_deg, elev_deg=20.0):
     """Camera pose looking at CENTRE from (az, elev) — +Z boresight (optical).
 
     Azimuth counted the grid's way: h = 0 faces the base, so the reference
-    direction is -CENTRE_xy (view/viewsphere.py:68-69).
+    direction is -CENTRE_xy (`ViewSphere.__init__`'s `_az0`).
     """
     ref = np.arctan2(-CENTRE[1], -CENTRE[0])
     a, e = np.radians(az_deg) + ref, np.radians(elev_deg)
