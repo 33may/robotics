@@ -37,8 +37,10 @@ def test_prompt_mentions_face_priority():
     import inspection.brain.loop as loop
     import inspect
     src = inspect.getsource(loop)
-    assert "face views" in src and "mainly" in src, \
-        "system prompt must carry the SOFT face-evidence priority"
+    assert "FACE VIEWS" in src and "BEFORE MINING A MEDIOCRE ONE" in src, \
+        "system prompt must carry the NORMATIVE face-evidence priority"
+    assert "A read off an oblique view is a lead, not evidence" in src, \
+        "oblique reads are leads, never evidence (demo7 ruling)"
 
 
 class _StoreStub:
