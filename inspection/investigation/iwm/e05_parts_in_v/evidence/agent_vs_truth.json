@@ -1,0 +1,4169 @@
+{
+ "2209-compute-ray-demo5_1mm_baseline": {
+  "run": "2209-compute-ray-demo5",
+  "mm": 1,
+  "mode": "baseline",
+  "lift": "L3",
+  "views": [
+   {
+    "view": "c5.2",
+    "role": "first",
+    "parts": 15,
+    "rows_labelled": 33601,
+    "surface_rows": 1825801,
+    "conflicts": 799,
+    "bytes": 7874268
+   },
+   {
+    "view": "c5.6",
+    "role": "later",
+    "applied": {
+     "same": 2,
+     "under": 14,
+     "drop": 0,
+     "parent_disagree": 0,
+     "conflicts": 5346,
+     "decisions": {
+      "0": [
+       "same",
+       "0"
+      ],
+      "2": [
+       "under",
+       "0",
+       "lower front panel"
+      ],
+      "3": [
+       "same",
+       "2"
+      ],
+      "4": [
+       "under",
+       "2",
+       "sticker"
+      ],
+      "12": [
+       "under",
+       "('node', 2)",
+       "LAN ports"
+      ],
+      "21": [
+       "under",
+       "('node', 2)",
+       "audio jacks"
+      ],
+      "23": [
+       "under",
+       "('node', 2)",
+       "COM ports"
+      ],
+      "55": [
+       "under",
+       "('node', 2)",
+       "antenna ports"
+      ],
+      "5": [
+       "under",
+       "('node', 12)",
+       "LAN 1G port"
+      ],
+      "6": [
+       "under",
+       "('node', 12)",
+       "LAN 10G port"
+      ],
+      "7": [
+       "under",
+       "('node', 55)",
+       "antenna port 1"
+      ],
+      "8": [
+       "under",
+       "('node', 55)",
+       "antenna port 2"
+      ],
+      "9": [
+       "under",
+       "('node', 23)",
+       "COM / CAN port"
+      ],
+      "11": [
+       "under",
+       "('node', 23)",
+       "COM / DIO port"
+      ],
+      "13": [
+       "under",
+       "('node', 21)",
+       "microphone jack (MIC IN)"
+      ],
+      "15": [
+       "under",
+       "('node', 21)",
+       "line output jack (LINE OUT)"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "0"
+     ],
+     "2": [
+      "under",
+      "0",
+      "lower front panel"
+     ],
+     "3": [
+      "same",
+      "2"
+     ],
+     "4": [
+      "under",
+      "2",
+      "sticker"
+     ],
+     "12": [
+      "under",
+      "('node', 2)",
+      "LAN ports"
+     ],
+     "21": [
+      "under",
+      "('node', 2)",
+      "audio jacks"
+     ],
+     "23": [
+      "under",
+      "('node', 2)",
+      "COM ports"
+     ],
+     "55": [
+      "under",
+      "('node', 2)",
+      "antenna ports"
+     ],
+     "5": [
+      "under",
+      "('node', 12)",
+      "LAN 1G port"
+     ],
+     "6": [
+      "under",
+      "('node', 12)",
+      "LAN 10G port"
+     ],
+     "7": [
+      "under",
+      "('node', 55)",
+      "antenna port 1"
+     ],
+     "8": [
+      "under",
+      "('node', 55)",
+      "antenna port 2"
+     ],
+     "9": [
+      "under",
+      "('node', 23)",
+      "COM / CAN port"
+     ],
+     "11": [
+      "under",
+      "('node', 23)",
+      "COM / DIO port"
+     ],
+     "13": [
+      "under",
+      "('node', 21)",
+      "microphone jack (MIC IN)"
+     ],
+     "15": [
+      "under",
+      "('node', 21)",
+      "line output jack (LINE OUT)"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 1,
+     "wrong": 1,
+     "invented": 0,
+     "missed": 9,
+     "correct_new": 4,
+     "coarse": 0,
+     "within_ok": 1,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "0",
+       "verdict": "recovered",
+       "width_mm": 180.6,
+       "name": "front view"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "0",
+        "lower front panel"
+       ],
+       "expected": "('within', 2)",
+       "verdict": "wrong",
+       "width_mm": 180.4,
+       "name": "lower front panel"
+      },
+      "3": {
+       "decision": [
+        "same",
+        "2"
+       ],
+       "expected": "('within', 2)",
+       "verdict": "within_ok",
+       "width_mm": 180.4,
+       "name": "upper front panel"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "2",
+        "sticker"
+       ],
+       "expected": "4",
+       "verdict": "missed",
+       "width_mm": 31.5,
+       "name": "sticker"
+      },
+      "12": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "LAN ports"
+       ],
+       "expected": "10",
+       "verdict": "missed",
+       "width_mm": 36.5,
+       "name": "LAN ports"
+      },
+      "21": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "audio jacks"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 19.5,
+       "name": "audio jacks"
+      },
+      "23": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "COM ports"
+       ],
+       "expected": "6",
+       "verdict": "missed",
+       "width_mm": 55.5,
+       "name": "COM ports"
+      },
+      "55": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "antenna ports"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 22.7,
+       "name": "antenna ports"
+      },
+      "5": {
+       "decision": [
+        "under",
+        "('node', 12)",
+        "LAN 1G port"
+       ],
+       "expected": "11",
+       "verdict": "missed",
+       "width_mm": 16.9,
+       "name": "LAN 1G port"
+      },
+      "6": {
+       "decision": [
+        "under",
+        "('node', 12)",
+        "LAN 10G port"
+       ],
+       "expected": "12",
+       "verdict": "missed",
+       "width_mm": 17.6,
+       "name": "LAN 10G port"
+      },
+      "7": {
+       "decision": [
+        "under",
+        "('node', 55)",
+        "antenna port 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 6.8,
+       "name": "antenna port 1"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 55)",
+        "antenna port 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.3,
+       "name": "antenna port 2"
+      },
+      "9": {
+       "decision": [
+        "under",
+        "('node', 23)",
+        "COM / CAN port"
+       ],
+       "expected": "13",
+       "verdict": "missed",
+       "width_mm": 18.5,
+       "name": "COM / CAN port"
+      },
+      "11": {
+       "decision": [
+        "under",
+        "('node', 23)",
+        "COM / DIO port"
+       ],
+       "expected": "14",
+       "verdict": "missed",
+       "width_mm": 26.2,
+       "name": "COM / DIO port"
+      },
+      "13": {
+       "decision": [
+        "under",
+        "('node', 21)",
+        "microphone jack (MIC IN)"
+       ],
+       "expected": "8",
+       "verdict": "missed",
+       "width_mm": 7.9,
+       "name": "microphone jack (MIC IN)"
+      },
+      "15": {
+       "decision": [
+        "under",
+        "('node', 21)",
+        "line output jack (LINE OUT)"
+       ],
+       "expected": "9",
+       "verdict": "missed",
+       "width_mm": 7.4,
+       "name": "line output jack (LINE OUT)"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 5,
+       "correct_new": 3,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 1,
+       "wrong": 1,
+       "invented": 0,
+       "missed": 4,
+       "correct_new": 1,
+       "coarse": 0,
+       "within_ok": 1
+      }
+     },
+     "pairs_recovered_share": 0.091
+    },
+    "agent_score": null,
+    "agent": null,
+    "visible_parts": 15,
+    "parts": 29,
+    "rows_labelled": 40840,
+    "surface_rows": 1825801,
+    "conflicts": 6145,
+    "bytes": 8048820
+   },
+   {
+    "view": "c5.7",
+    "role": "later",
+    "applied": {
+     "same": 1,
+     "under": 18,
+     "drop": 0,
+     "parent_disagree": 0,
+     "conflicts": 215,
+     "decisions": {
+      "0": [
+       "same",
+       "0"
+      ],
+      "2": [
+       "under",
+       "0",
+       "Top Casing"
+      ],
+      "3": [
+       "under",
+       "0",
+       "Front Face"
+      ],
+      "4": [
+       "under",
+       "('node', 3)",
+       "Power Button"
+      ],
+      "5": [
+       "under",
+       "('node', 3)",
+       "DC Input Terminal Block"
+      ],
+      "8": [
+       "under",
+       "('node', 3)",
+       "HDMI Port"
+      ],
+      "13": [
+       "under",
+       "('node', 3)",
+       "USB 3.0 Dual Port"
+      ],
+      "22": [
+       "under",
+       "('node', 3)",
+       "HDMI Port Label"
+      ],
+      "38": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 1"
+      ],
+      "42": [
+       "under",
+       "('node', 3)",
+       "USB 3.0 Port Label"
+      ],
+      "47": [
+       "under",
+       "('node', 3)",
+       "DC Input Label"
+      ],
+      "48": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 3"
+      ],
+      "49": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 2"
+      ],
+      "50": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 4"
+      ],
+      "60": [
+       "under",
+       "('node', 3)",
+       "Array of USB 3.2 Ports"
+      ],
+      "9": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 3"
+      ],
+      "10": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 2"
+      ],
+      "11": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 1"
+      ],
+      "15": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 4"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "0"
+     ],
+     "2": [
+      "under",
+      "0",
+      "Top Casing"
+     ],
+     "3": [
+      "under",
+      "0",
+      "Front Face"
+     ],
+     "4": [
+      "under",
+      "('node', 3)",
+      "Power Button"
+     ],
+     "5": [
+      "under",
+      "('node', 3)",
+      "DC Input Terminal Block"
+     ],
+     "8": [
+      "under",
+      "('node', 3)",
+      "HDMI Port"
+     ],
+     "13": [
+      "under",
+      "('node', 3)",
+      "USB 3.0 Dual Port"
+     ],
+     "22": [
+      "under",
+      "('node', 3)",
+      "HDMI Port Label"
+     ],
+     "38": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 1"
+     ],
+     "42": [
+      "under",
+      "('node', 3)",
+      "USB 3.0 Port Label"
+     ],
+     "47": [
+      "under",
+      "('node', 3)",
+      "DC Input Label"
+     ],
+     "48": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 3"
+     ],
+     "49": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 2"
+     ],
+     "50": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 4"
+     ],
+     "60": [
+      "under",
+      "('node', 3)",
+      "Array of USB 3.2 Ports"
+     ],
+     "9": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 3"
+     ],
+     "10": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 2"
+     ],
+     "11": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 1"
+     ],
+     "15": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 4"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 1,
+     "wrong": 0,
+     "invented": 0,
+     "missed": 0,
+     "correct_new": 18,
+     "coarse": 0,
+     "within_ok": 0,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "0",
+       "verdict": "recovered",
+       "width_mm": 183.1,
+       "name": "object"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "0",
+        "Top Casing"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 184.5,
+       "name": "Top Casing"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "0",
+        "Front Face"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 180.3,
+       "name": "Front Face"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "Power Button"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.0,
+       "name": "Power Button"
+      },
+      "5": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "DC Input Terminal Block"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 19.6,
+       "name": "DC Input Terminal Block"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "HDMI Port"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.9,
+       "name": "HDMI Port"
+      },
+      "13": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.0 Dual Port"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 15.3,
+       "name": "USB 3.0 Dual Port"
+      },
+      "22": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "HDMI Port Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 7.8,
+       "name": "HDMI Port Label"
+      },
+      "38": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.6,
+       "name": "USB 3.2 Label 1"
+      },
+      "42": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.0 Port Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 13.0,
+       "name": "USB 3.0 Port Label"
+      },
+      "47": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "DC Input Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 21.2,
+       "name": "DC Input Label"
+      },
+      "48": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 3"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.6,
+       "name": "USB 3.2 Label 3"
+      },
+      "49": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 13.5,
+       "name": "USB 3.2 Label 2"
+      },
+      "50": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 4"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.2,
+       "name": "USB 3.2 Label 4"
+      },
+      "60": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "Array of USB 3.2 Ports"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 73.5,
+       "name": "Array of USB 3.2 Ports"
+      },
+      "9": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 3"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 17.0,
+       "name": "USB 3.2 Port 3"
+      },
+      "10": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 18.0,
+       "name": "USB 3.2 Port 2"
+      },
+      "11": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 16.9,
+       "name": "USB 3.2 Port 1"
+      },
+      "15": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 4"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 17.0,
+       "name": "USB 3.2 Port 4"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 14,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 1,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 4,
+       "coarse": 0,
+       "within_ok": 0
+      }
+     },
+     "pairs_recovered_share": 1.0
+    },
+    "agent_score": null,
+    "agent": null,
+    "visible_parts": 2,
+    "parts": 47,
+    "rows_labelled": 58671,
+    "surface_rows": 1825801,
+    "conflicts": 6360,
+    "bytes": 8357924
+   }
+  ]
+ },
+ "2209-box-ray-demo1_1mm_baseline": {
+  "run": "2209-box-ray-demo1",
+  "mm": 1,
+  "mode": "baseline",
+  "lift": "L3",
+  "views": [
+   {
+    "view": "b1.1",
+    "role": "first",
+    "parts": 6,
+    "rows_labelled": 31269,
+    "surface_rows": 1365883,
+    "conflicts": 17,
+    "bytes": 6056724
+   },
+   {
+    "view": "b1.4",
+    "role": "later",
+    "applied": {
+     "same": 1,
+     "under": 11,
+     "drop": 0,
+     "parent_disagree": 0,
+     "conflicts": 3,
+     "decisions": {
+      "0": [
+       "same",
+       "0"
+      ],
+      "2": [
+       "under",
+       "0",
+       "product info label"
+      ],
+      "3": [
+       "under",
+       "0",
+       "serial number label"
+      ],
+      "4": [
+       "under",
+       "('node', 2)",
+       "barcode"
+      ],
+      "6": [
+       "under",
+       "('node', 2)",
+       "recycle symbol"
+      ],
+      "7": [
+       "under",
+       "('node', 3)",
+       "serial number text"
+      ],
+      "8": [
+       "under",
+       "('node', 2)",
+       "FCC mark"
+      ],
+      "16": [
+       "under",
+       "('node', 2)",
+       "model number text"
+      ],
+      "22": [
+       "under",
+       "('node', 2)",
+       "WEEE symbol"
+      ],
+      "23": [
+       "under",
+       "('node', 2)",
+       "made in china text"
+      ],
+      "26": [
+       "under",
+       "('node', 2)",
+       "CE mark"
+      ],
+      "27": [
+       "under",
+       "('node', 3)",
+       "QR code"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "0"
+     ],
+     "2": [
+      "under",
+      "0",
+      "product info label"
+     ],
+     "3": [
+      "under",
+      "0",
+      "serial number label"
+     ],
+     "4": [
+      "under",
+      "('node', 2)",
+      "barcode"
+     ],
+     "6": [
+      "under",
+      "('node', 2)",
+      "recycle symbol"
+     ],
+     "7": [
+      "under",
+      "('node', 3)",
+      "serial number text"
+     ],
+     "8": [
+      "under",
+      "('node', 2)",
+      "FCC mark"
+     ],
+     "16": [
+      "under",
+      "('node', 2)",
+      "model number text"
+     ],
+     "22": [
+      "under",
+      "('node', 2)",
+      "WEEE symbol"
+     ],
+     "23": [
+      "under",
+      "('node', 2)",
+      "made in china text"
+     ],
+     "26": [
+      "under",
+      "('node', 2)",
+      "CE mark"
+     ],
+     "27": [
+      "under",
+      "('node', 3)",
+      "QR code"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 0,
+     "wrong": 0,
+     "invented": 0,
+     "missed": 0,
+     "correct_new": 11,
+     "coarse": 1,
+     "within_ok": 0,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "new",
+       "verdict": "coarse",
+       "width_mm": 98.0,
+       "name": "front face"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "0",
+        "product info label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 71.6,
+       "name": "product info label"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "0",
+        "serial number label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 55.8,
+       "name": "serial number label"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "barcode"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 56.0,
+       "name": "barcode"
+      },
+      "6": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "recycle symbol"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 5.9,
+       "name": "recycle symbol"
+      },
+      "7": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "serial number text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 28.7,
+       "name": "serial number text"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "FCC mark"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.7,
+       "name": "FCC mark"
+      },
+      "16": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "model number text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 31.0,
+       "name": "model number text"
+      },
+      "22": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "WEEE symbol"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 6.3,
+       "name": "WEEE symbol"
+      },
+      "23": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "made in china text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.2,
+       "name": "made in china text"
+      },
+      "26": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "CE mark"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.6,
+       "name": "CE mark"
+      },
+      "27": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "QR code"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.9,
+       "name": "QR code"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 6,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 5,
+       "coarse": 1,
+       "within_ok": 0
+      }
+     },
+     "pairs_recovered_share": null
+    },
+    "agent_score": null,
+    "agent": null,
+    "visible_parts": 4,
+    "parts": 17,
+    "rows_labelled": 39258,
+    "surface_rows": 1365883,
+    "conflicts": 20,
+    "bytes": 6170660
+   }
+  ]
+ },
+ "2209-compute-ray-demo5_1mm_agent": {
+  "run": "2209-compute-ray-demo5",
+  "mm": 1,
+  "mode": "agent",
+  "lift": "L3",
+  "views": [
+   {
+    "view": "c5.2",
+    "role": "first",
+    "parts": 15,
+    "rows_labelled": 33601,
+    "surface_rows": 1825801,
+    "conflicts": 799,
+    "bytes": 7874268
+   },
+   {
+    "view": "c5.6",
+    "role": "later",
+    "applied": {
+     "same": 10,
+     "under": 6,
+     "drop": 0,
+     "parent_disagree": 5,
+     "conflicts": 3942,
+     "decisions": {
+      "0": [
+       "same",
+       "0"
+      ],
+      "2": [
+       "under",
+       "2",
+       "lower front panel"
+      ],
+      "3": [
+       "under",
+       "2",
+       "upper front panel"
+      ],
+      "4": [
+       "same",
+       "4"
+      ],
+      "12": [
+       "same",
+       "10"
+      ],
+      "5": [
+       "same",
+       "11"
+      ],
+      "6": [
+       "same",
+       "12"
+      ],
+      "23": [
+       "same",
+       "6"
+      ],
+      "11": [
+       "same",
+       "14"
+      ],
+      "9": [
+       "same",
+       "13"
+      ],
+      "21": [
+       "under",
+       "('node', 2)",
+       "audio jacks"
+      ],
+      "13": [
+       "same",
+       "8"
+      ],
+      "15": [
+       "same",
+       "9"
+      ],
+      "55": [
+       "under",
+       "('node', 2)",
+       "antenna ports"
+      ],
+      "7": [
+       "under",
+       "('node', 55)",
+       "antenna port 1"
+      ],
+      "8": [
+       "under",
+       "('node', 55)",
+       "antenna port 2"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "0"
+     ],
+     "2": [
+      "under",
+      "0",
+      "lower front panel"
+     ],
+     "3": [
+      "same",
+      "2"
+     ],
+     "4": [
+      "under",
+      "2",
+      "sticker"
+     ],
+     "12": [
+      "under",
+      "('node', 2)",
+      "LAN ports"
+     ],
+     "21": [
+      "under",
+      "('node', 2)",
+      "audio jacks"
+     ],
+     "23": [
+      "under",
+      "('node', 2)",
+      "COM ports"
+     ],
+     "55": [
+      "under",
+      "('node', 2)",
+      "antenna ports"
+     ],
+     "5": [
+      "under",
+      "('node', 12)",
+      "LAN 1G port"
+     ],
+     "6": [
+      "under",
+      "('node', 12)",
+      "LAN 10G port"
+     ],
+     "7": [
+      "under",
+      "('node', 55)",
+      "antenna port 1"
+     ],
+     "8": [
+      "under",
+      "('node', 55)",
+      "antenna port 2"
+     ],
+     "9": [
+      "under",
+      "('node', 23)",
+      "COM / CAN port"
+     ],
+     "11": [
+      "under",
+      "('node', 23)",
+      "COM / DIO port"
+     ],
+     "13": [
+      "under",
+      "('node', 21)",
+      "microphone jack (MIC IN)"
+     ],
+     "15": [
+      "under",
+      "('node', 21)",
+      "line output jack (LINE OUT)"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 1,
+     "wrong": 1,
+     "invented": 0,
+     "missed": 9,
+     "correct_new": 4,
+     "coarse": 0,
+     "within_ok": 1,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "0",
+       "verdict": "recovered",
+       "width_mm": 180.6,
+       "name": "front view"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "0",
+        "lower front panel"
+       ],
+       "expected": "('within', 2)",
+       "verdict": "wrong",
+       "width_mm": 180.4,
+       "name": "lower front panel"
+      },
+      "3": {
+       "decision": [
+        "same",
+        "2"
+       ],
+       "expected": "('within', 2)",
+       "verdict": "within_ok",
+       "width_mm": 180.4,
+       "name": "upper front panel"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "2",
+        "sticker"
+       ],
+       "expected": "4",
+       "verdict": "missed",
+       "width_mm": 31.5,
+       "name": "sticker"
+      },
+      "12": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "LAN ports"
+       ],
+       "expected": "10",
+       "verdict": "missed",
+       "width_mm": 36.5,
+       "name": "LAN ports"
+      },
+      "21": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "audio jacks"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 19.5,
+       "name": "audio jacks"
+      },
+      "23": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "COM ports"
+       ],
+       "expected": "6",
+       "verdict": "missed",
+       "width_mm": 55.5,
+       "name": "COM ports"
+      },
+      "55": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "antenna ports"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 22.7,
+       "name": "antenna ports"
+      },
+      "5": {
+       "decision": [
+        "under",
+        "('node', 12)",
+        "LAN 1G port"
+       ],
+       "expected": "11",
+       "verdict": "missed",
+       "width_mm": 16.9,
+       "name": "LAN 1G port"
+      },
+      "6": {
+       "decision": [
+        "under",
+        "('node', 12)",
+        "LAN 10G port"
+       ],
+       "expected": "12",
+       "verdict": "missed",
+       "width_mm": 17.6,
+       "name": "LAN 10G port"
+      },
+      "7": {
+       "decision": [
+        "under",
+        "('node', 55)",
+        "antenna port 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 6.8,
+       "name": "antenna port 1"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 55)",
+        "antenna port 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.3,
+       "name": "antenna port 2"
+      },
+      "9": {
+       "decision": [
+        "under",
+        "('node', 23)",
+        "COM / CAN port"
+       ],
+       "expected": "13",
+       "verdict": "missed",
+       "width_mm": 18.5,
+       "name": "COM / CAN port"
+      },
+      "11": {
+       "decision": [
+        "under",
+        "('node', 23)",
+        "COM / DIO port"
+       ],
+       "expected": "14",
+       "verdict": "missed",
+       "width_mm": 26.2,
+       "name": "COM / DIO port"
+      },
+      "13": {
+       "decision": [
+        "under",
+        "('node', 21)",
+        "microphone jack (MIC IN)"
+       ],
+       "expected": "8",
+       "verdict": "missed",
+       "width_mm": 7.9,
+       "name": "microphone jack (MIC IN)"
+      },
+      "15": {
+       "decision": [
+        "under",
+        "('node', 21)",
+        "line output jack (LINE OUT)"
+       ],
+       "expected": "9",
+       "verdict": "missed",
+       "width_mm": 7.4,
+       "name": "line output jack (LINE OUT)"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 5,
+       "correct_new": 3,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 1,
+       "wrong": 1,
+       "invented": 0,
+       "missed": 4,
+       "correct_new": 1,
+       "coarse": 0,
+       "within_ok": 1
+      }
+     },
+     "pairs_recovered_share": 0.091
+    },
+    "agent_score": {
+     "recovered": 10,
+     "wrong": 0,
+     "invented": 0,
+     "missed": 0,
+     "correct_new": 4,
+     "coarse": 0,
+     "within_ok": 2,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "0",
+       "verdict": "recovered",
+       "width_mm": 180.6,
+       "name": "front view"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "2",
+        "lower front panel"
+       ],
+       "expected": "('within', 2)",
+       "verdict": "within_ok",
+       "width_mm": 180.4,
+       "name": "lower front panel"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "2",
+        "upper front panel"
+       ],
+       "expected": "('within', 2)",
+       "verdict": "within_ok",
+       "width_mm": 180.4,
+       "name": "upper front panel"
+      },
+      "4": {
+       "decision": [
+        "same",
+        "4"
+       ],
+       "expected": "4",
+       "verdict": "recovered",
+       "width_mm": 31.5,
+       "name": "sticker"
+      },
+      "12": {
+       "decision": [
+        "same",
+        "10"
+       ],
+       "expected": "10",
+       "verdict": "recovered",
+       "width_mm": 36.5,
+       "name": "LAN ports"
+      },
+      "5": {
+       "decision": [
+        "same",
+        "11"
+       ],
+       "expected": "11",
+       "verdict": "recovered",
+       "width_mm": 16.9,
+       "name": "LAN 1G port"
+      },
+      "6": {
+       "decision": [
+        "same",
+        "12"
+       ],
+       "expected": "12",
+       "verdict": "recovered",
+       "width_mm": 17.6,
+       "name": "LAN 10G port"
+      },
+      "23": {
+       "decision": [
+        "same",
+        "6"
+       ],
+       "expected": "6",
+       "verdict": "recovered",
+       "width_mm": 55.5,
+       "name": "COM ports"
+      },
+      "11": {
+       "decision": [
+        "same",
+        "14"
+       ],
+       "expected": "14",
+       "verdict": "recovered",
+       "width_mm": 26.2,
+       "name": "COM / DIO port"
+      },
+      "9": {
+       "decision": [
+        "same",
+        "13"
+       ],
+       "expected": "13",
+       "verdict": "recovered",
+       "width_mm": 18.5,
+       "name": "COM / CAN port"
+      },
+      "21": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "audio jacks"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 19.5,
+       "name": "audio jacks"
+      },
+      "13": {
+       "decision": [
+        "same",
+        "8"
+       ],
+       "expected": "8",
+       "verdict": "recovered",
+       "width_mm": 7.9,
+       "name": "microphone jack (MIC IN)"
+      },
+      "15": {
+       "decision": [
+        "same",
+        "9"
+       ],
+       "expected": "9",
+       "verdict": "recovered",
+       "width_mm": 7.4,
+       "name": "line output jack (LINE OUT)"
+      },
+      "55": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "antenna ports"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 22.7,
+       "name": "antenna ports"
+      },
+      "7": {
+       "decision": [
+        "under",
+        "('node', 55)",
+        "antenna port 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 6.8,
+       "name": "antenna port 1"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 55)",
+        "antenna port 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.3,
+       "name": "antenna port 2"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 5,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 3,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 5,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 1,
+       "coarse": 0,
+       "within_ok": 2
+      }
+     },
+     "pairs_recovered_share": 1.0
+    },
+    "agent": {
+     "seconds": 22.8,
+     "turns": 4,
+     "tool_calls": 3,
+     "tools_used": [
+      "tree",
+      "existing",
+      "show_existing"
+     ],
+     "answer": "All nodes in the tree have been placed. Upper/lower front panels are placed as new subdivisions under P2, and the antenna ports and audio group are registered as new parts, while all existing ports and labels are mapped to their corresponding model parts.",
+     "exhausted": false,
+     "transcript": "transcripts/t004.json",
+     "decided_by_tools": 0,
+     "decided_in_final": 16
+    },
+    "visible_parts": 15,
+    "parts": 21,
+    "rows_labelled": 40840,
+    "surface_rows": 1825801,
+    "conflicts": 4741,
+    "bytes": 8126868
+   },
+   {
+    "view": "c5.7",
+    "role": "later",
+    "applied": {
+     "same": 2,
+     "under": 17,
+     "drop": 0,
+     "parent_disagree": 0,
+     "conflicts": 211,
+     "decisions": {
+      "0": [
+       "same",
+       "0"
+      ],
+      "2": [
+       "same",
+       "1"
+      ],
+      "3": [
+       "under",
+       "0",
+       "Front Face"
+      ],
+      "4": [
+       "under",
+       "('node', 3)",
+       "Power Button"
+      ],
+      "5": [
+       "under",
+       "('node', 3)",
+       "DC Input Terminal Block"
+      ],
+      "8": [
+       "under",
+       "('node', 3)",
+       "HDMI Port"
+      ],
+      "13": [
+       "under",
+       "('node', 3)",
+       "USB 3.0 Dual Port"
+      ],
+      "22": [
+       "under",
+       "('node', 3)",
+       "HDMI Port Label"
+      ],
+      "38": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 1"
+      ],
+      "42": [
+       "under",
+       "('node', 3)",
+       "USB 3.0 Port Label"
+      ],
+      "47": [
+       "under",
+       "('node', 3)",
+       "DC Input Label"
+      ],
+      "48": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 3"
+      ],
+      "49": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 2"
+      ],
+      "50": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 4"
+      ],
+      "60": [
+       "under",
+       "('node', 3)",
+       "Array of USB 3.2 Ports"
+      ],
+      "9": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 3"
+      ],
+      "10": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 2"
+      ],
+      "11": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 1"
+      ],
+      "15": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 4"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "0"
+     ],
+     "2": [
+      "under",
+      "0",
+      "Top Casing"
+     ],
+     "3": [
+      "under",
+      "0",
+      "Front Face"
+     ],
+     "4": [
+      "under",
+      "('node', 3)",
+      "Power Button"
+     ],
+     "5": [
+      "under",
+      "('node', 3)",
+      "DC Input Terminal Block"
+     ],
+     "8": [
+      "under",
+      "('node', 3)",
+      "HDMI Port"
+     ],
+     "13": [
+      "under",
+      "('node', 3)",
+      "USB 3.0 Dual Port"
+     ],
+     "22": [
+      "under",
+      "('node', 3)",
+      "HDMI Port Label"
+     ],
+     "38": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 1"
+     ],
+     "42": [
+      "under",
+      "('node', 3)",
+      "USB 3.0 Port Label"
+     ],
+     "47": [
+      "under",
+      "('node', 3)",
+      "DC Input Label"
+     ],
+     "48": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 3"
+     ],
+     "49": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 2"
+     ],
+     "50": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 4"
+     ],
+     "60": [
+      "under",
+      "('node', 3)",
+      "Array of USB 3.2 Ports"
+     ],
+     "9": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 3"
+     ],
+     "10": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 2"
+     ],
+     "11": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 1"
+     ],
+     "15": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 4"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 1,
+     "wrong": 0,
+     "invented": 0,
+     "missed": 0,
+     "correct_new": 18,
+     "coarse": 0,
+     "within_ok": 0,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "0",
+       "verdict": "recovered",
+       "width_mm": 183.1,
+       "name": "object"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "0",
+        "Top Casing"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 184.5,
+       "name": "Top Casing"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "0",
+        "Front Face"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 180.3,
+       "name": "Front Face"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "Power Button"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.0,
+       "name": "Power Button"
+      },
+      "5": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "DC Input Terminal Block"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 19.6,
+       "name": "DC Input Terminal Block"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "HDMI Port"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.9,
+       "name": "HDMI Port"
+      },
+      "13": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.0 Dual Port"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 15.3,
+       "name": "USB 3.0 Dual Port"
+      },
+      "22": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "HDMI Port Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 7.8,
+       "name": "HDMI Port Label"
+      },
+      "38": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.6,
+       "name": "USB 3.2 Label 1"
+      },
+      "42": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.0 Port Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 13.0,
+       "name": "USB 3.0 Port Label"
+      },
+      "47": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "DC Input Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 21.2,
+       "name": "DC Input Label"
+      },
+      "48": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 3"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.6,
+       "name": "USB 3.2 Label 3"
+      },
+      "49": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 13.5,
+       "name": "USB 3.2 Label 2"
+      },
+      "50": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 4"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.2,
+       "name": "USB 3.2 Label 4"
+      },
+      "60": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "Array of USB 3.2 Ports"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 73.5,
+       "name": "Array of USB 3.2 Ports"
+      },
+      "9": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 3"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 17.0,
+       "name": "USB 3.2 Port 3"
+      },
+      "10": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 18.0,
+       "name": "USB 3.2 Port 2"
+      },
+      "11": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 16.9,
+       "name": "USB 3.2 Port 1"
+      },
+      "15": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 4"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 17.0,
+       "name": "USB 3.2 Port 4"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 14,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 1,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 4,
+       "coarse": 0,
+       "within_ok": 0
+      }
+     },
+     "pairs_recovered_share": 1.0
+    },
+    "agent_score": {
+     "recovered": 1,
+     "wrong": 0,
+     "invented": 1,
+     "missed": 0,
+     "correct_new": 17,
+     "coarse": 0,
+     "within_ok": 0,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "0",
+       "verdict": "recovered",
+       "width_mm": 183.1,
+       "name": "object"
+      },
+      "2": {
+       "decision": [
+        "same",
+        "1"
+       ],
+       "expected": "new",
+       "verdict": "invented",
+       "width_mm": 184.5,
+       "name": "Top Casing"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "0",
+        "Front Face"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 180.3,
+       "name": "Front Face"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "Power Button"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.0,
+       "name": "Power Button"
+      },
+      "5": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "DC Input Terminal Block"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 19.6,
+       "name": "DC Input Terminal Block"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "HDMI Port"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.9,
+       "name": "HDMI Port"
+      },
+      "13": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.0 Dual Port"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 15.3,
+       "name": "USB 3.0 Dual Port"
+      },
+      "22": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "HDMI Port Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 7.8,
+       "name": "HDMI Port Label"
+      },
+      "38": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.6,
+       "name": "USB 3.2 Label 1"
+      },
+      "42": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.0 Port Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 13.0,
+       "name": "USB 3.0 Port Label"
+      },
+      "47": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "DC Input Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 21.2,
+       "name": "DC Input Label"
+      },
+      "48": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 3"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.6,
+       "name": "USB 3.2 Label 3"
+      },
+      "49": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 13.5,
+       "name": "USB 3.2 Label 2"
+      },
+      "50": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 4"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.2,
+       "name": "USB 3.2 Label 4"
+      },
+      "60": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "Array of USB 3.2 Ports"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 73.5,
+       "name": "Array of USB 3.2 Ports"
+      },
+      "9": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 3"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 17.0,
+       "name": "USB 3.2 Port 3"
+      },
+      "10": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 18.0,
+       "name": "USB 3.2 Port 2"
+      },
+      "11": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 16.9,
+       "name": "USB 3.2 Port 1"
+      },
+      "15": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 4"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 17.0,
+       "name": "USB 3.2 Port 4"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 14,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 1,
+       "wrong": 0,
+       "invented": 1,
+       "missed": 0,
+       "correct_new": 3,
+       "coarse": 0,
+       "within_ok": 0
+      }
+     },
+     "pairs_recovered_share": 1.0
+    },
+    "agent": {
+     "seconds": 13.3,
+     "turns": 4,
+     "tool_calls": 3,
+     "tools_used": [
+      "tree",
+      "existing",
+      "show_existing"
+     ],
+     "answer": "Place the object as P0, the Top Casing as P1, the Front Face and all its subparts as new parts under their respective parent nodes.",
+     "exhausted": false,
+     "transcript": "transcripts/t004.json",
+     "decided_by_tools": 0,
+     "decided_in_final": 19
+    },
+    "visible_parts": 2,
+    "parts": 38,
+    "rows_labelled": 58671,
+    "surface_rows": 1825801,
+    "conflicts": 4952,
+    "bytes": 8435940
+   }
+  ]
+ },
+ "2209-box-ray-demo1_1mm_agent": {
+  "run": "2209-box-ray-demo1",
+  "mm": 1,
+  "mode": "agent",
+  "lift": "L3",
+  "views": [
+   {
+    "view": "b1.1",
+    "role": "first",
+    "parts": 6,
+    "rows_labelled": 31269,
+    "surface_rows": 1365883,
+    "conflicts": 17,
+    "bytes": 6056724
+   },
+   {
+    "view": "b1.4",
+    "role": "later",
+    "applied": {
+     "same": 1,
+     "under": 11,
+     "drop": 0,
+     "parent_disagree": 0,
+     "conflicts": 16,
+     "decisions": {
+      "0": [
+       "same",
+       "1"
+      ],
+      "2": [
+       "under",
+       "1",
+       "product info label"
+      ],
+      "4": [
+       "under",
+       "('node', 2)",
+       "barcode"
+      ],
+      "16": [
+       "under",
+       "('node', 2)",
+       "model number text"
+      ],
+      "8": [
+       "under",
+       "('node', 2)",
+       "FCC mark"
+      ],
+      "6": [
+       "under",
+       "('node', 2)",
+       "recycle symbol"
+      ],
+      "26": [
+       "under",
+       "('node', 2)",
+       "CE mark"
+      ],
+      "22": [
+       "under",
+       "('node', 2)",
+       "WEEE symbol"
+      ],
+      "23": [
+       "under",
+       "('node', 2)",
+       "made in china text"
+      ],
+      "3": [
+       "under",
+       "1",
+       "serial number label"
+      ],
+      "7": [
+       "under",
+       "('node', 3)",
+       "serial number text"
+      ],
+      "27": [
+       "under",
+       "('node', 3)",
+       "QR code"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "0"
+     ],
+     "2": [
+      "under",
+      "0",
+      "product info label"
+     ],
+     "3": [
+      "under",
+      "0",
+      "serial number label"
+     ],
+     "4": [
+      "under",
+      "('node', 2)",
+      "barcode"
+     ],
+     "6": [
+      "under",
+      "('node', 2)",
+      "recycle symbol"
+     ],
+     "7": [
+      "under",
+      "('node', 3)",
+      "serial number text"
+     ],
+     "8": [
+      "under",
+      "('node', 2)",
+      "FCC mark"
+     ],
+     "16": [
+      "under",
+      "('node', 2)",
+      "model number text"
+     ],
+     "22": [
+      "under",
+      "('node', 2)",
+      "WEEE symbol"
+     ],
+     "23": [
+      "under",
+      "('node', 2)",
+      "made in china text"
+     ],
+     "26": [
+      "under",
+      "('node', 2)",
+      "CE mark"
+     ],
+     "27": [
+      "under",
+      "('node', 3)",
+      "QR code"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 0,
+     "wrong": 0,
+     "invented": 0,
+     "missed": 0,
+     "correct_new": 11,
+     "coarse": 1,
+     "within_ok": 0,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "new",
+       "verdict": "coarse",
+       "width_mm": 98.0,
+       "name": "front face"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "0",
+        "product info label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 71.6,
+       "name": "product info label"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "0",
+        "serial number label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 55.8,
+       "name": "serial number label"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "barcode"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 56.0,
+       "name": "barcode"
+      },
+      "6": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "recycle symbol"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 5.9,
+       "name": "recycle symbol"
+      },
+      "7": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "serial number text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 28.7,
+       "name": "serial number text"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "FCC mark"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.7,
+       "name": "FCC mark"
+      },
+      "16": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "model number text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 31.0,
+       "name": "model number text"
+      },
+      "22": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "WEEE symbol"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 6.3,
+       "name": "WEEE symbol"
+      },
+      "23": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "made in china text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.2,
+       "name": "made in china text"
+      },
+      "26": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "CE mark"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.6,
+       "name": "CE mark"
+      },
+      "27": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "QR code"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.9,
+       "name": "QR code"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 6,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 5,
+       "coarse": 1,
+       "within_ok": 0
+      }
+     },
+     "pairs_recovered_share": null
+    },
+    "agent_score": {
+     "recovered": 0,
+     "wrong": 0,
+     "invented": 1,
+     "missed": 0,
+     "correct_new": 11,
+     "coarse": 0,
+     "within_ok": 0,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "1"
+       ],
+       "expected": "new",
+       "verdict": "invented",
+       "width_mm": 98.0,
+       "name": "front face"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "1",
+        "product info label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 71.6,
+       "name": "product info label"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "barcode"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 56.0,
+       "name": "barcode"
+      },
+      "16": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "model number text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 31.0,
+       "name": "model number text"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "FCC mark"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.7,
+       "name": "FCC mark"
+      },
+      "6": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "recycle symbol"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 5.9,
+       "name": "recycle symbol"
+      },
+      "26": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "CE mark"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.6,
+       "name": "CE mark"
+      },
+      "22": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "WEEE symbol"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 6.3,
+       "name": "WEEE symbol"
+      },
+      "23": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "made in china text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.2,
+       "name": "made in china text"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "1",
+        "serial number label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 55.8,
+       "name": "serial number label"
+      },
+      "7": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "serial number text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 28.7,
+       "name": "serial number text"
+      },
+      "27": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "QR code"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.9,
+       "name": "QR code"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 6,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 1,
+       "missed": 0,
+       "correct_new": 5,
+       "coarse": 0,
+       "within_ok": 0
+      }
+     },
+     "pairs_recovered_share": null
+    },
+    "agent": {
+     "seconds": 12.5,
+     "turns": 4,
+     "tool_calls": 3,
+     "tools_used": [
+      "tree",
+      "existing",
+      "show_existing"
+     ],
+     "answer": "Place node #0 as the existing P1 (front face), and place all new labels and details as new subparts.",
+     "exhausted": false,
+     "transcript": "transcripts/t004.json",
+     "decided_by_tools": 0,
+     "decided_in_final": 12
+    },
+    "visible_parts": 4,
+    "parts": 17,
+    "rows_labelled": 39258,
+    "surface_rows": 1365883,
+    "conflicts": 33,
+    "bytes": 6234676
+   }
+  ]
+ },
+ "2209-compute-ray-demo5_2mm_baseline": {
+  "run": "2209-compute-ray-demo5",
+  "mm": 2,
+  "mode": "baseline",
+  "lift": "L3",
+  "views": [
+   {
+    "view": "c5.2",
+    "role": "first",
+    "parts": 15,
+    "rows_labelled": 9378,
+    "surface_rows": 390505,
+    "conflicts": 335,
+    "bytes": 1721948
+   },
+   {
+    "view": "c5.6",
+    "role": "later",
+    "applied": {
+     "same": 1,
+     "under": 15,
+     "drop": 0,
+     "parent_disagree": 0,
+     "conflicts": 942,
+     "decisions": {
+      "0": [
+       "same",
+       "2"
+      ],
+      "2": [
+       "under",
+       "2",
+       "lower front panel"
+      ],
+      "3": [
+       "under",
+       "2",
+       "upper front panel"
+      ],
+      "4": [
+       "under",
+       "('node', 3)",
+       "sticker"
+      ],
+      "12": [
+       "under",
+       "('node', 2)",
+       "LAN ports"
+      ],
+      "21": [
+       "under",
+       "('node', 2)",
+       "audio jacks"
+      ],
+      "23": [
+       "under",
+       "('node', 2)",
+       "COM ports"
+      ],
+      "55": [
+       "under",
+       "('node', 2)",
+       "antenna ports"
+      ],
+      "5": [
+       "under",
+       "('node', 12)",
+       "LAN 1G port"
+      ],
+      "6": [
+       "under",
+       "('node', 12)",
+       "LAN 10G port"
+      ],
+      "7": [
+       "under",
+       "('node', 55)",
+       "antenna port 1"
+      ],
+      "8": [
+       "under",
+       "('node', 55)",
+       "antenna port 2"
+      ],
+      "9": [
+       "under",
+       "('node', 23)",
+       "COM / CAN port"
+      ],
+      "11": [
+       "under",
+       "('node', 23)",
+       "COM / DIO port"
+      ],
+      "13": [
+       "under",
+       "('node', 21)",
+       "microphone jack (MIC IN)"
+      ],
+      "15": [
+       "under",
+       "('node', 21)",
+       "line output jack (LINE OUT)"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "2"
+     ],
+     "2": [
+      "under",
+      "2",
+      "lower front panel"
+     ],
+     "3": [
+      "under",
+      "2",
+      "upper front panel"
+     ],
+     "4": [
+      "under",
+      "('node', 3)",
+      "sticker"
+     ],
+     "12": [
+      "under",
+      "('node', 2)",
+      "LAN ports"
+     ],
+     "21": [
+      "under",
+      "('node', 2)",
+      "audio jacks"
+     ],
+     "23": [
+      "under",
+      "('node', 2)",
+      "COM ports"
+     ],
+     "55": [
+      "under",
+      "('node', 2)",
+      "antenna ports"
+     ],
+     "5": [
+      "under",
+      "('node', 12)",
+      "LAN 1G port"
+     ],
+     "6": [
+      "under",
+      "('node', 12)",
+      "LAN 10G port"
+     ],
+     "7": [
+      "under",
+      "('node', 55)",
+      "antenna port 1"
+     ],
+     "8": [
+      "under",
+      "('node', 55)",
+      "antenna port 2"
+     ],
+     "9": [
+      "under",
+      "('node', 23)",
+      "COM / CAN port"
+     ],
+     "11": [
+      "under",
+      "('node', 23)",
+      "COM / DIO port"
+     ],
+     "13": [
+      "under",
+      "('node', 21)",
+      "microphone jack (MIC IN)"
+     ],
+     "15": [
+      "under",
+      "('node', 21)",
+      "line output jack (LINE OUT)"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 0,
+     "wrong": 1,
+     "invented": 0,
+     "missed": 9,
+     "correct_new": 4,
+     "coarse": 0,
+     "within_ok": 2,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "2"
+       ],
+       "expected": "0",
+       "verdict": "wrong",
+       "width_mm": 183.8,
+       "name": "front view"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "2",
+        "lower front panel"
+       ],
+       "expected": "('within', 2)",
+       "verdict": "within_ok",
+       "width_mm": 183.2,
+       "name": "lower front panel"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "2",
+        "upper front panel"
+       ],
+       "expected": "('within', 2)",
+       "verdict": "within_ok",
+       "width_mm": 185.6,
+       "name": "upper front panel"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "sticker"
+       ],
+       "expected": "4",
+       "verdict": "missed",
+       "width_mm": 28.2,
+       "name": "sticker"
+      },
+      "12": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "LAN ports"
+       ],
+       "expected": "10",
+       "verdict": "missed",
+       "width_mm": 38.4,
+       "name": "LAN ports"
+      },
+      "21": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "audio jacks"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 19.4,
+       "name": "audio jacks"
+      },
+      "23": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "COM ports"
+       ],
+       "expected": "6",
+       "verdict": "missed",
+       "width_mm": 57.8,
+       "name": "COM ports"
+      },
+      "55": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "antenna ports"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 24.2,
+       "name": "antenna ports"
+      },
+      "5": {
+       "decision": [
+        "under",
+        "('node', 12)",
+        "LAN 1G port"
+       ],
+       "expected": "11",
+       "verdict": "missed",
+       "width_mm": 19.2,
+       "name": "LAN 1G port"
+      },
+      "6": {
+       "decision": [
+        "under",
+        "('node', 12)",
+        "LAN 10G port"
+       ],
+       "expected": "12",
+       "verdict": "missed",
+       "width_mm": 18.5,
+       "name": "LAN 10G port"
+      },
+      "7": {
+       "decision": [
+        "under",
+        "('node', 55)",
+        "antenna port 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.8,
+       "name": "antenna port 1"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 55)",
+        "antenna port 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.3,
+       "name": "antenna port 2"
+      },
+      "9": {
+       "decision": [
+        "under",
+        "('node', 23)",
+        "COM / CAN port"
+       ],
+       "expected": "13",
+       "verdict": "missed",
+       "width_mm": 19.8,
+       "name": "COM / CAN port"
+      },
+      "11": {
+       "decision": [
+        "under",
+        "('node', 23)",
+        "COM / DIO port"
+       ],
+       "expected": "14",
+       "verdict": "missed",
+       "width_mm": 27.1,
+       "name": "COM / DIO port"
+      },
+      "13": {
+       "decision": [
+        "under",
+        "('node', 21)",
+        "microphone jack (MIC IN)"
+       ],
+       "expected": "8",
+       "verdict": "missed",
+       "width_mm": 8.5,
+       "name": "microphone jack (MIC IN)"
+      },
+      "15": {
+       "decision": [
+        "under",
+        "('node', 21)",
+        "line output jack (LINE OUT)"
+       ],
+       "expected": "9",
+       "verdict": "missed",
+       "width_mm": 8.1,
+       "name": "line output jack (LINE OUT)"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 5,
+       "correct_new": 3,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 0,
+       "wrong": 1,
+       "invented": 0,
+       "missed": 4,
+       "correct_new": 1,
+       "coarse": 0,
+       "within_ok": 2
+      }
+     },
+     "pairs_recovered_share": 0.0
+    },
+    "agent_score": null,
+    "agent": null,
+    "visible_parts": 15,
+    "parts": 30,
+    "rows_labelled": 11180,
+    "surface_rows": 390505,
+    "conflicts": 1277,
+    "bytes": 1792052
+   },
+   {
+    "view": "c5.7",
+    "role": "later",
+    "applied": {
+     "same": 1,
+     "under": 18,
+     "drop": 0,
+     "parent_disagree": 0,
+     "conflicts": 110,
+     "decisions": {
+      "0": [
+       "same",
+       "0"
+      ],
+      "2": [
+       "under",
+       "0",
+       "Top Casing"
+      ],
+      "3": [
+       "under",
+       "0",
+       "Front Face"
+      ],
+      "4": [
+       "under",
+       "('node', 3)",
+       "Power Button"
+      ],
+      "5": [
+       "under",
+       "('node', 3)",
+       "DC Input Terminal Block"
+      ],
+      "8": [
+       "under",
+       "('node', 3)",
+       "HDMI Port"
+      ],
+      "13": [
+       "under",
+       "('node', 3)",
+       "USB 3.0 Dual Port"
+      ],
+      "22": [
+       "under",
+       "('node', 3)",
+       "HDMI Port Label"
+      ],
+      "38": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 1"
+      ],
+      "42": [
+       "under",
+       "('node', 3)",
+       "USB 3.0 Port Label"
+      ],
+      "47": [
+       "under",
+       "('node', 3)",
+       "DC Input Label"
+      ],
+      "48": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 3"
+      ],
+      "49": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 2"
+      ],
+      "50": [
+       "under",
+       "('node', 3)",
+       "USB 3.2 Label 4"
+      ],
+      "60": [
+       "under",
+       "('node', 3)",
+       "Array of USB 3.2 Ports"
+      ],
+      "9": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 3"
+      ],
+      "10": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 2"
+      ],
+      "11": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 1"
+      ],
+      "15": [
+       "under",
+       "('node', 60)",
+       "USB 3.2 Port 4"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "0"
+     ],
+     "2": [
+      "under",
+      "0",
+      "Top Casing"
+     ],
+     "3": [
+      "under",
+      "0",
+      "Front Face"
+     ],
+     "4": [
+      "under",
+      "('node', 3)",
+      "Power Button"
+     ],
+     "5": [
+      "under",
+      "('node', 3)",
+      "DC Input Terminal Block"
+     ],
+     "8": [
+      "under",
+      "('node', 3)",
+      "HDMI Port"
+     ],
+     "13": [
+      "under",
+      "('node', 3)",
+      "USB 3.0 Dual Port"
+     ],
+     "22": [
+      "under",
+      "('node', 3)",
+      "HDMI Port Label"
+     ],
+     "38": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 1"
+     ],
+     "42": [
+      "under",
+      "('node', 3)",
+      "USB 3.0 Port Label"
+     ],
+     "47": [
+      "under",
+      "('node', 3)",
+      "DC Input Label"
+     ],
+     "48": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 3"
+     ],
+     "49": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 2"
+     ],
+     "50": [
+      "under",
+      "('node', 3)",
+      "USB 3.2 Label 4"
+     ],
+     "60": [
+      "under",
+      "('node', 3)",
+      "Array of USB 3.2 Ports"
+     ],
+     "9": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 3"
+     ],
+     "10": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 2"
+     ],
+     "11": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 1"
+     ],
+     "15": [
+      "under",
+      "('node', 60)",
+      "USB 3.2 Port 4"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 1,
+     "wrong": 0,
+     "invented": 0,
+     "missed": 0,
+     "correct_new": 18,
+     "coarse": 0,
+     "within_ok": 0,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "0",
+       "verdict": "recovered",
+       "width_mm": 187.4,
+       "name": "object"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "0",
+        "Top Casing"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 189.0,
+       "name": "Top Casing"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "0",
+        "Front Face"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 184.6,
+       "name": "Front Face"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "Power Button"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 13.1,
+       "name": "Power Button"
+      },
+      "5": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "DC Input Terminal Block"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 21.9,
+       "name": "DC Input Terminal Block"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "HDMI Port"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 13.9,
+       "name": "HDMI Port"
+      },
+      "13": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.0 Dual Port"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 17.5,
+       "name": "USB 3.0 Dual Port"
+      },
+      "22": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "HDMI Port Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 11.1,
+       "name": "HDMI Port Label"
+      },
+      "38": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 9.5,
+       "name": "USB 3.2 Label 1"
+      },
+      "42": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.0 Port Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 15.2,
+       "name": "USB 3.0 Port Label"
+      },
+      "47": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "DC Input Label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 24.1,
+       "name": "DC Input Label"
+      },
+      "48": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 3"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 12.8,
+       "name": "USB 3.2 Label 3"
+      },
+      "49": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 14.4,
+       "name": "USB 3.2 Label 2"
+      },
+      "50": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "USB 3.2 Label 4"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 11.4,
+       "name": "USB 3.2 Label 4"
+      },
+      "60": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "Array of USB 3.2 Ports"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 74.2,
+       "name": "Array of USB 3.2 Ports"
+      },
+      "9": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 3"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 14.2,
+       "name": "USB 3.2 Port 3"
+      },
+      "10": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 2"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 18.2,
+       "name": "USB 3.2 Port 2"
+      },
+      "11": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 1"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 16.4,
+       "name": "USB 3.2 Port 1"
+      },
+      "15": {
+       "decision": [
+        "under",
+        "('node', 60)",
+        "USB 3.2 Port 4"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 18.0,
+       "name": "USB 3.2 Port 4"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 13,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 1,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 5,
+       "coarse": 0,
+       "within_ok": 0
+      }
+     },
+     "pairs_recovered_share": 1.0
+    },
+    "agent_score": null,
+    "agent": null,
+    "visible_parts": 4,
+    "parts": 48,
+    "rows_labelled": 14920,
+    "surface_rows": 390505,
+    "conflicts": 1387,
+    "bytes": 1858604
+   }
+  ]
+ },
+ "2209-box-ray-demo1_2mm_baseline": {
+  "run": "2209-box-ray-demo1",
+  "mm": 2,
+  "mode": "baseline",
+  "lift": "L3",
+  "views": [
+   {
+    "view": "b1.1",
+    "role": "first",
+    "parts": 6,
+    "rows_labelled": 8452,
+    "surface_rows": 305125,
+    "conflicts": 32,
+    "bytes": 1377700
+   },
+   {
+    "view": "b1.4",
+    "role": "later",
+    "applied": {
+     "same": 1,
+     "under": 11,
+     "drop": 0,
+     "parent_disagree": 0,
+     "conflicts": 4,
+     "decisions": {
+      "0": [
+       "same",
+       "0"
+      ],
+      "2": [
+       "under",
+       "0",
+       "product info label"
+      ],
+      "3": [
+       "under",
+       "0",
+       "serial number label"
+      ],
+      "4": [
+       "under",
+       "('node', 2)",
+       "barcode"
+      ],
+      "6": [
+       "under",
+       "('node', 2)",
+       "recycle symbol"
+      ],
+      "7": [
+       "under",
+       "('node', 3)",
+       "serial number text"
+      ],
+      "8": [
+       "under",
+       "('node', 2)",
+       "FCC mark"
+      ],
+      "16": [
+       "under",
+       "('node', 2)",
+       "model number text"
+      ],
+      "22": [
+       "under",
+       "('node', 2)",
+       "WEEE symbol"
+      ],
+      "23": [
+       "under",
+       "('node', 2)",
+       "made in china text"
+      ],
+      "26": [
+       "under",
+       "('node', 2)",
+       "CE mark"
+      ],
+      "27": [
+       "under",
+       "('node', 3)",
+       "QR code"
+      ]
+     }
+    },
+    "baseline_decisions": {
+     "0": [
+      "same",
+      "0"
+     ],
+     "2": [
+      "under",
+      "0",
+      "product info label"
+     ],
+     "3": [
+      "under",
+      "0",
+      "serial number label"
+     ],
+     "4": [
+      "under",
+      "('node', 2)",
+      "barcode"
+     ],
+     "6": [
+      "under",
+      "('node', 2)",
+      "recycle symbol"
+     ],
+     "7": [
+      "under",
+      "('node', 3)",
+      "serial number text"
+     ],
+     "8": [
+      "under",
+      "('node', 2)",
+      "FCC mark"
+     ],
+     "16": [
+      "under",
+      "('node', 2)",
+      "model number text"
+     ],
+     "22": [
+      "under",
+      "('node', 2)",
+      "WEEE symbol"
+     ],
+     "23": [
+      "under",
+      "('node', 2)",
+      "made in china text"
+     ],
+     "26": [
+      "under",
+      "('node', 2)",
+      "CE mark"
+     ],
+     "27": [
+      "under",
+      "('node', 3)",
+      "QR code"
+     ]
+    },
+    "baseline_score": {
+     "recovered": 0,
+     "wrong": 0,
+     "invented": 0,
+     "missed": 0,
+     "correct_new": 11,
+     "coarse": 1,
+     "within_ok": 0,
+     "unscored": 0,
+     "per_node": {
+      "0": {
+       "decision": [
+        "same",
+        "0"
+       ],
+       "expected": "new",
+       "verdict": "coarse",
+       "width_mm": 99.2,
+       "name": "front face"
+      },
+      "2": {
+       "decision": [
+        "under",
+        "0",
+        "product info label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 72.1,
+       "name": "product info label"
+      },
+      "3": {
+       "decision": [
+        "under",
+        "0",
+        "serial number label"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 56.5,
+       "name": "serial number label"
+      },
+      "4": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "barcode"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 57.9,
+       "name": "barcode"
+      },
+      "6": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "recycle symbol"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.0,
+       "name": "recycle symbol"
+      },
+      "7": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "serial number text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 29.8,
+       "name": "serial number text"
+      },
+      "8": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "FCC mark"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.3,
+       "name": "FCC mark"
+      },
+      "16": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "model number text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 30.9,
+       "name": "model number text"
+      },
+      "22": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "WEEE symbol"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 7.5,
+       "name": "WEEE symbol"
+      },
+      "23": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "made in china text"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 8.5,
+       "name": "made in china text"
+      },
+      "26": {
+       "decision": [
+        "under",
+        "('node', 2)",
+        "CE mark"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 15.1,
+       "name": "CE mark"
+      },
+      "27": {
+       "decision": [
+        "under",
+        "('node', 3)",
+        "QR code"
+       ],
+       "expected": "new",
+       "verdict": "correct_new",
+       "width_mm": 11.3,
+       "name": "QR code"
+      }
+     },
+     "by_size": {
+      "small": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 6,
+       "coarse": 0,
+       "within_ok": 0
+      },
+      "large": {
+       "recovered": 0,
+       "wrong": 0,
+       "invented": 0,
+       "missed": 0,
+       "correct_new": 5,
+       "coarse": 1,
+       "within_ok": 0
+      }
+     },
+     "pairs_recovered_share": null
+    },
+    "agent_score": null,
+    "agent": null,
+    "visible_parts": 4,
+    "parts": 17,
+    "rows_labelled": 10766,
+    "surface_rows": 305125,
+    "conflicts": 36,
+    "bytes": 1410772
+   }
+  ]
+ }
+}

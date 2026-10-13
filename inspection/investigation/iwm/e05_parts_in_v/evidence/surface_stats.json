@@ -1,0 +1,17 @@
+[
+ {
+  "run": "2209-compute-ray-demo5",
+  "voxel_mm": 1,
+  "build_s_round": 0.38,
+  "rows_round": 1825801,
+  "cloud_points": 2496392,
+  "cloud_on_rows_round": 0.8318,
+  "cloud_exact_round": 0.8318,
+  "bytes_round": 36516020,
+  "build_s_floor": 0.36,
+  "rows_floor": 1825801,
+  "cloud_on_rows_floor": 0.865,
+  "cloud_exact_floor": 0.4818,
+  "bytes_floor": 36516020
+ }
+]

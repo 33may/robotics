@@ -1,0 +1,587 @@
+{
+ "results": [
+  {
+   "run": "2209-compute-ray-demo5",
+   "mm": 1,
+   "lift": "L3",
+   "first": "c5.2",
+   "second": "c5.6",
+   "rigid_vector_mm": [
+    0.4,
+    2.43,
+    -7.6
+   ],
+   "n_wide_pairs": 5,
+   "pairs": [
+    {
+     "a": "c5.2",
+     "a_id": 0,
+     "b": "c5.6",
+     "b_id": 0,
+     "what": "the object (c5.6's root 'front view' is the object seen from the front)",
+     "mm": 1,
+     "rows_a": 33601,
+     "rows_b": 14164,
+     "iou_rows": 0.17,
+     "share_b_on_a": 0.489,
+     "offset_mm": [
+      30.98,
+      38.18,
+      -35.16
+     ],
+     "offset_norm_mm": 60.45,
+     "width_mm": 188.1,
+     "wide": true,
+     "iou_rows_shifted": 0.057,
+     "render_iou": 0.49,
+     "render_offset_px": [
+      -28.9,
+      -22.9
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 7,
+     "b": "c5.6",
+     "b_id": 4,
+     "what": "Chort label = sticker 'Chort' (c5.2 hung it under the object, c5.6 under the upper panel); geometry: 5.4 mm apart",
+     "mm": 1,
+     "rows_a": 353,
+     "rows_b": 342,
+     "iou_rows": 0.19,
+     "share_b_on_a": 0.325,
+     "offset_mm": [
+      1.62,
+      -0.45,
+      -5.09
+     ],
+     "offset_norm_mm": 5.36,
+     "width_mm": 29.8,
+     "wide": true,
+     "iou_rows_shifted": 0.213,
+     "render_iou": 0.021,
+     "render_offset_px": [
+      -24.3,
+      35.6
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 35,
+     "b": "c5.6",
+     "b_id": 12,
+     "what": "ethernet ports group = LAN ports group",
+     "mm": 1,
+     "rows_a": 274,
+     "rows_b": 619,
+     "iou_rows": 0.109,
+     "share_b_on_a": 0.142,
+     "offset_mm": [
+      0.02,
+      -0.99,
+      -8.21
+     ],
+     "offset_norm_mm": 8.27,
+     "width_mm": 34.4,
+     "wide": true,
+     "iou_rows_shifted": 0.109,
+     "render_iou": 0.107,
+     "render_offset_px": [
+      -40.0,
+      1.7
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 9,
+     "b": "c5.6",
+     "b_id": 5,
+     "what": "Ethernet Port 1 (lower-left in c5.2, the Chort end of the face) = LAN 1G port (left in c5.6)",
+     "mm": 1,
+     "rows_a": 132,
+     "rows_b": 280,
+     "iou_rows": 0.117,
+     "share_b_on_a": 0.154,
+     "offset_mm": [
+      0.1,
+      -1.2,
+      -8.93
+     ],
+     "offset_norm_mm": 9.01,
+     "width_mm": 16.1,
+     "wide": false,
+     "iou_rows_shifted": 0.081,
+     "render_iou": 0.128,
+     "render_offset_px": [
+      -40.7,
+      2.2
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 17,
+     "b": "c5.6",
+     "b_id": 6,
+     "what": "Ethernet Port 2 = LAN 10G port",
+     "mm": 1,
+     "rows_a": 142,
+     "rows_b": 316,
+     "iou_rows": 0.106,
+     "share_b_on_a": 0.139,
+     "offset_mm": [
+      0.03,
+      -1.02,
+      -7.81
+     ],
+     "offset_norm_mm": 7.87,
+     "width_mm": 15.6,
+     "wide": false,
+     "iou_rows_shifted": 0.14,
+     "render_iou": 0.085,
+     "render_offset_px": [
+      -39.4,
+      0.7
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 10,
+     "b": "c5.6",
+     "b_id": 23,
+     "what": "Serial Ports Group = COM ports group",
+     "mm": 1,
+     "rows_a": 794,
+     "rows_b": 662,
+     "iou_rows": 0.149,
+     "share_b_on_a": 0.285,
+     "offset_mm": [
+      0.4,
+      2.69,
+      -8.27
+     ],
+     "offset_norm_mm": 8.71,
+     "width_mm": 58.2,
+     "wide": true,
+     "iou_rows_shifted": 0.279,
+     "render_iou": 0.15,
+     "render_offset_px": [
+      -39.0,
+      -2.3
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 32,
+     "b": "c5.6",
+     "b_id": 11,
+     "what": "Serial Port 1 (lower-left in c5.2) = COM / DIO port (left in c5.6)",
+     "mm": 1,
+     "rows_a": 256,
+     "rows_b": 296,
+     "iou_rows": 0.127,
+     "share_b_on_a": 0.209,
+     "offset_mm": [
+      0.73,
+      2.43,
+      -7.57
+     ],
+     "offset_norm_mm": 7.98,
+     "width_mm": 23.4,
+     "wide": true,
+     "iou_rows_shifted": 0.261,
+     "render_iou": 0.129,
+     "render_offset_px": [
+      -34.6,
+      -3.0
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 27,
+     "b": "c5.6",
+     "b_id": 9,
+     "what": "Serial Port 2 = COM / CAN port",
+     "mm": 1,
+     "rows_a": 304,
+     "rows_b": 269,
+     "iou_rows": 0.151,
+     "share_b_on_a": 0.279,
+     "offset_mm": [
+      0.03,
+      2.45,
+      -7.6
+     ],
+     "offset_norm_mm": 7.98,
+     "width_mm": 28.6,
+     "wide": true,
+     "iou_rows_shifted": 0.279,
+     "render_iou": 0.158,
+     "render_offset_px": [
+      -35.9,
+      -5.2
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 23,
+     "b": "c5.6",
+     "b_id": 13,
+     "what": "Audio Port 1 (lower-left) = microphone jack MIC IN (left); c5.2 has no audio group, c5.6 does -> the group node #21 is new and ought to become their parent (T edit, not scored)",
+     "mm": 1,
+     "rows_a": 58,
+     "rows_b": 60,
+     "iou_rows": 0.103,
+     "share_b_on_a": 0.183,
+     "offset_mm": [
+      1.12,
+      0.68,
+      -6.56
+     ],
+     "offset_norm_mm": 6.69,
+     "width_mm": 10.6,
+     "wide": false,
+     "iou_rows_shifted": 0.338,
+     "render_iou": 0.078,
+     "render_offset_px": [
+      -32.8,
+      1.4
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 26,
+     "b": "c5.6",
+     "b_id": 15,
+     "what": "Audio Port 2 = line output jack LINE OUT",
+     "mm": 1,
+     "rows_a": 53,
+     "rows_b": 56,
+     "iou_rows": 0.038,
+     "share_b_on_a": 0.071,
+     "offset_mm": [
+      0.95,
+      1.24,
+      -6.89
+     ],
+     "offset_norm_mm": 7.07,
+     "width_mm": 9.1,
+     "wide": false,
+     "iou_rows_shifted": 0.433,
+     "render_iou": 0.031,
+     "render_offset_px": [
+      -34.3,
+      1.6
+     ]
+    }
+   ]
+  },
+  {
+   "run": "2209-box-ray-demo1",
+   "mm": 1,
+   "lift": "L3",
+   "first": "b1.1",
+   "second": "b1.4",
+   "rigid_vector_mm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "n_wide_pairs": 0,
+   "pairs": []
+  },
+  {
+   "run": "2209-compute-ray-demo5",
+   "mm": 2,
+   "lift": "L3",
+   "first": "c5.2",
+   "second": "c5.6",
+   "rigid_vector_mm": [
+    0.69,
+    2.03,
+    -8.5
+   ],
+   "n_wide_pairs": 5,
+   "pairs": [
+    {
+     "a": "c5.2",
+     "a_id": 0,
+     "b": "c5.6",
+     "b_id": 0,
+     "what": "the object (c5.6's root 'front view' is the object seen from the front)",
+     "mm": 2,
+     "rows_a": 9378,
+     "rows_b": 4031,
+     "iou_rows": 0.199,
+     "share_b_on_a": 0.553,
+     "offset_mm": [
+      36.87,
+      37.01,
+      -33.92
+     ],
+     "offset_norm_mm": 62.29,
+     "width_mm": 188.5,
+     "wide": true,
+     "iou_rows_shifted": 0.112,
+     "render_iou": 0.594,
+     "render_offset_px": [
+      -33.3,
+      -31.8
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 7,
+     "b": "c5.6",
+     "b_id": 4,
+     "what": "Chort label = sticker 'Chort' (c5.2 hung it under the object, c5.6 under the upper panel); geometry: 5.4 mm apart",
+     "mm": 2,
+     "rows_a": 72,
+     "rows_b": 109,
+     "iou_rows": 0.392,
+     "share_b_on_a": 0.468,
+     "offset_mm": [
+      3.08,
+      -2.49,
+      -2.34
+     ],
+     "offset_norm_mm": 4.6,
+     "width_mm": 27.5,
+     "wide": true,
+     "iou_rows_shifted": 0.295,
+     "render_iou": 0.034,
+     "render_offset_px": [
+      -17.5,
+      45.9
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 35,
+     "b": "c5.6",
+     "b_id": 12,
+     "what": "ethernet ports group = LAN ports group",
+     "mm": 2,
+     "rows_a": 103,
+     "rows_b": 163,
+     "iou_rows": 0.147,
+     "share_b_on_a": 0.209,
+     "offset_mm": [
+      -0.41,
+      -0.38,
+      -8.55
+     ],
+     "offset_norm_mm": 8.57,
+     "width_mm": 34.1,
+     "wide": true,
+     "iou_rows_shifted": 0.207,
+     "render_iou": 0.107,
+     "render_offset_px": [
+      -45.3,
+      -0.5
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 9,
+     "b": "c5.6",
+     "b_id": 5,
+     "what": "Ethernet Port 1 (lower-left in c5.2, the Chort end of the face) = LAN 1G port (left in c5.6)",
+     "mm": 2,
+     "rows_a": 47,
+     "rows_b": 77,
+     "iou_rows": 0.181,
+     "share_b_on_a": 0.247,
+     "offset_mm": [
+      -0.51,
+      -0.11,
+      -8.95
+     ],
+     "offset_norm_mm": 8.97,
+     "width_mm": 18.2,
+     "wide": false,
+     "iou_rows_shifted": 0.179,
+     "render_iou": 0.136,
+     "render_offset_px": [
+      -44.1,
+      -2.0
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 17,
+     "b": "c5.6",
+     "b_id": 6,
+     "what": "Ethernet Port 2 = LAN 10G port",
+     "mm": 2,
+     "rows_a": 56,
+     "rows_b": 82,
+     "iou_rows": 0.122,
+     "share_b_on_a": 0.183,
+     "offset_mm": [
+      -1.42,
+      0.53,
+      -8.23
+     ],
+     "offset_norm_mm": 8.37,
+     "width_mm": 19.2,
+     "wide": false,
+     "iou_rows_shifted": 0.244,
+     "render_iou": 0.078,
+     "render_offset_px": [
+      -46.2,
+      -3.5
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 10,
+     "b": "c5.6",
+     "b_id": 23,
+     "what": "Serial Ports Group = COM ports group",
+     "mm": 2,
+     "rows_a": 249,
+     "rows_b": 168,
+     "iou_rows": 0.185,
+     "share_b_on_a": 0.387,
+     "offset_mm": [
+      1.16,
+      2.03,
+      -8.98
+     ],
+     "offset_norm_mm": 9.28,
+     "width_mm": 58.4,
+     "wide": true,
+     "iou_rows_shifted": 0.428,
+     "render_iou": 0.159,
+     "render_offset_px": [
+      -43.6,
+      -9.8
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 32,
+     "b": "c5.6",
+     "b_id": 11,
+     "what": "Serial Port 1 (lower-left in c5.2) = COM / DIO port (left in c5.6)",
+     "mm": 2,
+     "rows_a": 93,
+     "rows_b": 84,
+     "iou_rows": 0.149,
+     "share_b_on_a": 0.274,
+     "offset_mm": [
+      0.66,
+      2.55,
+      -8.5
+     ],
+     "offset_norm_mm": 8.9,
+     "width_mm": 24.9,
+     "wide": true,
+     "iou_rows_shifted": 0.455,
+     "render_iou": 0.136,
+     "render_offset_px": [
+      -40.9,
+      -8.3
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 27,
+     "b": "c5.6",
+     "b_id": 9,
+     "what": "Serial Port 2 = COM / CAN port",
+     "mm": 2,
+     "rows_a": 98,
+     "rows_b": 60,
+     "iou_rows": 0.17,
+     "share_b_on_a": 0.383,
+     "offset_mm": [
+      0.69,
+      2.25,
+      -8.25
+     ],
+     "offset_norm_mm": 8.58,
+     "width_mm": 29.1,
+     "wide": true,
+     "iou_rows_shifted": 0.429,
+     "render_iou": 0.14,
+     "render_offset_px": [
+      -42.0,
+      -8.1
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 23,
+     "b": "c5.6",
+     "b_id": 13,
+     "what": "Audio Port 1 (lower-left) = microphone jack MIC IN (left); c5.2 has no audio group, c5.6 does -> the group node #21 is new and ought to become their parent (T edit, not scored)",
+     "mm": 2,
+     "rows_a": 21,
+     "rows_b": 23,
+     "iou_rows": 0.073,
+     "share_b_on_a": 0.13,
+     "offset_mm": [
+      0.82,
+      1.35,
+      -8.46
+     ],
+     "offset_norm_mm": 8.6,
+     "width_mm": 12.4,
+     "wide": false,
+     "iou_rows_shifted": 0.583,
+     "render_iou": 0.077,
+     "render_offset_px": [
+      -39.9,
+      -2.4
+     ]
+    },
+    {
+     "a": "c5.2",
+     "a_id": 26,
+     "b": "c5.6",
+     "b_id": 15,
+     "what": "Audio Port 2 = line output jack LINE OUT",
+     "mm": 2,
+     "rows_a": 24,
+     "rows_b": 19,
+     "iou_rows": 0.024,
+     "share_b_on_a": 0.053,
+     "offset_mm": [
+      1.35,
+      1.61,
+      -9.51
+     ],
+     "offset_norm_mm": 9.74,
+     "width_mm": 12.9,
+     "wide": false,
+     "iou_rows_shifted": 0.423,
+     "render_iou": 0.023,
+     "render_offset_px": [
+      -44.0,
+      -1.9
+     ]
+    }
+   ]
+  },
+  {
+   "run": "2209-box-ray-demo1",
+   "mm": 2,
+   "lift": "L3",
+   "first": "b1.1",
+   "second": "b1.4",
+   "rigid_vector_mm": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "n_wide_pairs": 0,
+   "pairs": []
+  }
+ ],
+ "settings": {
+  "wide_mm": 20.0,
+  "verify_iou": 0.3,
+  "lift": "L3"
+ }
+}

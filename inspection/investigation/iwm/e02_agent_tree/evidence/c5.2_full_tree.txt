@@ -1,0 +1,15 @@
+#0 Industrial PC box [367, 256, 912, 720]
+  #2 Top Heatsink Face box [366, 254, 856, 560] 49% of #0
+  #3 Front Face box [450, 381, 911, 719] 27% of #0
+    #10 Serial Ports Group box [755, 490, 864, 572] 7% of #3
+      #32 Serial Port 1 box [756, 532, 805, 570] 36% of #10
+      #27 Serial Port 2 box [813, 493, 867, 532] 36% of #10
+    #35 ethernet ports box [671, 563, 743, 617] 2% of #3
+      #9 Ethernet Port 1 box [671, 588, 702, 617] 51% of #35
+      #17 Ethernet Port 2 box [711, 563, 743, 592] 49% of #35
+    #23 Audio Port 1 box [620, 638, 636, 655] 0% of #3
+    #26 Audio Port 2 box [644, 623, 662, 638] 0% of #3
+    #12 Status LED 1 box [586, 656, 603, 669] 0% of #3
+  #5 Front-Top Bevel Face box [437, 346, 912, 625] 23% of #0
+    #8 CropTeq logo box [449, 486, 653, 612] 33% of #5
+  #7 Chort label box [500, 576, 593, 641] 1% of #0

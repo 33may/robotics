@@ -1,0 +1,16 @@
+#0 Industrial PC front box [275, 247, 928, 561]
+  #2 Active port panel box [289, 342, 924, 561] 56% of #0
+    #28 DC terminal area box [792, 342, 923, 482] 15% of #2
+      #5 DC input terminal block box [841, 405, 894, 442] 9% of #28
+      #46 DC IN 12-24V label box [836, 451, 893, 468] 4% of #28
+    #49 array of USB 3.2 ports box [579, 411, 809, 504] 4% of #2
+      #13 USB 3.2 port 1 box [579, 427, 602, 503] 32% of #49
+      #15 USB 3.2 port 2 box [655, 419, 676, 491] 27% of #49
+      #27 USB 3.2 port 3 box [725, 411, 744, 468] 24% of #49
+      #14 USB 3.2 port 4 box [791, 420, 809, 460] 16% of #49
+    #9 Dual USB 3.0 port box [487, 451, 539, 504] 2% of #2
+    #4 Power button box [356, 461, 401, 498] 2% of #2
+      #16 Power button icon box [363, 464, 394, 492] 56% of #4
+    #6 HDMI port box [435, 462, 459, 514] 1% of #2
+    #26 HDMI port label box [427, 441, 459, 451] 0% of #2
+  #3 Plain upper bezel box [276, 247, 927, 389] 43% of #0

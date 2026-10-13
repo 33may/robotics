@@ -1,0 +1,574 @@
+{
+ "c5.6": {
+  "masks": {
+   "sam3_crop32": 5,
+   "sam3_crop64": 7,
+   "sam3_grid32": 13,
+   "sam3_grid64": 14,
+   "sam3_grid64_loose": 31,
+   "sam3_obj3_32": 81,
+   "sam3_text": 48,
+   "unsam_base_g0.3": 30,
+   "unsam_plus_g0.1": 34,
+   "unsam_plus_g0.1_eval": 142,
+   "unsam_plus_g0.2": 27,
+   "unsam_plus_g0.3": 28,
+   "unsam_plus_g0.3_eval": 154,
+   "unsam_plus_g0.5": 16,
+   "unsam_plus_g0.7": 15,
+   "unsam_plus_g0.9": 13
+  },
+  "trees": {
+   "sam3_obj3_32": {
+    "nodes": 49,
+    "depth": 7,
+    "per_depth": [
+     1,
+     6,
+     9,
+     13,
+     14,
+     5,
+     1
+    ],
+    "conflicts": 136,
+    "object_from": [
+     243,
+     310,
+     1073,
+     719
+    ]
+   },
+   "sam3_obj3_32+sam3_text": {
+    "nodes": 64,
+    "depth": 8,
+    "per_depth": [
+     1,
+     6,
+     10,
+     15,
+     20,
+     9,
+     2,
+     1
+    ],
+    "conflicts": 183,
+    "object_from": [
+     243,
+     310,
+     1073,
+     719
+    ]
+   },
+   "sam3_text": {
+    "nodes": 28,
+    "depth": 2,
+    "per_depth": [
+     21,
+     7
+    ],
+    "conflicts": 0,
+    "object_from": [
+     243,
+     310,
+     1073,
+     719
+    ]
+   },
+   "unsam_g0.1_eval": {
+    "nodes": 65,
+    "depth": 2,
+    "per_depth": [
+     58,
+     7
+    ],
+    "conflicts": 10,
+    "object_from": [
+     243,
+     310,
+     1073,
+     719
+    ]
+   },
+   "unsam_stack": {
+    "nodes": 39,
+    "depth": 6,
+    "per_depth": [
+     1,
+     2,
+     17,
+     13,
+     5,
+     1
+    ],
+    "conflicts": 10,
+    "object_from": [
+     243,
+     310,
+     1073,
+     719
+    ]
+   },
+   "unsam_stack+sam3_text": {
+    "nodes": 54,
+    "depth": 6,
+    "per_depth": [
+     1,
+     2,
+     17,
+     21,
+     8,
+     5
+    ],
+    "conflicts": 12,
+    "object_from": [
+     243,
+     310,
+     1073,
+     719
+    ]
+   }
+  }
+ },
+ "c5.2": {
+  "masks": {
+   "sam3_grid32": 9,
+   "sam3_obj3_32": 50,
+   "sam3_text": 55,
+   "unsam_plus_g0.1": 16,
+   "unsam_plus_g0.1_eval": 130,
+   "unsam_plus_g0.2": 30,
+   "unsam_plus_g0.3": 32,
+   "unsam_plus_g0.5": 11,
+   "unsam_plus_g0.7": 14,
+   "unsam_plus_g0.9": 11
+  },
+  "trees": {
+   "sam3_text": {
+    "nodes": 16,
+    "depth": 2,
+    "per_depth": [
+     14,
+     2
+    ],
+    "conflicts": 0,
+    "object_from": [
+     367,
+     256,
+     912,
+     720
+    ]
+   },
+   "unsam_stack": {
+    "nodes": 24,
+    "depth": 5,
+    "per_depth": [
+     1,
+     4,
+     7,
+     8,
+     4
+    ],
+    "conflicts": 3,
+    "object_from": [
+     367,
+     256,
+     912,
+     720
+    ]
+   },
+   "unsam_stack+sam3_text": {
+    "nodes": 34,
+    "depth": 6,
+    "per_depth": [
+     1,
+     8,
+     7,
+     10,
+     6,
+     2
+    ],
+    "conflicts": 9,
+    "object_from": [
+     367,
+     256,
+     912,
+     720
+    ]
+   }
+  }
+ },
+ "c5.7": {
+  "masks": {
+   "sam3_grid32": 16,
+   "sam3_obj3_32": 55,
+   "sam3_text": 68,
+   "unsam_plus_g0.1": 92,
+   "unsam_plus_g0.1_eval": 316,
+   "unsam_plus_g0.2": 88,
+   "unsam_plus_g0.3": 57,
+   "unsam_plus_g0.5": 31,
+   "unsam_plus_g0.7": 15,
+   "unsam_plus_g0.9": 10
+  },
+  "trees": {
+   "sam3_text": {
+    "nodes": 34,
+    "depth": 2,
+    "per_depth": [
+     25,
+     9
+    ],
+    "conflicts": 0,
+    "object_from": "largest mask of unsam_plus_g0.9"
+   },
+   "unsam_stack": {
+    "nodes": 43,
+    "depth": 4,
+    "per_depth": [
+     3,
+     22,
+     15,
+     3
+    ],
+    "conflicts": 1,
+    "object_from": "largest mask of unsam_plus_g0.9"
+   },
+   "unsam_stack+sam3_text": {
+    "nodes": 59,
+    "depth": 4,
+    "per_depth": [
+     3,
+     21,
+     26,
+     9
+    ],
+    "conflicts": 1,
+    "object_from": "largest mask of unsam_plus_g0.9"
+   }
+  }
+ },
+ "c9.6": {
+  "masks": {
+   "sam3_grid32": 19,
+   "sam3_obj3_32": 63,
+   "sam3_text": 72,
+   "unsam_plus_g0.1": 76,
+   "unsam_plus_g0.1_eval": 352,
+   "unsam_plus_g0.2": 109,
+   "unsam_plus_g0.3": 55,
+   "unsam_plus_g0.5": 23,
+   "unsam_plus_g0.7": 15,
+   "unsam_plus_g0.9": 12
+  },
+  "trees": {
+   "sam3_text": {
+    "nodes": 30,
+    "depth": 2,
+    "per_depth": [
+     26,
+     4
+    ],
+    "conflicts": 0,
+    "object_from": [
+     275,
+     247,
+     928,
+     561
+    ]
+   },
+   "unsam_stack": {
+    "nodes": 33,
+    "depth": 5,
+    "per_depth": [
+     1,
+     2,
+     18,
+     11,
+     1
+    ],
+    "conflicts": 3,
+    "object_from": [
+     275,
+     247,
+     928,
+     561
+    ]
+   },
+   "unsam_stack+sam3_text": {
+    "nodes": 48,
+    "depth": 5,
+    "per_depth": [
+     1,
+     2,
+     25,
+     15,
+     5
+    ],
+    "conflicts": 5,
+    "object_from": [
+     275,
+     247,
+     928,
+     561
+    ]
+   }
+  }
+ },
+ "bc5.9": {
+  "masks": {
+   "sam3_grid32": 9,
+   "sam3_obj3_32": 68,
+   "sam3_text": 12,
+   "unsam_plus_g0.1": 8,
+   "unsam_plus_g0.1_eval": 103,
+   "unsam_plus_g0.2": 27,
+   "unsam_plus_g0.3": 31,
+   "unsam_plus_g0.5": 12,
+   "unsam_plus_g0.7": 10,
+   "unsam_plus_g0.9": 12
+  },
+  "trees": {
+   "sam3_text": {
+    "nodes": 6,
+    "depth": 2,
+    "per_depth": [
+     1,
+     5
+    ],
+    "conflicts": 0,
+    "object_from": [
+     325,
+     365,
+     906,
+     718
+    ]
+   },
+   "unsam_stack": {
+    "nodes": 27,
+    "depth": 5,
+    "per_depth": [
+     1,
+     2,
+     10,
+     11,
+     3
+    ],
+    "conflicts": 9,
+    "object_from": [
+     325,
+     365,
+     906,
+     718
+    ]
+   },
+   "unsam_stack+sam3_text": {
+    "nodes": 28,
+    "depth": 5,
+    "per_depth": [
+     1,
+     2,
+     10,
+     11,
+     4
+    ],
+    "conflicts": 10,
+    "object_from": [
+     325,
+     365,
+     906,
+     718
+    ]
+   }
+  }
+ },
+ "b1.1": {
+  "masks": {
+   "sam3_grid32": 9,
+   "sam3_obj3_32": 65,
+   "sam3_text": 9,
+   "unsam_plus_g0.1": 27,
+   "unsam_plus_g0.1_eval": 164,
+   "unsam_plus_g0.2": 37,
+   "unsam_plus_g0.3": 35,
+   "unsam_plus_g0.5": 7,
+   "unsam_plus_g0.7": 7,
+   "unsam_plus_g0.9": 8
+  },
+  "trees": {
+   "sam3_text": {
+    "nodes": 5,
+    "depth": 2,
+    "per_depth": [
+     1,
+     4
+    ],
+    "conflicts": 0,
+    "object_from": [
+     280,
+     110,
+     996,
+     550
+    ]
+   },
+   "unsam_stack": {
+    "nodes": 49,
+    "depth": 6,
+    "per_depth": [
+     1,
+     5,
+     13,
+     16,
+     12,
+     2
+    ],
+    "conflicts": 10,
+    "object_from": [
+     280,
+     110,
+     996,
+     550
+    ]
+   },
+   "unsam_stack+sam3_text": {
+    "nodes": 50,
+    "depth": 7,
+    "per_depth": [
+     1,
+     5,
+     11,
+     15,
+     12,
+     5,
+     1
+    ],
+    "conflicts": 8,
+    "object_from": [
+     280,
+     110,
+     996,
+     550
+    ]
+   }
+  }
+ },
+ "b1.4": {
+  "masks": {
+   "sam3_grid32": 9,
+   "sam3_obj3_32": 64,
+   "sam3_text": 17,
+   "unsam_plus_g0.1": 17,
+   "unsam_plus_g0.1_eval": 104,
+   "unsam_plus_g0.2": 25,
+   "unsam_plus_g0.3": 28,
+   "unsam_plus_g0.5": 14,
+   "unsam_plus_g0.7": 21,
+   "unsam_plus_g0.9": 15
+  },
+  "trees": {
+   "sam3_text": {
+    "nodes": 11,
+    "depth": 3,
+    "per_depth": [
+     3,
+     6,
+     2
+    ],
+    "conflicts": 1,
+    "object_from": "largest mask of unsam_plus_g0.9"
+   },
+   "unsam_stack": {
+    "nodes": 22,
+    "depth": 4,
+    "per_depth": [
+     7,
+     13,
+     1,
+     1
+    ],
+    "conflicts": 2,
+    "object_from": "largest mask of unsam_plus_g0.9"
+   },
+   "unsam_stack+sam3_text": {
+    "nodes": 29,
+    "depth": 4,
+    "per_depth": [
+     8,
+     11,
+     9,
+     1
+    ],
+    "conflicts": 4,
+    "object_from": "largest mask of unsam_plus_g0.9"
+   }
+  }
+ },
+ "b4.5": {
+  "masks": {
+   "sam3_grid32": 11,
+   "sam3_obj3_32": 74,
+   "sam3_text": 16,
+   "unsam_plus_g0.1": 22,
+   "unsam_plus_g0.1_eval": 199,
+   "unsam_plus_g0.2": 36,
+   "unsam_plus_g0.3": 28,
+   "unsam_plus_g0.5": 11,
+   "unsam_plus_g0.7": 13,
+   "unsam_plus_g0.9": 6
+  },
+  "trees": {
+   "sam3_text": {
+    "nodes": 10,
+    "depth": 2,
+    "per_depth": [
+     3,
+     7
+    ],
+    "conflicts": 0,
+    "object_from": [
+     405,
+     108,
+     900,
+     532
+    ]
+   },
+   "unsam_stack": {
+    "nodes": 28,
+    "depth": 5,
+    "per_depth": [
+     3,
+     5,
+     8,
+     11,
+     1
+    ],
+    "conflicts": 1,
+    "object_from": [
+     405,
+     108,
+     900,
+     532
+    ]
+   },
+   "unsam_stack+sam3_text": {
+    "nodes": 31,
+    "depth": 6,
+    "per_depth": [
+     3,
+     5,
+     8,
+     10,
+     4,
+     1
+    ],
+    "conflicts": 2,
+    "object_from": [
+     405,
+     108,
+     900,
+     532
+    ]
+   }
+  }
+ }
+}

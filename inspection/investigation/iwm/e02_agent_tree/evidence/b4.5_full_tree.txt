@@ -1,0 +1,8 @@
+#0 object box [405, 108, 900, 532]
+  #3 front face box [407, 259, 899, 533] 69% of #0
+    #2 product info sticker box [417, 290, 769, 507] 48% of #3
+      #7 barcode box [462, 305, 733, 382] 35% of #2
+    #6 serial number sticker box [477, 472, 706, 511] 7% of #3
+      #13 QR code box [660, 475, 697, 502] 12% of #6
+  #5 top face box [405, 106, 897, 277] 30% of #0
+    #9 F3 AI KIT sticker box [475, 107, 809, 196] 37% of #5

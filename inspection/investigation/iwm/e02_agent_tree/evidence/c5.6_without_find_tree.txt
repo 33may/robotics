@@ -1,0 +1,12 @@
+#0 Chort device box [243, 310, 1073, 719]
+  #2 connector panel box [246, 446, 1073, 660] 59% of #0
+    #5 LAN 1G ethernet port box [538, 550, 610, 611] 3% of #2
+    #9 COM/CAN DB9 serial port box [901, 546, 988, 595] 2% of #2
+    #6 LAN 10G ethernet port box [623, 549, 703, 599] 2% of #2
+    #10 COM/DIO DB9 serial port box [749, 550, 834, 599] 2% of #2
+    #13 MIC IN audio port box [437, 578, 472, 610] 1% of #2
+    #8 antenna port 2 box [376, 580, 407, 611] 1% of #2
+    #7 antenna port 1 box [306, 581, 337, 612] 1% of #2
+    #15 LINE OUT audio port box [488, 578, 522, 609] 1% of #2
+  #3 upper front panel box [241, 309, 1069, 471] 41% of #0
+    #4 Chort brand sticker box [261, 338, 394, 392] 6% of #3

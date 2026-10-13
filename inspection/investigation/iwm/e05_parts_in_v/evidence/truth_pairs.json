@@ -1,0 +1,301 @@
+{
+ "author": "claude, 2026-10-12, from the e02 final figures and tree texts, corrected by the pairs.py geometry; for Anton's check (alignment round v2)",
+ "how_to_read": "pairs: a node of the LATER view (b) is the same physical part as a node of an EARLIER view (a). within: the node is a sub-region of an existing part (a band of a face) - under{node, part} and same{node, part} both count as right. new: no counterpart in the model so far. uncertain: excluded from scoring.",
+ "pairs": [
+  {
+   "a": "c5.2",
+   "a_id": 0,
+   "b": "c5.6",
+   "b_id": 0,
+   "what": "the object (c5.6's root 'front view' is the object seen from the front)"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 7,
+   "b": "c5.6",
+   "b_id": 4,
+   "what": "Chort label = sticker 'Chort' (c5.2 hung it under the object, c5.6 under the upper panel); geometry: 5.4 mm apart"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 35,
+   "b": "c5.6",
+   "b_id": 12,
+   "what": "ethernet ports group = LAN ports group"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 9,
+   "b": "c5.6",
+   "b_id": 5,
+   "what": "Ethernet Port 1 (lower-left in c5.2, the Chort end of the face) = LAN 1G port (left in c5.6)"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 17,
+   "b": "c5.6",
+   "b_id": 6,
+   "what": "Ethernet Port 2 = LAN 10G port"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 10,
+   "b": "c5.6",
+   "b_id": 23,
+   "what": "Serial Ports Group = COM ports group"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 32,
+   "b": "c5.6",
+   "b_id": 11,
+   "what": "Serial Port 1 (lower-left in c5.2) = COM / DIO port (left in c5.6)"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 27,
+   "b": "c5.6",
+   "b_id": 9,
+   "what": "Serial Port 2 = COM / CAN port"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 23,
+   "b": "c5.6",
+   "b_id": 13,
+   "what": "Audio Port 1 (lower-left) = microphone jack MIC IN (left); c5.2 has no audio group, c5.6 does -> the group node #21 is new and ought to become their parent (T edit, not scored)"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 26,
+   "b": "c5.6",
+   "b_id": 15,
+   "what": "Audio Port 2 = line output jack LINE OUT"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 0,
+   "b": "c5.7",
+   "b_id": 0,
+   "what": "the object"
+  }
+ ],
+ "within": [
+  {
+   "view": "c5.6",
+   "id": 2,
+   "a": "c5.2",
+   "a_id": 3,
+   "what": "lower front panel = the lower band (ports) of c5.2's Front Face; geometry: 41 % of its rows on the Front Face, IoU 0.28"
+  },
+  {
+   "view": "c5.6",
+   "id": 3,
+   "a": "c5.2",
+   "a_id": 3,
+   "what": "upper front panel = the upper band of c5.2's Front Face, NOT the bevel (geometry: IoU 0.02 with the bevel); my first reading paired it with the bevel - corrected"
+  }
+ ],
+ "new": [
+  {
+   "view": "c5.6",
+   "id": 21,
+   "what": "audio jacks group (c5.2 kept the two audio ports directly under the front face)"
+  },
+  {
+   "view": "c5.6",
+   "id": 55,
+   "what": "antenna ports group, not in c5.2"
+  },
+  {
+   "view": "c5.6",
+   "id": 7,
+   "what": "antenna port 1, not in c5.2 (unless c5.2's 'Status LED 1' is one of them, see uncertain)"
+  },
+  {
+   "view": "c5.6",
+   "id": 8,
+   "what": "antenna port 2, idem"
+  },
+  {
+   "view": "c5.7",
+   "id": 3,
+   "what": "Front Face of c5.7 is the OPPOSITE long side (USB, HDMI, power, DC) - a new face despite the same name as the existing Front Face"
+  },
+  {
+   "view": "c5.7",
+   "id": 2,
+   "what": "Top Casing of c5.7 is the smooth slanted band above the USB side (the back-top bevel), not c5.2's finned Top Heatsink Face - new face; check in V"
+  },
+  {
+   "view": "c5.7",
+   "id": 60,
+   "what": "Array of USB 3.2 Ports, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 15,
+   "what": "USB 3.2 Port 4, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 10,
+   "what": "USB 3.2 Port 2, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 9,
+   "what": "USB 3.2 Port 3, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 11,
+   "what": "USB 3.2 Port 1, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 5,
+   "what": "DC Input Terminal Block, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 13,
+   "what": "USB 3.0 Dual Port, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 4,
+   "what": "Power Button, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 47,
+   "what": "DC Input Label, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 8,
+   "what": "HDMI Port, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 38,
+   "what": "USB 3.2 Label 1, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 48,
+   "what": "USB 3.2 Label 3, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 50,
+   "what": "USB 3.2 Label 4, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 49,
+   "what": "USB 3.2 Label 2, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 42,
+   "what": "USB 3.0 Port Label, new"
+  },
+  {
+   "view": "c5.7",
+   "id": 22,
+   "what": "HDMI Port Label, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 0,
+   "what": "b1.4's root 'front face' is a side of the box b1.1 did not name: geometry IoU 0.0 with b1.1's 'front face' strip #39 -> a NEW face under the box (under{0, P0, 'front face'}); same{0, P0} counts as coarse"
+  },
+  {
+   "view": "b1.4",
+   "id": 2,
+   "what": "product info label, new (b1.1 saw the top face's AI KIT sticker, not this face's labels)"
+  },
+  {
+   "view": "b1.4",
+   "id": 3,
+   "what": "serial number label, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 4,
+   "what": "barcode, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 16,
+   "what": "model number text, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 8,
+   "what": "FCC mark, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 6,
+   "what": "recycle symbol, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 26,
+   "what": "CE mark, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 22,
+   "what": "WEEE symbol, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 23,
+   "what": "made in china text, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 7,
+   "what": "serial number text, new"
+  },
+  {
+   "view": "b1.4",
+   "id": 27,
+   "what": "QR code, new"
+  }
+ ],
+ "uncertain": [
+  {
+   "a": "c5.2",
+   "a_id": 12,
+   "b": "c5.6",
+   "what": "'Status LED 1' at the far left of c5.2's front face may be one of c5.6's two antenna ports (circular connectors) - cannot tell at that distance; excluded"
+  },
+  {
+   "a": "c5.2",
+   "a_id": 8,
+   "b": "c5.6",
+   "what": "c5.2's CropTeq logo lies on the bevel; c5.6 did not name a logo node, so nothing to pair"
+  }
+ ],
+ "geometry_notes": {
+  "b1.1#39_vs_b1.4#0": {
+   "iou_rows": 0.0,
+   "share_of_b_on_a": 0.0,
+   "verdict": "different sides"
+  },
+  "c5.2#5_vs_c5.6#3": {
+   "iou_rows": 0.02,
+   "verdict": "not the bevel"
+  },
+  "c5.2->c5.6 rigid vector mm": [
+   0.4,
+   2.45,
+   -8.21
+  ]
+ }
+}

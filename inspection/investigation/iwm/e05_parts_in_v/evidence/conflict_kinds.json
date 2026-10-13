@@ -1,0 +1,308 @@
+{
+ "2209-compute-ray-demo5": {
+  "conflicts": 4952,
+  "by_kind": {
+   "reparent": 2663,
+   "intermediate": 1262,
+   "boundary": 1027
+  },
+  "pairs": [
+   {
+    "old": "lower front panel",
+    "new": "ethernet ports",
+    "rows": 529,
+    "kind": "reparent",
+    "old_in_new": 0.09,
+    "new_in_old": 0.99
+   },
+   {
+    "old": "lower front panel",
+    "new": "Serial Ports Group",
+    "rows": 457,
+    "kind": "reparent",
+    "old_in_new": 0.14,
+    "new_in_old": 0.99
+   },
+   {
+    "old": "Front Face",
+    "new": "Chort label",
+    "rows": 331,
+    "kind": "reparent",
+    "old_in_new": 0.04,
+    "new_in_old": 0.99
+   },
+   {
+    "old": "upper front panel",
+    "new": "Chort label",
+    "rows": 325,
+    "kind": "reparent",
+    "old_in_new": 0.08,
+    "new_in_old": 0.69
+   },
+   {
+    "old": "Serial Port 2",
+    "new": "lower front panel",
+    "rows": 297,
+    "kind": "intermediate",
+    "old_in_new": 0.99,
+    "new_in_old": 0.05
+   },
+   {
+    "old": "lower front panel",
+    "new": "Ethernet Port 2",
+    "rows": 272,
+    "kind": "reparent",
+    "old_in_new": 0.05,
+    "new_in_old": 1.0
+   },
+   {
+    "old": "Serial Port 1",
+    "new": "lower front panel",
+    "rows": 249,
+    "kind": "intermediate",
+    "old_in_new": 0.99,
+    "new_in_old": 0.05
+   },
+   {
+    "old": "lower front panel",
+    "new": "Ethernet Port 1",
+    "rows": 237,
+    "kind": "reparent",
+    "old_in_new": 0.04,
+    "new_in_old": 0.99
+   },
+   {
+    "old": "Top Heatsink Face",
+    "new": "Front-Top Bevel Face",
+    "rows": 236,
+    "kind": "boundary",
+    "old_in_new": 0.01,
+    "new_in_old": 0.04
+   },
+   {
+    "old": "Serial Ports Group",
+    "new": "lower front panel",
+    "rows": 231,
+    "kind": "intermediate",
+    "old_in_new": 0.99,
+    "new_in_old": 0.14
+   },
+   {
+    "old": "lower front panel",
+    "new": "Serial Port 1",
+    "rows": 225,
+    "kind": "reparent",
+    "old_in_new": 0.05,
+    "new_in_old": 0.99
+   },
+   {
+    "old": "Top Heatsink Face",
+    "new": "Front Face",
+    "rows": 211,
+    "kind": "boundary",
+    "old_in_new": 0.01,
+    "new_in_old": 0.02
+   },
+   {
+    "old": "lower front panel",
+    "new": "Serial Port 2",
+    "rows": 186,
+    "kind": "reparent",
+    "old_in_new": 0.05,
+    "new_in_old": 0.99
+   },
+   {
+    "old": "Front-Top Bevel Face",
+    "new": "upper front panel",
+    "rows": 183,
+    "kind": "boundary",
+    "old_in_new": 0.04,
+    "new_in_old": 0.04
+   },
+   {
+    "old": "lower front panel",
+    "new": "upper front panel",
+    "rows": 160,
+    "kind": "boundary",
+    "old_in_new": 0.02,
+    "new_in_old": 0.03
+   },
+   {
+    "old": "Front Face",
+    "new": "Front-Top Bevel Face",
+    "rows": 152,
+    "kind": "boundary",
+    "old_in_new": 0.02,
+    "new_in_old": 0.06
+   },
+   {
+    "old": "Ethernet Port 2",
+    "new": "lower front panel",
+    "rows": 140,
+    "kind": "intermediate",
+    "old_in_new": 1.0,
+    "new_in_old": 0.05
+   },
+   {
+    "old": "Ethernet Port 1",
+    "new": "lower front panel",
+    "rows": 127,
+    "kind": "intermediate",
+    "old_in_new": 0.99,
+    "new_in_old": 0.04
+   },
+   {
+    "old": "Top Heatsink Face",
+    "new": "CropTeq logo",
+    "rows": 73,
+    "kind": "boundary",
+    "old_in_new": 0.0,
+    "new_in_old": 0.04
+   },
+   {
+    "old": "Audio Port 1",
+    "new": "lower front panel",
+    "rows": 57,
+    "kind": "intermediate",
+    "old_in_new": 0.99,
+    "new_in_old": 0.01
+   },
+   {
+    "old": "Audio Port 2",
+    "new": "lower front panel",
+    "rows": 53,
+    "kind": "intermediate",
+    "old_in_new": 1.0,
+    "new_in_old": 0.01
+   },
+   {
+    "old": "audio jacks",
+    "new": "Audio Port 2",
+    "rows": 52,
+    "kind": "reparent",
+    "old_in_new": 0.37,
+    "new_in_old": 0.68
+   },
+   {
+    "old": "audio jacks",
+    "new": "Audio Port 1",
+    "rows": 49,
+    "kind": "reparent",
+    "old_in_new": 0.4,
+    "new_in_old": 0.71
+   },
+   {
+    "old": "Status LED 1",
+    "new": "lower front panel",
+    "rows": 44,
+    "kind": "intermediate",
+    "old_in_new": 0.98,
+    "new_in_old": 0.0
+   },
+   {
+    "old": "Audio Port 1",
+    "new": "audio jacks",
+    "rows": 27,
+    "kind": "intermediate",
+    "old_in_new": 0.71,
+    "new_in_old": 0.4
+   },
+   {
+    "old": "Audio Port 2",
+    "new": "audio jacks",
+    "rows": 19,
+    "kind": "intermediate",
+    "old_in_new": 0.68,
+    "new_in_old": 0.37
+   },
+   {
+    "old": "Chort label",
+    "new": "upper front panel",
+    "rows": 18,
+    "kind": "intermediate",
+    "old_in_new": 0.69,
+    "new_in_old": 0.08
+   },
+   {
+    "old": "Front Face",
+    "new": "CropTeq logo",
+    "rows": 5,
+    "kind": "boundary",
+    "old_in_new": 0.0,
+    "new_in_old": 0.0
+   },
+   {
+    "old": "Front-Top Bevel Face",
+    "new": "Chort label",
+    "rows": 3,
+    "kind": "boundary",
+    "old_in_new": 0.0,
+    "new_in_old": 0.04
+   },
+   {
+    "old": "CropTeq logo",
+    "new": "upper front panel",
+    "rows": 2,
+    "kind": "boundary",
+    "old_in_new": 0.0,
+    "new_in_old": 0.0
+   },
+   {
+    "old": "Audio Port 2",
+    "new": "ethernet ports",
+    "rows": 2,
+    "kind": "boundary",
+    "old_in_new": 0.02,
+    "new_in_old": 0.0
+   }
+  ]
+ },
+ "2209-box-ray-demo1": {
+  "conflicts": 33,
+  "by_kind": {
+   "boundary": 33
+  },
+  "pairs": [
+   {
+    "old": "top face",
+    "new": "front face",
+    "rows": 13,
+    "kind": "boundary",
+    "old_in_new": 0.0,
+    "new_in_old": 0.0
+   },
+   {
+    "old": "text",
+    "new": "logo",
+    "rows": 9,
+    "kind": "boundary",
+    "old_in_new": 0.0,
+    "new_in_old": 0.0
+   },
+   {
+    "old": "front face",
+    "new": "top face",
+    "rows": 8,
+    "kind": "boundary",
+    "old_in_new": 0.0,
+    "new_in_old": 0.0
+   },
+   {
+    "old": "barcode",
+    "new": "model number text",
+    "rows": 2,
+    "kind": "boundary",
+    "old_in_new": 0.0,
+    "new_in_old": 0.01
+   },
+   {
+    "old": "FCC mark",
+    "new": "CE mark",
+    "rows": 1,
+    "kind": "boundary",
+    "old_in_new": 0.01,
+    "new_in_old": 0.01
+   }
+  ]
+ }
+}

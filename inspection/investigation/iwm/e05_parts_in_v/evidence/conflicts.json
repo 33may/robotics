@@ -1,0 +1,104 @@
+{
+ "2209-compute-ray-demo5_1mm_baseline": [
+  {
+   "view": "c5.2",
+   "conflicts_total": 799,
+   "added": 0,
+   "parts": 15
+  },
+  {
+   "view": "c5.6",
+   "conflicts_total": 6145,
+   "added": 5346,
+   "parts": 29
+  },
+  {
+   "view": "c5.7",
+   "conflicts_total": 6360,
+   "added": 215,
+   "parts": 47
+  }
+ ],
+ "2209-box-ray-demo1_1mm_baseline": [
+  {
+   "view": "b1.1",
+   "conflicts_total": 17,
+   "added": 0,
+   "parts": 6
+  },
+  {
+   "view": "b1.4",
+   "conflicts_total": 20,
+   "added": 3,
+   "parts": 17
+  }
+ ],
+ "2209-compute-ray-demo5_1mm_agent": [
+  {
+   "view": "c5.2",
+   "conflicts_total": 799,
+   "added": 0,
+   "parts": 15
+  },
+  {
+   "view": "c5.6",
+   "conflicts_total": 4741,
+   "added": 3942,
+   "parts": 21
+  },
+  {
+   "view": "c5.7",
+   "conflicts_total": 4952,
+   "added": 211,
+   "parts": 38
+  }
+ ],
+ "2209-box-ray-demo1_1mm_agent": [
+  {
+   "view": "b1.1",
+   "conflicts_total": 17,
+   "added": 0,
+   "parts": 6
+  },
+  {
+   "view": "b1.4",
+   "conflicts_total": 33,
+   "added": 16,
+   "parts": 17
+  }
+ ],
+ "2209-compute-ray-demo5_2mm_baseline": [
+  {
+   "view": "c5.2",
+   "conflicts_total": 335,
+   "added": 0,
+   "parts": 15
+  },
+  {
+   "view": "c5.6",
+   "conflicts_total": 1277,
+   "added": 942,
+   "parts": 30
+  },
+  {
+   "view": "c5.7",
+   "conflicts_total": 1387,
+   "added": 110,
+   "parts": 48
+  }
+ ],
+ "2209-box-ray-demo1_2mm_baseline": [
+  {
+   "view": "b1.1",
+   "conflicts_total": 32,
+   "added": 0,
+   "parts": 6
+  },
+  {
+   "view": "b1.4",
+   "conflicts_total": 36,
+   "added": 4,
+   "parts": 17
+  }
+ ]
+}

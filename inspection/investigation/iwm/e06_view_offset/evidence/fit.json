@@ -1,0 +1,1092 @@
+{
+ "fit_runs": [
+  "2209-bigcam-ray-demo5",
+  "2209-box-ray-demo2",
+  "2209-box-ray-demo4",
+  "2209-compute-ray-demo6",
+  "2209-compute-ray-demo8",
+  "2209-compute-ray-demo9",
+  "2209-compute-ray-demo12",
+  "2209-compute-ray-demo14",
+  "2209-compute-ray-demo16"
+ ],
+ "fit": {
+  "n_views": 30,
+  "s": 1.0511,
+  "s_p10": 1.0404,
+  "s_p90": 1.072,
+  "table_err_before_mm": {
+   "median": 17.67
+  },
+  "table_err_after_mm": {
+   "median": 2.28,
+   "p90": 6.99
+  }
+ },
+ "v1_table": {
+  "n_views": 34,
+  "before_mm": {
+   "median": 18.7,
+   "p90": 24.57,
+   "max": 29.72
+  },
+  "after_mm": {
+   "median": 1.81,
+   "p90": 7.34,
+   "max": 15.29
+  },
+  "views": [
+   {
+    "run": "2209-box-ray-demo1",
+    "step": 0,
+    "range_m": 0.4991,
+    "before_mm": -23.7,
+    "after_mm": 0.61
+   },
+   {
+    "run": "2209-box-ray-demo1",
+    "step": 1,
+    "range_m": 0.271,
+    "before_mm": -10.58,
+    "after_mm": 2.74
+   },
+   {
+    "run": "2209-box-ray-demo1",
+    "step": 2,
+    "range_m": 0.2904,
+    "before_mm": -15.85,
+    "after_mm": -1.81
+   },
+   {
+    "run": "2209-box-ray-demo1",
+    "step": 3,
+    "range_m": 0.3513,
+    "before_mm": -23.41,
+    "after_mm": -6.64
+   },
+   {
+    "run": "2209-box-ray-demo3",
+    "step": 0,
+    "range_m": 0.499,
+    "before_mm": -24.19,
+    "after_mm": 0.09
+   },
+   {
+    "run": "2209-compute-ray-demo11",
+    "step": 0,
+    "range_m": 0.499,
+    "before_mm": -23.9,
+    "after_mm": 0.39
+   },
+   {
+    "run": "2209-compute-ray-demo11",
+    "step": 1,
+    "range_m": 0.2513,
+    "before_mm": -11.49,
+    "after_mm": 0.77
+   },
+   {
+    "run": "2209-compute-ray-demo11",
+    "step": 2,
+    "range_m": 0.3118,
+    "before_mm": -16.88,
+    "after_mm": -1.8
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 0,
+    "range_m": 0.499,
+    "before_mm": -23.67,
+    "after_mm": 0.63
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 1,
+    "range_m": 0.3233,
+    "before_mm": -18.65,
+    "after_mm": -3.07
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 2,
+    "range_m": 0.3015,
+    "before_mm": -18.76,
+    "after_mm": -4.3
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 3,
+    "range_m": 0.2939,
+    "before_mm": -17.65,
+    "after_mm": -3.52
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 4,
+    "range_m": 0.3292,
+    "before_mm": -23.69,
+    "after_mm": -8.07
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 5,
+    "range_m": 0.3301,
+    "before_mm": -15.13,
+    "after_mm": 0.98
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 6,
+    "range_m": 0.331,
+    "before_mm": -22.95,
+    "after_mm": -7.2
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 7,
+    "range_m": 0.3313,
+    "before_mm": -23.15,
+    "after_mm": -7.39
+   },
+   {
+    "run": "2209-compute-ray-demo13",
+    "step": 9,
+    "range_m": 0.2511,
+    "before_mm": -12.34,
+    "after_mm": -0.13
+   },
+   {
+    "run": "2209-compute-ray-demo15",
+    "step": 0,
+    "range_m": 0.499,
+    "before_mm": -23.85,
+    "after_mm": 0.45
+   },
+   {
+    "run": "2209-compute-ray-demo5",
+    "step": 0,
+    "range_m": 0.4991,
+    "before_mm": -25.42,
+    "after_mm": -1.2
+   },
+   {
+    "run": "2209-compute-ray-demo5",
+    "step": 1,
+    "range_m": 0.398,
+    "before_mm": -17.03,
+    "after_mm": 2.45
+   },
+   {
+    "run": "2209-compute-ray-demo5",
+    "step": 2,
+    "range_m": 0.4229,
+    "before_mm": -19.93,
+    "after_mm": 0.67
+   },
+   {
+    "run": "2209-compute-ray-demo5",
+    "step": 3,
+    "range_m": 0.2583,
+    "before_mm": -11.88,
+    "after_mm": 0.72
+   },
+   {
+    "run": "2209-compute-ray-demo5",
+    "step": 4,
+    "range_m": 0.3119,
+    "before_mm": -29.72,
+    "after_mm": -15.29
+   },
+   {
+    "run": "2209-compute-ray-demo5",
+    "step": 5,
+    "range_m": 0.3589,
+    "before_mm": -14.55,
+    "after_mm": 3.06
+   },
+   {
+    "run": "2209-compute-ray-demo7",
+    "step": 0,
+    "range_m": 0.499,
+    "before_mm": -24.74,
+    "after_mm": -0.49
+   },
+   {
+    "run": "2209-compute-ray-demo7",
+    "step": 3,
+    "range_m": 0.241,
+    "before_mm": -11.62,
+    "after_mm": 0.11
+   },
+   {
+    "run": "2209-compute-ray-demo7",
+    "step": 4,
+    "range_m": 0.4067,
+    "before_mm": -23.53,
+    "after_mm": -3.94
+   },
+   {
+    "run": "2209-compute-ray-demo7",
+    "step": 5,
+    "range_m": 0.4086,
+    "before_mm": -15.62,
+    "after_mm": 4.47
+   },
+   {
+    "run": "2209-compute-ray-demo7",
+    "step": 6,
+    "range_m": 0.3889,
+    "before_mm": -16.17,
+    "after_mm": 2.89
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "step": 0,
+    "range_m": 0.4991,
+    "before_mm": -25.02,
+    "after_mm": -0.78
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "step": 1,
+    "range_m": 0.2311,
+    "before_mm": -11.38,
+    "after_mm": -0.15
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "step": 2,
+    "range_m": 0.2605,
+    "before_mm": -18.31,
+    "after_mm": -5.93
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "step": 3,
+    "range_m": 0.2261,
+    "before_mm": -10.44,
+    "after_mm": 0.59
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "step": 4,
+    "range_m": 0.2581,
+    "before_mm": -20.66,
+    "after_mm": -8.52
+   }
+  ]
+ },
+ "v2_pairs": {
+  "n_pairs": 26,
+  "pairs": [
+   {
+    "run": "2209-bigcam-ray-demo5",
+    "i": 0,
+    "j": 8,
+    "split": "fit",
+    "n": 31,
+    "before_mm": 20.2,
+    "after_mm": 10.73,
+    "vec_before_mm": [
+     15.71,
+     -8.11,
+     -9.71
+    ],
+    "vec_after_mm": [
+     9.18,
+     -5.64,
+     -0.14
+    ]
+   },
+   {
+    "run": "2209-bigcam-ray-demo5",
+    "i": 2,
+    "j": 6,
+    "split": "fit",
+    "n": 21,
+    "before_mm": 19.67,
+    "after_mm": 10.73,
+    "vec_before_mm": [
+     20.09,
+     -3.42,
+     0.61
+    ],
+    "vec_after_mm": [
+     5.73,
+     -9.14,
+     -1.75
+    ]
+   },
+   {
+    "run": "2209-bigcam-ray-demo5",
+    "i": 2,
+    "j": 8,
+    "split": "fit",
+    "n": 16,
+    "before_mm": 13.16,
+    "after_mm": 12.72,
+    "vec_before_mm": [
+     13.5,
+     -3.05,
+     0.34
+    ],
+    "vec_after_mm": [
+     7.04,
+     -10.7,
+     -3.06
+    ]
+   },
+   {
+    "run": "2209-bigcam-ray-demo5",
+    "i": 5,
+    "j": 6,
+    "split": "fit",
+    "n": 19,
+    "before_mm": 10.24,
+    "after_mm": 8.99,
+    "vec_before_mm": [
+     9.5,
+     -0.09,
+     2.39
+    ],
+    "vec_after_mm": [
+     -8.64,
+     -2.37,
+     1.23
+    ]
+   },
+   {
+    "run": "2209-bigcam-ray-demo5",
+    "i": 6,
+    "j": 8,
+    "split": "fit",
+    "n": 16,
+    "before_mm": 5.56,
+    "after_mm": 3.91,
+    "vec_before_mm": [
+     -4.76,
+     1.69,
+     -0.68
+    ],
+    "vec_after_mm": [
+     3.22,
+     -0.17,
+     -1.74
+    ]
+   },
+   {
+    "run": "2209-box-ray-demo1",
+    "i": 0,
+    "j": 1,
+    "split": "val",
+    "n": 48,
+    "before_mm": 8.72,
+    "after_mm": 3.27,
+    "vec_before_mm": [
+     2.28,
+     -4.04,
+     -7.17
+    ],
+    "vec_after_mm": [
+     -1.53,
+     -0.79,
+     2.31
+    ]
+   },
+   {
+    "run": "2209-box-ray-demo1",
+    "i": 0,
+    "j": 2,
+    "split": "val",
+    "n": 17,
+    "before_mm": 10.45,
+    "after_mm": 4.34,
+    "vec_before_mm": [
+     3.5,
+     -2.83,
+     -8.73
+    ],
+    "vec_after_mm": [
+     1.62,
+     -1.6,
+     4.14
+    ]
+   },
+   {
+    "run": "2209-box-ray-demo1",
+    "i": 1,
+    "j": 2,
+    "split": "val",
+    "n": 29,
+    "before_mm": 2.23,
+    "after_mm": 4.05,
+    "vec_before_mm": [
+     1.04,
+     1.47,
+     -0.99
+    ],
+    "vec_after_mm": [
+     2.96,
+     -0.54,
+     2.43
+    ]
+   },
+   {
+    "run": "2209-box-ray-demo1",
+    "i": 1,
+    "j": 3,
+    "split": "val",
+    "n": 17,
+    "before_mm": 6.9,
+    "after_mm": 6.81,
+    "vec_before_mm": [
+     2.58,
+     -5.97,
+     1.84
+    ],
+    "vec_after_mm": [
+     -4.87,
+     3.15,
+     3.41
+    ]
+   },
+   {
+    "run": "2209-box-ray-demo1",
+    "i": 2,
+    "j": 3,
+    "split": "val",
+    "n": 15,
+    "before_mm": 8.64,
+    "after_mm": 8.51,
+    "vec_before_mm": [
+     2.18,
+     -7.62,
+     3.29
+    ],
+    "vec_after_mm": [
+     -7.16,
+     3.5,
+     1.46
+    ]
+   },
+   {
+    "run": "2209-box-ray-demo2",
+    "i": 0,
+    "j": 1,
+    "split": "fit",
+    "n": 52,
+    "before_mm": 9.79,
+    "after_mm": 3.14,
+    "vec_before_mm": [
+     1.97,
+     -3.44,
+     -8.6
+    ],
+    "vec_after_mm": [
+     -0.28,
+     2.45,
+     -0.51
+    ]
+   },
+   {
+    "run": "2209-box-ray-demo4",
+    "i": 0,
+    "j": 1,
+    "split": "fit",
+    "n": 50,
+    "before_mm": 11.05,
+    "after_mm": 2.71,
+    "vec_before_mm": [
+     0.67,
+     -5.83,
+     -8.72
+    ],
+    "vec_after_mm": [
+     -1.58,
+     -0.36,
+     -0.51
+    ]
+   },
+   {
+    "run": "2209-box-ray-demo4",
+    "i": 1,
+    "j": 2,
+    "split": "fit",
+    "n": 23,
+    "before_mm": 2.92,
+    "after_mm": 4.69,
+    "vec_before_mm": [
+     -2.39,
+     0.27,
+     -0.47
+    ],
+    "vec_after_mm": [
+     4.46,
+     -0.76,
+     0.61
+    ]
+   },
+   {
+    "run": "2209-compute-ray-demo11",
+    "i": 0,
+    "j": 1,
+    "split": "val",
+    "n": 47,
+    "before_mm": 11.03,
+    "after_mm": 3.56,
+    "vec_before_mm": [
+     4.4,
+     -5.75,
+     -8.49
+    ],
+    "vec_after_mm": [
+     -0.67,
+     -1.99,
+     1.86
+    ]
+   },
+   {
+    "run": "2209-compute-ray-demo11",
+    "i": 0,
+    "j": 2,
+    "split": "val",
+    "n": 35,
+    "before_mm": 10.06,
+    "after_mm": 4.73,
+    "vec_before_mm": [
+     3.99,
+     -3.27,
+     -8.84
+    ],
+    "vec_after_mm": [
+     1.63,
+     -2.16,
+     3.33
+    ]
+   },
+   {
+    "run": "2209-compute-ray-demo11",
+    "i": 1,
+    "j": 2,
+    "split": "val",
+    "n": 45,
+    "before_mm": 2.78,
+    "after_mm": 3.12,
+    "vec_before_mm": [
+     0.0,
+     2.01,
+     -1.26
+    ],
+    "vec_after_mm": [
+     2.73,
+     -0.67,
+     0.5
+    ]
+   },
+   {
+    "run": "2209-compute-ray-demo16",
+    "i": 0,
+    "j": 5,
+    "split": "fit",
+    "n": 36,
+    "before_mm": 14.41,
+    "after_mm": 4.17,
+    "vec_before_mm": [
+     6.44,
+     -6.27,
+     -11.04
+    ],
+    "vec_after_mm": [
+     1.74,
+     -2.79,
+     1.87
+    ]
+   },
+   {
+    "run": "2209-compute-ray-demo16",
+    "i": 4,
+    "j": 5,
+    "split": "fit",
+    "n": 76,
+    "before_mm": 1.95,
+    "after_mm": 3.75,
+    "vec_before_mm": [
+     0.28,
+     -1.68,
+     0.82
+    ],
+    "vec_after_mm": [
+     -3.25,
+     -0.79,
+     -1.53
+    ]
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "i": 0,
+    "j": 1,
+    "split": "val",
+    "n": 45,
+    "before_mm": 11.88,
+    "after_mm": 3.65,
+    "vec_before_mm": [
+     4.13,
+     -6.5,
+     -9.73
+    ],
+    "vec_after_mm": [
+     0.72,
+     -2.75,
+     1.53
+    ]
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "i": 0,
+    "j": 2,
+    "split": "val",
+    "n": 17,
+    "before_mm": 14.17,
+    "after_mm": 6.08,
+    "vec_before_mm": [
+     2.9,
+     -10.79,
+     -8.77
+    ],
+    "vec_after_mm": [
+     -3.26,
+     1.55,
+     5.08
+    ]
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "i": 0,
+    "j": 3,
+    "split": "val",
+    "n": 43,
+    "before_mm": 13.44,
+    "after_mm": 4.08,
+    "vec_before_mm": [
+     3.84,
+     -9.08,
+     -9.58
+    ],
+    "vec_after_mm": [
+     -1.58,
+     -2.61,
+     1.23
+    ]
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "i": 1,
+    "j": 2,
+    "split": "val",
+    "n": 68,
+    "before_mm": 4.56,
+    "after_mm": 6.01,
+    "vec_before_mm": [
+     -0.85,
+     -4.47,
+     0.0
+    ],
+    "vec_after_mm": [
+     -3.59,
+     4.1,
+     2.55
+    ]
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "i": 1,
+    "j": 3,
+    "split": "val",
+    "n": 224,
+    "before_mm": 2.62,
+    "after_mm": 2.49,
+    "vec_before_mm": [
+     -0.39,
+     -2.59,
+     0.07
+    ],
+    "vec_after_mm": [
+     -2.41,
+     0.12,
+     -0.39
+    ]
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "i": 1,
+    "j": 4,
+    "split": "val",
+    "n": 70,
+    "before_mm": 6.54,
+    "after_mm": 5.98,
+    "vec_before_mm": [
+     4.5,
+     -4.59,
+     1.23
+    ],
+    "vec_after_mm": [
+     -3.48,
+     -2.77,
+     3.91
+    ]
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "i": 2,
+    "j": 3,
+    "split": "val",
+    "n": 55,
+    "before_mm": 2.08,
+    "after_mm": 5.16,
+    "vec_before_mm": [
+     0.44,
+     1.92,
+     0.16
+    ],
+    "vec_after_mm": [
+     1.16,
+     -3.93,
+     -2.83
+    ]
+   },
+   {
+    "run": "2209-smallcam-ray-demo5",
+    "i": 3,
+    "j": 4,
+    "split": "val",
+    "n": 72,
+    "before_mm": 5.36,
+    "after_mm": 5.3,
+    "vec_before_mm": [
+     4.85,
+     -1.99,
+     1.19
+    ],
+    "vec_after_mm": [
+     -1.1,
+     -2.88,
+     4.32
+    ]
+   }
+  ],
+  "median_before_mm": 9.25,
+  "median_after_mm": 4.52,
+  "p90_before_mm": 14.29,
+  "p90_after_mm": 9.86,
+  "max_before_mm": 20.2,
+  "max_after_mm": 12.72,
+  "best_s_on_pairs": 1.04,
+  "curve": {
+   "s": [
+    0.98,
+    0.982,
+    0.984,
+    0.986,
+    0.988,
+    0.99,
+    0.992,
+    0.994,
+    0.996,
+    0.998,
+    1.0,
+    1.002,
+    1.004,
+    1.006,
+    1.008,
+    1.01,
+    1.012,
+    1.014,
+    1.016,
+    1.018,
+    1.02,
+    1.022,
+    1.024,
+    1.026,
+    1.028,
+    1.03,
+    1.032,
+    1.034,
+    1.036,
+    1.038,
+    1.04,
+    1.042,
+    1.044,
+    1.046,
+    1.048,
+    1.05,
+    1.052,
+    1.054,
+    1.056,
+    1.058,
+    1.06,
+    1.062,
+    1.064,
+    1.066,
+    1.068,
+    1.07,
+    1.072,
+    1.074,
+    1.076,
+    1.078,
+    1.08,
+    1.082,
+    1.084,
+    1.086,
+    1.088,
+    1.09,
+    1.092,
+    1.094,
+    1.096,
+    1.098,
+    1.1
+   ],
+   "median_mm": [
+    13.74,
+    13.27,
+    12.81,
+    12.35,
+    11.89,
+    11.43,
+    10.98,
+    10.53,
+    10.09,
+    9.66,
+    9.26,
+    8.86,
+    8.39,
+    7.84,
+    7.3,
+    6.76,
+    6.23,
+    5.77,
+    5.39,
+    5.03,
+    4.69,
+    4.46,
+    4.32,
+    4.26,
+    4.16,
+    4.05,
+    3.9,
+    3.78,
+    3.69,
+    3.71,
+    3.68,
+    3.8,
+    3.93,
+    4.04,
+    4.09,
+    4.31,
+    4.66,
+    5.0,
+    5.35,
+    5.71,
+    6.04,
+    6.27,
+    6.46,
+    6.7,
+    6.94,
+    7.18,
+    7.43,
+    7.8,
+    8.13,
+    8.51,
+    8.83,
+    9.17,
+    9.64,
+    10.1,
+    10.56,
+    11.03,
+    11.49,
+    11.95,
+    12.34,
+    12.73,
+    13.12
+   ]
+  }
+ },
+ "v3_named": [
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "Chort label = sticker 'Chort' (c5.2 hung it under the object",
+   "before_mm": 6.96,
+   "after_mm": 7.04,
+   "vec_before_mm": [
+    1.99,
+    0.56,
+    -6.65
+   ],
+   "vec_after_mm": [
+    3.87,
+    -5.05,
+    3.03
+   ]
+  },
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "ethernet ports group = LAN ports group",
+   "before_mm": 7.19,
+   "after_mm": 4.73,
+   "vec_before_mm": [
+    -1.08,
+    1.78,
+    -6.89
+   ],
+   "vec_after_mm": [
+    0.64,
+    -3.77,
+    2.78
+   ]
+  },
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "Ethernet Port 1 (lower-left in c5.2, the Chort end of the fa",
+   "before_mm": 7.55,
+   "after_mm": 7.94,
+   "vec_before_mm": [
+    0.91,
+    -1.39,
+    -7.36
+   ],
+   "vec_after_mm": [
+    2.73,
+    -7.1,
+    2.28
+   ]
+  },
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "Ethernet Port 2 = LAN 10G port",
+   "before_mm": 7.32,
+   "after_mm": 8.78,
+   "vec_before_mm": [
+    -0.38,
+    -2.46,
+    -6.89
+   ],
+   "vec_after_mm": [
+    1.38,
+    -8.22,
+    2.78
+   ]
+  },
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "Serial Ports Group = COM ports group",
+   "before_mm": 8.27,
+   "after_mm": 3.92,
+   "vec_before_mm": [
+    -3.21,
+    4.26,
+    -6.31
+   ],
+   "vec_after_mm": [
+    -1.6,
+    -1.16,
+    3.38
+   ]
+  },
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "Serial Port 1 (lower-left in c5.2) = COM / DIO port (left in",
+   "before_mm": 6.67,
+   "after_mm": 6.01,
+   "vec_before_mm": [
+    1.26,
+    1.64,
+    -6.34
+   ],
+   "vec_after_mm": [
+    3.1,
+    -3.91,
+    3.35
+   ]
+  },
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "Serial Port 2 = COM / CAN port",
+   "before_mm": 6.54,
+   "after_mm": 6.27,
+   "vec_before_mm": [
+    0.66,
+    0.82,
+    -6.46
+   ],
+   "vec_after_mm": [
+    2.47,
+    -4.77,
+    3.23
+   ]
+  },
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "Audio Port 1 (lower-left) = microphone jack MIC IN (left); c",
+   "before_mm": 6.29,
+   "after_mm": 7.39,
+   "vec_before_mm": [
+    0.53,
+    -0.45,
+    -6.25
+   ],
+   "vec_after_mm": [
+    2.33,
+    -6.11,
+    3.44
+   ]
+  },
+  {
+   "kind": "part",
+   "pair": "c5.2-c5.6",
+   "what": "Audio Port 2 = line output jack LINE OUT",
+   "before_mm": 6.77,
+   "after_mm": 7.25,
+   "vec_before_mm": [
+    0.67,
+    -0.48,
+    -6.72
+   ],
+   "vec_after_mm": [
+    2.48,
+    -6.15,
+    2.95
+   ]
+  },
+  {
+   "kind": "sift",
+   "pair": "2209-compute-ray-demo5 2-6",
+   "n": 0,
+   "skipped": "too few on the object"
+  },
+  {
+   "kind": "sift",
+   "pair": "2209-compute-ray-demo5 2-7",
+   "n": 0,
+   "skipped": "too few on the object"
+  },
+  {
+   "kind": "sift",
+   "pair": "2209-compute-ray-demo5 6-7",
+   "n": 1,
+   "skipped": "too few on the object"
+  },
+  {
+   "kind": "sift",
+   "pair": "2209-box-ray-demo1 1-4",
+   "n": 0,
+   "skipped": "too few on the object"
+  }
+ ]
+}

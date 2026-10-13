@@ -1,0 +1,1202 @@
+[
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 0,
+  "rendered_share": 0.97,
+  "median_mm": 4.47,
+  "p90_mm": 11.73,
+  "share_gt_5mm": 0.45
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 1,
+  "rendered_share": 0.912,
+  "median_mm": 7.99,
+  "p90_mm": 15.88,
+  "share_gt_5mm": 0.685
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 2,
+  "rendered_share": 0.881,
+  "median_mm": 7.1,
+  "p90_mm": 19.04,
+  "share_gt_5mm": 0.66
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 3,
+  "rendered_share": 0.991,
+  "median_mm": 5.18,
+  "p90_mm": 11.89,
+  "share_gt_5mm": 0.526
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 4,
+  "rendered_share": 0.893,
+  "median_mm": 44.7,
+  "p90_mm": 274.84,
+  "share_gt_5mm": 0.831
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 5,
+  "rendered_share": 0.989,
+  "median_mm": 4.59,
+  "p90_mm": 11.68,
+  "share_gt_5mm": 0.459
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 6,
+  "rendered_share": 0.956,
+  "median_mm": 9.17,
+  "p90_mm": 17.69,
+  "share_gt_5mm": 0.843
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 8,
+  "rendered_share": 0.043,
+  "median_mm": 12.31,
+  "p90_mm": 19.6,
+  "share_gt_5mm": 0.964
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 0,
+  "rendered_share": 0.968,
+  "median_mm": 4.31,
+  "p90_mm": 10.87,
+  "share_gt_5mm": 0.425
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 1,
+  "rendered_share": 0.951,
+  "median_mm": 4.98,
+  "p90_mm": 9.9,
+  "share_gt_5mm": 0.497
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 2,
+  "rendered_share": 0.996,
+  "median_mm": 3.27,
+  "p90_mm": 8.32,
+  "share_gt_5mm": 0.295
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 3,
+  "rendered_share": 0.997,
+  "median_mm": 4.56,
+  "p90_mm": 21.83,
+  "share_gt_5mm": 0.463
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 4,
+  "rendered_share": 0.855,
+  "median_mm": 4.0,
+  "p90_mm": 272.27,
+  "share_gt_5mm": 0.45
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 5,
+  "rendered_share": 0.992,
+  "median_mm": 2.66,
+  "p90_mm": 8.78,
+  "share_gt_5mm": 0.222
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 6,
+  "rendered_share": 0.889,
+  "median_mm": 4.02,
+  "p90_mm": 6.64,
+  "share_gt_5mm": 0.317
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 8,
+  "rendered_share": 0.138,
+  "median_mm": 3.12,
+  "p90_mm": 13.58,
+  "share_gt_5mm": 0.33
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 0,
+  "rendered_share": 0.983,
+  "median_mm": 3.81,
+  "p90_mm": 8.19,
+  "share_gt_5mm": 0.349
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 1,
+  "rendered_share": 0.96,
+  "median_mm": 3.81,
+  "p90_mm": 7.66,
+  "share_gt_5mm": 0.349
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 2,
+  "rendered_share": 0.997,
+  "median_mm": 2.36,
+  "p90_mm": 5.92,
+  "share_gt_5mm": 0.147
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 3,
+  "rendered_share": 0.999,
+  "median_mm": 1.74,
+  "p90_mm": 6.1,
+  "share_gt_5mm": 0.139
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 4,
+  "rendered_share": 0.92,
+  "median_mm": 1.82,
+  "p90_mm": 267.77,
+  "share_gt_5mm": 0.282
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 5,
+  "rendered_share": 0.999,
+  "median_mm": 1.69,
+  "p90_mm": 5.56,
+  "share_gt_5mm": 0.115
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 6,
+  "rendered_share": 0.91,
+  "median_mm": 2.21,
+  "p90_mm": 4.31,
+  "share_gt_5mm": 0.062
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 8,
+  "rendered_share": 0.256,
+  "median_mm": 1.37,
+  "p90_mm": 8.34,
+  "share_gt_5mm": 0.18
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 0,
+  "rendered_share": 0.98,
+  "median_mm": 3.86,
+  "p90_mm": 9.28,
+  "share_gt_5mm": 0.34
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 1,
+  "rendered_share": 0.96,
+  "median_mm": 2.97,
+  "p90_mm": 6.58,
+  "share_gt_5mm": 0.23
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 2,
+  "rendered_share": 0.956,
+  "median_mm": 2.06,
+  "p90_mm": 6.14,
+  "share_gt_5mm": 0.138
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 3,
+  "rendered_share": 0.971,
+  "median_mm": 1.26,
+  "p90_mm": 4.91,
+  "share_gt_5mm": 0.099
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 4,
+  "rendered_share": 0.935,
+  "median_mm": 1.13,
+  "p90_mm": 269.07,
+  "share_gt_5mm": 0.207
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 5,
+  "rendered_share": 0.958,
+  "median_mm": 1.31,
+  "p90_mm": 5.53,
+  "share_gt_5mm": 0.11
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 6,
+  "rendered_share": 0.876,
+  "median_mm": 1.4,
+  "p90_mm": 3.12,
+  "share_gt_5mm": 0.027
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 8,
+  "rendered_share": 0.415,
+  "median_mm": 1.2,
+  "p90_mm": 7.34,
+  "share_gt_5mm": 0.191
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 0,
+  "rendered_share": 0.981,
+  "median_mm": 4.5,
+  "p90_mm": 9.53,
+  "share_gt_5mm": 0.456
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 1,
+  "rendered_share": 0.976,
+  "median_mm": 1.55,
+  "p90_mm": 4.22,
+  "share_gt_5mm": 0.061
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 2,
+  "rendered_share": 0.991,
+  "median_mm": 1.32,
+  "p90_mm": 4.31,
+  "share_gt_5mm": 0.078
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 3,
+  "rendered_share": 0.98,
+  "median_mm": 2.66,
+  "p90_mm": 4.59,
+  "share_gt_5mm": 0.074
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 4,
+  "rendered_share": 0.942,
+  "median_mm": 0.67,
+  "p90_mm": 268.33,
+  "share_gt_5mm": 0.186
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 5,
+  "rendered_share": 0.979,
+  "median_mm": 1.14,
+  "p90_mm": 3.26,
+  "share_gt_5mm": 0.059
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 6,
+  "rendered_share": 0.965,
+  "median_mm": 0.75,
+  "p90_mm": 2.17,
+  "share_gt_5mm": 0.022
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 8,
+  "rendered_share": 0.622,
+  "median_mm": 0.42,
+  "p90_mm": 2.62,
+  "share_gt_5mm": 0.012
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 0,
+  "rendered_share": 0.998,
+  "median_mm": 5.16,
+  "p90_mm": 17.03,
+  "share_gt_5mm": 0.513
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 1,
+  "rendered_share": 1.0,
+  "median_mm": 8.77,
+  "p90_mm": 19.47,
+  "share_gt_5mm": 0.722
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 2,
+  "rendered_share": 0.905,
+  "median_mm": 5.95,
+  "p90_mm": 15.45,
+  "share_gt_5mm": 0.569
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 3,
+  "rendered_share": 1.0,
+  "median_mm": 5.75,
+  "p90_mm": 20.44,
+  "share_gt_5mm": 0.582
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 4,
+  "rendered_share": 0.994,
+  "median_mm": 9.02,
+  "p90_mm": 260.51,
+  "share_gt_5mm": 0.678
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 5,
+  "rendered_share": 1.0,
+  "median_mm": 5.21,
+  "p90_mm": 15.45,
+  "share_gt_5mm": 0.516
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 6,
+  "rendered_share": 0.997,
+  "median_mm": 10.41,
+  "p90_mm": 17.33,
+  "share_gt_5mm": 0.832
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 8,
+  "rendered_share": 0.518,
+  "median_mm": 139.44,
+  "p90_mm": 231.86,
+  "share_gt_5mm": 0.992
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 0,
+  "rendered_share": 0.996,
+  "median_mm": 4.29,
+  "p90_mm": 11.05,
+  "share_gt_5mm": 0.423
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 1,
+  "rendered_share": 1.0,
+  "median_mm": 5.45,
+  "p90_mm": 11.92,
+  "share_gt_5mm": 0.544
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 2,
+  "rendered_share": 0.999,
+  "median_mm": 2.93,
+  "p90_mm": 8.46,
+  "share_gt_5mm": 0.274
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 3,
+  "rendered_share": 0.999,
+  "median_mm": 2.89,
+  "p90_mm": 10.01,
+  "share_gt_5mm": 0.251
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 4,
+  "rendered_share": 0.979,
+  "median_mm": 4.72,
+  "p90_mm": 264.61,
+  "share_gt_5mm": 0.485
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 5,
+  "rendered_share": 0.999,
+  "median_mm": 2.72,
+  "p90_mm": 9.79,
+  "share_gt_5mm": 0.238
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 6,
+  "rendered_share": 0.967,
+  "median_mm": 3.95,
+  "p90_mm": 8.05,
+  "share_gt_5mm": 0.306
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 8,
+  "rendered_share": 0.57,
+  "median_mm": 141.63,
+  "p90_mm": 228.14,
+  "share_gt_5mm": 0.957
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 0,
+  "rendered_share": 0.997,
+  "median_mm": 4.33,
+  "p90_mm": 10.23,
+  "share_gt_5mm": 0.423
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 1,
+  "rendered_share": 0.999,
+  "median_mm": 4.3,
+  "p90_mm": 8.91,
+  "share_gt_5mm": 0.421
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 2,
+  "rendered_share": 0.998,
+  "median_mm": 2.39,
+  "p90_mm": 6.86,
+  "share_gt_5mm": 0.179
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 3,
+  "rendered_share": 0.999,
+  "median_mm": 1.74,
+  "p90_mm": 6.01,
+  "share_gt_5mm": 0.134
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 4,
+  "rendered_share": 0.973,
+  "median_mm": 2.45,
+  "p90_mm": 264.35,
+  "share_gt_5mm": 0.328
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 5,
+  "rendered_share": 1.0,
+  "median_mm": 1.86,
+  "p90_mm": 7.18,
+  "share_gt_5mm": 0.148
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 6,
+  "rendered_share": 0.954,
+  "median_mm": 2.2,
+  "p90_mm": 5.61,
+  "share_gt_5mm": 0.126
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 8,
+  "rendered_share": 0.622,
+  "median_mm": 137.17,
+  "p90_mm": 230.14,
+  "share_gt_5mm": 0.857
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 0,
+  "rendered_share": 0.992,
+  "median_mm": 4.38,
+  "p90_mm": 10.47,
+  "share_gt_5mm": 0.414
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 1,
+  "rendered_share": 0.987,
+  "median_mm": 3.62,
+  "p90_mm": 7.75,
+  "share_gt_5mm": 0.322
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 2,
+  "rendered_share": 0.967,
+  "median_mm": 2.31,
+  "p90_mm": 8.11,
+  "share_gt_5mm": 0.188
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 3,
+  "rendered_share": 0.975,
+  "median_mm": 1.27,
+  "p90_mm": 4.96,
+  "share_gt_5mm": 0.1
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 4,
+  "rendered_share": 0.975,
+  "median_mm": 1.49,
+  "p90_mm": 266.21,
+  "share_gt_5mm": 0.251
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 5,
+  "rendered_share": 0.96,
+  "median_mm": 1.44,
+  "p90_mm": 6.5,
+  "share_gt_5mm": 0.129
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 6,
+  "rendered_share": 0.965,
+  "median_mm": 1.6,
+  "p90_mm": 4.24,
+  "share_gt_5mm": 0.07
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 8,
+  "rendered_share": 0.693,
+  "median_mm": 126.56,
+  "p90_mm": 228.97,
+  "share_gt_5mm": 0.712
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 0,
+  "rendered_share": 0.97,
+  "median_mm": 5.35,
+  "p90_mm": 11.02,
+  "share_gt_5mm": 0.536
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 1,
+  "rendered_share": 0.99,
+  "median_mm": 2.18,
+  "p90_mm": 5.83,
+  "share_gt_5mm": 0.133
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 2,
+  "rendered_share": 0.952,
+  "median_mm": 1.61,
+  "p90_mm": 6.35,
+  "share_gt_5mm": 0.136
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 3,
+  "rendered_share": 0.988,
+  "median_mm": 2.61,
+  "p90_mm": 4.69,
+  "share_gt_5mm": 0.083
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 4,
+  "rendered_share": 0.971,
+  "median_mm": 0.87,
+  "p90_mm": 266.97,
+  "share_gt_5mm": 0.256
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 5,
+  "rendered_share": 0.967,
+  "median_mm": 1.28,
+  "p90_mm": 4.87,
+  "share_gt_5mm": 0.097
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 6,
+  "rendered_share": 0.961,
+  "median_mm": 0.92,
+  "p90_mm": 31.02,
+  "share_gt_5mm": 0.173
+ },
+ {
+  "run": "2209-compute-ray-demo5",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 8,
+  "rendered_share": 0.79,
+  "median_mm": 2.58,
+  "p90_mm": 218.44,
+  "share_gt_5mm": 0.448
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 0,
+  "rendered_share": 0.911,
+  "median_mm": 5.46,
+  "p90_mm": 33.88,
+  "share_gt_5mm": 0.533
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 1,
+  "rendered_share": 0.984,
+  "median_mm": 9.14,
+  "p90_mm": 19.59,
+  "share_gt_5mm": 0.841
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 2,
+  "rendered_share": 0.652,
+  "median_mm": 31.36,
+  "p90_mm": 44.11,
+  "share_gt_5mm": 0.908
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 10,
+  "step": 3,
+  "rendered_share": 0.945,
+  "median_mm": 29.32,
+  "p90_mm": 48.28,
+  "share_gt_5mm": 0.877
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 0,
+  "rendered_share": 0.985,
+  "median_mm": 4.1,
+  "p90_mm": 11.06,
+  "share_gt_5mm": 0.409
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 1,
+  "rendered_share": 0.996,
+  "median_mm": 5.53,
+  "p90_mm": 9.03,
+  "share_gt_5mm": 0.595
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 2,
+  "rendered_share": 0.988,
+  "median_mm": 7.13,
+  "p90_mm": 10.85,
+  "share_gt_5mm": 0.73
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 5,
+  "step": 3,
+  "rendered_share": 0.912,
+  "median_mm": 2.71,
+  "p90_mm": 7.06,
+  "share_gt_5mm": 0.233
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 0,
+  "rendered_share": 0.99,
+  "median_mm": 4.71,
+  "p90_mm": 14.88,
+  "share_gt_5mm": 0.468
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 1,
+  "rendered_share": 0.999,
+  "median_mm": 4.15,
+  "p90_mm": 7.16,
+  "share_gt_5mm": 0.326
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 2,
+  "rendered_share": 0.993,
+  "median_mm": 5.27,
+  "p90_mm": 8.94,
+  "share_gt_5mm": 0.528
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 3,
+  "step": 3,
+  "rendered_share": 0.937,
+  "median_mm": 1.6,
+  "p90_mm": 4.37,
+  "share_gt_5mm": 0.065
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 0,
+  "rendered_share": 0.991,
+  "median_mm": 5.06,
+  "p90_mm": 18.79,
+  "share_gt_5mm": 0.505
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 1,
+  "rendered_share": 0.999,
+  "median_mm": 2.94,
+  "p90_mm": 5.84,
+  "share_gt_5mm": 0.154
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 2,
+  "rendered_share": 0.995,
+  "median_mm": 2.44,
+  "p90_mm": 7.13,
+  "share_gt_5mm": 0.279
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 2,
+  "step": 3,
+  "rendered_share": 0.914,
+  "median_mm": 1.17,
+  "p90_mm": 3.74,
+  "share_gt_5mm": 0.055
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 0,
+  "rendered_share": 0.989,
+  "median_mm": 7.98,
+  "p90_mm": 18.65,
+  "share_gt_5mm": 0.661
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 1,
+  "rendered_share": 0.998,
+  "median_mm": 1.02,
+  "p90_mm": 3.84,
+  "share_gt_5mm": 0.068
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 2,
+  "rendered_share": 0.996,
+  "median_mm": 0.95,
+  "p90_mm": 3.28,
+  "share_gt_5mm": 0.054
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "object",
+  "voxel_mm": 1,
+  "step": 3,
+  "rendered_share": 0.983,
+  "median_mm": 0.74,
+  "p90_mm": 6.3,
+  "share_gt_5mm": 0.13
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 0,
+  "rendered_share": 1.0,
+  "median_mm": 6.49,
+  "p90_mm": 29.13,
+  "share_gt_5mm": 0.582
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 1,
+  "rendered_share": 1.0,
+  "median_mm": 9.24,
+  "p90_mm": 21.66,
+  "share_gt_5mm": 0.814
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 2,
+  "rendered_share": 0.986,
+  "median_mm": 8.4,
+  "p90_mm": 34.27,
+  "share_gt_5mm": 0.731
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 10,
+  "step": 3,
+  "rendered_share": 0.998,
+  "median_mm": 27.67,
+  "p90_mm": 48.7,
+  "share_gt_5mm": 0.859
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 0,
+  "rendered_share": 0.998,
+  "median_mm": 4.72,
+  "p90_mm": 12.91,
+  "share_gt_5mm": 0.472
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 1,
+  "rendered_share": 1.0,
+  "median_mm": 5.4,
+  "p90_mm": 9.33,
+  "share_gt_5mm": 0.567
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 2,
+  "rendered_share": 1.0,
+  "median_mm": 6.44,
+  "p90_mm": 10.26,
+  "share_gt_5mm": 0.649
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 5,
+  "step": 3,
+  "rendered_share": 0.983,
+  "median_mm": 2.87,
+  "p90_mm": 7.93,
+  "share_gt_5mm": 0.268
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 0,
+  "rendered_share": 0.999,
+  "median_mm": 5.2,
+  "p90_mm": 17.56,
+  "share_gt_5mm": 0.519
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 1,
+  "rendered_share": 1.0,
+  "median_mm": 3.86,
+  "p90_mm": 6.32,
+  "share_gt_5mm": 0.271
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 2,
+  "rendered_share": 1.0,
+  "median_mm": 4.5,
+  "p90_mm": 8.53,
+  "share_gt_5mm": 0.455
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 3,
+  "step": 3,
+  "rendered_share": 0.971,
+  "median_mm": 1.8,
+  "p90_mm": 5.08,
+  "share_gt_5mm": 0.105
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 0,
+  "rendered_share": 0.999,
+  "median_mm": 5.86,
+  "p90_mm": 20.1,
+  "share_gt_5mm": 0.567
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 1,
+  "rendered_share": 1.0,
+  "median_mm": 2.71,
+  "p90_mm": 5.02,
+  "share_gt_5mm": 0.102
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 2,
+  "rendered_share": 1.0,
+  "median_mm": 2.13,
+  "p90_mm": 6.95,
+  "share_gt_5mm": 0.253
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 2,
+  "step": 3,
+  "rendered_share": 0.878,
+  "median_mm": 1.57,
+  "p90_mm": 4.89,
+  "share_gt_5mm": 0.096
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 0,
+  "rendered_share": 0.998,
+  "median_mm": 8.38,
+  "p90_mm": 19.18,
+  "share_gt_5mm": 0.701
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 1,
+  "rendered_share": 0.999,
+  "median_mm": 0.98,
+  "p90_mm": 3.39,
+  "share_gt_5mm": 0.062
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 2,
+  "rendered_share": 1.0,
+  "median_mm": 0.95,
+  "p90_mm": 3.13,
+  "share_gt_5mm": 0.044
+ },
+ {
+  "run": "2209-box-ray-demo1",
+  "scope": "scene",
+  "voxel_mm": 1,
+  "step": 3,
+  "rendered_share": 0.937,
+  "median_mm": 1.08,
+  "p90_mm": 7.38,
+  "share_gt_5mm": 0.2
+ }
+]

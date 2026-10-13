@@ -1,0 +1,17 @@
+{
+  "chosen_by": "Anton, 2026-10-08, from evidence/frames_all.jpg",
+  "frames": [
+    {"id": "c5.6",  "run": "2209-compute-ray-demo5", "step": 6, "face": "x+", "dist_cm": 21.9, "role": "compute x+ panel (Chort wordmark, 2 RJ45, 2 DB9, jacks, LEDs, labels) - main example", "recorded_mask": true},
+    {"id": "c5.2",  "run": "2209-compute-ray-demo5", "step": 2, "face": "oblique 9:1", "dist_cm": 29.7, "role": "far view paired with c5.6", "recorded_mask": true},
+    {"id": "c5.7",  "run": "2209-compute-ray-demo5", "step": 7, "face": "x-", "dist_cm": 22.0, "role": "compute x- panel (USB ports, terminal block) - second example", "recorded_mask": false},
+    {"id": "c9.6",  "run": "2209-compute-ray-demo9", "step": 6, "face": "x-", "dist_cm": 24.9, "role": "same x- panel from another run, paired with c5.7 for multi-view", "recorded_mask": true},
+    {"id": "bc5.9", "run": "2209-bigcam-ray-demo5", "step": 9, "face": "x+", "dist_cm": 20.7, "role": "REALSENSE box barcode label - label-rich example", "recorded_mask": true},
+    {"id": "b1.1",  "run": "2209-box-ray-demo1", "step": 1, "face": "top 1:2", "dist_cm": 20.7, "role": "cardboard box top, AI KIT sticker - simple example", "recorded_mask": true},
+    {"id": "b1.4",  "run": "2209-box-ray-demo1", "step": 4, "face": "x+", "dist_cm": 24.2, "role": "cardboard box barcode sticker face", "recorded_mask": false},
+    {"id": "b4.5",  "run": "2209-box-ray-demo4", "step": 5, "face": "y-", "dist_cm": 24.8, "role": "same sticker face from another run, paired with b1.4 for multi-view", "recorded_mask": true}
+  ],
+  "pairs": {
+    "far_close": [["c5.2", "c5.6"]],
+    "multi_view": [["c5.7", "c9.6"], ["b1.4", "b4.5"]]
+  }
+}

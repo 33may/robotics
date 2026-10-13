@@ -1,0 +1,2128 @@
+{
+ "c5.6": {
+  "run": "2209-compute-ray-demo5",
+  "step": 6,
+  "fused": true,
+  "nodes": {
+   "2": {
+    "name": "lower front panel",
+    "depth": 1,
+    "px_with_depth": 0.989,
+    "off_side_plane_gt_8mm": 0.004,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 5.4
+   },
+   "3": {
+    "name": "upper front panel",
+    "depth": 1,
+    "px_with_depth": 0.978,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 4.6
+   },
+   "23": {
+    "name": "COM ports",
+    "depth": 2,
+    "px_with_depth": 0.997,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 2.1,
+    "median_to_fused_mm": 6.0
+   },
+   "12": {
+    "name": "LAN ports",
+    "depth": 2,
+    "px_with_depth": 0.945,
+    "off_side_plane_gt_8mm": 0.085,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 2.6
+   },
+   "4": {
+    "name": "sticker",
+    "depth": 2,
+    "px_with_depth": 0.854,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 1.8
+   },
+   "21": {
+    "name": "audio jacks",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 7.9
+   },
+   "55": {
+    "name": "antenna ports",
+    "depth": 2,
+    "px_with_depth": 0.999,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.6,
+    "median_to_fused_mm": 18.5
+   },
+   "11": {
+    "name": "COM / DIO port",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 2.8,
+    "median_to_fused_mm": 4.9
+   },
+   "5": {
+    "name": "LAN 1G port",
+    "depth": 3,
+    "px_with_depth": 0.909,
+    "off_side_plane_gt_8mm": 0.082,
+    "off_side_plane_median_mm": 0.5,
+    "median_to_fused_mm": 2.0
+   },
+   "9": {
+    "name": "COM / CAN port",
+    "depth": 3,
+    "px_with_depth": 0.992,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.3,
+    "median_to_fused_mm": 7.4
+   },
+   "6": {
+    "name": "LAN 10G port",
+    "depth": 3,
+    "px_with_depth": 0.977,
+    "off_side_plane_gt_8mm": 0.096,
+    "off_side_plane_median_mm": 1.0,
+    "median_to_fused_mm": 3.4
+   },
+   "13": {
+    "name": "microphone jack (MIC IN)",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.1,
+    "median_to_fused_mm": 8.8
+   },
+   "8": {
+    "name": "antenna port 2",
+    "depth": 3,
+    "px_with_depth": 0.999,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.8,
+    "median_to_fused_mm": 13.8
+   },
+   "7": {
+    "name": "antenna port 1",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.4,
+    "median_to_fused_mm": 25.2
+   },
+   "15": {
+    "name": "line output jack (LINE OUT)",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.1,
+    "median_to_fused_mm": 7.6
+   }
+  },
+  "views": {
+   "6": {
+    "step": 6,
+    "object_visible_share": 1.0,
+    "angle_to_face_deg": 15.9,
+    "nodes": {
+     "2": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "3": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "23": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "12": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "21": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "55": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "11": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "5": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "13": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "7": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "15": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "2": {
+    "step": 2,
+    "object_visible_share": 0.817,
+    "angle_to_face_deg": 68.1,
+    "nodes": {
+     "2": {
+      "visible_share": 0.814,
+      "occluded_share_of_known": 0.014
+     },
+     "3": {
+      "visible_share": 0.82,
+      "occluded_share_of_known": 0.004
+     },
+     "23": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "12": {
+      "visible_share": 0.994,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 0.96,
+      "occluded_share_of_known": 0.0
+     },
+     "21": {
+      "visible_share": 0.924,
+      "occluded_share_of_known": 0.0
+     },
+     "55": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "11": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "5": {
+      "visible_share": 0.998,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 0.991,
+      "occluded_share_of_known": 0.0
+     },
+     "13": {
+      "visible_share": 0.836,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "7": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "15": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    },
+    "match_own_tree": {
+     "2": {
+      "own_node": 3,
+      "own_name": "Front Face",
+      "iou": 0.324,
+      "centroid_offset_px": 41.5,
+      "centroid_offset_mm": 15.2
+     },
+     "3": {
+      "own_node": 3,
+      "own_name": "Front Face",
+      "iou": 0.476,
+      "centroid_offset_px": 15.8,
+      "centroid_offset_mm": 5.8
+     },
+     "4": {
+      "own_node": 7,
+      "own_name": "Chort label",
+      "iou": 0.218,
+      "centroid_offset_px": 15.8,
+      "centroid_offset_mm": 4.9
+     },
+     "5": {
+      "own_node": 9,
+      "own_name": "Ethernet Port 1",
+      "iou": 0.256,
+      "centroid_offset_px": 10.1,
+      "centroid_offset_mm": 4.0
+     },
+     "6": {
+      "own_node": 17,
+      "own_name": "Ethernet Port 2",
+      "iou": 0.308,
+      "centroid_offset_px": 8.2,
+      "centroid_offset_mm": 3.3
+     },
+     "9": {
+      "own_node": 27,
+      "own_name": "Serial Port 2",
+      "iou": 0.349,
+      "centroid_offset_px": 9.4,
+      "centroid_offset_mm": 4.1
+     },
+     "11": {
+      "own_node": 32,
+      "own_name": "Serial Port 1",
+      "iou": 0.334,
+      "centroid_offset_px": 9.4,
+      "centroid_offset_mm": 3.9
+     },
+     "12": {
+      "own_node": 35,
+      "own_name": "ethernet ports",
+      "iou": 0.271,
+      "centroid_offset_px": 8.5,
+      "centroid_offset_mm": 3.4
+     },
+     "13": {
+      "own_node": 23,
+      "own_name": "Audio Port 1",
+      "iou": 0.258,
+      "centroid_offset_px": 7.7,
+      "centroid_offset_mm": 2.9
+     },
+     "15": {
+      "own_node": 26,
+      "own_name": "Audio Port 2",
+      "iou": 0.187,
+      "centroid_offset_px": 9.6,
+      "centroid_offset_mm": 3.7
+     },
+     "21": {
+      "own_node": 23,
+      "own_name": "Audio Port 1",
+      "iou": 0.191,
+      "centroid_offset_px": 11.1,
+      "centroid_offset_mm": 4.2
+     },
+     "23": {
+      "own_node": 10,
+      "own_name": "Serial Ports Group",
+      "iou": 0.353,
+      "centroid_offset_px": 9.7,
+      "centroid_offset_mm": 4.2
+     }
+    }
+   },
+   "skipped": {
+    "0": {
+     "visible_share": 0.168,
+     "angle_deg": 104.2
+    },
+    "1": {
+     "visible_share": 0.044,
+     "angle_deg": 134.5
+    },
+    "3": {
+     "visible_share": 0.003,
+     "angle_deg": 106.7
+    },
+    "4": {
+     "visible_share": 0.035,
+     "angle_deg": 112.0
+    },
+    "5": {
+     "visible_share": 0.048,
+     "angle_deg": 117.2
+    },
+    "7": {
+     "visible_share": 0.0,
+     "angle_deg": 172.4
+    },
+    "8": {
+     "visible_share": 0.049,
+     "angle_deg": 100.4
+    }
+   }
+  }
+ },
+ "c5.2": {
+  "run": "2209-compute-ray-demo5",
+  "step": 2,
+  "fused": true,
+  "nodes": {
+   "2": {
+    "name": "Top Heatsink Face",
+    "depth": 1,
+    "px_with_depth": 0.919,
+    "off_side_plane_gt_8mm": 0.001,
+    "off_side_plane_median_mm": 0.6,
+    "median_to_fused_mm": 1.7
+   },
+   "3": {
+    "name": "Front Face",
+    "depth": 1,
+    "px_with_depth": 0.849,
+    "off_side_plane_gt_8mm": 0.033,
+    "off_side_plane_median_mm": 1.4,
+    "median_to_fused_mm": 1.7
+   },
+   "5": {
+    "name": "Front-Top Bevel Face",
+    "depth": 1,
+    "px_with_depth": 0.978,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 1.5
+   },
+   "7": {
+    "name": "Chort label",
+    "depth": 1,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 1.5
+   },
+   "8": {
+    "name": "CropTeq logo",
+    "depth": 2,
+    "px_with_depth": 0.935,
+    "off_side_plane_gt_8mm": 0.001,
+    "off_side_plane_median_mm": 0.8,
+    "median_to_fused_mm": 1.6
+   },
+   "10": {
+    "name": "Serial Ports Group",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.6,
+    "median_to_fused_mm": 1.9
+   },
+   "35": {
+    "name": "ethernet ports",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.4,
+    "median_to_fused_mm": 1.5
+   },
+   "23": {
+    "name": "Audio Port 1",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.7,
+    "median_to_fused_mm": 3.2
+   },
+   "26": {
+    "name": "Audio Port 2",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.9,
+    "median_to_fused_mm": 2.5
+   },
+   "12": {
+    "name": "Status LED 1",
+    "depth": 2,
+    "px_with_depth": 0.519,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 6.4
+   },
+   "32": {
+    "name": "Serial Port 1",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.8,
+    "median_to_fused_mm": 1.8
+   },
+   "27": {
+    "name": "Serial Port 2",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.4,
+    "median_to_fused_mm": 2.1
+   },
+   "9": {
+    "name": "Ethernet Port 1",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 1.5
+   },
+   "17": {
+    "name": "Ethernet Port 2",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 1.4
+   }
+  },
+  "views": {
+   "2": {
+    "step": 2,
+    "object_visible_share": 1.0,
+    "angle_to_face_deg": 46.1,
+    "nodes": {
+     "2": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "3": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "5": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "7": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "10": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "35": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "23": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "26": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "12": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "32": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "27": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "17": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "5": {
+    "step": 5,
+    "object_visible_share": 0.626,
+    "angle_to_face_deg": 22.8,
+    "nodes": {
+     "2": {
+      "visible_share": 0.948,
+      "occluded_share_of_known": 0.043
+     },
+     "3": {
+      "visible_share": 0.02,
+      "occluded_share_of_known": 0.979
+     },
+     "5": {
+      "visible_share": 0.622,
+      "occluded_share_of_known": 0.35
+     },
+     "7": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "8": {
+      "visible_share": 0.657,
+      "occluded_share_of_known": 0.308
+     },
+     "10": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "35": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "23": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "26": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "12": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "32": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "27": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "9": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "17": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     }
+    }
+   },
+   "1": {
+    "step": 1,
+    "object_visible_share": 0.595,
+    "angle_to_face_deg": 53.2,
+    "nodes": {
+     "2": {
+      "visible_share": 0.95,
+      "occluded_share_of_known": 0.048
+     },
+     "3": {
+      "visible_share": 0.027,
+      "occluded_share_of_known": 0.972
+     },
+     "5": {
+      "visible_share": 0.479,
+      "occluded_share_of_known": 0.486
+     },
+     "7": {
+      "visible_share": 0.278,
+      "occluded_share_of_known": 0.663
+     },
+     "8": {
+      "visible_share": 0.527,
+      "occluded_share_of_known": 0.443
+     },
+     "10": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "35": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "23": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "26": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "12": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "32": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "27": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "9": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "17": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     }
+    }
+   },
+   "0": {
+    "step": 0,
+    "object_visible_share": 0.49,
+    "angle_to_face_deg": 28.8,
+    "nodes": {
+     "2": {
+      "visible_share": 0.482,
+      "occluded_share_of_known": 0.237
+     },
+     "3": {
+      "visible_share": 0.148,
+      "occluded_share_of_known": 0.841
+     },
+     "5": {
+      "visible_share": 0.873,
+      "occluded_share_of_known": 0.094
+     },
+     "7": {
+      "visible_share": 0.774,
+      "occluded_share_of_known": 0.034
+     },
+     "8": {
+      "visible_share": 0.872,
+      "occluded_share_of_known": 0.115
+     },
+     "10": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "35": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "23": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "26": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "12": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "32": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "27": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "9": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "17": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     }
+    }
+   },
+   "3": {
+    "step": 3,
+    "object_visible_share": 0.339,
+    "angle_to_face_deg": 9.3,
+    "nodes": {
+     "2": {
+      "visible_share": 0.407,
+      "occluded_share_of_known": 0.112
+     },
+     "3": {
+      "visible_share": 0.015,
+      "occluded_share_of_known": 0.982
+     },
+     "5": {
+      "visible_share": 0.546,
+      "occluded_share_of_known": 0.381
+     },
+     "7": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "8": {
+      "visible_share": 0.712,
+      "occluded_share_of_known": 0.244
+     },
+     "10": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "35": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "23": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "26": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "12": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "32": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "27": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "9": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "17": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     }
+    }
+   },
+   "skipped": {
+    "4": {
+     "visible_share": 0.178,
+     "angle_deg": 77.8
+    },
+    "6": {
+     "visible_share": 0.217,
+     "angle_deg": 92.7
+    },
+    "7": {
+     "visible_share": 0.011,
+     "angle_deg": 96.2
+    },
+    "8": {
+     "visible_share": 0.003,
+     "angle_deg": 87.5
+    }
+   }
+  }
+ },
+ "c5.7": {
+  "run": "2209-compute-ray-demo5",
+  "step": 7,
+  "fused": false,
+  "nodes": {
+   "3": {
+    "name": "Front Face",
+    "depth": 1,
+    "px_with_depth": 0.981,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 3.2
+   },
+   "2": {
+    "name": "Top Casing",
+    "depth": 1,
+    "px_with_depth": 0.878,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 2.3
+   },
+   "60": {
+    "name": "Array of USB 3.2 Ports",
+    "depth": 2,
+    "px_with_depth": 0.998,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.5,
+    "median_to_fused_mm": 3.0
+   },
+   "5": {
+    "name": "DC Input Terminal Block",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 1.7
+   },
+   "13": {
+    "name": "USB 3.0 Dual Port",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.9,
+    "median_to_fused_mm": 4.7
+   },
+   "4": {
+    "name": "Power Button",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 5.1
+   },
+   "47": {
+    "name": "DC Input Label",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 7.6
+   },
+   "8": {
+    "name": "HDMI Port",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.6,
+    "median_to_fused_mm": 2.9
+   },
+   "38": {
+    "name": "USB 3.2 Label 1",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 2.9
+   },
+   "48": {
+    "name": "USB 3.2 Label 3",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 2.2
+   },
+   "50": {
+    "name": "USB 3.2 Label 4",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 1.6
+   },
+   "49": {
+    "name": "USB 3.2 Label 2",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 2.1
+   },
+   "42": {
+    "name": "USB 3.0 Port Label",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 2.1
+   },
+   "22": {
+    "name": "HDMI Port Label",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 2.4
+   },
+   "15": {
+    "name": "USB 3.2 Port 4",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.1,
+    "median_to_fused_mm": 2.1
+   },
+   "10": {
+    "name": "USB 3.2 Port 2",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.7,
+    "median_to_fused_mm": 5.9
+   },
+   "9": {
+    "name": "USB 3.2 Port 3",
+    "depth": 3,
+    "px_with_depth": 0.998,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.7,
+    "median_to_fused_mm": 5.9
+   },
+   "11": {
+    "name": "USB 3.2 Port 1",
+    "depth": 3,
+    "px_with_depth": 0.996,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.8,
+    "median_to_fused_mm": 3.0
+   }
+  },
+  "views": {
+   "7": {
+    "step": 7,
+    "object_visible_share": 1.0,
+    "angle_to_face_deg": 14.4,
+    "nodes": {
+     "3": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "2": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "60": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "5": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "13": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "47": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "38": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "48": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "50": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "49": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "42": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "22": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "15": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "10": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "11": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "1": {
+    "step": 1,
+    "object_visible_share": 0.935,
+    "angle_to_face_deg": 67.1,
+    "nodes": {
+     "3": {
+      "visible_share": 0.94,
+      "occluded_share_of_known": 0.0
+     },
+     "2": {
+      "visible_share": 0.928,
+      "occluded_share_of_known": 0.001
+     },
+     "60": {
+      "visible_share": 0.971,
+      "occluded_share_of_known": 0.0
+     },
+     "5": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "13": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "47": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "38": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "48": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "50": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "49": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "42": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "22": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "15": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "10": {
+      "visible_share": 0.886,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "11": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "skipped": {
+    "0": {
+     "visible_share": 0.181,
+     "angle_deg": 93.4
+    },
+    "2": {
+     "visible_share": 0.086,
+     "angle_deg": 133.2
+    },
+    "3": {
+     "visible_share": 0.161,
+     "angle_deg": 107.9
+    },
+    "4": {
+     "visible_share": 0.055,
+     "angle_deg": 96.3
+    },
+    "5": {
+     "visible_share": 0.61,
+     "angle_deg": 86.7
+    },
+    "6": {
+     "visible_share": 0.0,
+     "angle_deg": 171.2
+    },
+    "8": {
+     "visible_share": 0.013,
+     "angle_deg": 99.8
+    }
+   }
+  }
+ },
+ "c9.6": {
+  "run": "2209-compute-ray-demo9",
+  "step": 6,
+  "fused": true,
+  "nodes": {
+   "2": {
+    "name": "Active port panel",
+    "depth": 1,
+    "px_with_depth": 0.999,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.4,
+    "median_to_fused_mm": 1.4
+   },
+   "3": {
+    "name": "Plain upper bezel",
+    "depth": 1,
+    "px_with_depth": 0.99,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.4,
+    "median_to_fused_mm": 1.4
+   },
+   "28": {
+    "name": "DC terminal area",
+    "depth": 2,
+    "px_with_depth": 0.996,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.5,
+    "median_to_fused_mm": 1.4
+   },
+   "49": {
+    "name": "array of USB 3.2 ports",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.3,
+    "median_to_fused_mm": 1.3
+   },
+   "9": {
+    "name": "Dual USB 3.0 port",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.6,
+    "median_to_fused_mm": 1.4
+   },
+   "4": {
+    "name": "Power button",
+    "depth": 2,
+    "px_with_depth": 0.999,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 1.5
+   },
+   "6": {
+    "name": "HDMI port",
+    "depth": 2,
+    "px_with_depth": 0.998,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 3.6,
+    "median_to_fused_mm": 1.3
+   },
+   "26": {
+    "name": "HDMI port label",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 1.4
+   },
+   "5": {
+    "name": "DC input terminal block",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.4,
+    "median_to_fused_mm": 1.6
+   },
+   "13": {
+    "name": "USB 3.2 port 1",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.5,
+    "median_to_fused_mm": 1.4
+   },
+   "15": {
+    "name": "USB 3.2 port 2",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.4,
+    "median_to_fused_mm": 1.3
+   },
+   "27": {
+    "name": "USB 3.2 port 3",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 1.1,
+    "median_to_fused_mm": 1.3
+   },
+   "16": {
+    "name": "Power button icon",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 1.7
+   },
+   "14": {
+    "name": "USB 3.2 port 4",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.8,
+    "median_to_fused_mm": 1.3
+   },
+   "46": {
+    "name": "DC IN 12-24V label",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 1.2
+   }
+  },
+  "views": {
+   "6": {
+    "step": 6,
+    "object_visible_share": 1.0,
+    "angle_to_face_deg": 20.6,
+    "nodes": {
+     "2": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "3": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "28": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "49": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "26": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "5": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "13": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "15": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "27": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "16": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "14": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "46": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "4": {
+    "step": 4,
+    "object_visible_share": 0.819,
+    "angle_to_face_deg": 66.3,
+    "nodes": {
+     "2": {
+      "visible_share": 0.731,
+      "occluded_share_of_known": 0.076
+     },
+     "3": {
+      "visible_share": 0.939,
+      "occluded_share_of_known": 0.026
+     },
+     "28": {
+      "visible_share": 0.995,
+      "occluded_share_of_known": 0.0
+     },
+     "49": {
+      "visible_share": 0.728,
+      "occluded_share_of_known": 0.093
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 0.005,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 0.859,
+      "occluded_share_of_known": 0.0
+     },
+     "26": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "5": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "13": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "15": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "27": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "16": {
+      "visible_share": 0.0,
+      "occluded_share_of_known": 1.0
+     },
+     "14": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "46": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "skipped": {
+    "0": {
+     "visible_share": 0.209,
+     "angle_deg": 96.0
+    },
+    "1": {
+     "visible_share": 0.093,
+     "angle_deg": 100.0
+    },
+    "2": {
+     "visible_share": 0.182,
+     "angle_deg": 103.5
+    },
+    "3": {
+     "visible_share": 0.195,
+     "angle_deg": 108.7
+    },
+    "5": {
+     "visible_share": 0.0,
+     "angle_deg": 170.2
+    },
+    "7": {
+     "visible_share": 0.83,
+     "angle_deg": 78.8
+    },
+    "8": {
+     "visible_share": 0.015,
+     "angle_deg": 97.6
+    },
+    "9": {
+     "visible_share": 0.118,
+     "angle_deg": 104.1
+    }
+   }
+  }
+ },
+ "bc5.9": {
+  "run": "2209-bigcam-ray-demo5",
+  "step": 9,
+  "fused": true,
+  "nodes": {
+   "1": {
+    "name": "Product Specification Label",
+    "depth": 1,
+    "px_with_depth": 0.968,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 1.9
+   },
+   "9": {
+    "name": "Product Code Barcode",
+    "depth": 2,
+    "px_with_depth": 0.939,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 2.0
+   },
+   "3": {
+    "name": "Serial Number Barcode",
+    "depth": 2,
+    "px_with_depth": 0.959,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 1.6
+   },
+   "28": {
+    "name": "Manufacturing Info Text",
+    "depth": 2,
+    "px_with_depth": 0.978,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.4,
+    "median_to_fused_mm": 2.8
+   },
+   "8": {
+    "name": "UPC Barcode",
+    "depth": 2,
+    "px_with_depth": 0.892,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.3,
+    "median_to_fused_mm": 1.7
+   },
+   "4": {
+    "name": "MM# Barcode",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 1.9
+   },
+   "6": {
+    "name": "EAN Barcode",
+    "depth": 2,
+    "px_with_depth": 0.995,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 1.5
+   }
+  },
+  "views": {
+   "9": {
+    "step": 9,
+    "object_visible_share": 1.0,
+    "angle_to_face_deg": 12.9,
+    "nodes": {
+     "1": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "3": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "28": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "6": {
+    "step": 6,
+    "object_visible_share": 0.971,
+    "angle_to_face_deg": 66.1,
+    "nodes": {
+     "1": {
+      "visible_share": 0.995,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "3": {
+      "visible_share": 0.991,
+      "occluded_share_of_known": 0.0
+     },
+     "28": {
+      "visible_share": 0.981,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 0.993,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "7": {
+    "step": 7,
+    "object_visible_share": 0.915,
+    "angle_to_face_deg": 61.1,
+    "nodes": {
+     "1": {
+      "visible_share": 0.95,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 0.996,
+      "occluded_share_of_known": 0.0
+     },
+     "3": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "28": {
+      "visible_share": 0.967,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 0.978,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 0.895,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "skipped": {
+    "0": {
+     "visible_share": 0.481,
+     "angle_deg": 98.2
+    },
+    "1": {
+     "visible_share": 0.08,
+     "angle_deg": 105.9
+    },
+    "2": {
+     "visible_share": 0.048,
+     "angle_deg": 143.1
+    },
+    "3": {
+     "visible_share": 0.063,
+     "angle_deg": 94.7
+    },
+    "4": {
+     "visible_share": 0.107,
+     "angle_deg": 117.7
+    },
+    "5": {
+     "visible_share": 0.083,
+     "angle_deg": 133.9
+    },
+    "8": {
+     "visible_share": 0.332,
+     "angle_deg": 89.7
+    },
+    "10": {
+     "visible_share": 0.0,
+     "angle_deg": 174.9
+    }
+   }
+  }
+ },
+ "b1.1": {
+  "run": "2209-box-ray-demo1",
+  "step": 1,
+  "fused": true,
+  "nodes": {
+   "51": {
+    "name": "top face",
+    "depth": 1,
+    "px_with_depth": 0.987,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 1.3
+   },
+   "39": {
+    "name": "front face",
+    "depth": 1,
+    "px_with_depth": 0.526,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 1.3
+   },
+   "1": {
+    "name": "AI KIT sticker",
+    "depth": 2,
+    "px_with_depth": 0.969,
+    "off_side_plane_gt_8mm": 0.001,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 1.3
+   },
+   "50": {
+    "name": "logo",
+    "depth": 3,
+    "px_with_depth": 0.899,
+    "off_side_plane_gt_8mm": 0.003,
+    "off_side_plane_median_mm": 0.8,
+    "median_to_fused_mm": 1.4
+   },
+   "43": {
+    "name": "text",
+    "depth": 3,
+    "px_with_depth": 0.999,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.4,
+    "median_to_fused_mm": 1.3
+   }
+  },
+  "views": {
+   "1": {
+    "step": 1,
+    "object_visible_share": 1.0,
+    "angle_to_face_deg": 23.7,
+    "nodes": {
+     "51": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "39": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "1": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "50": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "43": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "0": {
+    "step": 0,
+    "object_visible_share": 0.959,
+    "angle_to_face_deg": 25.4,
+    "nodes": {
+     "51": {
+      "visible_share": 0.96,
+      "occluded_share_of_known": 0.014
+     },
+     "39": {
+      "visible_share": 0.965,
+      "occluded_share_of_known": 0.034
+     },
+     "1": {
+      "visible_share": 0.943,
+      "occluded_share_of_known": 0.022
+     },
+     "50": {
+      "visible_share": 0.987,
+      "occluded_share_of_known": 0.009
+     },
+     "43": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "3": {
+    "step": 3,
+    "object_visible_share": 0.95,
+    "angle_to_face_deg": 49.7,
+    "nodes": {
+     "51": {
+      "visible_share": 0.993,
+      "occluded_share_of_known": 0.0
+     },
+     "39": {
+      "visible_share": 0.688,
+      "occluded_share_of_known": 0.265
+     },
+     "1": {
+      "visible_share": 0.985,
+      "occluded_share_of_known": 0.0
+     },
+     "50": {
+      "visible_share": 0.965,
+      "occluded_share_of_known": 0.0
+     },
+     "43": {
+      "visible_share": 0.997,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "2": {
+    "step": 2,
+    "object_visible_share": 0.874,
+    "angle_to_face_deg": 51.8,
+    "nodes": {
+     "51": {
+      "visible_share": 0.856,
+      "occluded_share_of_known": 0.032
+     },
+     "39": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "1": {
+      "visible_share": 0.83,
+      "occluded_share_of_known": 0.039
+     },
+     "50": {
+      "visible_share": 0.723,
+      "occluded_share_of_known": 0.067
+     },
+     "43": {
+      "visible_share": 0.968,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "skipped": {
+    "4": {
+     "visible_share": 0.057,
+     "angle_deg": 92.4
+    }
+   }
+  }
+ },
+ "b1.4": {
+  "run": "2209-box-ray-demo1",
+  "step": 4,
+  "fused": false,
+  "nodes": {
+   "2": {
+    "name": "product info label",
+    "depth": 1,
+    "px_with_depth": 0.928,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 24.4
+   },
+   "3": {
+    "name": "serial number label",
+    "depth": 1,
+    "px_with_depth": 0.948,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 37.4
+   },
+   "4": {
+    "name": "barcode",
+    "depth": 2,
+    "px_with_depth": 0.781,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 21.4
+   },
+   "7": {
+    "name": "serial number text",
+    "depth": 2,
+    "px_with_depth": 0.913,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 22.9
+   },
+   "16": {
+    "name": "model number text",
+    "depth": 2,
+    "px_with_depth": 0.988,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 34.2
+   },
+   "27": {
+    "name": "QR code",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.0,
+    "median_to_fused_mm": 56.1
+   },
+   "8": {
+    "name": "FCC mark",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 36.7
+   },
+   "6": {
+    "name": "recycle symbol",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 47.0
+   },
+   "26": {
+    "name": "CE mark",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 27.0
+   },
+   "22": {
+    "name": "WEEE symbol",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 49.3
+   },
+   "23": {
+    "name": "made in china text",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 41.7
+   }
+  },
+  "views": {
+   "4": {
+    "step": 4,
+    "object_visible_share": 1.0,
+    "angle_to_face_deg": 14.8,
+    "nodes": {
+     "2": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "3": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "4": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "7": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "16": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "27": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "8": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "26": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "22": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "23": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "skipped": {
+    "0": {
+     "visible_share": 0.173,
+     "angle_deg": 102.9
+    },
+    "1": {
+     "visible_share": 0.196,
+     "angle_deg": 113.2
+    },
+    "2": {
+     "visible_share": 0.177,
+     "angle_deg": 113.9
+    },
+    "3": {
+     "visible_share": 0.222,
+     "angle_deg": 121.0
+    }
+   }
+  }
+ },
+ "b4.5": {
+  "run": "2209-box-ray-demo4",
+  "step": 5,
+  "fused": true,
+  "nodes": {
+   "3": {
+    "name": "front face",
+    "depth": 1,
+    "px_with_depth": 0.972,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.5,
+    "median_to_fused_mm": 1.0
+   },
+   "5": {
+    "name": "top face",
+    "depth": 1,
+    "px_with_depth": 0.943,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.6,
+    "median_to_fused_mm": 1.1
+   },
+   "2": {
+    "name": "product info sticker",
+    "depth": 2,
+    "px_with_depth": 0.942,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.5,
+    "median_to_fused_mm": 1.0
+   },
+   "9": {
+    "name": "F3 AI KIT sticker",
+    "depth": 2,
+    "px_with_depth": 0.892,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.7,
+    "median_to_fused_mm": 1.1
+   },
+   "6": {
+    "name": "serial number sticker",
+    "depth": 2,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.2,
+    "median_to_fused_mm": 1.0
+   },
+   "7": {
+    "name": "barcode",
+    "depth": 3,
+    "px_with_depth": 0.998,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.5,
+    "median_to_fused_mm": 1.0
+   },
+   "13": {
+    "name": "QR code",
+    "depth": 3,
+    "px_with_depth": 1.0,
+    "off_side_plane_gt_8mm": 0.0,
+    "off_side_plane_median_mm": 0.1,
+    "median_to_fused_mm": 1.0
+   }
+  },
+  "views": {
+   "5": {
+    "step": 5,
+    "object_visible_share": 1.0,
+    "angle_to_face_deg": 33.1,
+    "nodes": {
+     "3": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "5": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "2": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "9": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "6": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "7": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     },
+     "13": {
+      "visible_share": 1.0,
+      "occluded_share_of_known": 0.0
+     }
+    }
+   },
+   "skipped": {
+    "0": {
+     "visible_share": 0.228,
+     "angle_deg": 128.9
+    },
+    "1": {
+     "visible_share": 0.291,
+     "angle_deg": 131.5
+    },
+    "2": {
+     "visible_share": 0.274,
+     "angle_deg": 141.5
+    },
+    "3": {
+     "visible_share": 0.115,
+     "angle_deg": 119.6
+    },
+    "4": {
+     "visible_share": 0.0,
+     "angle_deg": 175.3
+    }
+   }
+  }
+ }
+}

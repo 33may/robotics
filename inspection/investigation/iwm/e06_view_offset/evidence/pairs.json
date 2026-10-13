@@ -1,0 +1,3878 @@
+{
+ "runs": [
+  {
+   "run": "2209-bigcam-ray-demo5",
+   "skipped": {
+    "7": "no mask"
+   },
+   "pairs": [
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 1,
+     "id_i": "b0",
+     "id_j": "b1",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 68.9,
+     "n_ratio": 12
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 2,
+     "id_i": "b0",
+     "id_j": "b2",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 90.5,
+     "n_ratio": 10
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 3,
+     "id_i": "b0",
+     "id_j": "b3",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 79.0,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 4,
+     "id_i": "b0",
+     "id_j": "b4",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 139.0,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 5,
+     "id_i": "b0",
+     "id_j": "b5",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 69.9,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 6,
+     "id_i": "b0",
+     "id_j": "b6",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 95.4,
+     "n_ratio": 14
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 8,
+     "id_i": "b0",
+     "id_j": "b8",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 51.9,
+     "n_ratio": 36,
+     "n_essential": 31,
+     "n_rigid": 31,
+     "n": 31,
+     "med_mm": 20.2,
+     "p90_mm": 22.22,
+     "max_mm": 23.5,
+     "mean_vec_mm": [
+      15.71,
+      -8.11,
+      -9.71
+     ],
+     "mean_vec_norm_mm": 20.18,
+     "consistency": 0.995,
+     "resid_after_mean_mm": 2.12,
+     "rigid_rot_deg": 9.11,
+     "rigid_resid_med_mm": 1.05,
+     "epi_pose_med_px": 14.97,
+     "epi_pose_p90_px": 16.76,
+     "range_i_m": 0.398,
+     "range_j_m": 0.195
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 9,
+     "id_i": "b0",
+     "id_j": "b9",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 123.6,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 0,
+     "j": 10,
+     "id_i": "b0",
+     "id_j": "b10",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 119.7,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 1,
+     "j": 2,
+     "id_i": "b1",
+     "id_j": "b2",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 99.2,
+     "n_ratio": 59,
+     "n_essential": 41,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 1,
+     "j": 3,
+     "id_i": "b1",
+     "id_j": "b3",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 11.1,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 1,
+     "j": 4,
+     "id_i": "b1",
+     "id_j": "b4",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 149.5,
+     "n_ratio": 33,
+     "n_essential": 18,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 1,
+     "j": 5,
+     "id_i": "b1",
+     "id_j": "b5",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 66.7,
+     "n_ratio": 11
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 1,
+     "j": 6,
+     "id_i": "b1",
+     "id_j": "b6",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 136.7,
+     "n_ratio": 21,
+     "n_essential": 15,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 1,
+     "j": 8,
+     "id_i": "b1",
+     "id_j": "b8",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 103.3,
+     "n_ratio": 23,
+     "n_essential": 11,
+     "n_rigid": 6
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 1,
+     "j": 9,
+     "id_i": "b1",
+     "id_j": "b9",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 103.5,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 1,
+     "j": 10,
+     "id_i": "b1",
+     "id_j": "b10",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 100.6,
+     "n_ratio": 20,
+     "n_essential": 14,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 2,
+     "j": 3,
+     "id_i": "b2",
+     "id_j": "b3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 104.5,
+     "n_ratio": 10
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 2,
+     "j": 4,
+     "id_i": "b2",
+     "id_j": "b4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 73.4,
+     "n_ratio": 26,
+     "n_essential": 20,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 2,
+     "j": 5,
+     "id_i": "b2",
+     "id_j": "b5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 34.2,
+     "n_ratio": 17,
+     "n_essential": 12,
+     "n_rigid": 7
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 2,
+     "j": 6,
+     "id_i": "b2",
+     "id_j": "b6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 121.7,
+     "n_ratio": 35,
+     "n_essential": 22,
+     "n_rigid": 21,
+     "n": 21,
+     "med_mm": 19.67,
+     "p90_mm": 23.51,
+     "max_mm": 23.84,
+     "mean_vec_mm": [
+      20.09,
+      -3.42,
+      0.61
+     ],
+     "mean_vec_norm_mm": 20.39,
+     "consistency": 0.996,
+     "resid_after_mean_mm": 2.93,
+     "rigid_rot_deg": 6.18,
+     "rigid_resid_med_mm": 1.31,
+     "epi_pose_med_px": 30.38,
+     "epi_pose_p90_px": 45.16,
+     "range_i_m": 0.176,
+     "range_j_m": 0.226
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 2,
+     "j": 8,
+     "id_i": "b2",
+     "id_j": "b8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 122.3,
+     "n_ratio": 31,
+     "n_essential": 18,
+     "n_rigid": 16,
+     "n": 16,
+     "med_mm": 13.16,
+     "p90_mm": 18.27,
+     "max_mm": 18.76,
+     "mean_vec_mm": [
+      13.5,
+      -3.05,
+      0.34
+     ],
+     "mean_vec_norm_mm": 13.85,
+     "consistency": 0.993,
+     "resid_after_mean_mm": 3.1,
+     "rigid_rot_deg": 5.57,
+     "rigid_resid_med_mm": 0.69,
+     "epi_pose_med_px": 35.44,
+     "epi_pose_p90_px": 50.26,
+     "range_i_m": 0.177,
+     "range_j_m": 0.196
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 2,
+     "j": 9,
+     "id_i": "b2",
+     "id_j": "b9",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 144.0,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 2,
+     "j": 10,
+     "id_i": "b2",
+     "id_j": "b10",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 30.6,
+     "n_ratio": 26,
+     "n_essential": 13,
+     "n_rigid": 7
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 3,
+     "j": 4,
+     "id_i": "b3",
+     "id_j": "b4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 141.0,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 3,
+     "j": 5,
+     "id_i": "b3",
+     "id_j": "b5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 74.0,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 3,
+     "j": 6,
+     "id_i": "b3",
+     "id_j": "b6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 133.6,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 3,
+     "j": 8,
+     "id_i": "b3",
+     "id_j": "b8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 107.6,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 3,
+     "j": 9,
+     "id_i": "b3",
+     "id_j": "b9",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 94.1,
+     "n_ratio": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 3,
+     "j": 10,
+     "id_i": "b3",
+     "id_j": "b10",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 100.1,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 4,
+     "j": 5,
+     "id_i": "b4",
+     "id_j": "b5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 106.7,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 4,
+     "j": 6,
+     "id_i": "b4",
+     "id_j": "b6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 64.8,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 4,
+     "j": 8,
+     "id_i": "b4",
+     "id_j": "b8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 105.6,
+     "n_ratio": 28,
+     "n_essential": 26,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 4,
+     "j": 9,
+     "id_i": "b4",
+     "id_j": "b9",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 72.8,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 4,
+     "j": 10,
+     "id_i": "b4",
+     "id_j": "b10",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 58.0,
+     "n_ratio": 126,
+     "n_essential": 116,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 5,
+     "j": 6,
+     "id_i": "b5",
+     "id_j": "b6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 147.2,
+     "n_ratio": 34,
+     "n_essential": 26,
+     "n_rigid": 19,
+     "n": 19,
+     "med_mm": 10.24,
+     "p90_mm": 10.74,
+     "max_mm": 11.38,
+     "mean_vec_mm": [
+      9.5,
+      -0.09,
+      2.39
+     ],
+     "mean_vec_norm_mm": 9.8,
+     "consistency": 0.989,
+     "resid_after_mean_mm": 1.05,
+     "rigid_rot_deg": 5.41,
+     "rigid_resid_med_mm": 0.83,
+     "epi_pose_med_px": 4.13,
+     "epi_pose_p90_px": 5.54,
+     "range_i_m": 0.223,
+     "range_j_m": 0.24
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 5,
+     "j": 8,
+     "id_i": "b5",
+     "id_j": "b8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 118.9,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 5,
+     "j": 9,
+     "id_i": "b5",
+     "id_j": "b9",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 160.6,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 5,
+     "j": 10,
+     "id_i": "b5",
+     "id_j": "b10",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 52.9,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 6,
+     "j": 8,
+     "id_i": "b6",
+     "id_j": "b8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 44.6,
+     "n_ratio": 29,
+     "n_essential": 19,
+     "n_rigid": 16,
+     "n": 16,
+     "med_mm": 5.56,
+     "p90_mm": 6.22,
+     "max_mm": 6.34,
+     "mean_vec_mm": [
+      -4.76,
+      1.69,
+      -0.68
+     ],
+     "mean_vec_norm_mm": 5.1,
+     "consistency": 0.954,
+     "resid_after_mean_mm": 1.42,
+     "rigid_rot_deg": 2.3,
+     "rigid_resid_med_mm": 1.08,
+     "epi_pose_med_px": 4.09,
+     "epi_pose_p90_px": 4.88,
+     "range_i_m": 0.228,
+     "range_j_m": 0.199
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 6,
+     "j": 9,
+     "id_i": "b6",
+     "id_j": "b9",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 51.0,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 6,
+     "j": 10,
+     "id_i": "b6",
+     "id_j": "b10",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 121.5,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 8,
+     "j": 9,
+     "id_i": "b8",
+     "id_j": "b9",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 79.0,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 8,
+     "j": 10,
+     "id_i": "b8",
+     "id_j": "b10",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 147.3,
+     "n_ratio": 30,
+     "n_essential": 26,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-bigcam-ray-demo5",
+     "i": 9,
+     "j": 10,
+     "id_i": "b9",
+     "id_j": "b10",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 116.6,
+     "n_ratio": 2
+    }
+   ],
+   "per_view": {
+    "0": {
+     "id": "b0",
+     "family": "A",
+     "address": null,
+     "elev_deg": 63.6,
+     "v_base_mm": [
+      -9.99,
+      6.45,
+      8.07
+     ],
+     "v_cam_mm": [
+      8.03,
+      3.0,
+      -11.53
+     ],
+     "norm_mm": 14.37,
+     "n_pairs": 1
+    },
+    "2": {
+     "id": "b2",
+     "family": "B",
+     "address": [
+      4,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      -8.39,
+      0.95,
+      -1.84
+     ],
+     "v_cam_mm": [
+      5.97,
+      -5.25,
+      -3.39
+     ],
+     "norm_mm": 8.65,
+     "n_pairs": 2
+    },
+    "5": {
+     "id": "b5",
+     "family": "B",
+     "address": [
+      3,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      1.59,
+      -2.82,
+      -3.49
+     ],
+     "v_cam_mm": [
+      3.01,
+      1.91,
+      3.15
+     ],
+     "norm_mm": 4.76,
+     "n_pairs": 1
+    },
+    "6": {
+     "id": "b6",
+     "family": "B",
+     "address": [
+      9,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      11.09,
+      -2.91,
+      -1.1
+     ],
+     "v_cam_mm": [
+      -4.39,
+      7.65,
+      -7.41
+     ],
+     "norm_mm": 11.51,
+     "n_pairs": 3
+    },
+    "8": {
+     "id": "b8",
+     "family": "B",
+     "address": [
+      11,
+      2
+     ],
+     "elev_deg": 70.0,
+     "v_base_mm": [
+      5.72,
+      -1.66,
+      -1.64
+     ],
+     "v_cam_mm": [
+      -5.94,
+      0.96,
+      1.4
+     ],
+     "norm_mm": 6.17,
+     "n_pairs": 3
+    },
+    "_model_residual_mm": {
+     "median": 0.76,
+     "max": 0.76
+    }
+   }
+  },
+  {
+   "run": "2209-box-ray-demo1",
+   "skipped": {
+    "4": "no mask"
+   },
+   "pairs": [
+    {
+     "run": "2209-box-ray-demo1",
+     "i": 0,
+     "j": 1,
+     "id_i": "b0",
+     "id_j": "b1.1",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 46.0,
+     "n_ratio": 84,
+     "n_essential": 57,
+     "n_rigid": 48,
+     "n": 48,
+     "med_mm": 8.72,
+     "p90_mm": 10.46,
+     "max_mm": 14.75,
+     "mean_vec_mm": [
+      2.28,
+      -4.04,
+      -7.17
+     ],
+     "mean_vec_norm_mm": 8.54,
+     "consistency": 0.995,
+     "resid_after_mean_mm": 1.64,
+     "rigid_rot_deg": 0.89,
+     "rigid_resid_med_mm": 1.8,
+     "epi_pose_med_px": 3.99,
+     "epi_pose_p90_px": 5.0,
+     "range_i_m": 0.379,
+     "range_j_m": 0.176
+    },
+    {
+     "run": "2209-box-ray-demo1",
+     "i": 0,
+     "j": 2,
+     "id_i": "b0",
+     "id_j": "b2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 85.7,
+     "n_ratio": 31,
+     "n_essential": 22,
+     "n_rigid": 17,
+     "n": 17,
+     "med_mm": 10.45,
+     "p90_mm": 11.34,
+     "max_mm": 12.13,
+     "mean_vec_mm": [
+      3.5,
+      -2.83,
+      -8.73
+     ],
+     "mean_vec_norm_mm": 9.82,
+     "consistency": 0.998,
+     "resid_after_mean_mm": 1.16,
+     "rigid_rot_deg": 1.88,
+     "rigid_resid_med_mm": 1.15,
+     "epi_pose_med_px": 1.18,
+     "epi_pose_p90_px": 2.68,
+     "range_i_m": 0.379,
+     "range_j_m": 0.144
+    },
+    {
+     "run": "2209-box-ray-demo1",
+     "i": 0,
+     "j": 3,
+     "id_i": "b0",
+     "id_j": "b3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 119.5,
+     "n_ratio": 32,
+     "n_essential": 14,
+     "n_rigid": 12
+    },
+    {
+     "run": "2209-box-ray-demo1",
+     "i": 1,
+     "j": 2,
+     "id_i": "b1.1",
+     "id_j": "b2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 55.4,
+     "n_ratio": 44,
+     "n_essential": 30,
+     "n_rigid": 29,
+     "n": 29,
+     "med_mm": 2.23,
+     "p90_mm": 2.81,
+     "max_mm": 4.35,
+     "mean_vec_mm": [
+      1.04,
+      1.47,
+      -0.99
+     ],
+     "mean_vec_norm_mm": 2.05,
+     "consistency": 0.891,
+     "resid_after_mean_mm": 0.97,
+     "rigid_rot_deg": 1.1,
+     "rigid_resid_med_mm": 0.71,
+     "epi_pose_med_px": 6.44,
+     "epi_pose_p90_px": 7.73,
+     "range_i_m": 0.176,
+     "range_j_m": 0.145
+    },
+    {
+     "run": "2209-box-ray-demo1",
+     "i": 1,
+     "j": 3,
+     "id_i": "b1.1",
+     "id_j": "b3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 109.0,
+     "n_ratio": 34,
+     "n_essential": 19,
+     "n_rigid": 17,
+     "n": 17,
+     "med_mm": 6.9,
+     "p90_mm": 8.39,
+     "max_mm": 9.1,
+     "mean_vec_mm": [
+      2.58,
+      -5.97,
+      1.84
+     ],
+     "mean_vec_norm_mm": 6.76,
+     "consistency": 0.984,
+     "resid_after_mean_mm": 1.33,
+     "rigid_rot_deg": 2.2,
+     "rigid_resid_med_mm": 1.31,
+     "epi_pose_med_px": 5.82,
+     "epi_pose_p90_px": 7.42,
+     "range_i_m": 0.18,
+     "range_j_m": 0.217
+    },
+    {
+     "run": "2209-box-ray-demo1",
+     "i": 2,
+     "j": 3,
+     "id_i": "b2",
+     "id_j": "b3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 128.6,
+     "n_ratio": 23,
+     "n_essential": 18,
+     "n_rigid": 15,
+     "n": 15,
+     "med_mm": 8.64,
+     "p90_mm": 9.69,
+     "max_mm": 10.06,
+     "mean_vec_mm": [
+      2.18,
+      -7.62,
+      3.29
+     ],
+     "mean_vec_norm_mm": 8.58,
+     "consistency": 0.994,
+     "resid_after_mean_mm": 1.09,
+     "rigid_rot_deg": 2.66,
+     "rigid_resid_med_mm": 0.99,
+     "epi_pose_med_px": 11.52,
+     "epi_pose_p90_px": 12.13,
+     "range_i_m": 0.152,
+     "range_j_m": 0.22
+    }
+   ],
+   "per_view": {
+    "0": {
+     "id": "b0",
+     "family": "B",
+     "address": null,
+     "elev_deg": 63.6,
+     "v_base_mm": [
+      -2.76,
+      4.28,
+      5.32
+     ],
+     "v_cam_mm": [
+      1.53,
+      1.76,
+      -6.99
+     ],
+     "norm_mm": 7.36,
+     "n_pairs": 2
+    },
+    "1": {
+     "id": "b1.1",
+     "family": "B",
+     "address": [
+      1,
+      2
+     ],
+     "elev_deg": 70.0,
+     "v_base_mm": [
+      -0.34,
+      0.12,
+      -2.01
+     ],
+     "v_cam_mm": [
+      0.19,
+      0.97,
+      1.78
+     ],
+     "norm_mm": 2.04,
+     "n_pairs": 3
+    },
+    "2": {
+     "id": "b2",
+     "family": "B",
+     "address": [
+      1,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      0.59,
+      1.57,
+      -3.25
+     ],
+     "v_cam_mm": [
+      1.45,
+      -3.03,
+      1.45
+     ],
+     "norm_mm": 3.66,
+     "n_pairs": 3
+    },
+    "3": {
+     "id": "b3",
+     "family": "B",
+     "address": [
+      7,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      2.51,
+      -5.96,
+      -0.06
+     ],
+     "v_cam_mm": [
+      1.85,
+      -4.03,
+      -4.7
+     ],
+     "norm_mm": 6.46,
+     "n_pairs": 2
+    },
+    "_model_residual_mm": {
+     "median": 0.28,
+     "max": 0.3
+    }
+   }
+  },
+  {
+   "run": "2209-box-ray-demo2",
+   "skipped": {},
+   "pairs": [
+    {
+     "run": "2209-box-ray-demo2",
+     "i": 0,
+     "j": 1,
+     "id_i": "b0",
+     "id_j": "b1",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 180.0,
+     "n_ratio": 83,
+     "n_essential": 59,
+     "n_rigid": 52,
+     "n": 52,
+     "med_mm": 9.79,
+     "p90_mm": 12.8,
+     "max_mm": 14.25,
+     "mean_vec_mm": [
+      1.97,
+      -3.44,
+      -8.6
+     ],
+     "mean_vec_norm_mm": 9.47,
+     "consistency": 0.997,
+     "resid_after_mean_mm": 1.58,
+     "rigid_rot_deg": 4.81,
+     "rigid_resid_med_mm": 1.66,
+     "epi_pose_med_px": 1.34,
+     "epi_pose_p90_px": 2.7,
+     "range_i_m": 0.406,
+     "range_j_m": 0.211
+    }
+   ],
+   "per_view": {
+    "0": {
+     "id": "b0",
+     "family": "A",
+     "address": null,
+     "elev_deg": 63.6,
+     "v_base_mm": [
+      -0.98,
+      1.72,
+      4.3
+     ],
+     "v_cam_mm": [
+      0.23,
+      -0.22,
+      -4.72
+     ],
+     "norm_mm": 4.73,
+     "n_pairs": 1
+    },
+    "1": {
+     "id": "b1",
+     "family": "B",
+     "address": [
+      1,
+      2
+     ],
+     "elev_deg": 70.0,
+     "v_base_mm": [
+      0.98,
+      -1.72,
+      -4.3
+     ],
+     "v_cam_mm": [
+      0.14,
+      -0.39,
+      4.72
+     ],
+     "norm_mm": 4.73,
+     "n_pairs": 1
+    },
+    "_model_residual_mm": {
+     "median": 0.0,
+     "max": 0.0
+    }
+   }
+  },
+  {
+   "run": "2209-box-ray-demo3",
+   "skipped": {
+    "0": "no mask"
+   },
+   "pairs": [],
+   "per_view": {}
+  },
+  {
+   "run": "2209-box-ray-demo4",
+   "skipped": {
+    "3": "no mask"
+   },
+   "pairs": [
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 0,
+     "j": 1,
+     "id_i": "b0",
+     "id_j": "b1",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 44.7,
+     "n_ratio": 72,
+     "n_essential": 56,
+     "n_rigid": 50,
+     "n": 50,
+     "med_mm": 11.05,
+     "p90_mm": 12.88,
+     "max_mm": 14.23,
+     "mean_vec_mm": [
+      0.67,
+      -5.83,
+      -8.72
+     ],
+     "mean_vec_norm_mm": 10.51,
+     "consistency": 0.995,
+     "resid_after_mean_mm": 1.95,
+     "rigid_rot_deg": 1.28,
+     "rigid_resid_med_mm": 1.95,
+     "epi_pose_med_px": 3.11,
+     "epi_pose_p90_px": 5.01,
+     "range_i_m": 0.408,
+     "range_j_m": 0.212
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 0,
+     "j": 2,
+     "id_i": "b0",
+     "id_j": "b2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 64.4,
+     "n_ratio": 28,
+     "n_essential": 14,
+     "n_rigid": 11
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 0,
+     "j": 4,
+     "id_i": "b0",
+     "id_j": "b4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 87.1,
+     "n_ratio": 0
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 0,
+     "j": 5,
+     "id_i": "b0",
+     "id_j": "b5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 124.4,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 1,
+     "j": 2,
+     "id_i": "b1",
+     "id_j": "b2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 71.0,
+     "n_ratio": 37,
+     "n_essential": 23,
+     "n_rigid": 23,
+     "n": 23,
+     "med_mm": 2.92,
+     "p90_mm": 3.6,
+     "max_mm": 7.45,
+     "mean_vec_mm": [
+      -2.39,
+      0.27,
+      -0.47
+     ],
+     "mean_vec_norm_mm": 2.45,
+     "consistency": 0.814,
+     "resid_after_mean_mm": 1.09,
+     "rigid_rot_deg": 2.59,
+     "rigid_resid_med_mm": 1.09,
+     "epi_pose_med_px": 0.46,
+     "epi_pose_p90_px": 2.52,
+     "range_i_m": 0.211,
+     "range_j_m": 0.277
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 1,
+     "j": 4,
+     "id_i": "b1",
+     "id_j": "b4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 127.4,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 1,
+     "j": 5,
+     "id_i": "b1",
+     "id_j": "b5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 81.1,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 2,
+     "j": 4,
+     "id_i": "b2",
+     "id_j": "b4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 68.9,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 2,
+     "j": 5,
+     "id_i": "b2",
+     "id_j": "b5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 116.2,
+     "n_ratio": 16,
+     "n_essential": 4,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-box-ray-demo4",
+     "i": 4,
+     "j": 5,
+     "id_i": "b4",
+     "id_j": "b5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 148.0,
+     "n_ratio": 0
+    }
+   ],
+   "per_view": {
+    "0": {
+     "id": "b0",
+     "family": "B",
+     "address": null,
+     "elev_deg": 63.6,
+     "v_base_mm": [
+      0.35,
+      3.8,
+      5.97
+     ],
+     "v_cam_mm": [
+      -1.56,
+      0.85,
+      -6.86
+     ],
+     "norm_mm": 7.08,
+     "n_pairs": 1
+    },
+    "1": {
+     "id": "b1",
+     "family": "B",
+     "address": [
+      1,
+      2
+     ],
+     "elev_deg": 70.0,
+     "v_base_mm": [
+      1.02,
+      -2.03,
+      -2.75
+     ],
+     "v_cam_mm": [
+      0.27,
+      -1.18,
+      3.36
+     ],
+     "norm_mm": 3.57,
+     "n_pairs": 2
+    },
+    "2": {
+     "id": "b2",
+     "family": "B",
+     "address": [
+      2,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      -1.37,
+      -1.76,
+      -3.22
+     ],
+     "v_cam_mm": [
+      2.18,
+      2.77,
+      1.71
+     ],
+     "norm_mm": 3.92,
+     "n_pairs": 1
+    },
+    "_model_residual_mm": {
+     "median": 0.0,
+     "max": 0.0
+    }
+   }
+  },
+  {
+   "run": "2209-compute-ray-demo11",
+   "skipped": {
+    "4": "no mask"
+   },
+   "pairs": [
+    {
+     "run": "2209-compute-ray-demo11",
+     "i": 0,
+     "j": 1,
+     "id_i": "c0",
+     "id_j": "c1",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 79.7,
+     "n_ratio": 68,
+     "n_essential": 50,
+     "n_rigid": 47,
+     "n": 47,
+     "med_mm": 11.03,
+     "p90_mm": 14.1,
+     "max_mm": 15.47,
+     "mean_vec_mm": [
+      4.4,
+      -5.75,
+      -8.49
+     ],
+     "mean_vec_norm_mm": 11.16,
+     "consistency": 0.996,
+     "resid_after_mean_mm": 2.14,
+     "rigid_rot_deg": 6.02,
+     "rigid_resid_med_mm": 2.01,
+     "epi_pose_med_px": 6.88,
+     "epi_pose_p90_px": 8.27,
+     "range_i_m": 0.383,
+     "range_j_m": 0.157
+    },
+    {
+     "run": "2209-compute-ray-demo11",
+     "i": 0,
+     "j": 2,
+     "id_i": "c0",
+     "id_j": "c2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 95.5,
+     "n_ratio": 49,
+     "n_essential": 37,
+     "n_rigid": 35,
+     "n": 35,
+     "med_mm": 10.06,
+     "p90_mm": 13.12,
+     "max_mm": 16.27,
+     "mean_vec_mm": [
+      3.99,
+      -3.27,
+      -8.84
+     ],
+     "mean_vec_norm_mm": 10.23,
+     "consistency": 0.995,
+     "resid_after_mean_mm": 1.45,
+     "rigid_rot_deg": 2.27,
+     "rigid_resid_med_mm": 1.78,
+     "epi_pose_med_px": 0.61,
+     "epi_pose_p90_px": 2.6,
+     "range_i_m": 0.381,
+     "range_j_m": 0.163
+    },
+    {
+     "run": "2209-compute-ray-demo11",
+     "i": 0,
+     "j": 3,
+     "id_i": "c0",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 104.5,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo11",
+     "i": 1,
+     "j": 2,
+     "id_i": "c1",
+     "id_j": "c2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 55.9,
+     "n_ratio": 59,
+     "n_essential": 46,
+     "n_rigid": 45,
+     "n": 45,
+     "med_mm": 2.78,
+     "p90_mm": 3.32,
+     "max_mm": 6.18,
+     "mean_vec_mm": [
+      0.0,
+      2.01,
+      -1.26
+     ],
+     "mean_vec_norm_mm": 2.38,
+     "consistency": 0.842,
+     "resid_after_mean_mm": 1.21,
+     "rigid_rot_deg": 0.69,
+     "rigid_resid_med_mm": 1.12,
+     "epi_pose_med_px": 5.41,
+     "epi_pose_p90_px": 7.04,
+     "range_i_m": 0.156,
+     "range_j_m": 0.164
+    },
+    {
+     "run": "2209-compute-ray-demo11",
+     "i": 1,
+     "j": 3,
+     "id_i": "c1",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 140.8,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo11",
+     "i": 2,
+     "j": 3,
+     "id_i": "c2",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 85.0,
+     "n_ratio": 5
+    }
+   ],
+   "per_view": {
+    "0": {
+     "id": "c0",
+     "family": "B",
+     "address": null,
+     "elev_deg": 63.6,
+     "v_base_mm": [
+      -2.8,
+      3.01,
+      5.78
+     ],
+     "v_cam_mm": [
+      1.66,
+      0.42,
+      -6.88
+     ],
+     "norm_mm": 7.09,
+     "n_pairs": 2
+    },
+    "1": {
+     "id": "c1",
+     "family": "B",
+     "address": [
+      1,
+      2
+     ],
+     "elev_deg": 70.0,
+     "v_base_mm": [
+      1.47,
+      -2.59,
+      -2.41
+     ],
+     "v_cam_mm": [
+      -0.69,
+      1.89,
+      3.25
+     ],
+     "norm_mm": 3.83,
+     "n_pairs": 2
+    },
+    "2": {
+     "id": "c2",
+     "family": "B",
+     "address": [
+      1,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      1.33,
+      -0.42,
+      -3.37
+     ],
+     "v_cam_mm": [
+      0.68,
+      -1.8,
+      3.1
+     ],
+     "norm_mm": 3.64,
+     "n_pairs": 2
+    },
+    "_model_residual_mm": {
+     "median": 0.37,
+     "max": 0.37
+    }
+   }
+  },
+  {
+   "run": "2209-compute-ray-demo12",
+   "skipped": {},
+   "pairs": [
+    {
+     "run": "2209-compute-ray-demo12",
+     "i": 0,
+     "j": 1,
+     "id_i": "c0",
+     "id_j": "c1",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 115.7,
+     "n_ratio": 4
+    },
+    {
+     "run": "2209-compute-ray-demo12",
+     "i": 0,
+     "j": 2,
+     "id_i": "c0",
+     "id_j": "c2",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 160.5,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo12",
+     "i": 1,
+     "j": 2,
+     "id_i": "c1",
+     "id_j": "c2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 83.8,
+     "n_ratio": 3
+    }
+   ],
+   "per_view": {}
+  },
+  {
+   "run": "2209-compute-ray-demo13",
+   "skipped": {},
+   "pairs": [
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 1,
+     "id_i": "c0",
+     "id_j": "c1",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 61.2,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 2,
+     "id_i": "c0",
+     "id_j": "c2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 93.9,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 3,
+     "id_i": "c0",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 80.1,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 4,
+     "id_i": "c0",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 120.8,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 5,
+     "id_i": "c0",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 121.2,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 6,
+     "id_i": "c0",
+     "id_j": "c6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 127.5,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 7,
+     "id_i": "c0",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 96.2,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 8,
+     "id_i": "c0",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 96.8,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 0,
+     "j": 9,
+     "id_i": "c0",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 65.2,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 1,
+     "j": 2,
+     "id_i": "c1",
+     "id_j": "c2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 75.6,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 1,
+     "j": 3,
+     "id_i": "c1",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 42.6,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 1,
+     "j": 4,
+     "id_i": "c1",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 140.3,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 1,
+     "j": 5,
+     "id_i": "c1",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 144.1,
+     "n_ratio": 4
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 1,
+     "j": 6,
+     "id_i": "c1",
+     "id_j": "c6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 163.9,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 1,
+     "j": 7,
+     "id_i": "c1",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 94.1,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 1,
+     "j": 8,
+     "id_i": "c1",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 50.3,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 1,
+     "j": 9,
+     "id_i": "c1",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 69.3,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 2,
+     "j": 3,
+     "id_i": "c2",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 33.2,
+     "n_ratio": 11
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 2,
+     "j": 4,
+     "id_i": "c2",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 137.8,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 2,
+     "j": 5,
+     "id_i": "c2",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 68.5,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 2,
+     "j": 6,
+     "id_i": "c2",
+     "id_j": "c6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 114.3,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 2,
+     "j": 7,
+     "id_i": "c2",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 159.9,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 2,
+     "j": 8,
+     "id_i": "c2",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 34.3,
+     "n_ratio": 4
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 2,
+     "j": 9,
+     "id_i": "c2",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 144.6,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 3,
+     "j": 4,
+     "id_i": "c3",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 158.5,
+     "n_ratio": 4
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 3,
+     "j": 5,
+     "id_i": "c3",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 101.5,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 3,
+     "j": 6,
+     "id_i": "c3",
+     "id_j": "c6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 144.5,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 3,
+     "j": 7,
+     "id_i": "c3",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 132.6,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 3,
+     "j": 8,
+     "id_i": "c3",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 17.2,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 3,
+     "j": 9,
+     "id_i": "c3",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 112.0,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 4,
+     "j": 5,
+     "id_i": "c4",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 72.8,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 4,
+     "j": 6,
+     "id_i": "c4",
+     "id_j": "c6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 25.5,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 4,
+     "j": 7,
+     "id_i": "c4",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 46.9,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 4,
+     "j": 8,
+     "id_i": "c4",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 141.3,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 4,
+     "j": 9,
+     "id_i": "c4",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 76.5,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 5,
+     "j": 6,
+     "id_i": "c5",
+     "id_j": "c6",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 47.3,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 5,
+     "j": 7,
+     "id_i": "c5",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 119.6,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 5,
+     "j": 8,
+     "id_i": "c5",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 96.2,
+     "n_ratio": 0
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 5,
+     "j": 9,
+     "id_i": "c5",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 146.5,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 6,
+     "j": 7,
+     "id_i": "c6",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 72.4,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 6,
+     "j": 8,
+     "id_i": "c6",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 131.6,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 6,
+     "j": 9,
+     "id_i": "c6",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 101.0,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 7,
+     "j": 8,
+     "id_i": "c7",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 126.7,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 7,
+     "j": 9,
+     "id_i": "c7",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 33.2,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo13",
+     "i": 8,
+     "j": 9,
+     "id_i": "c8",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 116.4,
+     "n_ratio": 4
+    }
+   ],
+   "per_view": {}
+  },
+  {
+   "run": "2209-compute-ray-demo14",
+   "skipped": {
+    "0": "no mask"
+   },
+   "pairs": [],
+   "per_view": {}
+  },
+  {
+   "run": "2209-compute-ray-demo15",
+   "skipped": {},
+   "pairs": [],
+   "per_view": {}
+  },
+  {
+   "run": "2209-compute-ray-demo16",
+   "skipped": {},
+   "pairs": [
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 0,
+     "j": 1,
+     "id_i": "c0",
+     "id_j": "c1",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 111.4,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 0,
+     "j": 2,
+     "id_i": "c0",
+     "id_j": "c2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 136.4,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 0,
+     "j": 3,
+     "id_i": "c0",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 155.3,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 0,
+     "j": 4,
+     "id_i": "c0",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 133.0,
+     "n_ratio": 14
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 0,
+     "j": 5,
+     "id_i": "c0",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 83.6,
+     "n_ratio": 38,
+     "n_essential": 37,
+     "n_rigid": 36,
+     "n": 36,
+     "med_mm": 14.41,
+     "p90_mm": 16.28,
+     "max_mm": 18.31,
+     "mean_vec_mm": [
+      6.44,
+      -6.27,
+      -11.04
+     ],
+     "mean_vec_norm_mm": 14.24,
+     "consistency": 0.998,
+     "resid_after_mean_mm": 1.18,
+     "rigid_rot_deg": 2.44,
+     "rigid_resid_med_mm": 1.23,
+     "epi_pose_med_px": 6.83,
+     "epi_pose_p90_px": 10.23,
+     "range_i_m": 0.425,
+     "range_j_m": 0.168
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 1,
+     "j": 2,
+     "id_i": "c1",
+     "id_j": "c2",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 103.1,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 1,
+     "j": 3,
+     "id_i": "c1",
+     "id_j": "c3",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 58.4,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 1,
+     "j": 4,
+     "id_i": "c1",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 105.9,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 1,
+     "j": 5,
+     "id_i": "c1",
+     "id_j": "c5",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 130.3,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 2,
+     "j": 3,
+     "id_i": "c2",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 44.8,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 2,
+     "j": 4,
+     "id_i": "c2",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 54.5,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 2,
+     "j": 5,
+     "id_i": "c2",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 94.1,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 3,
+     "j": 4,
+     "id_i": "c3",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 70.6,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 3,
+     "j": 5,
+     "id_i": "c3",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 120.6,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo16",
+     "i": 4,
+     "j": 5,
+     "id_i": "c4",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 50.1,
+     "n_ratio": 87,
+     "n_essential": 79,
+     "n_rigid": 76,
+     "n": 76,
+     "med_mm": 1.95,
+     "p90_mm": 2.17,
+     "max_mm": 3.09,
+     "mean_vec_mm": [
+      0.28,
+      -1.68,
+      0.82
+     ],
+     "mean_vec_norm_mm": 1.89,
+     "consistency": 0.959,
+     "resid_after_mean_mm": 0.36,
+     "rigid_rot_deg": 0.33,
+     "rigid_resid_med_mm": 0.37,
+     "epi_pose_med_px": 6.28,
+     "epi_pose_p90_px": 7.63,
+     "range_i_m": 0.159,
+     "range_j_m": 0.161
+    }
+   ],
+   "per_view": {
+    "0": {
+     "id": "c0",
+     "family": "B",
+     "address": null,
+     "elev_deg": 63.6,
+     "v_base_mm": [
+      -4.2,
+      3.62,
+      7.63
+     ],
+     "v_cam_mm": [
+      2.74,
+      0.27,
+      -9.02
+     ],
+     "norm_mm": 9.43,
+     "n_pairs": 1
+    },
+    "4": {
+     "id": "c4",
+     "family": "B",
+     "address": [
+      2,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      1.96,
+      -0.97,
+      -4.23
+     ],
+     "v_cam_mm": [
+      -0.43,
+      -1.86,
+      4.36
+     ],
+     "norm_mm": 4.76,
+     "n_pairs": 1
+    },
+    "5": {
+     "id": "c5",
+     "family": "B",
+     "address": [
+      2,
+      2
+     ],
+     "elev_deg": 70.0,
+     "v_base_mm": [
+      2.24,
+      -2.65,
+      -3.41
+     ],
+     "v_cam_mm": [
+      -2.01,
+      1.49,
+      4.17
+     ],
+     "norm_mm": 4.86,
+     "n_pairs": 2
+    },
+    "_model_residual_mm": {
+     "median": 0.0,
+     "max": 0.0
+    }
+   }
+  },
+  {
+   "run": "2209-compute-ray-demo5",
+   "skipped": {
+    "7": "no mask",
+    "8": "mask spilled"
+   },
+   "pairs": [
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 0,
+     "j": 1,
+     "id_i": "c0",
+     "id_j": "c1",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 62.1,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 0,
+     "j": 2,
+     "id_i": "c0",
+     "id_j": "c5.2",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 99.5,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 0,
+     "j": 3,
+     "id_i": "c0",
+     "id_j": "c3",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 71.1,
+     "n_ratio": 10
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 0,
+     "j": 4,
+     "id_i": "c0",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 133.9,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 0,
+     "j": 5,
+     "id_i": "c0",
+     "id_j": "c5",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 38.6,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 0,
+     "j": 6,
+     "id_i": "c0",
+     "id_j": "c5.6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 125.8,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 1,
+     "j": 2,
+     "id_i": "c1",
+     "id_j": "c5.2",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 152.8,
+     "n_ratio": 22,
+     "n_essential": 9,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 1,
+     "j": 3,
+     "id_i": "c1",
+     "id_j": "c3",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 115.1,
+     "n_ratio": 11
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 1,
+     "j": 4,
+     "id_i": "c1",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 112.9,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 1,
+     "j": 5,
+     "id_i": "c1",
+     "id_j": "c5",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 51.9,
+     "n_ratio": 15,
+     "n_essential": 6,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 1,
+     "j": 6,
+     "id_i": "c1",
+     "id_j": "c5.6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 156.2,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 2,
+     "j": 3,
+     "id_i": "c5.2",
+     "id_j": "c3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 37.7,
+     "n_ratio": 11
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 2,
+     "j": 4,
+     "id_i": "c5.2",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 64.1,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 2,
+     "j": 5,
+     "id_i": "c5.2",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 100.9,
+     "n_ratio": 12
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 2,
+     "j": 6,
+     "id_i": "c5.2",
+     "id_j": "c5.6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 50.7,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 3,
+     "j": 4,
+     "id_i": "c3",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 71.6,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 3,
+     "j": 5,
+     "id_i": "c3",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 63.3,
+     "n_ratio": 23,
+     "n_essential": 14,
+     "n_rigid": 11
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 3,
+     "j": 6,
+     "id_i": "c3",
+     "id_j": "c5.6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 88.0,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 4,
+     "j": 5,
+     "id_i": "c4",
+     "id_j": "c5",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 99.4,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 4,
+     "j": 6,
+     "id_i": "c4",
+     "id_j": "c5.6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 78.6,
+     "n_ratio": 17,
+     "n_essential": 6,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo5",
+     "i": 5,
+     "j": 6,
+     "id_i": "c5",
+     "id_j": "c5.6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 149.8,
+     "n_ratio": 10
+    }
+   ],
+   "per_view": {}
+  },
+  {
+   "run": "2209-compute-ray-demo6",
+   "skipped": {},
+   "pairs": [
+    {
+     "run": "2209-compute-ray-demo6",
+     "i": 0,
+     "j": 1,
+     "id_i": "c0",
+     "id_j": "c1",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 180.0,
+     "n_ratio": 18,
+     "n_essential": 8,
+     "n_rigid": 0
+    }
+   ],
+   "per_view": {}
+  },
+  {
+   "run": "2209-compute-ray-demo7",
+   "skipped": {},
+   "pairs": [
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 0,
+     "j": 1,
+     "id_i": "c0",
+     "id_j": "c1",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 104.7,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 0,
+     "j": 2,
+     "id_i": "c0",
+     "id_j": "c2",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 114.4,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 0,
+     "j": 3,
+     "id_i": "c0",
+     "id_j": "c3",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 95.7,
+     "n_ratio": 17,
+     "n_essential": 10,
+     "n_rigid": 1
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 0,
+     "j": 4,
+     "id_i": "c0",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 63.3,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 0,
+     "j": 5,
+     "id_i": "c0",
+     "id_j": "c5",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 64.5,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 0,
+     "j": 6,
+     "id_i": "c0",
+     "id_j": "c6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 83.4,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 0,
+     "j": 7,
+     "id_i": "c0",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 125.3,
+     "n_ratio": 4
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 1,
+     "j": 2,
+     "id_i": "c1",
+     "id_j": "c2",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 118.8,
+     "n_ratio": 12
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 1,
+     "j": 3,
+     "id_i": "c1",
+     "id_j": "c3",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 137.4,
+     "n_ratio": 14
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 1,
+     "j": 4,
+     "id_i": "c1",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 42.6,
+     "n_ratio": 22,
+     "n_essential": 5,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 1,
+     "j": 5,
+     "id_i": "c1",
+     "id_j": "c5",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 62.6,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 1,
+     "j": 6,
+     "id_i": "c1",
+     "id_j": "c6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 104.9,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 1,
+     "j": 7,
+     "id_i": "c1",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 79.9,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 2,
+     "j": 3,
+     "id_i": "c2",
+     "id_j": "c3",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 21.2,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 2,
+     "j": 4,
+     "id_i": "c2",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 127.5,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 2,
+     "j": 5,
+     "id_i": "c2",
+     "id_j": "c5",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 178.5,
+     "n_ratio": 12
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 2,
+     "j": 6,
+     "id_i": "c2",
+     "id_j": "c6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 124.1,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 2,
+     "j": 7,
+     "id_i": "c2",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 109.5,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 3,
+     "j": 4,
+     "id_i": "c3",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 129.7,
+     "n_ratio": 17,
+     "n_essential": 4,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 3,
+     "j": 5,
+     "id_i": "c3",
+     "id_j": "c5",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 157.3,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 3,
+     "j": 6,
+     "id_i": "c3",
+     "id_j": "c6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 114.4,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 3,
+     "j": 7,
+     "id_i": "c3",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 117.5,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 4,
+     "j": 5,
+     "id_i": "c4",
+     "id_j": "c5",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 53.1,
+     "n_ratio": 15,
+     "n_essential": 8,
+     "n_rigid": 3
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 4,
+     "j": 6,
+     "id_i": "c4",
+     "id_j": "c6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 108.2,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 4,
+     "j": 7,
+     "id_i": "c4",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 111.4,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 5,
+     "j": 6,
+     "id_i": "c5",
+     "id_j": "c6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 55.2,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 5,
+     "j": 7,
+     "id_i": "c5",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 70.9,
+     "n_ratio": 9
+    },
+    {
+     "run": "2209-compute-ray-demo7",
+     "i": 6,
+     "j": 7,
+     "id_i": "c6",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 44.5,
+     "n_ratio": 15,
+     "n_essential": 6,
+     "n_rigid": 0
+    }
+   ],
+   "per_view": {}
+  },
+  {
+   "run": "2209-compute-ray-demo8",
+   "skipped": {},
+   "pairs": [],
+   "per_view": {}
+  },
+  {
+   "run": "2209-compute-ray-demo9",
+   "skipped": {
+    "3": "no mask",
+    "5": "no mask"
+   },
+   "pairs": [
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 0,
+     "j": 1,
+     "id_i": "c0",
+     "id_j": "c1",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 51.2,
+     "n_ratio": 14
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 0,
+     "j": 2,
+     "id_i": "c0",
+     "id_j": "c2",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 18.4,
+     "n_ratio": 21,
+     "n_essential": 7,
+     "n_rigid": 3
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 0,
+     "j": 4,
+     "id_i": "c0",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 77.9,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 0,
+     "j": 6,
+     "id_i": "c0",
+     "id_j": "c6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 122.3,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 0,
+     "j": 7,
+     "id_i": "c0",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 105.0,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 0,
+     "j": 8,
+     "id_i": "c0",
+     "id_j": "c8",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 78.7,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 0,
+     "j": 9,
+     "id_i": "c0",
+     "id_j": "c9",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 131.5,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 1,
+     "j": 2,
+     "id_i": "c1",
+     "id_j": "c2",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 52.0,
+     "n_ratio": 24,
+     "n_essential": 1,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 1,
+     "j": 4,
+     "id_i": "c1",
+     "id_j": "c4",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 81.7,
+     "n_ratio": 17,
+     "n_essential": 4,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 1,
+     "j": 6,
+     "id_i": "c1",
+     "id_j": "c6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 104.5,
+     "n_ratio": 12
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 1,
+     "j": 7,
+     "id_i": "c1",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 154.0,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 1,
+     "j": 8,
+     "id_i": "c1",
+     "id_j": "c8",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 27.7,
+     "n_ratio": 12
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 1,
+     "j": 9,
+     "id_i": "c1",
+     "id_j": "c9",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 164.6,
+     "n_ratio": 10
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 2,
+     "j": 4,
+     "id_i": "c2",
+     "id_j": "c4",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 96.2,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 2,
+     "j": 6,
+     "id_i": "c2",
+     "id_j": "c6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 140.1,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 2,
+     "j": 7,
+     "id_i": "c2",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 109.5,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 2,
+     "j": 8,
+     "id_i": "c2",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 78.9,
+     "n_ratio": 10
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 2,
+     "j": 9,
+     "id_i": "c2",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 124.6,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 4,
+     "j": 6,
+     "id_i": "c4",
+     "id_j": "c6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 44.8,
+     "n_ratio": 16,
+     "n_essential": 7,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 4,
+     "j": 7,
+     "id_i": "c4",
+     "id_j": "c7",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 82.7,
+     "n_ratio": 5
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 4,
+     "j": 8,
+     "id_i": "c4",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 83.2,
+     "n_ratio": 10
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 4,
+     "j": 9,
+     "id_i": "c4",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 113.5,
+     "n_ratio": 13
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 6,
+     "j": 7,
+     "id_i": "c6",
+     "id_j": "c7",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 78.2,
+     "n_ratio": 8
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 6,
+     "j": 8,
+     "id_i": "c6",
+     "id_j": "c8",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 86.8,
+     "n_ratio": 15,
+     "n_essential": 6,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 6,
+     "j": 9,
+     "id_i": "c6",
+     "id_j": "c9",
+     "fam_i": "A",
+     "fam_j": "B",
+     "angle_deg": 86.3,
+     "n_ratio": 14
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 7,
+     "j": 8,
+     "id_i": "c7",
+     "id_j": "c8",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 164.3,
+     "n_ratio": 10
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 7,
+     "j": 9,
+     "id_i": "c7",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 38.2,
+     "n_ratio": 16,
+     "n_essential": 0,
+     "n_rigid": 0
+    },
+    {
+     "run": "2209-compute-ray-demo9",
+     "i": 8,
+     "j": 9,
+     "id_i": "c8",
+     "id_j": "c9",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 146.7,
+     "n_ratio": 12
+    }
+   ],
+   "per_view": {}
+  },
+  {
+   "run": "2209-smallcam-ray-demo5",
+   "skipped": {
+    "5": "mask spilled"
+   },
+   "pairs": [
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 0,
+     "j": 1,
+     "id_i": "s0",
+     "id_j": "s1",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 14.3,
+     "n_ratio": 56,
+     "n_essential": 50,
+     "n_rigid": 45,
+     "n": 45,
+     "med_mm": 11.88,
+     "p90_mm": 15.78,
+     "max_mm": 16.5,
+     "mean_vec_mm": [
+      4.13,
+      -6.5,
+      -9.73
+     ],
+     "mean_vec_norm_mm": 12.41,
+     "consistency": 0.998,
+     "resid_after_mean_mm": 1.77,
+     "rigid_rot_deg": 7.95,
+     "rigid_resid_med_mm": 1.46,
+     "epi_pose_med_px": 5.45,
+     "epi_pose_p90_px": 7.54,
+     "range_i_m": 0.409,
+     "range_j_m": 0.17
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 0,
+     "j": 2,
+     "id_i": "s0",
+     "id_j": "s2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 115.6,
+     "n_ratio": 22,
+     "n_essential": 18,
+     "n_rigid": 17,
+     "n": 17,
+     "med_mm": 14.17,
+     "p90_mm": 16.17,
+     "max_mm": 18.6,
+     "mean_vec_mm": [
+      2.9,
+      -10.79,
+      -8.77
+     ],
+     "mean_vec_norm_mm": 14.2,
+     "consistency": 0.995,
+     "resid_after_mean_mm": 0.95,
+     "rigid_rot_deg": 10.98,
+     "rigid_resid_med_mm": 0.8,
+     "epi_pose_med_px": 6.06,
+     "epi_pose_p90_px": 6.8,
+     "range_i_m": 0.41,
+     "range_j_m": 0.148
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 0,
+     "j": 3,
+     "id_i": "s0",
+     "id_j": "s3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 51.1,
+     "n_ratio": 50,
+     "n_essential": 47,
+     "n_rigid": 43,
+     "n": 43,
+     "med_mm": 13.44,
+     "p90_mm": 17.15,
+     "max_mm": 17.71,
+     "mean_vec_mm": [
+      3.84,
+      -9.08,
+      -9.58
+     ],
+     "mean_vec_norm_mm": 13.75,
+     "consistency": 0.997,
+     "resid_after_mean_mm": 2.12,
+     "rigid_rot_deg": 7.24,
+     "rigid_resid_med_mm": 1.5,
+     "epi_pose_med_px": 7.09,
+     "epi_pose_p90_px": 9.74,
+     "range_i_m": 0.408,
+     "range_j_m": 0.163
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 0,
+     "j": 4,
+     "id_i": "s0",
+     "id_j": "s4",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 107.7,
+     "n_ratio": 14
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 0,
+     "j": 6,
+     "id_i": "s0",
+     "id_j": "s6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 126.7,
+     "n_ratio": 0
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 0,
+     "j": 7,
+     "id_i": "s0",
+     "id_j": "s7",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 108.5,
+     "n_ratio": 4
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 0,
+     "j": 8,
+     "id_i": "s0",
+     "id_j": "s8",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 76.4,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 1,
+     "j": 2,
+     "id_i": "s1",
+     "id_j": "s2",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 129.9,
+     "n_ratio": 85,
+     "n_essential": 68,
+     "n_rigid": 68,
+     "n": 68,
+     "med_mm": 4.56,
+     "p90_mm": 5.28,
+     "max_mm": 7.0,
+     "mean_vec_mm": [
+      -0.85,
+      -4.47,
+      0.0
+     ],
+     "mean_vec_norm_mm": 4.55,
+     "consistency": 0.984,
+     "resid_after_mean_mm": 0.69,
+     "rigid_rot_deg": 2.47,
+     "rigid_resid_med_mm": 0.54,
+     "epi_pose_med_px": 7.96,
+     "epi_pose_p90_px": 9.32,
+     "range_i_m": 0.17,
+     "range_j_m": 0.148
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 1,
+     "j": 3,
+     "id_i": "s1",
+     "id_j": "s3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 63.8,
+     "n_ratio": 239,
+     "n_essential": 224,
+     "n_rigid": 224,
+     "n": 224,
+     "med_mm": 2.62,
+     "p90_mm": 2.96,
+     "max_mm": 4.15,
+     "mean_vec_mm": [
+      -0.39,
+      -2.59,
+      0.07
+     ],
+     "mean_vec_norm_mm": 2.62,
+     "consistency": 0.977,
+     "resid_after_mean_mm": 0.31,
+     "rigid_rot_deg": 0.48,
+     "rigid_resid_med_mm": 0.33,
+     "epi_pose_med_px": 7.03,
+     "epi_pose_p90_px": 7.33,
+     "range_i_m": 0.169,
+     "range_j_m": 0.163
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 1,
+     "j": 4,
+     "id_i": "s1",
+     "id_j": "s4",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 109.5,
+     "n_ratio": 80,
+     "n_essential": 70,
+     "n_rigid": 70,
+     "n": 70,
+     "med_mm": 6.54,
+     "p90_mm": 6.88,
+     "max_mm": 8.43,
+     "mean_vec_mm": [
+      4.5,
+      -4.59,
+      1.23
+     ],
+     "mean_vec_norm_mm": 6.54,
+     "consistency": 0.996,
+     "resid_after_mean_mm": 0.41,
+     "rigid_rot_deg": 1.69,
+     "rigid_resid_med_mm": 0.38,
+     "epi_pose_med_px": 16.55,
+     "epi_pose_p90_px": 17.37,
+     "range_i_m": 0.169,
+     "range_j_m": 0.147
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 1,
+     "j": 6,
+     "id_i": "s1",
+     "id_j": "s6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 121.8,
+     "n_ratio": 1
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 1,
+     "j": 7,
+     "id_i": "s1",
+     "id_j": "s7",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 108.6,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 1,
+     "j": 8,
+     "id_i": "s1",
+     "id_j": "s8",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 63.0,
+     "n_ratio": 4
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 2,
+     "j": 3,
+     "id_i": "s2",
+     "id_j": "s3",
+     "fam_i": "B",
+     "fam_j": "B",
+     "angle_deg": 70.9,
+     "n_ratio": 70,
+     "n_essential": 56,
+     "n_rigid": 55,
+     "n": 55,
+     "med_mm": 2.08,
+     "p90_mm": 2.84,
+     "max_mm": 4.7,
+     "mean_vec_mm": [
+      0.44,
+      1.92,
+      0.16
+     ],
+     "mean_vec_norm_mm": 1.98,
+     "consistency": 0.905,
+     "resid_after_mean_mm": 0.79,
+     "rigid_rot_deg": 2.54,
+     "rigid_resid_med_mm": 0.62,
+     "epi_pose_med_px": 2.39,
+     "epi_pose_p90_px": 3.84,
+     "range_i_m": 0.147,
+     "range_j_m": 0.163
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 2,
+     "j": 4,
+     "id_i": "s2",
+     "id_j": "s4",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 76.0,
+     "n_ratio": 19,
+     "n_essential": 8,
+     "n_rigid": 5
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 2,
+     "j": 6,
+     "id_i": "s2",
+     "id_j": "s6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 87.6,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 2,
+     "j": 7,
+     "id_i": "s2",
+     "id_j": "s7",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 78.0,
+     "n_ratio": 4
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 2,
+     "j": 8,
+     "id_i": "s2",
+     "id_j": "s8",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 156.3,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 3,
+     "j": 4,
+     "id_i": "s3",
+     "id_j": "s4",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 73.9,
+     "n_ratio": 93,
+     "n_essential": 74,
+     "n_rigid": 72,
+     "n": 72,
+     "med_mm": 5.36,
+     "p90_mm": 5.86,
+     "max_mm": 6.85,
+     "mean_vec_mm": [
+      4.85,
+      -1.99,
+      1.19
+     ],
+     "mean_vec_norm_mm": 5.38,
+     "consistency": 0.996,
+     "resid_after_mean_mm": 0.43,
+     "rigid_rot_deg": 1.25,
+     "rigid_resid_med_mm": 0.39,
+     "epi_pose_med_px": 10.44,
+     "epi_pose_p90_px": 12.61,
+     "range_i_m": 0.163,
+     "range_j_m": 0.147
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 3,
+     "j": 6,
+     "id_i": "s3",
+     "id_j": "s6",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 102.8,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 3,
+     "j": 7,
+     "id_i": "s3",
+     "id_j": "s7",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 122.2,
+     "n_ratio": 7
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 3,
+     "j": 8,
+     "id_i": "s3",
+     "id_j": "s8",
+     "fam_i": "B",
+     "fam_j": "A",
+     "angle_deg": 126.7,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 4,
+     "j": 6,
+     "id_i": "s4",
+     "id_j": "s6",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 29.0,
+     "n_ratio": 6
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 4,
+     "j": 7,
+     "id_i": "s4",
+     "id_j": "s7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 141.8,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 4,
+     "j": 8,
+     "id_i": "s4",
+     "id_j": "s8",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 121.5,
+     "n_ratio": 3
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 6,
+     "j": 7,
+     "id_i": "s6",
+     "id_j": "s7",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 123.5,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 6,
+     "j": 8,
+     "id_i": "s6",
+     "id_j": "s8",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 101.5,
+     "n_ratio": 2
+    },
+    {
+     "run": "2209-smallcam-ray-demo5",
+     "i": 7,
+     "j": 8,
+     "id_i": "s7",
+     "id_j": "s8",
+     "fam_i": "A",
+     "fam_j": "A",
+     "angle_deg": 78.8,
+     "n_ratio": 1
+    }
+   ],
+   "per_view": {
+    "0": {
+     "id": "s0",
+     "family": "B",
+     "address": null,
+     "elev_deg": 63.6,
+     "v_base_mm": [
+      -3.88,
+      7.48,
+      7.26
+     ],
+     "v_cam_mm": [
+      1.99,
+      3.89,
+      -10.23
+     ],
+     "norm_mm": 11.12,
+     "n_pairs": 3
+    },
+    "1": {
+     "id": "s1",
+     "family": "B",
+     "address": [
+      1,
+      2
+     ],
+     "elev_deg": 70.0,
+     "v_base_mm": [
+      0.17,
+      1.03,
+      -2.21
+     ],
+     "v_cam_mm": [
+      0.76,
+      -1.43,
+      1.83
+     ],
+     "norm_mm": 2.44,
+     "n_pairs": 4
+    },
+    "2": {
+     "id": "s2",
+     "family": "B",
+     "address": [
+      6,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      -0.76,
+      -3.41,
+      -2.0
+     ],
+     "v_cam_mm": [
+      1.21,
+      -3.63,
+      -1.23
+     ],
+     "norm_mm": 4.02,
+     "n_pairs": 3
+    },
+    "3": {
+     "id": "s3",
+     "family": "B",
+     "address": [
+      "face",
+      "top"
+     ],
+     "elev_deg": 90.0,
+     "v_base_mm": [
+      -0.19,
+      -1.55,
+      -2.11
+     ],
+     "v_cam_mm": [
+      1.4,
+      0.69,
+      2.11
+     ],
+     "norm_mm": 2.62,
+     "n_pairs": 4
+    },
+    "4": {
+     "id": "s4",
+     "family": "A",
+     "address": [
+      9,
+      1
+     ],
+     "elev_deg": 40.0,
+     "v_base_mm": [
+      4.67,
+      -3.55,
+      -0.95
+     ],
+     "v_cam_mm": [
+      4.16,
+      -3.38,
+      -2.56
+     ],
+     "norm_mm": 5.94,
+     "n_pairs": 2
+    },
+    "_model_residual_mm": {
+     "median": 0.25,
+     "max": 0.54
+    }
+   }
+  }
+ ],
+ "settings": {
+  "max_feat": 4000,
+  "ratio": 0.75,
+  "ransac_px": 2.0,
+  "min_inl": 15,
+  "lift_win": 2,
+  "edge_spread_m": 0.004,
+  "rigid_thr_m": 0.006,
+  "erode_px": 9,
+  "max_spill": 0.5
+ }
+}

@@ -1,0 +1,7 @@
+#0   object  138907 px  box [325, 365, 906, 718]
+  #1   label  89256 px  box [356, 401, 817, 606]
+    #4   barcode  5923 px  box [378, 428, 560, 463]
+    #2   barcode  4034 px  box [382, 530, 502, 565]
+    #6   barcode  3216 px  box [400, 480, 493, 518]
+    #3   barcode  3046 px  box [653, 475, 751, 508]
+    #5   barcode  3022 px  box [533, 478, 627, 515]

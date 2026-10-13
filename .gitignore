@@ -99,4 +99,7 @@ inspection/data/derived/
 # regenerable by investigation/fill_probe.py and hull_blueprint.py
 inspection/data/framing/
 inspection/data/tool/
+# heavy outputs of the IWM research experiments (masks, clouds, arrays); what a
+# report shows is committed next to it in investigation/iwm/<experiment>/evidence/
+inspection/data/iwm/
 inspection/cell/topview.png

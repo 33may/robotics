@@ -1,0 +1,122 @@
+[
+ {
+  "frame": "b1.1",
+  "variant": "full",
+  "turns": 9,
+  "tool_calls": 6,
+  "seconds": 39.1,
+  "nodes_before": 50,
+  "nodes_after": 51,
+  "nodes_final": 6,
+  "unnamed_dropped": 45,
+  "exhausted": false
+ },
+ {
+  "frame": "b1.4",
+  "variant": "full",
+  "turns": 9,
+  "tool_calls": 6,
+  "seconds": 35.0,
+  "nodes_before": 29,
+  "nodes_after": 24,
+  "nodes_final": 12,
+  "unnamed_dropped": 12,
+  "exhausted": false
+ },
+ {
+  "frame": "b4.5",
+  "variant": "full",
+  "turns": 11,
+  "tool_calls": 5,
+  "seconds": 40.2,
+  "nodes_before": 31,
+  "nodes_after": 29,
+  "nodes_final": 8,
+  "unnamed_dropped": 21,
+  "exhausted": false
+ },
+ {
+  "frame": "bc5.9",
+  "variant": "full",
+  "turns": 10,
+  "tool_calls": 7,
+  "seconds": 43.6,
+  "nodes_before": 28,
+  "nodes_after": 14,
+  "nodes_final": 8,
+  "unnamed_dropped": 6,
+  "exhausted": false
+ },
+ {
+  "frame": "c5.2",
+  "variant": "full",
+  "turns": 12,
+  "tool_calls": 10,
+  "seconds": 63.1,
+  "nodes_before": 34,
+  "nodes_after": 28,
+  "nodes_final": 15,
+  "unnamed_dropped": 13,
+  "exhausted": false
+ },
+ {
+  "frame": "c5.6",
+  "variant": "full",
+  "turns": 11,
+  "tool_calls": 9,
+  "seconds": 52.9,
+  "nodes_before": 54,
+  "nodes_after": 28,
+  "nodes_final": 16,
+  "unnamed_dropped": 12,
+  "exhausted": false
+ },
+ {
+  "frame": "c5.6",
+  "variant": "without_find",
+  "turns": 8,
+  "tool_calls": 6,
+  "seconds": 42.7,
+  "nodes_before": 54,
+  "nodes_after": 49,
+  "nodes_final": 12,
+  "unnamed_dropped": 37,
+  "exhausted": false
+ },
+ {
+  "frame": "c5.6",
+  "variant": "without_show",
+  "turns": 8,
+  "tool_calls": 4,
+  "seconds": 34.8,
+  "nodes_before": 54,
+  "nodes_after": 23,
+  "nodes_final": 2,
+  "unnamed_dropped": 21,
+  "exhausted": false
+ },
+ {
+  "frame": "c5.7",
+  "variant": "full",
+  "turns": 8,
+  "tool_calls": 5,
+  "seconds": 40.0,
+  "nodes_before": 59,
+  "nodes_after": 58,
+  "nodes_final": 19,
+  "unnamed_dropped": 39,
+  "exhausted": false
+ },
+ {
+  "frame": "c9.6",
+  "variant": "full",
+  "turns": 8,
+  "tool_calls": 6,
+  "seconds": 41.4,
+  "nodes_before": 48,
+  "nodes_after": 34,
+  "nodes_final": 16,
+  "unnamed_dropped": 18,
+  "exhausted": false
+ }
+]

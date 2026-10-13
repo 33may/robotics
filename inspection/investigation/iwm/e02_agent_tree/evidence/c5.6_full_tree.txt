@@ -1,0 +1,16 @@
+#0 front view box [243, 310, 1073, 719]
+  #2 lower front panel box [246, 446, 1073, 660] 59% of #0
+    #23 COM ports box [729, 544, 1015, 599] 6% of #2
+      #11 COM / DIO port box [724, 549, 862, 599] 49% of #23
+      #9 COM / CAN port box [901, 546, 988, 595] 39% of #23
+    #12 LAN ports box [502, 545, 704, 611] 5% of #2
+      #5 LAN 1G port box [538, 550, 610, 611] 49% of #12
+      #6 LAN 10G port box [623, 549, 703, 599] 46% of #12
+    #21 audio jacks box [437, 542, 523, 613] 2% of #2
+      #13 microphone jack (MIC IN) box [437, 578, 472, 610] 36% of #21
+      #15 line output jack (LINE OUT) box [488, 578, 522, 609] 32% of #21
+    #55 antenna ports box [306, 580, 408, 613] 1% of #2
+      #8 antenna port 2 box [376, 580, 407, 611] 50% of #55
+      #7 antenna port 1 box [306, 581, 337, 612] 50% of #55
+  #3 upper front panel box [241, 309, 1069, 471] 41% of #0
+    #4 sticker text="Chort" box [261, 338, 394, 392] 6% of #3

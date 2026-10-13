@@ -1,0 +1,12 @@
+#0 front face box [334, 315, 855, 700]
+  #2 product info label box [337, 353, 712, 587] 44% of #0
+    #4 barcode box [391, 378, 673, 471] 32% of #2
+    #16 model number text box [453, 473, 617, 504] 5% of #2
+    #8 FCC mark box [502, 543, 542, 575] 1% of #2
+    #6 recycle symbol box [560, 543, 596, 572] 1% of #2
+    #26 CE mark box [440, 543, 536, 575] 1% of #2
+    #22 WEEE symbol box [613, 543, 636, 575] 1% of #2
+    #23 made in china text box [543, 517, 588, 527] 1% of #2
+  #3 serial number label box [379, 601, 657, 664] 8% of #0
+    #7 serial number text box [378, 606, 528, 664] 49% of #3
+    #27 QR code box [600, 607, 644, 650] 12% of #3

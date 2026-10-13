@@ -1,0 +1,19 @@
+#0 object box [236, 225, 1068, 569]
+  #3 Front Face box [246, 365, 1058, 569] 58% of #0
+    #60 Array of USB 3.2 Ports box [530, 444, 853, 522] 5% of #3
+      #15 USB 3.2 Port 4 box [824, 444, 852, 521] 26% of #60
+      #10 USB 3.2 Port 2 box [626, 446, 654, 521] 25% of #60
+      #9 USB 3.2 Port 3 box [725, 445, 752, 521] 25% of #60
+      #11 USB 3.2 Port 1 box [530, 447, 558, 520] 24% of #60
+    #5 DC Input Terminal Block box [906, 459, 998, 508] 2% of #3
+    #13 USB 3.0 Dual Port box [425, 468, 482, 527] 2% of #3
+    #4 Power Button box [293, 462, 334, 500] 1% of #3
+    #47 DC Input Label box [898, 528, 1000, 542] 1% of #3
+    #8 HDMI Port box [370, 471, 393, 529] 1% of #3
+    #38 USB 3.2 Label 1 box [515, 395, 568, 414] 1% of #3
+    #48 USB 3.2 Label 3 box [711, 400, 769, 415] 1% of #3
+    #50 USB 3.2 Label 4 box [809, 399, 869, 413] 0% of #3
+    #49 USB 3.2 Label 2 box [609, 402, 667, 417] 0% of #3
+    #42 USB 3.0 Port Label box [426, 445, 478, 457] 0% of #3
+    #22 HDMI Port Label box [362, 447, 395, 458] 0% of #3
+  #2 Top Casing box [236, 225, 1060, 381] 42% of #0

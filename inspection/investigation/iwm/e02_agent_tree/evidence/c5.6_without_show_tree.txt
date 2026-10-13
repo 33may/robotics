@@ -1,0 +1,2 @@
+#0 object box [243, 310, 1073, 719]
+  #55 antenna connectors box [306, 580, 408, 613] 1% of #0

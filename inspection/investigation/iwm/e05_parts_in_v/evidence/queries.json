@@ -1,0 +1,335 @@
+{
+ "2209-compute-ray-demo5": {
+  "lan": {
+   "expected": [
+    "Ethernet Port 1",
+    "Ethernet Port 2",
+    "ethernet ports"
+   ],
+   "hits": [
+    "Ethernet Port 1",
+    "Ethernet Port 2",
+    "ethernet ports"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "serial": {
+   "expected": [
+    "Serial Port 1",
+    "Serial Port 2",
+    "Serial Ports Group"
+   ],
+   "hits": [
+    "Serial Port 1",
+    "Serial Port 2",
+    "Serial Ports Group"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "usb": {
+   "expected": [
+    "Array of USB 3.2 Ports",
+    "USB 3.0 Dual Port",
+    "USB 3.0 Port Label",
+    "USB 3.2 Label 1",
+    "USB 3.2 Label 2",
+    "USB 3.2 Label 3",
+    "USB 3.2 Label 4",
+    "USB 3.2 Port 1",
+    "USB 3.2 Port 2",
+    "USB 3.2 Port 3",
+    "USB 3.2 Port 4"
+   ],
+   "hits": [
+    "Array of USB 3.2 Ports",
+    "USB 3.0 Dual Port",
+    "USB 3.0 Port Label",
+    "USB 3.2 Label 1",
+    "USB 3.2 Label 2",
+    "USB 3.2 Label 3",
+    "USB 3.2 Label 4",
+    "USB 3.2 Port 1",
+    "USB 3.2 Port 2",
+    "USB 3.2 Port 3",
+    "USB 3.2 Port 4"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "hdmi": {
+   "expected": [
+    "HDMI Port",
+    "HDMI Port Label"
+   ],
+   "hits": [
+    "HDMI Port",
+    "HDMI Port Label"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "sticker": {
+   "expected": [
+    "Chort label"
+   ],
+   "hits": [
+    "Chort label"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "label": {
+   "expected": [
+    "Chort label",
+    "DC Input Label",
+    "HDMI Port Label",
+    "USB 3.0 Port Label",
+    "USB 3.2 Label 1",
+    "USB 3.2 Label 2",
+    "USB 3.2 Label 3",
+    "USB 3.2 Label 4"
+   ],
+   "hits": [
+    "Chort label",
+    "DC Input Label",
+    "HDMI Port Label",
+    "USB 3.0 Port Label",
+    "USB 3.2 Label 1",
+    "USB 3.2 Label 2",
+    "USB 3.2 Label 3",
+    "USB 3.2 Label 4"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "power": {
+   "expected": [
+    "DC Input Label",
+    "DC Input Terminal Block",
+    "Power Button"
+   ],
+   "hits": [
+    "Power Button"
+   ],
+   "precision": 1.0,
+   "recall": 0.33
+  },
+  "audio": {
+   "expected": [
+    "Audio Port 1",
+    "Audio Port 2",
+    "audio jacks"
+   ],
+   "hits": [
+    "Audio Port 1",
+    "Audio Port 2",
+    "audio jacks"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "antenna": {
+   "expected": [
+    "antenna port 1",
+    "antenna port 2",
+    "antenna ports"
+   ],
+   "hits": [
+    "antenna port 1",
+    "antenna port 2",
+    "antenna ports"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "heatsink": {
+   "expected": [
+    "Top Heatsink Face"
+   ],
+   "hits": [
+    "Top Heatsink Face"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "logo": {
+   "expected": [
+    "CropTeq logo"
+   ],
+   "hits": [
+    "CropTeq logo"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "front face": {
+   "expected": [
+    "Front Face",
+    "lower front panel",
+    "upper front panel"
+   ],
+   "hits": [
+    "Array of USB 3.2 Ports",
+    "Audio Port 1",
+    "Audio Port 2",
+    "DC Input Label",
+    "DC Input Terminal Block",
+    "Ethernet Port 1",
+    "Ethernet Port 2",
+    "Front Face",
+    "HDMI Port",
+    "HDMI Port Label",
+    "Power Button",
+    "Serial Port 1",
+    "Serial Port 2",
+    "Serial Ports Group",
+    "Status LED 1",
+    "USB 3.0 Dual Port",
+    "USB 3.0 Port Label",
+    "USB 3.2 Label 1",
+    "USB 3.2 Label 2",
+    "USB 3.2 Label 3",
+    "USB 3.2 Label 4",
+    "USB 3.2 Port 1",
+    "USB 3.2 Port 2",
+    "USB 3.2 Port 3",
+    "USB 3.2 Port 4",
+    "antenna port 1",
+    "antenna port 2",
+    "antenna ports",
+    "audio jacks",
+    "ethernet ports",
+    "lower front panel",
+    "upper front panel"
+   ],
+   "precision": 0.09,
+   "recall": 1.0
+  }
+ },
+ "2209-box-ray-demo1": {
+  "serial": {
+   "expected": [
+    "serial number label",
+    "serial number text"
+   ],
+   "hits": [
+    "QR code",
+    "serial number label",
+    "serial number text"
+   ],
+   "precision": 0.67,
+   "recall": 1.0
+  },
+  "sticker": {
+   "expected": [
+    "AI KIT sticker"
+   ],
+   "hits": [
+    "AI KIT sticker",
+    "logo",
+    "text"
+   ],
+   "precision": 0.33,
+   "recall": 1.0
+  },
+  "label": {
+   "expected": [
+    "product info label",
+    "serial number label"
+   ],
+   "hits": [
+    "CE mark",
+    "FCC mark",
+    "QR code",
+    "WEEE symbol",
+    "barcode",
+    "made in china text",
+    "model number text",
+    "product info label",
+    "recycle symbol",
+    "serial number label",
+    "serial number text"
+   ],
+   "precision": 0.18,
+   "recall": 1.0
+  },
+  "barcode": {
+   "expected": [
+    "barcode"
+   ],
+   "hits": [
+    "barcode"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "qr": {
+   "expected": [
+    "QR code"
+   ],
+   "hits": [
+    "QR code"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "logo": {
+   "expected": [
+    "logo"
+   ],
+   "hits": [
+    "logo"
+   ],
+   "precision": 1.0,
+   "recall": 1.0
+  },
+  "ce": {
+   "expected": [
+    "CE mark"
+   ],
+   "hits": [
+    "AI KIT sticker",
+    "CE mark",
+    "FCC mark",
+    "QR code",
+    "WEEE symbol",
+    "barcode",
+    "front face",
+    "logo",
+    "made in china text",
+    "model number text",
+    "product info label",
+    "recycle symbol",
+    "serial number label",
+    "serial number text",
+    "text",
+    "top face"
+   ],
+   "precision": 0.06,
+   "recall": 1.0
+  },
+  "front face": {
+   "expected": [
+    "front face"
+   ],
+   "hits": [
+    "CE mark",
+    "FCC mark",
+    "QR code",
+    "WEEE symbol",
+    "barcode",
+    "front face",
+    "made in china text",
+    "model number text",
+    "product info label",
+    "recycle symbol",
+    "serial number label",
+    "serial number text"
+   ],
+   "precision": 0.08,
+   "recall": 1.0
+  }
+ }
+}
