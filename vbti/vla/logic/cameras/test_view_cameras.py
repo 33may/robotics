@@ -1,7 +1,7 @@
 import unittest
 
-from view_cameras import parse_args
-from cameras import DEFAULT_PRESET
+from vla.logic.cameras.view_cameras import parse_args
+from vla.logic.cameras.cameras import DEFAULT_PRESET
 
 
 class ViewCamerasTest(unittest.TestCase):

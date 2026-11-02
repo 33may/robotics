@@ -39,7 +39,7 @@ import json
 import yaml
 
 
-EXPERIMENTS_ROOT = Path("~/projects/ml_portfolio/robotics/vbti/vla/experiments").expanduser()
+EXPERIMENTS_ROOT = Path(__file__).resolve().parents[2] / "experiments"  # vla/experiments
 STATE_FILE = EXPERIMENTS_ROOT / "state.json"
 
 

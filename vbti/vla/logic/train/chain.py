@@ -35,7 +35,7 @@ from vla.logic.train.remote import _load_remote_config, _rsync_from_remote, _ssh
 # ── Constants ────────────────────────────────────────────────────────────────
 
 EXPERIMENT      = "duck_cup_smolvla"
-REPO_ROOT       = Path("/home/may33/projects/ml_portfolio/robotics")
+REPO_ROOT       = Path(__file__).resolve().parents[4]  # repo root (…/vbti/vla/logic/train/chain.py)
 EXP_ROOT        = REPO_ROOT / "vbti/vla/experiments" / EXPERIMENT
 
 POLL_INTERVAL_SEC = 300   # 5 min — overridable via --poll_interval

@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vla"
+version = "0.1.0"
+description = "VBTI VLA track: SO-101 cameras/servos, LeRobot datasets, SmolVLA training and real-robot inference"
+requires-python = ">=3.10"
+# Minimal runtime deps only. torch / lerobot / transformers come from the conda
+# env (envs/lerobot.yml) — pinning them here would fight the env's CUDA wheels.
+dependencies = [
+    "fire",
+    "pyyaml",
+    "numpy",
+    "loguru",
+    "h5py",
+    "pandas",
+    "opencv-python",
+    "tqdm",
+]
+
+# Flat layout: this directory IS the `vla` package.
+[tool.setuptools]
+package-dir = { "vla" = "." }
+# Explicit list — keeps experiments/research/docs/documentation/tmp_data/udev/
+# libs/scripts out of the installed package. servos and inference.protocols
+# have no __init__.py (implicit namespace packages) and are listed explicitly.
+packages = [
+    "vla",
+    "vla.logic",
+    "vla.logic.cameras",
+    "vla.logic.dataset",
+    "vla.logic.dataset.target_extractors",
+    "vla.logic.depth",
+    "vla.logic.inference",
+    "vla.logic.inference.protocols",
+    "vla.logic.reconstruct",
+    "vla.logic.servos",
+    "vla.logic.train",
+    "vla.logic.train.backends",
+]
+
+[tool.setuptools.package-data]
+"vla.logic.inference.protocols" = ["*.json"]

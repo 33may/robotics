@@ -10,7 +10,7 @@ Usage:
 import argparse
 import cv2
 
-from cameras import CAMERA_PRESETS, DEFAULT_PRESET, build_grid_frame, capture_frames, init_cameras, stop_cameras
+from vla.logic.cameras.cameras import CAMERA_PRESETS, DEFAULT_PRESET, build_grid_frame, capture_frames, init_cameras, stop_cameras
 
 
 def parse_args(argv=None):
