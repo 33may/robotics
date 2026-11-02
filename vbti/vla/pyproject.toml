@@ -23,7 +23,7 @@ dependencies = [
 # Flat layout: this directory IS the `vla` package.
 [tool.setuptools]
 package-dir = { "vla" = "." }
-# Explicit list — keeps experiments/research/docs/documentation/tmp_data/udev/
+# Explicit list — keeps experiments/research/docs/tmp_data/udev/
 # libs/scripts out of the installed package. servos and inference.protocols
 # have no __init__.py (implicit namespace packages) and are listed explicitly.
 packages = [

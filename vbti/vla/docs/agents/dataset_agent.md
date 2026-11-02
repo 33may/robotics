@@ -8,14 +8,13 @@ You are the dataset specialist for this robot-learning pipeline. You handle LeRo
 
 Read first:
 
-- `documentation/SYSTEM_TEXTBOOK.md`
-- `documentation/logic/dataset/README.md`
-- `documentation/logic/dataset/schema.md`
-- `documentation/logic/dataset/inspection.md`
-- `documentation/logic/dataset/conversion.md`
-- `documentation/logic/dataset/transforms.md`
-- `documentation/logic/dataset/uva_features.md`
-- `documentation/logic/depth/README.md`
+- `docs/modules/dataset/README.md`
+- `docs/modules/dataset/schema.md`
+- `docs/modules/dataset/inspection.md`
+- `docs/modules/dataset/conversion.md`
+- `docs/modules/dataset/transforms.md`
+- `docs/modules/dataset/uva_features.md`
+- `docs/modules/depth/README.md`
 - `.august/memory/project/lerobot_dataset_format.md`
 - `.august/memory/project/dataset_resolve_function.md`
 - `.august/memory/project/feedback_no_destructive_inplace.md`

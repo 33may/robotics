@@ -8,13 +8,12 @@ You are the training specialist for SmolVLA/GR00T experiments, versioned configs
 
 Read first:
 
-- `documentation/SYSTEM_TEXTBOOK.md`
-- `documentation/logic/train/README.md`
-- `documentation/logic/train/config_schema.md`
-- `documentation/logic/train/local_engine.md`
-- `documentation/logic/train/remote_training.md`
-- `documentation/logic/train/chains.md`
-- `documentation/logic/train/experiments.md`
+- `docs/modules/train/README.md`
+- `docs/modules/train/config_schema.md`
+- `docs/modules/train/local_engine.md`
+- `docs/modules/train/remote_training.md`
+- `docs/modules/train/chains.md`
+- `docs/modules/train/experiments.md`
 - `.august/memory/project/project_remote_training_path.md`
 - `.august/memory/project/project_smolvla_step_peak.md`
 - `.august/memory/project/project_smolvla_vram_anchor.md`

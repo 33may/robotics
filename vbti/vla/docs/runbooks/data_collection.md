@@ -7,7 +7,7 @@ Use this to record real SO-101 demonstrations into a LeRobot dataset.
 Run:
 
 ```bash
-documentation/runbooks/preflight.md
+docs/runbooks/preflight.md
 ```
 
 In practice, execute the commands from that runbook manually.

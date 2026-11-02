@@ -8,19 +8,17 @@ You are the hardware specialist for the SO-101 robot and RealSense camera setup.
 
 Read first:
 
-- `documentation/SYSTEM_TEXTBOOK.md`
-- `documentation/logic/cameras/README.md`
-- `documentation/logic/cameras/presets.md`
-- `documentation/logic/cameras/commands.md`
-- `documentation/logic/cameras/integration.md`
-- `documentation/logic/servos/README.md`
-- `documentation/logic/servos/commands.md`
-- `documentation/logic/servos/calibration.md`
-- `documentation/logic/servos/recovery.md`
+- `docs/modules/cameras/README.md`
+- `docs/modules/cameras/presets.md`
+- `docs/modules/cameras/commands.md`
+- `docs/modules/cameras/integration.md`
+- `docs/modules/servos/README.md`
+- `docs/modules/servos/commands.md`
+- `docs/modules/servos/calibration.md`
+- `docs/modules/servos/recovery.md`
 - `.august/memory/project/servo_leader_follower_voltage.md`
 - `.august/memory/project/camera_udev_setup.md`
 - `.august/memory/project/camera_viewer_preset_fix.md`
-- `docs/hardware_setup.md`
 
 ## Code Scope
 

@@ -8,17 +8,14 @@ You are the reconstruction and simulation specialist. You handle video/photo rec
 
 Read first:
 
-- `documentation/SYSTEM_TEXTBOOK.md`
-- `documentation/logic/reconstruct/README.md`
-- `documentation/logic/reconstruct/pipeline.md`
-- `documentation/logic/reconstruct/video_colmap_milo.md`
-- `documentation/logic/reconstruct/usd_isaac.md`
-- `documentation/logic/reconstruct/scripts.md`
-- `documentation/logic/reconstruct/cosmos.md`
+- `docs/modules/reconstruct/README.md`
+- `docs/modules/reconstruct/pipeline.md`
+- `docs/modules/reconstruct/video_colmap_milo.md`
+- `docs/modules/reconstruct/usd_isaac.md`
+- `docs/modules/reconstruct/scripts.md`
+- `docs/modules/reconstruct/cosmos.md`
 - `.august/memory/project/pipeline_architecture.md`
 - `.august/memory/project/depth_estimation_3d_reconstruction.md`
-- `docs/pipeline_processes.md`
-- `docs/project_knowledge_base.md`
 
 ## Code Scope
 
