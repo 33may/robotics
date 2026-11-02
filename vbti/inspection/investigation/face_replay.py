@@ -12,8 +12,6 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
 from inspection.cell.world import RobotCell
 from inspection.fit.box import boxguard_fit
 from inspection.motion.ik import UR5eIK

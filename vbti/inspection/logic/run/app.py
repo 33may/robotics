@@ -1,0 +1,581 @@
+#!/usr/bin/env python3
+"""Loop v2 composition root. Design: vbti/inspection/docs/blueprints/ui-driven-loop.md.
+
+    p vbti/inspection/logic/run/app.py run --name=box1 --object=box      # -> data/runs/DDMM-box1
+    p vbti/inspection/logic/run/app.py collect --name=box1 --object=box  # -> data/datasets/DDMM-box1
+    p vbti/inspection/logic/run/app.py teach                             # save survey pose
+
+`--outdir` still works on both and overrides the default; without it, `run`
+lands in data/runs/ and `collect` in data/datasets/ (the runs-vs-data split,
+Anton 2026-09-08 — see record/catalog.py).
+"""
+import datetime
+import json, logging, signal, subprocess, sys, threading, webbrowser
+from pathlib import Path
+import numpy as np
+
+log = logging.getLogger(__name__)
+
+ROBOT_IP = "192.168.2.50"
+SURVEY_POSE_FILE = Path(__file__).resolve().parent / "survey_pose.json"
+
+#: Controlled object vocabulary — the archive is queried by this tag, so a
+#: typo (`cyl`, `Cup`) would silently fragment the dataset. Extend the
+#: tuple when a new object class is collected (Anton, 2026-09-10).
+OBJECTS = ("box", "cup", "cylinder", "duck")
+
+
+def _check_object(object: str | None) -> str | None:
+    if object is not None and object not in OBJECTS:
+        raise SystemExit(
+            f"unknown --object '{object}' — one of {', '.join(OBJECTS)} "
+            f"(extend OBJECTS in {Path(__file__).name} for a new class)")
+    return object
+UI_APP = Path(__file__).resolve().parents[1] / "ui" / "app.py"
+
+
+def _default_outdir(root: Path, name: str | None) -> Path:
+    """`<root>/<DDMM-name>`, suffixed -2, -3, ... if today already has one.
+
+    Only the DEFAULT path auto-suffixes: an explicit `--outdir` that already
+    exists still fails in `RunWriter.create` (evidence is never overwritten),
+    because there the collision is a mistake, not a second take of box1.
+    """
+    if not name:
+        raise SystemExit("give --name (or an explicit --outdir)")
+    today = datetime.date.today()
+    base = f"{today.day:02d}{today.month:02d}-{name}"
+    outdir, n = root / base, 2
+    while outdir.exists():
+        outdir, n = root / f"{base}-{n}", n + 1
+    return outdir
+
+
+def install_sigint(sup):
+    """First Ctrl-C: safe shutdown (stop arm, save, close). Second: hard exit.
+
+    Install this as early as the Supervisor exists: everything after it —
+    opening the camera, starting threads, waiting for a window — is time the
+    operator may want to abort, and until it is installed the default handler
+    tears the process down with the arm live.
+    """
+    def handler(signum, frame):
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+        sup.request_shutdown()
+    signal.signal(signal.SIGINT, handler)
+
+
+def _open_ui(outdir, port, bus_port, no_window, gui):
+    """Show the UI. Returns the window's child process, or None.
+
+    The native window is a CHILD PROCESS, not a thread: pywebview refuses to
+    start off the main thread, and this process's main thread is the
+    dispatcher (and the only thread that may receive signals). So the window
+    gets a main thread of its own — `vbti/inspection/logic/ui/app.py serve`, which serves
+    the built frontend and dials this process's bus over the socket like any
+    other client. It owns no run state; killing it, or closing the window,
+    cannot touch the run.
+    """
+    url = f"http://127.0.0.1:{port}" + (f"/?bus={bus_port}" if bus_port != 8765 else "")
+    print(f"ui   {url}", flush=True)
+    if no_window:
+        from porthole.window import serve_ui
+        from inspection.ui.app import DIST, _asset_mounts
+        serve_ui(DIST, port=port, assets=_asset_mounts(outdir))
+        webbrowser.open(url)
+        return None
+    cmd = [sys.executable, str(UI_APP), "serve", f"--run_dir={outdir}",
+           f"--port={port}", f"--gui={gui}"]
+    if bus_port != 8765:
+        cmd.append(f"--bus_port={bus_port}")
+    return subprocess.Popen(cmd)
+
+
+def _close_ui(child):
+    """Terminate the window process, bounded. Never raises into shutdown."""
+    if child is None or child.poll() is not None:
+        return
+    try:
+        child.terminate()
+        try:
+            child.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            log.warning("ui window did not exit in 3 s — killing it")
+            child.kill()
+            child.wait(timeout=1)
+    except Exception:
+        log.exception("closing the ui window failed")
+
+
+def _hashed(path: Path, embed: bool = False):
+    """A `HashedFile` for a calib/config artifact — identity, not "latest"."""
+    import hashlib
+    p = Path(path)
+    data = p.read_bytes()
+    out = {"file": p.name, "sha256": hashlib.sha256(data).hexdigest()}
+    if embed:
+        out["content"] = data.decode()
+    return out
+
+
+def config_snapshot(models: dict[str, str] | None = None):
+    """The world-in-effect at run start: code, cell, calib, tuning constants.
+
+    Everything here is what makes a recorded run re-checkable after cell.yaml
+    or the hand-eye artifact is edited — the questions "was this safe" and
+    "why is that cloud shaped like that" are answered from this file plus the
+    steps, never from today's source tree.
+    """
+    from inspection.cell import geometry as geo
+    from inspection.cell.world import CELL_YAML, DEFAULT_PADDING
+    from inspection.record.schema import ConfigSnapshot
+    from inspection.record.writer import git_sha
+    from inspection.run import settle
+    from inspection.run.segmenter import MIN_MASK_PX, MIN_MASK_SCORE
+    from inspection.view.grid import H_BINS, V_ELEVATIONS
+
+    calib = sorted((Path(geo.__file__).resolve().parents[1] / "calib")
+                   .glob("T_flange_cam_*.npy"))[-1]
+    return ConfigSnapshot(
+        git_sha=git_sha(),
+        cell_yaml=_hashed(CELL_YAML, embed=True),
+        calib=_hashed(calib),
+        constants={
+            "padding_m": DEFAULT_PADDING,
+            "voxel_m": geo.VOXEL_M, "jump_gate_m": geo.JUMP_GATE_M,
+            "box_pct": geo.BOX_PCT, "grow_eps_m": geo.GROW_EPS_M,
+            "range_m": [geo.MIN_RANGE_M, geo.MAX_RANGE_M],
+            "workspace": geo.WORKSPACE,
+            "plane_z_tol_m": settle.PLANE_Z_TOL_M,
+            "plane_tilt_tol_deg": settle.PLANE_TILT_TOL_DEG,
+            "min_mask_score": MIN_MASK_SCORE, "min_mask_px": MIN_MASK_PX,
+            "h_bins": H_BINS, "v_elevs": list(V_ELEVATIONS),
+        },
+        models=dict(models or {}),
+    )
+
+
+def viewsphere_method(r: float | None = None) -> dict:
+    """The run's one view method, as `run.json` declares it.
+
+    `r` is left open here and filled in by the Supervisor the moment the
+    survey derives it (`machine.py:_recenter` -> `set_view_method_params`).
+    """
+    from inspection.run.machine import VIEW_METHOD
+    from inspection.view.grid import H_BINS, V_ELEVATIONS
+    return {"id": VIEW_METHOD, "kind": "viewsphere",
+            "params": {"h_bins": H_BINS, "v_elevs": list(V_ELEVATIONS), "r": r}}
+
+
+def face_method() -> dict:
+    """Boxguard face-evidence views (docs/blueprints/face-evidence.md)."""
+    from inspection.view.faceview import (CONE_MAX_DEG,
+                                          FACE_STABLE_TOL_DEG_DEFAULT)
+    return {"id": "face", "kind": "boxguard-face", "version": "1",
+            "params": {"stable_tol_deg": FACE_STABLE_TOL_DEG_DEFAULT,
+                       "cone_max_deg": CONE_MAX_DEG}}
+
+
+def finish_run(writer, acc) -> None:
+    """Close a run: the fused cloud beside the steps, then the final run.json.
+
+    Shared by both composition roots (`run/app.py` and `ui/mock.py`) so a mock
+    run ends exactly the way a real one does. `fused/` is a directory because
+    the cloud is derived from the steps, not one of them; `record/run.py`
+    reads it there first. Status is read off the disk, not off a flag: a run
+    is completed iff some AI session actually answered — OR the run never
+    asked anything, because a question-less run owes no answer (the same
+    ruling `record/validate.py` enforces: `completed` requires an answer only
+    when `run.question` is set).
+
+    `acc` may be None — a run whose setup died before the Supervisor existed
+    still gets closed, because "created but never closed" is the signature of
+    a crash and this one was not.
+    """
+    if acc is not None and len(acc.points):
+        d = writer.dir / "fused"
+        d.mkdir(parents=True, exist_ok=True)
+        np.save(d / "cloud.npy", acc.points)
+        # Row-aligned with cloud.npy — uint8, mid-grey where a view
+        # contributed points without a usable colour frame.
+        np.save(d / "colors.npy", acc.colors)
+    answered = any((writer.dir / "ai").glob("*/answer.json"))
+    writer.close("completed" if answered or writer.question is None
+                 else "aborted")
+
+
+def teach(ip: str = ROBOT_IP):
+    # unchanged from v1 (loop.py, retired — see the 2026-08-20 design doc)
+    from rtde_receive import RTDEReceiveInterface
+    r = RTDEReceiveInterface(ip)
+    q = list(r.getActualQ())
+    r.disconnect()
+    SURVEY_POSE_FILE.write_text(json.dumps({"q_rad": q}, indent=2) + "\n")
+    print(f"survey pose saved: {np.round(np.degrees(q), 1).tolist()} deg")
+
+
+def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
+        port: int = 8767, bus_port: int = 8765, no_window: bool = False,
+        seed: int = 0, gui: str = "qt", name: str | None = None,
+        object: str | None = None, fit: str = "boxguard"):
+    """One live run. `outdir` defaults to `data/runs/<DDMM-name>` (so `--name`
+    is enough); given explicitly it is `<root>/<run id>` and `name` defaults
+    to its leaf. `object` must be one of OBJECTS (archive query tag).
+
+    `--cells` (calib/depth_eval.py): survey, then exactly these cells in
+    order, then the run finishes itself — no shell sweep.
+
+    `--fit` names the per-step primitive fitter (`fit/apply.py:METHODS`;
+    empty or "none" disables it): every fused step then records the same
+    `decomposition.json` the offline backfill writes — same registry, same
+    record builder, same writer, byte-compatible by construction — and the
+    fitted box shows up live in the 3D scene as the cloud grows.
+    """
+    object = _check_object(object)
+    fit = None if not fit or str(fit).lower() == "none" else str(fit)
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    from porthole import PortholeBus
+    from inspection.eyes.cognition import real_cognition
+    from inspection.eyes.verbs_local import Sam3Backend
+    from inspection.motion.execute import preflight
+    from inspection.run.machine import Supervisor
+    from inspection.run.rigs import PoseStreamer, RealRig
+    from inspection.run.segmenter import ObjectSegmenter
+    from inspection.record.writer import RunWriter
+    from inspection.ui.app import _require_build
+    from inspection.ui.publisher import InspectionPublisher
+
+    # FIRST, before the arm: `real_cognition()` raises if GEMINI_API_KEY is
+    # unset, and there is no stub fallback any more (Anton 2026-08-26). A key
+    # discovered missing at the first `brain/ask` is a key discovered with the
+    # robot powered, the bus up and an operator waiting. Nothing loads
+    # synchronously here — OCR and the Gemini client are lazy, and SAM 3 is
+    # warmed by the background thread below: it used to load at the first
+    # post-survey mask, which parked the run for the whole weight load with
+    # the arm already at the survey frame (Anton 21-09).
+    # ONE SAM 3 on the GPU: this same instance goes to the segmenter below, so
+    # the checkpoint is loaded once for both the subagent's detect/segment and
+    # the identity mask, instead of twice (`run/segmenter.py:77`).
+    sam3 = Sam3Backend()
+    cognition = real_cognition(sam3=sam3)
+
+    def _warm_sam3():
+        import time
+        t0 = time.perf_counter()
+        try:
+            sam3.warm()
+            log.info("sam3 warm in %.1f s — the first mask won't stall",
+                     time.perf_counter() - t0)
+        except Exception:
+            # a failed warm-up must not kill the app: the lazy path retries
+            # at first use and surfaces the real error where it matters
+            log.exception("sam3 background warm-up failed; first use will "
+                          "load (and report) instead")
+    threading.Thread(target=_warm_sam3, name="sam3-warm", daemon=True).start()
+
+    pf = preflight(ip)
+    if not pf["go"]:
+        raise SystemExit(f"preflight NO-GO: {pf}")
+    if not SURVEY_POSE_FILE.exists():
+        raise SystemExit("no survey pose — run `p vbti/inspection/logic/run/app.py teach`")
+    if not _require_build():
+        raise SystemExit(1)
+    q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])
+
+    from inspection.record.catalog import RUNS_ROOT
+    outdir = Path(outdir).resolve() if outdir \
+        else _default_outdir(RUNS_ROOT, name)
+    stop_event = threading.Event()
+    # Everything that owns a socket, hardware or a thread is built inside the
+    # try, so a failure part-way through setup still runs the teardown below
+    # instead of leaking a listening bus, an open RTDE interface and a running
+    # camera pipe.
+    bus = rig = sup = poses = child = writer = None
+    try:
+        bus = PortholeBus(app="inspection", port=bus_port).start()
+        pub = InspectionPublisher(bus, run_dir=outdir)
+        pub.declare()
+        # The run directory is CREATED here, by the one writer that owns it —
+        # `create` refuses an existing id, because evidence is never
+        # overwritten. Everything downstream gets its paths from `writer.dir`.
+        writer = RunWriter.create(
+            outdir.parent, run_id=outdir.name, name=name or outdir.name,
+            source="live", rig="real", object=object, question=None,
+            config=config_snapshot({"vlm": cognition.label,
+                                    "segmenter": "sam3",
+                                    "fit": fit or "none"}),
+            # No `r`: cells are RAYS now, and the Supervisor stamps the
+            # measured mean depth itself once the survey resolves one
+            # (`_recenter` -> `set_view_method_params`). Passing the
+            # already-ignored `--r` wrote an operator's WISH into run.json
+            # as a property of the method (`mock.py` omits it likewise).
+            view_methods=[viewsphere_method(), face_method()],
+            q_survey=[float(v) for v in q_survey])
+        # Retained, so a UI window opened at any moment knows which flow it
+        # is rendering (data-engine runs drop the AI panel).
+        pub.publish_run_meta(source="live", name=name or outdir.name,
+                             object=object, question=None)
+        rig = RealRig(None, stop_event, outdir, ip)   # world set below
+        # Built by the rig (it opens the camera), written by the writer (it
+        # owns every JSON in the run) — the split that ended the two-writers
+        # problem for session.json.
+        writer.write_session(rig.session)
+        # Object identity is settled in image space (run 2408-cup2): a cable
+        # 20 mm from the cup is adjacent, so no distance rule can refuse it.
+        # Weights load lazily on the first capture or the first detect,
+        # whichever comes first — never here.
+        sup = Supervisor(rig, pub, writer, q_survey, seed=seed, r=r,
+                         segmenter=ObjectSegmenter(backend=sam3), fit=fit)
+        install_sigint(sup)                          # earliest safe Ctrl-C
+        rig.world = sup.world
+        rig.start_camera(pub)
+        poses = PoseStreamer(rig.q, lambda q: pub.publish_pose(sup.world, q))
+        poses.active = sup.pose_active               # dispatcher-gated
+        sup.pose_quiesce = poses.quiesce             # settle-leg interlock
+        poses.start()
+
+        from inspection.brain.live import make_ask_handler
+        start_brain = make_ask_handler(sup, pub, outdir, cognition, writer)
+
+        def pump():
+            for c in bus.commands():
+                # `brain/ask` is the ONLY command not forwarded to the
+                # Supervisor: it starts a thinker, not a motion. Everything
+                # that can move the arm still goes through the one queue.
+                if c.get("cmd") == "brain/ask":
+                    start_brain(str(c.get("question") or "").strip())
+                else:
+                    sup.events.put(c)
+        threading.Thread(target=pump, name="cmd-pump", daemon=True).start()
+
+        child = _open_ui(outdir, port, bus_port, no_window, gui)
+        sup.run()                                    # blocks until done
+    finally:
+        # belt-and-braces shutdown, in this order (design §Safety):
+        # stop event -> join worker (bounded) -> stopJ -> save -> close.
+        if sup is not None:
+            sup.stop_event.set()
+            # Clearing the pose gate is what makes the exec worker's I4
+            # handoff winnable on an ABNORMAL exit: if `sup.run()` died (an
+            # escaped exception, a second Ctrl-C) with a worker waiting on
+            # `_pose_ack`, no dispatcher is left to clear `pose_active`, so
+            # its `quiesce()` could never succeed and it would walk into
+            # `_recenter()` with the streamer still publishing. One line,
+            # and the interlock holds on every path out of the run.
+            sup.pose_active.clear()
+            if not sup.join_workers(5.0):
+                log.warning("a worker outlived the join budget — closing anyway")
+        if poses is not None:
+            poses.stop()
+        if rig is not None:
+            try:
+                rig.arm.stop()
+            except Exception:
+                pass
+        if writer is not None:
+            # Guarded like every other line of this teardown: `finish_run`
+            # saves two arrays, hashes every binary in the run and validates
+            # the final run.json. Losing the last bytes of a record must never
+            # cost us `rig.close()` — a leaked RTDE interface and a camera pipe
+            # left running are worse than an unclosed run, which the reader
+            # already detects as crashed.
+            try:
+                finish_run(writer, sup.acc if sup is not None else None)
+            except Exception:
+                log.exception("could not close the run record")
+        if rig is not None:
+            rig.close()
+        _close_ui(child)
+        if bus is not None:
+            bus.stop()
+    print(f"run saved: {outdir}")
+
+
+def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
+           port: int = 8767, bus_port: int = 8765, no_window: bool = False,
+           seed: int = 0, gui: str = "qt", name: str | None = None,
+           object: str | None = None, auto: bool = False,
+           random: bool = False, fit: str = "boxguard", cells=None):
+    """One data-collection sweep — Flow B. `outdir` defaults to
+    `data/datasets/<DDMM-name>`: sweeps are training data, not inspection
+    runs, and they land in their own archive (`ls --data` lists them).
+
+    `--auto` removes the approval CLICK, not the approval WINDOW: every view
+    still plans, previews in the 3D panel for `AUTO_DWELL_S`, and only then
+    confirms itself (`SupervisorMover.auto_confirm_s`) — STOP, finish and
+    exit keep working throughout, and the run is tagged "auto" on disk.
+
+    `--random` visits cells in seeded-shuffled order instead of
+    cheapest-path-first — the honest step ordering for convergence analysis
+    (nearest-first grows the cloud one-sided). Tagged "random" on the run;
+    every step's `ViewState.decider` says `sweep-random`.
+
+    `--fit` names the per-step primitive fitter (`fit/apply.py:METHODS`;
+    empty or "none" disables it): every fused step then records the same
+    `decomposition.json` the offline backfill writes — same registry, same
+    record builder, same writer, byte-compatible by construction — and the
+    fitted box shows up live in the 3D scene as the sweep's cloud grows.
+
+    Same composition as `run()` minus cognition/`brain/ask` — no VLM, no
+    question, nothing under `ai/` — plus a `SweepDriver` in place of an
+    operator picking cells: it walks the whole shell cheapest-path-first
+    through the SAME approval gate every other mover uses. The closing
+    status says whether it actually got there: `driver.finished` is True
+    only once the candidate set ran out, never on a run cut short.
+
+    `run()`'s own teardown (`finish_run`) closes on whether a question got
+    answered, which has no meaning for a run that never asked one — so the
+    close here is its own, not a call into `run()` or `finish_run` (the
+    merge-safety rule for this task: additive-only in this file, `run()`
+    itself untouched). It duplicates `finish_run`'s few lines of "save the
+    fused cloud" rather than its "did the AI answer" status logic.
+    """
+    object = _check_object(object)
+    fit = None if not fit or str(fit).lower() == "none" else str(fit)
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    from porthole import PortholeBus
+    from inspection.eyes.verbs_local import Sam3Backend
+    from inspection.motion.execute import preflight
+    from inspection.run.collect import SweepDriver
+    from inspection.run.machine import Supervisor
+    from inspection.run.rigs import PoseStreamer, RealRig
+    from inspection.run.segmenter import ObjectSegmenter
+    from inspection.record.writer import RunWriter
+    from inspection.ui.app import _require_build
+    from inspection.ui.publisher import InspectionPublisher
+
+    pf = preflight(ip)
+    if not pf["go"]:
+        raise SystemExit(f"preflight NO-GO: {pf}")
+    if not SURVEY_POSE_FILE.exists():
+        raise SystemExit("no survey pose — run `p vbti/inspection/logic/run/app.py teach`")
+    if not _require_build():
+        raise SystemExit(1)
+    q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])
+
+    from inspection.record.catalog import DATASETS_ROOT
+    outdir = Path(outdir).resolve() if outdir \
+        else _default_outdir(DATASETS_ROOT, name)
+    stop_event = threading.Event()
+    # Same "everything live inside the try" shape as `run()`, for the same
+    # reason: a failure part-way through setup must still hit the teardown
+    # below rather than leak a socket, an open RTDE interface or a camera.
+    bus = rig = sup = poses = child = writer = driver = None
+    try:
+        bus = PortholeBus(app="inspection", port=bus_port).start()
+        pub = InspectionPublisher(bus, run_dir=outdir)
+        pub.declare()
+        writer = RunWriter.create(
+            outdir.parent, run_id=outdir.name, name=name or outdir.name,
+            source="data-engine", rig="real", object=object, question=None,
+            config=config_snapshot({"segmenter": "sam3",
+                                    "fit": fit or "none"}),
+            # No `r`: cells are RAYS now, and the Supervisor stamps the
+            # measured mean depth itself once the survey resolves one
+            # (`_recenter` -> `set_view_method_params`). Passing the
+            # already-ignored `--r` wrote an operator's WISH into run.json
+            # as a property of the method (`mock.py` omits it likewise).
+            view_methods=[viewsphere_method(), face_method()],
+            q_survey=[float(v) for v in q_survey],
+            tags=(["auto"] if auto else []) + (["random"] if random else [])
+            + (["fixed-cells"] if cells else []))
+        pub.publish_run_meta(source="data-engine", name=name or outdir.name,
+                             object=object, question=None)
+        rig = RealRig(None, stop_event, outdir, ip)   # world set below
+        writer.write_session(rig.session)
+        # Segmentation stays real (identity still matters for a sweep's
+        # cloud), only the question-answering tier is gone.
+        sup = Supervisor(rig, pub, writer, q_survey, seed=seed, r=r,
+                         segmenter=ObjectSegmenter(backend=Sam3Backend()),
+                         fit=fit)
+        install_sigint(sup)                          # earliest safe Ctrl-C
+        rig.world = sup.world
+        rig.start_camera(pub)
+        poses = PoseStreamer(rig.q, lambda q: pub.publish_pose(sup.world, q))
+        poses.active = sup.pose_active               # dispatcher-gated
+        sup.pose_quiesce = poses.quiesce             # settle-leg interlock
+        poses.start()
+
+        # The sweep's beats are a RECORD, not a log line: requested ->
+        # awaiting_approval -> approved is the on-disk proof that a human
+        # opened the gate for every cell this driver asked for, and Flow B
+        # has no AI session to write them through — so the sink takes the
+        # run's own `RunWriter`. Two threads append to `events.jsonl` from
+        # here on (this one and the dispatcher's stopped/fault rows); both
+        # write single lines under O_APPEND, which is atomic at these sizes.
+        from inspection.brain.live import make_event_sink
+        driver = SweepDriver(sup, outdir,
+                             on_event=make_event_sink(writer, pub,
+                                                      label="sweep"),
+                             auto=auto, random_order=random, cells=cells)
+        driver.start()
+
+        def pump():
+            # No `brain/ask` branch here — Flow B has no cognition command to
+            # intercept, every bus command is the Supervisor's.
+            for c in bus.commands():
+                sup.events.put(c)
+        threading.Thread(target=pump, name="cmd-pump", daemon=True).start()
+
+        child = _open_ui(outdir, port, bus_port, no_window, gui)
+        sup.run()                                    # blocks until done
+    finally:
+        # Same order as `run()`'s teardown (design §Safety): stop event ->
+        # join worker (bounded) -> stopJ -> save -> close. The driver is
+        # asked to stop FIRST: it plans and reads `rig.q()` on its own
+        # thread, and neither may still be happening once `rig.close()`
+        # below takes the RTDE interface and the camera away.
+        if driver is not None:
+            driver.stop()
+            driver.join(5.0)
+            if driver.is_alive():
+                log.warning("the sweep driver outlived the join budget")
+        if sup is not None:
+            sup.stop_event.set()
+            sup.pose_active.clear()
+            if not sup.join_workers(5.0):
+                log.warning("a worker outlived the join budget — closing anyway")
+        if poses is not None:
+            poses.stop()
+        if rig is not None:
+            try:
+                rig.arm.stop()
+            except Exception:
+                pass
+        if writer is not None:
+            # Guarded exactly like `run()`'s `finish_run` call, and for the
+            # same reason: losing the last bytes of a record must never cost
+            # us `rig.close()` below — a leaked RTDE interface and a camera
+            # left running are worse than an unclosed run, which the reader
+            # already detects as crashed.
+            try:
+                acc = sup.acc if sup is not None else None
+                if acc is not None and len(acc.points):
+                    d = writer.dir / "fused"
+                    d.mkdir(parents=True, exist_ok=True)
+                    np.save(d / "cloud.npy", acc.points)
+                    # Row-aligned with cloud.npy, exactly as `finish_run`
+                    # saves it: a data-engine run's fused output is the live
+                    # one minus `ai/**` (flows-design §6), and a colourless
+                    # cloud is not the same artifact.
+                    np.save(d / "colors.npy", acc.colors)
+                # Completed two ways: the sweep exhausted the shell, or the
+                # operator pressed finish — both are the run ending as
+                # intended. Only an unmarked exit is an abort.
+                finished = (driver is not None and driver.finished) or \
+                           (sup is not None and sup.finish_requested)
+                writer.close("completed" if finished else "aborted")
+            except Exception:
+                log.exception("could not close the run record")
+        if rig is not None:
+            rig.close()
+        _close_ui(child)
+        if bus is not None:
+            bus.stop()
+    print(f"collect saved: {outdir}")
+
+
+if __name__ == "__main__":
+    import fire
+    fire.core.Display = lambda lines, out: print(*lines, file=out)
+    fire.Fire({"run": run, "teach": teach, "collect": collect})

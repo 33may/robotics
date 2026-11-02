@@ -1,6 +1,6 @@
 # 1. Cell and calibration
 
-**What you have:** a UR5e welded to its table, an RG2 on the flange and a wrist RealSense D405 (serial `WRIST_SERIAL` in `perception/camera.py`) on a bracket under the gripper. The controller is at `192.168.2.50`; every module that talks to it carries that as `ROBOT_IP` and takes `--ip`. The host needs an address on `192.168.2.0/24`. Everything that plans or reconstructs reads one world model, `cell/cell.yaml`: the probed `base → table` frame, the taught keep-out `corners` and `planes`, the `floor` slab, and the `tool` boxes welded to the flange. The camera pose on the flange is `calib/T_flange_cam_<date>.npy` (the loader takes the newest by name; the `.yaml` beside it is its provenance). The run starts from `run/survey_pose.json`.
+**What you have:** a UR5e welded to its table, an RG2 on the flange and a wrist RealSense D405 (serial `WRIST_SERIAL` in `logic/perception/camera.py`) on a bracket under the gripper. The controller is at `192.168.2.50`; every module that talks to it carries that as `ROBOT_IP` and takes `--ip`. The host needs an address on `192.168.2.0/24`. Everything that plans or reconstructs reads one world model, `logic/cell/cell.yaml`: the probed `base → table` frame, the taught keep-out `corners` and `planes`, the `floor` slab, and the `tool` boxes welded to the flange. The camera pose on the flange is `calib/T_flange_cam_<date>.npy` (the loader takes the newest by name; the `.yaml` beside it is its provenance). The run starts from `logic/run/survey_pose.json`.
 
 **What you need to do:** get the arm into Remote Control and check that the model's base frame matches the controller's. Measure the cell into `cell.yaml` from freedrive taps and check it visually. Solve the hand-eye transform and commit it as a dated artifact, teach the survey pose, then Tare the D405 depth and keep the candidate that scores best on the baseline cells.
 
@@ -16,28 +16,28 @@ python -m inspection.calib.tap_probe                     # "s" prints the TCP po
 python -m inspection.calib.probe_fit                     # newest table_probe_*.yaml -> frames.table pose for cell.yaml
 python -m inspection.calib.plane_fit                     # newest planes_*.yaml -> corners/planes snippet for cell.yaml
 python -m inspection.cell.viewer                         # meshcat; re-renders on every save of cell.yaml
-python -m inspection.cell.topview                        # cell/topview.png: footprints, keep-out sides, reach circle
+python -m inspection.cell.topview                        # logic/cell/topview.png: footprints, keep-out sides, reach circle
 python -m inspection.cell.world                          # collision smoke: truth table + timings
 python -m inspection.cell.world --demo                   # truth-table poses in meshcat, coloured by verdict
 
 # hand-eye: ChArUco 8x6/20 mm (data/inspection/charuco_8x6_20mm_a4_print.pdf) flat on the table
 python -m inspection.perception.handeye collect --outdir=vbti/inspection/data/inspection/handeye_ur
 python -m inspection.perception.handeye solve --outdir=vbti/inspection/data/inspection/handeye_ur
-cp vbti/inspection/data/inspection/handeye_ur/T_flange_cam.npy vbti/inspection/calib/T_flange_cam_<YYYY-MM-DD>.npy
+cp vbti/inspection/data/inspection/handeye_ur/T_flange_cam.npy vbti/inspection/logic/calib/T_flange_cam_<YYYY-MM-DD>.npy
 # write calib/T_flange_cam_<YYYY-MM-DD>.yaml (pairs, method, residual); move the lens station in cell.yaml tool.cam_stack if it changed
 
 # survey pose: freedrive the camera over the object area, looking down
 python -m inspection.motion.wrist_watch                  # every joint vs survey_pose.json, red = the planner will refuse
-python -m inspection.run.app teach                       # current q -> run/survey_pose.json
+python -m inspection.run.app teach                       # current q -> logic/run/survey_pose.json
 
 # depth: baseline is 1310-calib-red (red object with a yellow dot, survey + 6 cells, untared camera)
 python -m inspection.calib.depth_tare measure            # board under the camera: depth error here, no motion
 python -m inspection.calib.depth_tare scan               # asks before each move; one Tare candidate per height
 # per candidate in calib/d405_tare/<MMDD-HHMM>/: write it, re-run the baseline cells, compare
-python -m inspection.calib.depth_tare apply --cand=vbti/inspection/calib/d405_tare/<MMDD-HHMM>/h240.json --yes
+python -m inspection.calib.depth_tare apply --cand=vbti/inspection/logic/calib/d405_tare/<MMDD-HHMM>/h240.json --yes
 python -m inspection.calib.depth_eval --label=h240       # red object on the table; survey + baseline cells, auto-confirmed
 # leave the winner applied; roll back with
-python -m inspection.calib.depth_tare restore --backup=vbti/inspection/calib/d405_tare/backup_before_apply_<stamp>.json --yes
+python -m inspection.calib.depth_tare restore --backup=vbti/inspection/logic/calib/d405_tare/backup_before_apply_<stamp>.json --yes
 ```
 
 **Done when:**
@@ -73,4 +73,4 @@ python -m inspection.calib.depth_tare restore --backup=vbti/inspection/calib/d40
 | `python -m inspection.calib.depth_eval <label> [--baseline] [--skip_capture=<run>]` | Survey + baseline cells as a collect run, `depth_val` on it, before/after table |
 | `python -m inspection.calib.depth_val --run=<run>` | Yellow-dot triangulation and table plane per view of a recorded run (read-only) |
 
-Design and history of the cell model: `cell/AGENTS.md`, `docs/demo/context/04-motion-and-safety.md`.
+Design and history of the cell model: `logic/cell/AGENTS.md`, `docs/demo/context/04-motion-and-safety.md`.

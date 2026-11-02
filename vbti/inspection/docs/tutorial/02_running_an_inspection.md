@@ -1,6 +1,6 @@
 # 2. Running an inspection
 
-**What you have:** the calibrated cell from block 1, the `inspection` env, and two model providers: Gemini for the vision agents (`eyes/`, `GEMINI_API_KEY`) and Claude for the planner (`brain/`, the Claude Agent SDK, authenticated by `ANTHROPIC_API_KEY` or a Claude Code login). `run/app.py run` is the composition root: it checks the key and the robot preflight, starts the porthole bus, the `Supervisor` (`run/machine.py`), the real rig and the operator window. The question is not a flag; it is typed into the window. Nothing moves until the operator confirms it. `ui/app.py mock` is the same `Supervisor`, bus and window over a `FakeRig` (`run/rigs.py`): a real planner, stub vision and stub segmentation, and no robot or camera.
+**What you have:** the calibrated cell from block 1, the `inspection` env, and two model providers: Gemini for the vision agents (`logic/eyes/`, `GEMINI_API_KEY`) and Claude for the planner (`logic/brain/`, the Claude Agent SDK, authenticated by `ANTHROPIC_API_KEY` or a Claude Code login). `logic/run/app.py run` is the composition root: it checks the key and the robot preflight, starts the porthole bus, the `Supervisor` (`logic/run/machine.py`), the real rig and the operator window. The question is not a flag; it is typed into the window. Nothing moves until the operator confirms it. `logic/ui/app.py mock` is the same `Supervisor`, bus and window over a `FakeRig` (`logic/run/rigs.py`): a real planner, stub vision and stub segmentation, and no robot or camera.
 
 **What you need to do:** export the keys, build the frontend once, rehearse the operator flow on the mock, then start the live app, ask, approve every move, and read the answer.
 
@@ -40,11 +40,11 @@ In the window: wait for `sam3 warm` in the log, then type the question into the 
 |---|---|
 | `python -m inspection.run.app run --name=<n> --object=<o> [--outdir] [--fit] [--ip] [--port] [--bus_port] [--no_window] [--gui]` | Live inspection run into `data/runs/<DDMM>-<n>` (`-2`, `-3` if taken); `--object` ∈ `box`, `cup`, `cylinder`, `duck`; `--fit none` disables the box fitter; `--no_window` serves the UI in the browser |
 | `python -m inspection.run.app collect --name=<n> --object=<o> [--auto] [--random] [--cells]` | Sweep without cognition into `data/datasets/<DDMM>-<n>`; `--auto` confirms each view after its preview, `--random` shuffles the order, `--cells` visits exactly these cells |
-| `python -m inspection.run.app teach` | Save the current joints as `run/survey_pose.json` |
+| `python -m inspection.run.app teach` | Save the current joints as `logic/run/survey_pose.json` |
 | `python -m inspection.ui.app mock [--collect] [--auto] [--no_window] [--bus_port] [--run_root]` | Real `Supervisor` + `FakeRig` over the real bus; stub vision, real planner |
 | `python -m inspection.ui.app serve --run_dir=<dir>` | Window only, no bus; for a loop that already owns the bus |
 | `python -m inspection.ui.tap [--topic=<t>] [--show] [--rtde]` | Read-only bus monitor: per-topic rates, pose motion, arm motion from its own RTDE receive |
 | `python -m inspection.motion.wrist_watch` | Per-joint distance to the survey pose, for freedriving back after an abort |
 | `pytest vbti/inspection/tests/e2e -m e2e` | Headless-browser runs of the mock app, both flows |
 
-Loop design: `docs/blueprints/ui-driven-loop.md`, `docs/blueprints/loop-v1.md`; UI contract: `ui/AGENTS.md`.
+Loop design: `docs/blueprints/ui-driven-loop.md`, `docs/blueprints/loop-v1.md`; UI contract: `logic/ui/AGENTS.md`.

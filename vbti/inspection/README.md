@@ -8,14 +8,14 @@ We do this with an agent loop. The robot commands, the representation of the cur
 
 | Part | Module | Role |
 |---|---|---|
-| Planner | `brain/` | The orchestrator agent. Owns the question, the plan and the answer; never sees images |
-| Vision | `eyes/` | VLM agents that read captured views and report back as text |
-| World | `cell/`, `perception/`, `calib/`, `fit/` | Workcell model, camera capture and hand-eye calibration, object shape from captured clouds |
-| Views | `view/` | Where the camera can stand around the object, as safe, addressable views |
-| Robot | `motion/` | IK, planning and execution on the UR5e |
-| Loop | `run/`, `ui/` | The inspection loop, plus the operator UI that watches and controls it |
-| Record | `record/` | Every run saved to one schema, for review and replay |
-| Research | `investigation/`, `viewplan/` | Experiments beyond the PoC |
+| Planner | `logic/brain/` | The orchestrator agent. Owns the question, the plan and the answer; never sees images |
+| Vision | `logic/eyes/` | VLM agents that read captured views and report back as text |
+| World | `logic/cell/`, `logic/perception/`, `logic/calib/`, `logic/fit/` | Workcell model, camera capture and hand-eye calibration, object shape from captured clouds |
+| Views | `logic/view/` | Where the camera can stand around the object, as safe, addressable views |
+| Robot | `logic/motion/` | IK, planning and execution on the UR5e |
+| Loop | `logic/run/`, `logic/ui/` | The inspection loop, plus the operator UI that watches and controls it |
+| Record | `logic/record/` | Every run saved to one schema, for review and replay |
+| Research | `investigation/`, `logic/viewplan/` | Experiments beyond the PoC |
 
 ## Install
 
@@ -31,7 +31,7 @@ cd vbti/inspection/vendor/porthole && npm ci && npm run build -w @porthole/frame
 cd ../../ui && npm ci && npm run build
 ```
 
-Keys: `GEMINI_API_KEY` for the vision agents (`eyes/`), Anthropic auth for the Claude Agent SDK (`brain/`).
+Keys: `GEMINI_API_KEY` for the vision agents (`logic/eyes/`), Anthropic auth for the Claude Agent SDK (`logic/brain/`).
 
 ## Documentation
 

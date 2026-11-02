@@ -26,12 +26,16 @@ dependencies = [
 
 # Flat layout: this directory IS the `inspection` package.
 [tool.setuptools]
-package-dir = { "inspection" = "." }
-# Explicit list — keeps data/ docs/ scripts/ vendor/ ui/node_modules and the
+package-dir = { "inspection" = "logic", "inspection.investigation" = "investigation", "inspection.tests" = "tests" }
+# Code lives in logic/. investigation/ (research) and tests/ (fixtures used by the
+# mock rig) are packaged as inspection.investigation and inspection.tests.
+# Explicit list keeps data/ docs/ scripts/ vendor/ ui/node_modules and the
 # test dirs out of the installed package. investigation/iwm/e06_view_offset
 # has no __init__.py (implicit namespace package) and is listed explicitly.
 packages = [
     "inspection",
+    "inspection.tests",
+    "inspection.tests.e2e",
     "inspection.brain",
     "inspection.calib",
     "inspection.cell",

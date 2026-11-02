@@ -25,7 +25,7 @@ from pathlib import Path
 import pytest
 
 PYTHON = sys.executable
-REPO_ROOT = Path(__file__).resolve().parents[3]  # vbti/, where inspection is importable for -m
+REPO_ROOT = Path(__file__).resolve().parents[2]  # vbti/inspection
 READY_TIMEOUT_S = 30.0
 
 
@@ -95,7 +95,7 @@ def _launch(tmp_path: Path, collect: bool, auto: bool = False) -> MockApp:
     log_path = tmp_path / ("mock-collect.log" if collect else "mock-live.log")
 
     cmd = [
-        PYTHON, "-m", "inspection.tests.e2e._mock_launcher", "mock",
+        PYTHON, str(Path(__file__).resolve().parent / "_mock_launcher.py"), "mock",
         f"--port={port}", f"--bus_port={bus_port}",
         f"--run_root={run_root}",
         "--no_window", "--open_browser=False",

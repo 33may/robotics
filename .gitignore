@@ -23,7 +23,7 @@ MUJOCO_LOG.TXT
 .claude/worktrees/
 vbti/vla/.claude/agent-memory/
 # UI trace screenshots — session scratch from scripts/uitest runs
-vbti/inspection/ui/tools/trace-*.png
+vbti/inspection/logic/ui/tools/trace-*.png
 
 # ---- ML training run outputs (regeneratable artifacts) --------------
 wandb/
@@ -103,7 +103,7 @@ vbti/inspection/data/tool/
 # heavy outputs of the IWM research experiments (masks, clouds, arrays); what a
 # report shows is committed next to it in investigation/iwm/<experiment>/evidence/
 vbti/inspection/data/iwm/
-vbti/inspection/cell/topview.png
+vbti/inspection/logic/cell/topview.png
 
 # browser-automation snapshots
 .playwright-mcp/
