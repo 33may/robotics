@@ -3,17 +3,17 @@
 ## Purpose
 Every eyes-tier agent — a VLM with tools over ONE captured frame — runs the
 same loop. A variant is DATA: rules text, a tool subset, an emit tuple, a
-turn budget. The loop lives in `vlm_agent.py` once and no variant rebuilds it
-(Anton 2026-08-27). Three exist:
+turn budget. The loop lives in `vlm_agent.py` once and no variant rebuilds it.
+Three exist:
 
 - `inspect_agent.py` — reads a view against the run's question; emits the
   `view {saw, recommendation}` appendix the move menu renders.
 - `survey_agent.py` — declares the object before `plan()`: identity,
   geometric primitive, per-surface orientation, visible features. Declares
-  only; the planner infers (the tier split, 2026-08-27).
+  only; the planner infers.
 - `evidence_agent.py` — at answer time, hunts ONE named thing in one frame:
   locate → verify (text read verbatim or it is not found) → frame. "not
-  found" is a successful hunt; a fresh miss bounces the orchestrator's
+  found" is a successful hunt; a fresh miss bounces the planner's
   answer (`brain/loop.py:_collect_evidence`).
 
 ## Files
@@ -25,7 +25,7 @@ turn budget. The loop lives in `vlm_agent.py` once and no variant rebuilds it
   string, a spec, normalisers, and a thin entry function with a stable
   signature. Nothing else.
 
-Tests: `p vbti/inspection/tests/test_vlm_agent.py` (the loop and its structural
+Tests: `tests/test_vlm_agent.py` (the loop and its structural
 guarantees), `test_eyes_inspect.py`, `test_survey.py`, `test_evidence.py`
 (one per variant).
 
@@ -36,11 +36,10 @@ guarantees), `test_eyes_inspect.py`, `test_survey.py`, `test_evidence.py`
    `{"evidence": [...], "reasoning": "...", "answer": "...", <appendix>}`.
    State any vocabulary WITH its meaning (the degree-mapped phrases are the
    pattern: the number defines the word, the model says the word). Contracts
-   are prompt text on both sides, leniently parsed, never strictly validated
-   (Anton 2026-08-26).
+   are prompt text on both sides, leniently parsed, never strictly validated.
 2. **Decide the appendix.** Only add one if a consumer exists — every field
    needs exactly one consumer (`view.saw` → menu row, `view.recommendation`
-   → orchestrator arithmetic, `evidence_image` → path resolution). Write a
+   → planner arithmetic, `evidence_image` → path resolution). Write a
    `normalise_<x>(raw)` that never raises and returns a harmless value for
    garbage: a malformed appendix must not discard a good answer.
 3. **Declare the spec** next to the rules:
@@ -88,8 +87,8 @@ guarantees), `test_eyes_inspect.py`, `test_survey.py`, `test_evidence.py`
   2am run.
 
 ## Does NOT belong here
-- The orchestrator's use of a finding (menu rendering, bounce logic,
+- The planner's use of a finding (menu rendering, bounce logic,
   answer.json assembly) — `brain/`.
 - Verb implementations — `../verbs_local.py`; policy vs backend split holds.
 - A variant that looks at more than one frame. That is a second decider;
-  the orchestrator owns cross-view reasoning, always.
+  the planner owns cross-view reasoning, always.

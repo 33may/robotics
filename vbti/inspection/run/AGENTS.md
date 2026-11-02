@@ -1,83 +1,78 @@
 # run — orchestration
 
 ## Purpose
-Top-level entry points: the command-driven inspection loop and demo
-scripts. This is the only layer allowed to talk to everything —
-perception, cell, view, motion — and wire them together.
+Entry points and the command-driven state machine. The only layer allowed to
+wire perception, cell, view, motion, fit, brain and record together.
+Design: `docs/blueprints/ui-driven-loop.md`.
 
 ## Files
-- `machine.py` — `Supervisor`, the v2 command-driven state machine: one
-  dispatcher thread owns every bit of run state; named worker threads
-  (plan/preview/exec) talk back only via events on a queue. Commands:
-  `view/request`, `view/confirm`, `run/stop`, `run/exit`, all validated
-  backend-side (a stale button can never move the arm). Spec:
-  `vbti/inspection/docs/blueprints/ui-driven-loop.md`.
-- `app.py` — composition root. `run` (bus + window + `Supervisor` +
-  `RealRig`, SIGINT-safe shutdown) and `teach` (freedrive-then-save the
-  survey pose). The native window is a child process (`vbti/inspection/ui/app.py
-  serve`), not a thread: pywebview needs a main thread and this one belongs
-  to the dispatcher. Teardown order is the design's:
-  `stop_event` → `sup.join_workers(bounded)` → `stopJ` → save → close
-  hardware → close window → stop bus.
-- `rigs.py` — `FakeRig`/`RealRig`/`CameraWorker`/`PoseStreamer`. The shared
-  rig contract both hardware and the mock implement is `q()`/`move(path)`/
-  `capture(pose_id)`/`close()` plus a `stop_event` attribute; `FakeRig`
-  additionally has `frame()` for its own capture/grab plumbing — `RealRig`
-  has no equivalent. Live camera frames instead flow through
-  `CameraWorker`, wired in `RealRig.start_camera` (hardware) /
-  `mock.start_mock` (mock).
-- `segmenter.py` — object identity for the geometry path. `ObjectSegmenter`
-  (box → mask, with the policy that decides when to believe it: score floor,
-  minimum pixels, backend exceptions swallowed into a miss) and
-  `object_view(cap, ...)`, the whole per-view identity decision the settle
-  leg calls. Lives HERE because `cell/geometry.py` may not import `eyes`
-  (cycle via `eyes/tools.py`) and `perception/` is barred from it too — the
-  run tier is the only one above both. Backend is injected, so tests use
-  `StubBackend` and never touch a GPU. `p vbti/inspection/tests/test_segmenter.py`.
-- `decider.py` — parked for v2-AI; not wired into the run path since loop
-  v2 (see `vbti/inspection/docs/blueprints/ui-driven-loop.md`). Still holds
-  the egocentric menu-gloss helpers (`gloss`, `build_menu`) and the v1
-  terminal implementation (`Console`, `TerminalDecider`), kept for when
-  an AI decider slots into the request/confirm seam.
-- `survey_pose.json` — taught on hardware, not committed until it exists.
+- `machine.py`: `Supervisor`: one dispatcher thread owns all run state;
+  worker threads (plan/preview/exec) talk back only via events on a queue.
+  Commands `view/request`, `view/confirm`, `run/stop`, `run/finish`,
+  `run/exit`, all validated backend-side. A generation counter (`self.gen`)
+  makes a stale button or stale agent request unable to move the arm. Moves
+  are `motion/transaction.py` legs; the exec worker records the waypoints it
+  actually travelled (`_arrival_path`) for the retreat. Optional live fitting
+  (`fit=` name from `fit/apply.py:METHODS`).
+- `settle.py`: `settle_capture`: one capture → object identity + table-plane
+  gate (`PLANE_Z_TOL_M`, `PLANE_TILT_TOL_DEG`) + fuse, or refused. No
+  publishing or disk writes; used by the machine and offline replay.
+- `segmenter.py`: `ObjectSegmenter` (box → mask, with the belief policy:
+  score floor, minimum pixels, backend exceptions → miss) and `object_view`,
+  the per-view identity decision. Lives here because `cell/` may not import
+  `eyes/` and `perception/` stays model-free. Backend injected; tests use `StubBackend`.
+- `app.py`: composition root (fire CLI): `run` (bus + UI child process +
+  `Supervisor` + `RealRig` + cognition; `brain/ask` starts the planner),
+  `collect` (Flow B data sweep, no cognition), `teach` (freedrive, save
+  `survey_pose.json`). Also `config_snapshot`, `finish_run`. `run` lands in
+  `data/runs/`, `collect` in `data/datasets/`; `--object` from `OBJECTS`.
+- `collect.py`: `SweepDriver`: requests every open cell through
+  `SupervisorMover`, cheapest-first (or `--random`). It keeps its OWN
+  `RobotCell` for costing; `sup.world` belongs to the dispatcher.
+- `rigs.py`: `FakeRig`/`RealRig`/`CameraWorker`/`PoseStreamer`. Shared rig
+  contract: `q()`/`move(path, world)`/`capture(pose_id)`/`close()` plus a
+  `stop_event`. Live frames flow through `CameraWorker`
+  (`RealRig.start_camera` / `ui/mock.py:start_mock`).
+- `decider.py`: v1 terminal decider (`Console`, `TerminalDecider`,
+  `build_menu`). Not wired into the run path; only `tests/test_decider.py` uses it.
+- `survey_pose.json`: taught survey joint pose (`app.py teach`).
 
 ## Contracts & decisions
-- Nothing imports from `run/`. If a sibling package needs something
-  defined here, that something is in the wrong place — push it down.
-- **The segmenter is optional and the loop must survive without it.**
-  `Supervisor(segmenter=None)` is the pure depth pipeline; every failure
-  mode — no rgb, object out of frame, low score, tiny mask, a backend that
-  raises — falls back to depth growth with a warning rather than aborting.
-  A model failure is a LIVENESS cost (a fuzzier collision box, still guarded
-  by the jump gate and the percentile extent); dropping the view would be a
-  safety one. The real segmenter is injected in `app.py` only, and its
-  weights load lazily on first capture, never at import.
-- **Identity persists through geometry, not through text.** No noun phrase
-  is used anywhere in the loop: the accumulated cloud plus `T_base_cam`
-  reproject into each new view to give SAM its box (`prompt_box`). That keeps
-  the question ("is there a logo on this cup?") entirely in `eyes/`, costs
-  no extra inference, and is instance-level by construction — a text prompt
-  would re-find *any* cup. Measured across a 180 deg roll and a ring change:
-  scores 0.73-0.97, 5 calls, 0 misses.
-- Masks are written beside their capture (`mask.png`) in the SAME
-  orientation as `rgb.png`, so a run stays replayable offline and the
-  artifact that decided the geometry is on disk. Their score/box/px are a
-  RECORD and live in `steps/NNN/step.json:segmentation` — one writer, no
-  hand-rolled twin. Best-effort: a disk error there must never fail a settle
-  that otherwise succeeded.
-- **One writer.** The `Supervisor` is handed a `RunWriter` and has no other
-  path to disk: `begin_step` hands out the step dir the rig writes bytes
-  into, `write_capture`/`write_fused`/`mark_step`/`event` write every record.
-  The old `run.json:turns` ledger, the rigs' `meta.json`/`session.json`, and
-  the run-root `fused_cloud.npy` are gone — the layout is `record/schema.py`.
-- Orchestration only: sequencing, UI, logging, entry points. Any
-  geometry, planning, or camera logic that accretes here gets moved to
-  its pipeline stage.
-- Command authority: `Supervisor` is the only thing that mutates run
-  state or moves the arm; every command it receives is validated before
-  anything happens (design FR11). The AI slot, when it lands, replaces
-  exactly the operator's judgment at `view/request`/`view/confirm` —
-  not the state machine, the safety checks, or the stop hierarchy.
+- Only composition roots import from `run/` (`ui/mock.py`,
+  `calib/depth_eval.py`, `investigation/`). A library module needing
+  something here means it is in the wrong place: push it down.
+- **Threading.** Only the dispatcher mutates run state, with two deliberate
+  exceptions (the settle leg's `acc.add`/`_recenter()`, and `_reach` refresh
+  in the workers), safe because exactly one action worker is alive at a time.
+  That is enforced: OMPL cannot be cancelled, so a `view/request` during
+  `planning` is deferred (`_pending_request`, last wins); `_cancel_preview()`
+  joins before any spawn. `RobotCell` is not thread-safe.
+- `PoseStreamer` handoff is structural: the settle leg waits for `_pose_ack`
+  and `pose_quiesce()` before `_recenter()`. Both waits are bounded.
+- **Teardown order** (`app.run` finally): `stop_event` → clear `pose_active`
+  → `join_workers(5 s)` → stop poses → `stopJ` → `finish_run` (guarded) →
+  `rig.close()` → close UI → stop bus.
+- **The segmenter is optional.** `Supervisor(segmenter=None)` is the pure
+  depth pipeline; every segmenter failure falls back to depth growth with a
+  warning. A model failure costs liveness (fuzzier box, still jump-gated),
+  never safety. `app.py` warms SAM 3 in a background thread at startup; a
+  failed warm-up falls back to lazy load. Never at import.
+- **Identity persists through geometry, not text.** The accumulated cloud +
+  `T_base_cam` reproject into each new view as SAM's box prompt
+  (`prompt_box`). No noun phrase anywhere in the loop; the question stays in
+  `eyes/`/`brain/`. Instance-level by construction.
+- Masks are written beside their capture (`mask.png`, same orientation as
+  `rgb.png`); score/box/px live in `steps/NNN/step.json:segmentation`.
+  Best-effort: a disk error there never fails a settle.
+- **One writer.** The `Supervisor` writes only through its injected
+  `RunWriter` (`begin_step`, `write_capture`, `write_fused`, `mark_step`,
+  `event`). The layout is `record/schema.py`. The exec worker writes the
+  capture before queueing `settle_done`; the dispatcher writes the fused half.
+- **Command authority.** `Supervisor` is the only thing that moves the arm.
+  The planner and the sweep press `view/request` like the UI; `view/confirm`
+  stays with the operator (except `collect --auto`). STOP outranks everything.
+- Orchestration only: geometry, planning or camera logic that accretes here
+  moves to its pipeline stage.
 
 ## Does NOT belong here
-- Reusable logic of any kind — this layer is glue, not a library.
+- Reusable logic of any kind: this layer is glue, not a library.

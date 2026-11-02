@@ -1,29 +1,30 @@
-# vbti/inspection/ui — the frontend and its contract with the backend
+# ui — the frontend and its contract with the backend
 
-The operator-facing UI for the inspection loop. Six panels, built on **porthole**
-(`~/projects/porthole`), talking to Python over the porthole bus.
+The operator-facing UI for the inspection loop. Seven panels, built on **porthole**
+(vendored at `vendor/porthole`, `@porthole/framework` is a `file:` dependency),
+talking to Python over the porthole bus.
 
-**This module publishes and sends commands; it does not decide.** v2's
-`ActionsPanel` is a real command path — `view/request`, `view/confirm`,
-`run/stop`, `run/exit` — but every command lands on `run/machine.py`'s
-`Supervisor`, which validates it before anything moves: a stale button click
-can never move the arm (design FR11). Stop hierarchy, strongest first:
+**This module publishes and sends commands; it does not decide.** Every
+command (`view/request`, `view/confirm`, `run/stop`, `run/finish`, `run/exit`)
+lands on `run/machine.py`'s `Supervisor`, which validates it before anything
+moves: a stale button click can never move the arm (design FR11). `brain/ask`
+(from the trace panel) is handled in `run/app.py` and starts the planner. Stop hierarchy, strongest first:
 pendant e-stop (hardware) > Ctrl-C (process; `SIGINT` → `request_shutdown`)
-> UI Stop (software; the dispatcher acts on it in `executing` and logs a
-no-op elsewhere — the button itself is never disabled, because a stop you
-have to wait for the UI to re-enable is not a stop). The judgment `run/decider.py`'s
-`TerminalDecider` used to own is deferred to v2-AI (`decider.py` is parked);
-today it is in the operator's head, exercised through the same two-press
-request/confirm pattern for every view. See
-`vbti/inspection/docs/blueprints/ui-driven-loop.md`.
+> UI Stop (software; the dispatcher acts on it in `adjusting`/`executing` and
+logs a no-op elsewhere — the button itself is never disabled, because a stop you
+have to wait for the UI to re-enable is not a stop). The planner (`brain/`) or
+the operator chooses views; both go through the same two-press
+request/confirm pattern, and only the operator confirms. See
+`docs/blueprints/ui-driven-loop.md`.
 
-**Nothing in `run/` imports from here.** The existing contract ("nothing imports
-from run/") is preserved in both directions: `publisher.py` takes plain data —
-arrays, dicts, tuples — and knows nothing about `Supervisor`, `Ctx` or `RealRig`.
+**`publisher.py` imports nothing from `run/`.** It takes plain data (arrays,
+dicts, tuples) and knows nothing about `Supervisor` or `RealRig`. Only the
+composition roots cross: `run/app.py` builds the publisher, `ui/mock.py`
+builds a `Supervisor`.
 
 ---
 
-## 1. The six panels
+## 1. The seven panels
 
 | Panel | Topic(s) | Source |
 |---|---|---|
@@ -32,7 +33,8 @@ arrays, dicts, tuples — and knows nothing about `Supervisor`, `Ctx` or `RealRi
 | **cloud** — fused cloud, clickable view markers, image of the picked view | `cloud/fused`, `views/state` | `src/panels/CloudInspectPanel.tsx`, app-owned |
 | **log** — event stream | `log/events` | porthole `event-log`, copied |
 | **chain** — the identity chain for the newest capture, 2×2 | `chain/latest` | `src/panels/ImageChainPanel.tsx`, app-owned |
-| **actions** — survey + view grid + Stop + Exit; the operator's only command path | reads `views/state`, `run/status`; sends `view/request`, `view/confirm`, `run/stop`, `run/exit` | `src/panels/ActionsPanel.tsx`, app-owned |
+| **actions** — survey + view grid + Stop + Finish + Exit; the operator's command path | reads `views/state`, `run/status`; sends `view/request`, `view/confirm`, `run/stop`, `run/finish`, `run/exit` | `src/panels/ActionsPanel.tsx`, app-owned |
+| **trace** — the planner's trace stream + Ask composer | `trace/state`, `run/meta`; sends `brain/ask` | `src/panels/TracePanel.tsx`, app-owned |
 
 `chain` tabs in beside `cloud`, deliberately **not** beside `cell`: a panel
 placed `within` a group is added last and becomes the active tab, and the
@@ -52,7 +54,9 @@ upstream fixes as long as `src/.porthole/base/` survives.
 | `cloud/fused` | stream, retained | per capture | `{points: $nd float32 [N,3]}`, base frame |
 | `camera/wrist` | stream | ~10 Hz | `$img` JPEG |
 | `views/state` | stream, retained | per turn | viewsphere cells (§5) |
-| `run/status` | stream, retained | per phase change | `{phase, target, visited, total}` (§6) |
+| `run/status` | stream, retained | per phase change | `{phase, target, visited, total, legs}` (§6) |
+| `run/meta` | stream, retained | at boot, on `brain/ask` | `{source: live\|data-engine, name, object, question}` |
+| `trace/state` | stream, retained | per trace change | `{events: [...]}` from `<run>/ai/<seq>/trace.jsonl` |
 | `log/events` | event | as they happen | `{level, msg}` |
 | `chain/latest` | stream, retained | per capture | `{images: {rgb, prompt, mask, kept}, pose_id, source, score, …}` (§7) |
 
@@ -73,17 +77,19 @@ group names the panel's visibility toggles use:
 
 ```
 world/axes            base-frame triad
-cell/<box>            every box in cell.yaml, coloured by the viewer's STYLE table
+cell/<box>            every box in cell.yaml
+cell/keepout_blob<i>  merged safety keep-out meshes
 robot/<link>          7 UR5e visual meshes, served over HTTP (§7)
 tool/<box>            RG2 envelope + cable loop, welded to the flange
 object/obb            the reconstructed object primitive (world.set_object)
 object/cloud          points node -> streams from `cloud/fused`
+fit/<label>           the step's boxguard primitive (publish_decomposition)
 views/h<HH>v<V>       one marker sphere per viewsphere cell
 views/face:<name>     one marker per non-settling face target (x+ x- y+ y- top)
 ```
 
 The whole set is republished whenever anything changes — a marker turning green
-resends the description. That is the protocol (`porthole/docs/scene-protocol.md`
+resends the description. That is the protocol (`vendor/porthole/docs/scene-protocol.md`
 §3), and it is cheap because the bulk data is not in here: the cloud is a
 `points` node that names `cloud/fused` rather than carrying it.
 
@@ -196,13 +202,13 @@ mode matches a pending/previewing face the same way it matches a cell.
 ## 6. `run/status` — the strip everything else reads
 
 ```python
-{"phase": "idle|planning|previewing|executing|capturing|fusing|fault|done",
- "target": [h, v] | "survey" | None,
- "visited": 4, "total": 22}
+{"phase": "idle|planning|previewing|adjusting|executing|capturing|fusing|fault|done",
+ "target": [h, v] | ["face", name] | "survey" | None,
+ "visited": 4, "total": 22, "legs": ...}
 ```
 
 `phase` exists so the UI can say what the robot is doing without inferring it
-from message timing — telling `previewing` (3D panel looping a replay) apart
+from message timing (`adjusting` = a slide leg, `executing` = the hop) — telling `previewing` (3D panel looping a replay) apart
 from `executing` (3D panel mirroring the live arm) is exactly the ambiguity
 FR3 exists to resolve, and both share the same `target`. `fault` is the one
 that matters most: the executor halted or refused mid-move, the grid goes
@@ -217,12 +223,12 @@ serves the UI, never over the bus:
 
 ```python
 serve_ui(dist, assets={
-    "/captures": run_outdir,                  # NNN/rgb.png per capture
+    "/captures": run_outdir,                  # steps/NNN/rgb.png per capture
     "/meshes":   ur_description_visual_dir,   # 9 MB of DAE
 })
 ```
 
-An 848×480 PNG per view, twelve views, is not bus traffic — and the browser
+A 1280×720 PNG per view is not bus traffic — and the browser
 already caches, streams and decodes them off the main thread. The bus carries
 the URL.
 
@@ -230,11 +236,11 @@ The **chain overlays** follow the same rule. Each capture dir gets, beside
 `rgb.png`, three renderings of how that view's object points were decided:
 
 ```
-NNN/rgb.png             what the camera saw
-NNN/chain_prompt.png    the cloud so far, reprojected + the box built from it
-NNN/chain_mask.png      what the segmenter called object inside that box
-NNN/chain_kept.png      the points that entered the object cloud
-NNN/mask.png            the raw mask, for offline replay
+steps/NNN/rgb.png             what the camera saw
+steps/NNN/chain_prompt.png    the cloud so far, reprojected + the box built from it
+steps/NNN/chain_mask.png      what the segmenter called object inside that box
+steps/NNN/chain_kept.png      the points that entered the object cloud
+steps/NNN/mask.png            the raw mask, for offline replay
 ```
 
 Written by `perception/overlay.py:save_chain` in the same orientation as
@@ -258,19 +264,21 @@ could see.
 bit of run state, plus its worker threads (`_plan_worker`, `_preview_worker`,
 `_exec_worker`) which call back into it via `self.events`, never directly.
 Read `Supervisor` (module docstring + `_publish_views`/`_publish_all`/
-`_set_phase`) and `vbti/inspection/docs/blueprints/ui-driven-loop.md` ("State
+`_set_phase`) and `docs/blueprints/ui-driven-loop.md` ("State
 machine & commands") for exactly when each `pub.*` call happens — a call
 table here would drift the next time a worker changes; the design doc and
 the code are the source of truth.
 
-The four commands this panel can send, all validated backend-side before
-they touch anything (design FR11):
+The commands the UI can send, all validated backend-side before they touch
+anything (design FR11):
 
 ```
-view/request {target}     target = "survey" | [h, v]
+view/request {target}     target = "survey" | [h, v] | ["face", name]
 view/confirm {target}
 run/stop {}
+run/finish {}             exit's safe shutdown, recorded as "completed"
 run/exit {}
+brain/ask {question}      handled by run/app.py, not the Supervisor
 ```
 
 **The publisher must never raise into the dispatcher.** A UI that is not
@@ -283,16 +291,19 @@ method swallows and logs.
 ## 9. Running it
 
 ```bash
-cd ~/projects/porthole && npm run build -w @porthole/framework   # after any porthole change
-cd ~/projects/robotics/vbti/inspection/ui && npm install && npm run build
+# from vbti/inspection/
+(cd vendor/porthole && npm run build -w @porthole/framework)   # after any porthole change
+(cd ui && npm install && npm run build)
 
-p vbti/inspection/run/app.py run --outdir=data/runs/r1   # the real thing: bus + window + Supervisor + RealRig
-p vbti/inspection/ui/app.py mock                          # bus + window + Supervisor + FakeRig, no hardware
-p vbti/inspection/ui/app.py serve --run_dir=data/...      # window only; some other process owns the bus
-npm run check                                        # headless render + PNG checks (tools/verify-ui.mjs)
+python run/app.py run --name=box1 --object=box   # the real thing: bus + window + Supervisor + RealRig
+python ui/app.py mock [--collect]                # bus + window + Supervisor + FakeRig, no hardware
+python ui/app.py serve --run_dir=data/runs/...   # window only; some other process owns the bus
+python ui/app.py trace --run_dir=data/runs/...   # replay a planner trace
+python ui/tap.py [--show] [--rtde]               # read-only bus monitor: rates and pose motion
+(cd ui && npm run check)                         # headless render + PNG checks (tools/verify-ui.mjs)
 ```
 
-`mock` (`vbti/inspection/ui/mock.py`'s `start_mock`) wires an ordinary `Supervisor`
+`mock` (`ui/mock.py`'s `start_mock`, or `start_mock_collect` with `--collect`) wires an ordinary `Supervisor`
 to an ordinary `FakeRig` behind an ordinary bus — the same dispatcher,
 planner, IK, viewsphere and reachability code a real run uses. Only the arm
 and camera are faked (a slow-interpolating fake arm so `executing` is
@@ -303,7 +314,7 @@ hardware.
 
 `serve` starts **no bus**: there can be one bus on a port and it belongs to
 whoever owns the robot. `serve` is for pointing a window at a bus some other
-process already owns — and that is exactly how `vbti/inspection/run/app.py run`
+process already owns — and that is exactly how `run/app.py run`
 opens its own window: it spawns `serve` as a **child process**. pywebview
 refuses to start off the main thread, and the loop's main thread is the
 dispatcher (also the only thread that may take a signal), so the window gets
@@ -353,5 +364,5 @@ fighting over 8765, and how the window opens on a laptop during a demo.
   silently links the old `dist/`.
 - **Publish full descriptions.** A description missing a node deletes that node
   from the scene, including its GPU buffers.
-- **Marker count is 36** (12 azimuth × 3 elevations). If `V_ELEVATIONS` changes,
-  nothing breaks — the publisher reads `sphere.elevations`.
+- **Marker count is 36** (12 azimuth × 3 elevations). If the grid changes,
+  nothing breaks: the publisher iterates `sphere.cells()`.

@@ -1,87 +1,76 @@
-# brain — the orchestrator tier (MAY-187)
+# brain — the planner tier
 
 ## Purpose
 The blind planner. It owns the question, the geometry, the plan and the answer;
-it never sees a pixel. All visual knowledge reaches it as text from the `eyes`
-tier. Runtime is the **Claude Agent SDK** — we adopt the loop and build only
-the harness (tool bodies, safety gate, context render, evidence ledger).
-
-Loop shape (Anton, 2026-08-25):
+it never sees a pixel. All visual knowledge reaches it as text from `eyes/`.
+Runtime is the **Claude Agent SDK**: we adopt its loop and build only the
+harness (tool bodies, safety gate, context render, evidence ledger).
 
     survey -> plan() -> { inspect(question, cell) | move(cell) }* -> answer()
 
 ## Files
-- `loop.py` — `Brain(run_dir, question, vlm, verbs)` (both models injected,
-  never defaulted — `eyes/cognition.py` assembles them): the four verbs as
-  in-process MCP tools, the `PostToolUse` state hook (STATE + MOVES, every
-  turn, stamped), the `PreToolUse` safety gate, the survey declaration before
-  the opening, the answer-time evidence hunts with bounce-on-miss, the system
-  prompt and the run budget. CLI:
-  `p vbti/inspection/brain/loop.py vbti/inspection/data/runs/2408-cup1 "is there a logo on the cup?"`
-- `render.py` — everything the planner reads that a model did not write:
-  `state_block`, `moves_block`, `survey_bearing_line`, `gloss`, `opening`.
+- `loop.py`: `Brain(run_dir, question, vlm, verbs, ..., mover=None)`
+  (models injected, never defaulted; `eyes/cognition.py` assembles them): the
+  four verbs as in-process MCP tools, the `PostToolUse` state hook
+  (`_staple_state`: STATE + MOVES every turn), the `PreToolUse` gate on
+  `move` (`_gate`), the survey declaration before the opening, answer-time
+  evidence hunts with bounce-on-miss (`_collect_evidence`), the system prompt
+  and the turn budget. `mover=None` is replay over captured cells.
+  CLI: `python loop.py <run_dir> "<question>"`.
+- `live.py`: live binding: `SupervisorMover` sends `view/request` on the same
+  queue as the UI buttons and polls the `Supervisor` phase; plus the UI
+  handlers (`make_event_sink`, `make_beat_handler`, `make_ask_handler`) and
+  `TraceWatcher`.
+- `render.py`: everything the planner reads that a model did not write:
+  `state_block`, `moves_block`, `survey_bearing_line`, `gloss`, `opening`,
+  `menu_def`.
+- `trace.py`: `TraceWriter`/`read_trace`: `<run>/ai/<seq>/trace.jsonl`,
+  append-only, one per planner session. Image paths are run-relative; the UI
+  publisher maps them to URLs.
 
 ## Contracts & decisions
-- **The orchestrator is blind** (Anton 2026-08-25). No images, ever. The
-  description is therefore the world model: what the vision tier does not say
-  is permanently invisible here. Description quality, not planner model choice,
-  is the dominant capability lever.
-- **Append-only context, not stateless re-render** (Anton 2026-08-25). The
-  transcript accumulates; we keep the SDK loop intact. This is safe *because
-  the store is our filesystem* — any captured view can be re-inspected at any
-  time for zero motion, so stale context is always recoverable. What
-  re-reading does NOT fix is a wrong hypothesis being reinforced turn after
-  turn, which is why `thinking: adaptive` is on by default.
-- **Content accumulates, state is recomputed.** Descriptions ride the
-  transcript. Position/coverage/menu are derived from the store every turn and
-  pushed onto tool results by hook — a push cannot be forgotten, a pull can.
-- **Deltas, never snapshots.** A coverage table is false one view later; "4/12
-  -> 5/12" stays true forever. Nothing that rots goes into an append-only log.
-- **Four verbs, and that is a budget.** Pruning the action set is the largest
-  measured lever on agent loops (AgentOccam: WebArena 16.5 -> 25.8% from
-  removal alone). A fifth verb must earn its place on the bench.
-- **`move` is deterministic robot code plus the inspect call itself** (Anton
-  2026-08-25): go to the cell, capture the frame, inspect it against the run's
-  question. It returns **exactly what `inspect` returns** — it IS `inspect`
-  with a motion in front of it. The planner is blind, so a move that handed
-  back only a pose would waste a turn. Position and menu are state and arrive
-  by hook; a verb never renders its own context.
-- **`inspect` is the inspection model alone** — same looking, no motion, and a
-  question of the planner's choosing on any view already held. Chasing a detail
-  through held views is therefore strictly cheaper than moving. Both verbs go
-  through `Brain._inspect_cell`, so every description in a run is a
-  FindingWriter entry with a transcript on disk; there is no unaudited way to
-  see.
-- **`answer_schema` is the planner constraining the readout shape** — "yes|no",
-  "the text, verbatim", "a count". It is enforced by prompt text and nothing
-  else: `models.respond`'s schema argument is only a truthiness flag that flips
-  Gemini into JSON mode (`models.py:111`). A caller may constrain what the
-  answer contains, never the field ORDER — evidence, reasoning, answer is fixed,
-  because answer-first erases 100% of the CoT gain.
-- **Failures come back categorical, not verbatim** (LLM3 `2403.11552`: 60% vs
-  40% success *and* fewer retries).
-- **The full finding crosses back, not the one-line summary** — Anton
-  2026-08-25 overrode "distilled in context" for v1; Opus carries the tokens
-  and OpenEQA's one datapoint favours raw (36.5 captions < 43.6 < 49.6 raw).
-  Transcripts still stay on disk.
+- **The planner is blind.** No images, ever. The description is the world
+  model: what the vision tier does not say is invisible here. Description
+  quality, not planner model choice, is the dominant capability lever.
+- **Append-only context.** The transcript accumulates; the SDK loop stays
+  intact. Safe because any captured view can be re-inspected for zero motion.
+  Re-reading does not fix a reinforced wrong hypothesis, hence adaptive
+  thinking on by default.
+- **Content accumulates, state is recomputed.** Position/coverage/menu are
+  derived every turn and pushed onto tool results by hook: a push cannot be
+  forgotten, a pull can.
+- **Deltas, never snapshots.** "4/12 -> 5/12" stays true; a coverage table
+  is false one view later.
+- **Four verbs (`plan`, `inspect`, `move`, `answer`), and that is a budget.**
+  Pruning the action set is the largest measured lever on agent loops
+  (AgentOccam: WebArena 16.5 -> 25.8%). A fifth verb must earn its place.
+- **`move` = deterministic robot code + the inspect call.** It returns exactly
+  what `inspect` returns. Position and menu arrive by hook.
+- **`inspect` = the inspection model alone** on any held view, no motion.
+  Both verbs go through `Brain._inspect_cell`, so every description is a
+  `FindingWriter` entry with a transcript on disk.
+- **`answer_schema` constrains readout shape by prompt text only**:
+  `models.respond`'s schema argument only flips Gemini into JSON mode. Field
+  ORDER is fixed (evidence, reasoning, answer).
+- **Failures come back categorical, not verbatim** (LLM3 `2403.11552`).
+- **The full finding crosses back**, not a one-line summary. Transcripts stay on disk.
 - **Answer policy is judgment, not arithmetic.** One clear view settles a yes;
-  a no is a coverage argument. No vote counting, no confidence numbers,
-  reasoning before verdict.
-- **No `undetermined()` escape hatch for the model** — held back deliberately
-  (`action-space-absolute-look-hv`, Anton 2026-08-12, reaffirmed 2026-08-25):
-  GPT-4 wrongly declared 54.9% of feasible WebArena tasks impossible, so an
-  offered hatch gets over-used. The prompt does not invite "cannot determine".
-  Budget exhaustion still produces that verdict, but as a HARNESS outcome the
-  model cannot invoke — a loop must be able to stop.
-- **Replay first.** `move` jumps to cells a data-engine sweep already captured,
-  so the loop runs and benches with no arm. The live executor binds at exactly
-  one seam: `Brain._gate`, where the motion tier's checks
-  (`motion/execute.py`: path validity, safety mode) run before any real motion.
+  a no is a coverage argument. No vote counting, no confidence numbers.
+- **No `undetermined()` verb.** An offered escape hatch gets over-used.
+  Budget exhaustion still yields that verdict, as a harness outcome.
+- **Answer is stored before the run ends** (`_commit_answer`): a schema
+  rejection fails the tool call and the run continues.
+- **Approval gate.** In live mode the brain may press `view/request`; only the
+  operator presses `view/confirm` (`Supervisor._on_view_confirm` drops
+  confirms unless previewing). Exception: `SupervisorMover(auto_confirm_s=...)`
+  for `collect --auto` data sweeps with an operator at the cell. A stale
+  request cannot move the arm (`Supervisor.gen`). `_gate` validates the cell /
+  face address in code before `move` runs.
 
 ## Does NOT belong here
-- Pixels, crops, detection, OCR — all of that is `eyes/`, behind `inspect`.
-- Camera-centric language. The subagent speaks in-frame; this tier speaks
-  azimuth/elevation, because it is the tier that knows the pose.
-- Post-run validation and reflection. Stubs by design (Anton 2026-08-25):
-  `answer()` writes `eyes/answer.json` with the evidence a later validator
-  needs to disagree with it.
+- Pixels, crops, detection, OCR: `eyes/`, behind `inspect`.
+- Camera-centric language. Subagents speak in-frame; this tier speaks
+  azimuth/elevation because it knows the pose.
+- Motion or its own motion path: live moves go through the `Supervisor` queue.
+- Post-run validation and reflection: `answer.json` carries the evidence a
+  later validator needs to disagree.

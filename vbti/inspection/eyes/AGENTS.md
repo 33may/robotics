@@ -1,87 +1,74 @@
-# eyes — image machinery (MAY-186)
+# eyes — image machinery
 
 ## Purpose
-The run structure and tool API an AI agent uses to navigate our geometric
-space, inspect captured views, and know what it has seen. Machinery, not a
-question-answerer: **the module owns no question** — the agent does. Design:
-`../docs/blueprints/image-machinery.md`; plan:
-`docs/superpowers/plans/2026-08-24-image-machinery.md`.
+The tools a VLM agent uses to read captured views and know what it has seen.
+Machinery, not a question-answerer: **the module owns no question**; the
+planner (`brain/`) does. Design: `docs/blueprints/image-machinery.md`.
 
-Two agent tiers. The **orchestrator** owns geometry, the run structure and
-the final answer; the **inspection subagent** reads one captured view with
-its own tools and returns text. That split is what keeps raw pixels from
-accumulating in the orchestrator's context over a 5–30 step run.
+Two tiers. The planner owns geometry, the run structure and the final answer;
+the VLM subagents (`agents/`) read one captured view with their own tools and
+return text. That split keeps raw pixels out of the planner's context.
 
 ## Files
-- `agents/` — the VLM subagents: one loop (`vlm_agent.py`), one spec per
-  variant (inspect / survey / evidence). The recipe for adding a variant is
-  `agents/AGENTS.md`.
-- `store.py` — the run structure. `RunStore` (read API + flush to
-  `<run>/eyes/store.json` on every write) and the three writers.
-  `ViewRecord(cell, pose_id, cap_dir, t, T_base_cam)`.
-- `tools.py` — the verb surface: `ViewTools(run, writer=None)` — `run` a
-  `record/run.py:Run` (task-5, 2026-09-07: views come straight from `Run`
-  now, not a `RunStore` populated by a separate loader) — with `view_at`
-  (newest view of a cell), `views_near` (4-connected; an uncaptured
-  neighbour returns None and is logged as a note), `get_view` → `ViewImage`
-  (pixels **and** text), `crop` (clipped), `coverage` (ASCII + count), `note`.
-  Debug CLI: `p vbti/inspection/eyes/tools.py vbti/inspection/data/runs/2408-seeded`.
-- `verbs_local.py` — the subagent's local verbs: `LocalVerbs(backend)` with
-  `detect` (text → boxes), `segment` (box → frame-sized mask), `read_text`.
-  Policy (thresholds, clipping, ordering) lives in `LocalVerbs` and is tested
-  on `StubBackend` with no GPU; `Sam3Backend` and `PaddleOcrBackend` hold only
-  model I/O. Measured on the 5090: SAM 3 63–74 ms/frame warm, PP-OCRv6 ~16 ms.
-  `p vbti/inspection/eyes/verbs_local.py <run_dir> <h> <v>`.
-- `env_check.py` — preflight for the model stack (sm_120, a real bf16 matmul,
-  transformers ≥5, HF token, and a genuine gated-file fetch for `facebook/sam3`).
+- `agents/`: the VLM subagents: one loop (`vlm_agent.py`), one spec per
+  variant (inspect / survey / evidence). Recipe for a new variant: `agents/AGENTS.md`.
+- `tools.py`: the verb surface: `ViewTools(run, writer=None)` over a
+  `record/run.py:Run`: `view_at` (newest view of a cell), `views_near`
+  (4-connected; an uncaptured neighbour returns None and is noted), `get_view`
+  → `ViewImage` (pixels **and** deterministic text), `crop`, `coverage`
+  (ASCII + count), `note`, `survey_bearing`. `upright()` corrects only a 180°
+  capture. Debug CLI: `python tools.py <run_dir>`.
+- `store.py`: mutable AI state: `RunStore` (flushes `store.json` on every
+  write) and the writers `FactWriter`, `PlanWriter`, `FindingWriter`. Views
+  are read from `Run`, not from here.
+- `verbs_local.py`: local verbs: `LocalVerbs(backend)` with `detect` (text →
+  boxes), `segment` (box → frame-sized mask), `read_text`. Policy lives in
+  `LocalVerbs`, tested on `StubBackend` (no GPU); `Sam3Backend`,
+  `PaddleOcrBackend`, `SamOcrBackend` hold only model I/O. On the 5090: SAM 3
+  63–74 ms/frame warm, PP-OCR ~16 ms.
+- `models.py`: the swappable VLM interface `respond(parts, schema)`:
+  `GeminiVlm` (default `gemini-robotics-er-2-preview`), `StubVlm`,
+  `first_json_object`. No retries/batching/caching here.
+- `cognition.py`: `real_cognition()` / `stub_cognition()`: the caller picks
+  explicitly; nothing falls back to a stub. A live run that cannot see fails
+  at boot, and a stub run is labelled in the trace.
+- `preview.py`: draws detect boxes / masks / OCR onto captures
+  (`<run>/eyes/preview/<cell>.png`) for eyeball checks.
+- `env_check.py`: model-stack preflight (sm_120, real bf16 matmul,
+  transformers ≥5, HF token, gated fetch of `facebook/sam3`).
+- `bench/labels.py`: per-capture human ground truth (yes / no / partial)
+  in a separate file beside the run.
 
-`replay.py` (`load_run(run_dir, v_elevs, h_bins) -> RunStore`) is deleted
-(task-5, 2026-09-07): a captured run's views are read straight off `Run`
-now (`record/run.py:Run.load`, `.captured`, `.at()`), legacy layouts
-included. Debug a run without writing code: `p -m inspection.record card
-<id>` (`record/__main__.py`), or `Run.load(run_dir)` from a REPL.
-
-Tests (no pytest): `p vbti/inspection/tests/test_eyes_store.py`,
-`p vbti/inspection/tests/test_record_run_port.py`.
+Debug a run without code: `python -m inspection.record card <id>`, or
+`Run.load(run_dir)` from a REPL. Tests: `tests/test_eyes_*.py`, `tests/test_vlm_agent.py`.
 
 ## Contracts & decisions
 - **Three trust levels, enforced by construction.** `FactWriter` is the only
-  writer of geometric ground truth (views, visited, coverage) — deterministic
-  code holds it. `PlanWriter` (plan/hypothesis/notes) goes to the
-  orchestrator, `FindingWriter` (findings, verbatim transcripts, notes) to the
-  inspection subagent. Neither model-facing writer *has* an `add_view`; a test
-  locks their public API to an exact set. A hallucinated "I have seen the far
-  side" would corrupt the one signal independent of the VLM.
-- **Never imports `inspection.motion` or `inspection.run`** — the image tier
-  does not move the robot, in any form. Asserted by a test, not by convention.
-  Grid dimensions are passed in as parameters rather than imported from
-  `view/viewsphere.py` (which pulls in the whole pinocchio/IK stack).
-- **Capture↔cell join**: there is no join any more. A step IS the pair —
-  `steps/NNN/step.json` carries its own `view.address` (`null` for the
-  survey, which is always step 0), and `Run.at(cell)` is the only lookup.
-  Ids are dense over steps that HAPPENED: a rejected or failed capture keeps
-  its id and says why, a move that never captured has no step at all. The
-  old `run.json:turns[]` ↔ `meta.json:pose_id` join is dead, and with it the
-  two-namespaces trap (legacy runs still get it, below the read door, in
-  `record/legacy.py`).
-- **Verbatim on disk, distilled in context.** Full subagent transcripts land
-  in `<run>/ai/<seq>/transcripts/`, beside the trace and store of the session
-  that produced them; only summaries return to the orchestrator. You can
-  always drop detail later, never recover it.
-- **Never de-rotate a capture before detection** (measured 2026-08-24). SAM 3
-  resizes inputs to a square 1008, so turning a landscape frame into a portrait
-  one changes the object's rendered scale: losslessly straightening the ±90°
-  captures made 5 of 7 detections *worse*, two by ~0.70. The model tolerates
-  rotation, not aspect change. `upright()` corrects only the 180° flip.
-- **SAM 3 always returns 200 queries** — the score threshold is the detector.
-- **Answering is not a vote.** One positive view settles a yes; coverage is a
-  supporting argument for *absence* only. Naive tallying across views degrades
-  presence detection (PInVerify: 0.652 → 0.592) — do not add a scoring formula.
-- No pruning/summarisation in v1. Images used as captured, 848×480.
+  writer of geometric facts (views, visited, coverage) and is held by
+  deterministic code. `PlanWriter` (plan/hypothesis/notes) goes to the planner,
+  `FindingWriter` (findings, verbatim transcripts, notes) to the subagent.
+  Neither model-facing writer has `add_view`; a test locks their public API.
+  A hallucinated "I have seen the far side" must not reach the coverage signal.
+- **Never imports `inspection.motion` or `inspection.run`**: the image tier
+  never moves the robot. Asserted by tests (`test_eyes_store.py`,
+  `test_eyes_inspect.py`, `test_vlm_agent.py`). Grid vocabulary comes from
+  `view/grid.py` (numpy only), never `view/viewsphere.py`/`rays.py`.
+- **A step IS the capture↔cell pair.** `steps/NNN/step.json` carries its
+  `view.address` (`null` for the survey, always step 0); `Run.at(cell)` is the
+  only lookup. Legacy layouts are adapted in `record/legacy.py`.
+- **Verbatim on disk, distilled in context.** Full subagent transcripts go to
+  `<run>/ai/<seq>/transcripts/tNNN.json`; only summaries return to the planner.
+- **Never de-rotate a capture before detection.** SAM 3 resizes to a square
+  1008, so landscape→portrait changes the object's scale: straightening ±90°
+  captures made 5 of 7 detections worse. Only the 180° flip is corrected.
+- **SAM 3 always returns 200 queries**: the score threshold is the detector.
+- **Answering is not a vote.** One positive view settles a yes; coverage
+  supports *absence* only. Naive tallying degraded presence detection
+  (0.652 → 0.592); do not add a scoring formula.
 
 ## Does NOT belong here
 - Robot motion, IK, reachability, capture (`motion/`, `view/`, `perception/`).
-- Question-specific logic (the demo's "is there a logo" lives in the agent).
-- World-frame spatial reasoning inside the inspection subagent — it reasons
-  camera-centric; the orchestrator, which knows the pose, translates.
-- The next-move decision itself — that is the decider (MAY-187, `run/decider.py`).
+- Question-specific logic (lives in the agent prompt / planner).
+- World-frame reasoning inside a subagent: it reasons camera-centric; the
+  planner, which knows the pose, translates.
+- The next-move decision (`brain/`).
