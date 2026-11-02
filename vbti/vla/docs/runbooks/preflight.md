@@ -4,11 +4,9 @@ Use before data collection, real inference, or protocol evaluation.
 
 ## 1. Activate Environment
 
-Most real robot tools run from the robotics workspace with the LeRobot env:
-
 ```bash
-cd /home/may33/projects/ml_portfolio/robotics
-conda activate lerobot
+cd vbti/vla
+conda activate vla
 ```
 
 ## 2. Scan Servos
@@ -42,7 +40,7 @@ Use the actual follower port from the scan. Do not blindly use `/dev/ttyACM1` if
 ## 4. Move Robot To Rest
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --port=/dev/ttyACM1 --speed=3.0 --fps=30
+python -m vla.logic.servos.rest --port=/dev/ttyACM1 --speed=3.0 --fps=30
 ```
 
 ## 5. Check Cameras
@@ -81,7 +79,7 @@ python -m vla.logic.cameras.check_usb
 If RealSense is stuck:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/cameras/reset_camera.py
+python -m vla.logic.cameras.reset_camera
 ```
 
 ## 7. Decide The Mode

@@ -3,8 +3,8 @@
 ## EEPROM Unlock
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/unlock_all.py
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/unlock_all.py --port=/dev/ttyACM1
+python -m vla.logic.servos.unlock_all
+python -m vla.logic.servos.unlock_all --port=/dev/ttyACM1
 ```
 
 Unlocks EEPROM register on IDs 1-6. Use before operations that need persistent motor writes.
@@ -12,7 +12,7 @@ Unlocks EEPROM register on IDs 1-6. Use before operations that need persistent m
 ## Change Motor ID
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/change_id.py /dev/ttyACM1 <current_id> <new_id>
+python -m vla.logic.servos.change_id /dev/ttyACM1 <current_id> <new_id>
 ```
 
 The script:
@@ -27,7 +27,7 @@ The script:
 ## Factory Reset
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/factory_reset_motors.py
+python -m vla.logic.servos.factory_reset_motors
 ```
 
 Warning: read the constants at the top of the file before running:
@@ -44,9 +44,9 @@ The script temporarily moves ID 1 out of the way, resets the target, restores ID
 
 ```bash
 python -m vla.logic.servos.scan_all
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/unlock_all.py --port=/dev/ttyACM1
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/change_id.py /dev/ttyACM1 <current_id> <new_id>
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/factory_reset_motors.py
+python -m vla.logic.servos.unlock_all --port=/dev/ttyACM1
+python -m vla.logic.servos.change_id /dev/ttyACM1 <current_id> <new_id>
+python -m vla.logic.servos.factory_reset_motors
 python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
 ```
 

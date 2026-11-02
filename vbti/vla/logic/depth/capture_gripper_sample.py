@@ -13,7 +13,7 @@ Usage:
     conda run -n lerobot python -m vla.logic.depth.capture_gripper_sample \\
         --serial 123622270367 \\
         --seconds 5 \\
-        --out /home/may33/projects/ml_portfolio/robotics/vbti/vla/experiments/duck_cup_smolvla/v016/data/d405_gripper_sample
+        --out experiments/duck_cup_smolvla/v016/data/d405_gripper_sample
 """
 from __future__ import annotations
 

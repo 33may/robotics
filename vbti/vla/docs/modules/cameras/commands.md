@@ -101,8 +101,8 @@ If four cameras timeout, check:
 ## RealSense Reset
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/cameras/reset_camera.py
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/cameras/reset_camera.py 128422270260
+python -m vla.logic.cameras.reset_camera
+python -m vla.logic.cameras.reset_camera 128422270260
 ```
 
 No serial resets all detected RealSense devices. With a serial, only that camera is reset.
@@ -112,7 +112,7 @@ Warning: current script includes sudo/udev trigger behavior. Read it before modi
 ## Test Viewer Parsing
 
 ```bash
-cd /home/may33/projects/ml_portfolio/robotics/vbti/logic/cameras
+cd vbti/vla/logic/cameras
 python -m unittest test_view_cameras.py
 python -m py_compile view_cameras.py cameras.py
 ```

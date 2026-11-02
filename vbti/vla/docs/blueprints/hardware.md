@@ -74,8 +74,8 @@ python -m vla.logic.cameras.check_usb
 RealSense reset:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/cameras/reset_camera.py
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/cameras/reset_camera.py 128422270260
+python -m vla.logic.cameras.reset_camera
+python -m vla.logic.cameras.reset_camera 128422270260
 ```
 
 ## Udev Symlinks
@@ -173,7 +173,7 @@ python -m vla.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frode
 Move to rest:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --port=/dev/ttyACM1 --speed=3.0 --fps=30
+python -m vla.logic.servos.rest --port=/dev/ttyACM1 --speed=3.0 --fps=30
 ```
 
 Rest pose in degrees:
@@ -190,19 +190,19 @@ gripper: 0
 EEPROM unlock:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/unlock_all.py --port=/dev/ttyACM1
+python -m vla.logic.servos.unlock_all --port=/dev/ttyACM1
 ```
 
 Change ID:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/change_id.py /dev/ttyACM1 6 1
+python -m vla.logic.servos.change_id /dev/ttyACM1 6 1
 ```
 
 Factory reset:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/factory_reset_motors.py
+python -m vla.logic.servos.factory_reset_motors
 ```
 
 Warning: `factory_reset_motors.py` has hardcoded `PORT`, `MOTORS_TO_RESET`, and `TEMP_ID`. Read/edit before running.
@@ -216,7 +216,7 @@ python -m vla.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=sim_
 Quick recalibration:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/quick_recalib.py \
+python -m vla.logic.servos.quick_recalib \
   --port=/dev/ttyACM1 \
   --old_profile=frodeo-test \
   --new_profile=sim_accurate

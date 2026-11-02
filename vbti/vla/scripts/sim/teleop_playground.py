@@ -38,10 +38,11 @@ from isaaclab.actuators import ImplicitActuatorCfg
 # EDIT THIS SECTION — define your scene
 # ══════════════════════════════════════════════════════════════════════════════
 
-ROBOT_USD = str(Path(__file__).resolve().parents[2] / "assets/robots/so101_leisaac_vbti/so101_simready_follower_leisaac.usd")
-SCENE_USD = "/home/may33/projects/ml_portfolio/robotics/vbti/vla/data/so_v1/scene/ready_scene_rigid_hdri_v1_no_robot_no_duck.usda"
-# SOFT_DUCK_USD = "/home/may33/projects/ml_portfolio/robotics/vbti/vla/data/so_v1/assets/duck/object_1_soft.usda"
-SCENE_WITH_DUCK_USD = "/home/may33/projects/ml_portfolio/robotics/vbti/vla/data/so_v1/scene/ready_scene_rigid_hdri_v1_no_robot.usda"
+VLA_ROOT = Path(__file__).resolve().parents[2]  # vbti/vla
+ROBOT_USD = str(VLA_ROOT / "assets/robots/so101_leisaac_vbti/so101_simready_follower_leisaac.usd")
+SCENE_USD = str(VLA_ROOT / "data/so_v1/scene/ready_scene_rigid_hdri_v1_no_robot_no_duck.usda")
+# SOFT_DUCK_USD = str(VLA_ROOT / "data/so_v1/assets/duck/object_1_soft.usda")
+SCENE_WITH_DUCK_USD = str(VLA_ROOT / "data/so_v1/scene/ready_scene_rigid_hdri_v1_no_robot.usda")
 
 ROBOT_POS = (0.04386, 0.6008, 0.01133)
 ROBOT_ROT = (0.7071, 0.0, 0.0, 0.7071)
@@ -88,7 +89,7 @@ def design_scene():
     # Lights
     dome = sim_utils.DomeLightCfg(
         intensity=1000.0,
-        texture_file="/home/may33/projects/ml_portfolio/robotics/vbti/vla/data/so_v1/hdri/office_pano_4k.hdr",
+        texture_file=str(VLA_ROOT / "data/so_v1/hdri/office_pano_4k.hdr"),
         texture_format="latlong",
     )
     dome.func("/World/domeLight", dome)

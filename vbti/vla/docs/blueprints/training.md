@@ -88,7 +88,7 @@ python -m vla.logic.train.config_utils schema
 python -m vla.logic.train.config_utils schema training
 python -m vla.logic.train.config_utils default smolvla
 python -m vla.logic.train.config_utils default groot
-python -m vla.logic.train.config_utils show /home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/config.yaml
+python -m vla.logic.train.config_utils show experiments/duck_cup_smolvla/v020/config.yaml
 ```
 
 Create config with overrides:

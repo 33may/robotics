@@ -11,7 +11,7 @@ Run `preflight.md`.
 Example explicit checkpoint:
 
 ```text
-/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/lerobot_output_r12/checkpoints/150000/pretrained_model
+experiments/duck_cup_smolvla/v020/lerobot_output_r12/checkpoints/150000/pretrained_model
 ```
 
 Verify pre/postprocessor files are present.
@@ -54,7 +54,7 @@ python -m vla.logic.inference.run_real_inference run \
 Move to rest if needed:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --port=/dev/ttyACM1
+python -m vla.logic.servos.rest --port=/dev/ttyACM1
 ```
 
 Record notes:

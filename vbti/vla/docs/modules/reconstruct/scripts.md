@@ -5,7 +5,7 @@
 Gaussian Splat/object PLY to Poisson GLB:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/scripts/3d/reconstruct_mesh.py \
+python scripts/3d/reconstruct_mesh.py \
   --input vbti/data/so_v1/assets/duck/object_0.ply \
   --output vbti/data/so_v1/assets/duck/object_0_reconstructed.glb \
   --depth 9 \
@@ -17,7 +17,7 @@ python /home/may33/projects/ml_portfolio/robotics/vbti/scripts/3d/reconstruct_me
 Repair GLB for PhysX/deformables:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/scripts/3d/fix_manifold.py \
+python scripts/3d/fix_manifold.py \
   --input vbti/data/so_v1/assets/duck/object_0.glb \
   --output vbti/data/so_v1/assets/duck/object_0_fixed.glb
 ```

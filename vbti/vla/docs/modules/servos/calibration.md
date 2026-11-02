@@ -73,7 +73,7 @@ This writes homing offset and range registers. Do not run casually.
 Use when manually placing the robot at simulation zero and deriving new offsets:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/quick_recalib.py \
+python -m vla.logic.servos.quick_recalib \
   --port=/dev/ttyACM1 \
   --old_profile=frodeo-test \
   --new_profile=sim_accurate
@@ -83,7 +83,7 @@ Typical sequence:
 
 ```bash
 python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/quick_recalib.py --port=/dev/ttyACM1 --old_profile=frodeo-test --new_profile=sim_accurate
+python -m vla.logic.servos.quick_recalib --port=/dev/ttyACM1 --old_profile=frodeo-test --new_profile=sim_accurate
 python -m vla.logic.servos.profiles load sim_accurate --port /dev/ttyACM1
 ```
 

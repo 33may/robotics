@@ -22,7 +22,7 @@ Examples:
 ## 2. Copy A Close Config
 
 ```bash
-cd /home/may33/projects/ml_portfolio/robotics/vbti
+cd vbti/vla
 mkdir -p experiments/duck_cup_smolvla/vNNN
 cp experiments/duck_cup_smolvla/v020/config.yaml experiments/duck_cup_smolvla/vNNN/config.yaml
 ```

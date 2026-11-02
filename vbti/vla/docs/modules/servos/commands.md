@@ -48,7 +48,7 @@ If `robot_id` is omitted, it uses the active/default profile.
 ## Move To Rest
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --port=/dev/ttyACM1 --speed=3.0 --fps=30
+python -m vla.logic.servos.rest --port=/dev/ttyACM1 --speed=3.0 --fps=30
 ```
 
 Rest pose:
@@ -70,7 +70,7 @@ Pass `--port` explicitly. Defaults differ from other scripts and may not match t
 python -m vla.logic.servos.scan_all
 python -m vla.logic.servos.profiles list
 python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --port=/dev/ttyACM1
+python -m vla.logic.servos.rest --port=/dev/ttyACM1
 ```
 
 Only after this should model behavior be interpreted as model behavior rather than hidden hardware state.

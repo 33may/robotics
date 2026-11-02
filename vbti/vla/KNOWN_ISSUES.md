@@ -18,3 +18,4 @@ Found while writing the tutorials (2026-11). Not fixed.
 - `logic/inference/run_real_inference.py`: `run()` connects to the robot twice without disconnecting; the first connection ignores `--max_relative_target` (move to rest always uses 10.0). An unknown `--cameras` preset silently falls back to `realsense`.
 
 **Repo**
+- `logic/reconstruct/isaac_cfg_utils.py`: `LEISAAC_ROOT` is an absolute path to a LeIsaac checkout outside the repo; point it at yours before generating tasks.

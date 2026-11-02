@@ -5,7 +5,7 @@ Usage: import and call, or edit the __main__ block and run directly.
 from pathlib import Path
 import re
 
-DEFAULT_USD = "/home/may33/projects/ml_portfolio/robotics/vbti/vla/data/so_v1/assets/duck/object_1_soft.usda"
+DEFAULT_USD = str(Path(__file__).resolve().parents[2] / "data/so_v1/assets/duck/object_1_soft.usda")  # vbti/vla/data
 
 
 def _set_param(usd_path: str, pattern: str, value: float):
