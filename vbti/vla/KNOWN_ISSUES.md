@@ -18,4 +18,5 @@ Found while writing the tutorials (2026-11). Not fixed.
 - `logic/inference/run_real_inference.py`: `run()` connects to the robot twice without disconnecting; the first connection ignores `--max_relative_target` (move to rest always uses 10.0). An unknown `--cameras` preset silently falls back to `realsense`.
 
 **Repo**
+- `envs/vla.yml` installs stock lerobot 0.4.4; `smolvla_uva` checkpoints (v025-v029) and the per-group LR / depth patches need the fork `github.com/33may/lerobot` branch `vbti/main` (`pip install -e ".[smolvla]"`).
 - `logic/reconstruct/isaac_cfg_utils.py`: `LEISAAC_ROOT` is an absolute path to a LeIsaac checkout outside the repo; point it at yours before generating tasks.
