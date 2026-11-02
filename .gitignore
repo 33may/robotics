@@ -21,6 +21,7 @@ MUJOCO_LOG.TXT
 .venv/
 .claude/workflows/
 .claude/worktrees/
+vbti/vla/.claude/agent-memory/
 # UI trace screenshots — session scratch from scripts/uitest runs
 vbti/inspection/ui/tools/trace-*.png
 
