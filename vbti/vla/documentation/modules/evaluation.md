@@ -56,7 +56,6 @@ Important defaults:
 - `fps=30`.
 - `max_steps=500`.
 - `device=auto`.
-- `detection=False`.
 - `depth=False`.
 
 Workflow:
@@ -67,12 +66,11 @@ Workflow:
 4. Load policy, preprocessor, and postprocessor.
 5. Start async chunk runner.
 6. Capture state and camera frames.
-7. Optionally append detection-state vector.
-8. Optionally inject `gripper_depth` virtual camera.
-9. Predict action in policy space.
-10. Postprocess/denormalize and send joint targets with relative clamp.
-11. Save/display video if enabled.
-12. Stop cameras, robot, and async runner; move to rest.
+7. Optionally inject `gripper_depth` virtual camera.
+8. Predict action in policy space.
+9. Postprocess/denormalize and send joint targets with relative clamp.
+10. Save/display video if enabled.
+11. Stop cameras, robot, and async runner; move to rest.
 
 Postprocessor is mandatory because SmolVLA outputs normalized actions. The real robot command path expects denormalized joint targets.
 
@@ -96,24 +94,6 @@ D405 z16 depth -> aligned to gripper RGB -> clip 0.05-0.20m -> turbo RGB -> obse
 ```
 
 OpenCV cannot provide D405 depth. Hybrid presets use OpenCV for fixed RGB cameras and RealSense for gripper depth.
-
-## Detection-State In Inference
-
-Use only for models trained on augmented state:
-
-```bash
-python -m vla.logic.inference.run_real_inference run \
-  --checkpoint=/path/to/pretrained_model \
-  --detection=true
-```
-
-State layout:
-
-```text
-6 joints + [left,right,top,gripper] x [duck,cup] x [cx,cy]
-```
-
-Live detector input is already RGB; do not BGR-swap before detection.
 
 ## Protocol Evaluation
 
@@ -161,7 +141,7 @@ Workflow:
 2. Create or resume an `eval_sessions/...` folder.
 3. Persist session config.
 4. Load protocol JSON.
-5. Initialize cameras, robot, policy, optional depth/detector.
+5. Initialize cameras, robot, policy, optional depth.
 6. Show live top-camera placement overlay.
 7. Run inference after operator starts trial.
 8. Save per-trial result and optional video.
@@ -287,6 +267,5 @@ Interpretation from v020: dual-cup language disambiguation was solved in the sat
 - Compare only sessions from the same protocol for quantitative claims.
 - `eval_engine.py` CLI docs and Fire binding differ; use direct module args.
 - Depth requires RealSense gripper depth.
-- Detection-state models require matching 22D state at inference.
 - Checkpoint shorthand resolution is convenient but should be verified before a long eval.
 - v020 `dual_cup_60` is near saturation; use harder protocols for further progress.

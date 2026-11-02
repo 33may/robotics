@@ -12,7 +12,6 @@ Use this tree when you need to work with code. The older `documentation/modules/
 | `logic/servos` | `servos/` | SO-101 Feetech scanning, calibration profiles, rest pose, EEPROM recovery. |
 | `logic/dataset` | `dataset/` | LeRobot/HDF5 inspection, conversion, loading, aggregation, curation, feature transforms. |
 | `logic/depth` | `depth/` | D405 capture, packed depth, turbo colorization, offline baking, realtime parity. |
-| `logic/detection` | `detection/` | Grounding DINO/student detection, phase labels, detection-state features, distillation. |
 | `logic/train` | `train/` | Config schema, local engine, remote `lerobot-train`, chains, experiment folders. |
 | `logic/inference` | `inference/` | Real inference, protocol evaluation, protocol generation, session analysis/rendering. |
 | `logic/reconstruct` | `reconstruct/` | Video/COLMAP/MILo reconstruction, USD conversion, Isaac/LeIsaac generation, Cosmos prep. |

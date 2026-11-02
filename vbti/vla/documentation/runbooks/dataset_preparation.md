@@ -96,19 +96,7 @@ Common strides:
 - `4`: about 25%;
 - `2`: about 50%.
 
-## 6. Detection/Phase Augmentation If Needed
-
-Only for detection-state experiments:
-
-```bash
-python -m vla.logic.detection.process_dataset <dataset>
-python -m vla.logic.detection.phases <dataset>
-python -m vla.logic.dataset.augment <dataset> --augmentations detection phase -o <augmented_dataset>
-```
-
-Verify `observation.state` dimension after augmentation.
-
-## 7. UVA Feature Bake If Needed
+## 6. UVA Feature Bake If Needed
 
 ```bash
 python -m vla.logic.dataset.add_video_features \
@@ -123,7 +111,7 @@ python -m vla.logic.dataset.add_video_features \
 
 For remote training, bake where the remote can access the result or sync it afterward.
 
-## 8. Final Verification
+## 7. Final Verification
 
 ```bash
 python -m vla.logic.dataset.check_utils report <final_dataset>

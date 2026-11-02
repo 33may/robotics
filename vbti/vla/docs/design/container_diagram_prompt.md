@@ -26,7 +26,6 @@ This layer contains reusable utilities for robot learning, from hardware setup t
 
 - **Hardware Utilities** (`logic/cameras/`, `logic/servos/`): RealSense camera setup/view/calibration/reset and Feetech servo scan/calibration/profile/rest/unlock tools.
 - **Dataset Utilities** (`logic/dataset/`): LeRobot/HDF5 conversion, trimming, augmentation, subsampling, inspection, replay, validation, feature editing.
-- **Perception + Detection Utilities** (`logic/detection/`, `logic/inference/async_detector.py`): object detection, phase detection, dataset processing, detector distillation/export, realtime async detection.
 - **Depth Utilities** (`logic/depth/`, dataset depth tools): depth baking, gripper depth capture, realtime preparation, colorization, real-vs-estimated comparison, depth feature insertion.
 - **Training Utilities** (`logic/train/`): SmolVLA/GR00T training backends, config utilities, experiment launch/monitoring, chains, remote training.
 - **Inference Utilities** (`logic/inference/`): real policy inference, prompt/voice input, async chunk runner, policy action dispatch.
@@ -41,8 +40,8 @@ Show the main AI model flow as:
 
 Also show cross-links:
 
-- Dataset utilities can call detection and depth utilities to enrich datasets.
-- Inference can call perception/depth utilities for realtime state augmentation.
+- Dataset utilities can call depth utilities to enrich datasets.
+- Inference can call depth utilities for realtime depth input.
 - Evaluation drives inference and uses hardware setup.
 - Simulation uses generated scenes/tasks from the 3D reconstruction layer.
 - The design knowledge base documents both layers and should sit as supporting infrastructure, not as runtime logic.

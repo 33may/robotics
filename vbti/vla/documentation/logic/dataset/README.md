@@ -17,9 +17,6 @@ It is the main contract layer between data collection, training, inference, and 
 | `loading_utils.py` | Dataset loading, train/val splitting, aggregation. |
 | `replay_utils.py` | Robot/dataset replay and pose helpers. |
 | `trim_utils.py` | Dataset trimming/episode curation utilities. |
-| `viewer.py` | Augmented dataset viewer. |
-| `augment.py` | Bake detection/phase features into `observation.state`. |
-| `augment_all.py` | Batch augmentation helper; appears stale against current `augment.py`. |
 | `subsample.py` | Deterministic episode-stride dataset slicing. |
 | `strip_feature.py` | Create a dataset copy without a selected feature. |
 | `add_zero_depth_turbo.py` | Add black depth-image feature for schema compatibility. |

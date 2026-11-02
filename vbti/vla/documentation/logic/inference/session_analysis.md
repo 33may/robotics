@@ -38,7 +38,7 @@ For every evaluation claim include:
 - protocol name;
 - action horizon;
 - camera preset;
-- depth/detection flags;
+- depth flag;
 - success count and denominator;
 - session path;
 - any failed/cancelled trials;
@@ -62,7 +62,7 @@ For every evaluation claim include:
 - Same protocol.
 - Same physical setup or documented setup difference.
 - Same camera schema.
-- Same depth/detection modality expectation.
+- Same depth modality expectation.
 - Same or intentionally varied action horizon.
 - Enough trials to support the claim.
 

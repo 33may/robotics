@@ -10,7 +10,6 @@ Start here:
 - `logic/servos/` - SO-101 scan, calibration profiles, rest, EEPROM recovery.
 - `logic/dataset/` - LeRobot/HDF5 schema, inspection, conversion, transforms, UVA features.
 - `logic/depth/` - D405 capture, packed/baked depth, train/inference parity.
-- `logic/detection/` - Grounding DINO, phase labels, detection-state augmentation, distillation.
 - `logic/train/` - config schema, local engine, remote training, chains, experiment history.
 - `logic/inference/` - real inference, protocol eval, protocol schemas, session analysis.
 - `logic/reconstruct/` - video/COLMAP/MILo, USD/Isaac, scripts, Cosmos prep.

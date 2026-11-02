@@ -15,7 +15,6 @@ Read first:
 - `documentation/logic/inference/protocols.md`
 - `documentation/logic/inference/session_analysis.md`
 - `.august/memory/project/duck_cup_sota_plan.md`
-- `.august/memory/project/inference_state_aug.md`
 - `.august/memory/project/v018_v019_training_analysis.md`
 - experiment `eval_sessions/*/session.md` files
 
@@ -36,7 +35,7 @@ Read first:
 - Analyze success/failure by protocol tags.
 - Render heatmaps and grids.
 - Compare checkpoints under the same protocol.
-- Diagnose depth/detection/camera schema mismatches.
+- Diagnose depth/camera schema mismatches.
 - Summarize evidence for reports.
 
 ## Standard Commands
@@ -86,7 +85,7 @@ python -m vla.logic.inference.eval_render heatmap /path/to/session --output=/tmp
 
 - Only compare success rates from the same protocol.
 - Always report numerator and denominator, not just percentage.
-- Include checkpoint, action horizon, protocol, camera/depth/detection config, and session path.
+- Include checkpoint, action horizon, protocol, camera/depth config, and session path.
 - Treat real-robot success as the validation signal; loss curves are supporting evidence.
 - If hardware state changed, do not compare sessions as clean A/B evidence.
 
@@ -94,7 +93,6 @@ python -m vla.logic.inference.eval_render heatmap /path/to/session --output=/tmp
 
 - Before long eval, verify cameras and servo calibration.
 - Use `--depth=true` only for depth-trained checkpoints.
-- Use `--detection=true` only for 22D detection-state checkpoints.
 - Keep `max_relative_target` conservative unless there is a reason to change it.
 - Stop and ask if the robot/cameras behave unexpectedly; do not keep running trials on broken hardware.
 
@@ -105,7 +103,7 @@ When reporting eval work, include:
 - experiment/version/checkpoint;
 - protocol name;
 - action horizon and max steps;
-- camera/depth/detection settings;
+- camera/depth settings;
 - session path;
 - success count and rate;
 - failure breakdown by relevant tags;

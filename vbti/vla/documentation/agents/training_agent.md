@@ -85,7 +85,7 @@ python -m vla.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run
 
 - Do not expose plaintext remote password from `remote.yaml`.
 - Before launching, run a dry run if config/path behavior is uncertain.
-- Verify dataset schema before training, especially camera list and depth/detection features.
+- Verify dataset schema before training, especially camera list and depth features.
 - Do not assume local backend edits affect remote training.
 - Avoid comparing runs across different protocols as if they are the same metric.
 - For long sweeps, make failure criteria explicit: missing checkpoint, tiny safetensors, crashed tmux, wrong dataset path.

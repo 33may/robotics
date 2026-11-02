@@ -33,7 +33,6 @@ Important: current Fire binding exposes `run` arguments directly. Some older doc
 | `record` | `False` |
 | `resume` | `False` |
 | `depth` | `False` |
-| `detection` | `False` |
 
 ## Operator Flow
 

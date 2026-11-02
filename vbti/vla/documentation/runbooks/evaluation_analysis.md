@@ -59,7 +59,7 @@ Template:
 - Protocol:
 - Action horizon:
 - Camera preset:
-- Depth/detection:
+- Depth:
 - Result: X/Y = Z%
 - Session path:
 - Main failure patterns:

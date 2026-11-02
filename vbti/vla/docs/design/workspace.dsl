@@ -30,7 +30,6 @@ workspace "VBTI Modular Robot Learning Platform" "C4 architecture model focused 
             group "AI Model Pipeline" {
                 hardwareUtils = container "Hardware Utilities" "Camera discovery/viewing/calibration/reset plus servo scanning, calibration, profiles, rest/unlock, and raw robot setup helpers." "logic/cameras/, logic/servos/"
                 datasetUtils = container "Dataset Utilities" "Converts, trims, augments, subsamples, inspects, replays, validates, and edits LeRobot/HDF5 datasets." "logic/dataset/"
-                perceptionUtils = container "Perception + Detection Utilities" "Runs object detection, phase detection, async detection, dataset processing, and distilled detector training/export." "logic/detection/, logic/inference/async_detector.py"
                 depthUtils = container "Depth Utilities" "Bakes, colorizes, compares, captures, estimates, and adds gripper/depth features to datasets and realtime inference inputs." "logic/depth/, dataset depth tools"
                 trainingUtils = container "Training Utilities" "Configures, launches, monitors, chains, and remotely runs SmolVLA/GR00T training backends and experiment utilities." "logic/train/"
                 inferenceUtils = container "Inference Utilities" "Runs real policy inference, prompt/voice input, async chunk execution, policy loading, and closed-loop action dispatch." "logic/inference/"
@@ -69,11 +68,9 @@ workspace "VBTI Modular Robot Learning Platform" "C4 architecture model focused 
             hardwareUtils -> datasetUtils "Provides recorded episodes to"
 
             datasetUtils -> hardwareUtils "Consumes recorded observations/actions"
-            datasetUtils -> perceptionUtils "Can add object/phase annotations through"
             datasetUtils -> depthUtils "Can add or transform depth features through"
             datasetUtils -> trainingUtils "Provides LeRobot datasets to"
             datasetUtils -> hf "Publishes and loads datasets from"
-            perceptionUtils -> inferenceUtils "Provides realtime detections/state augmentation"
             depthUtils -> inferenceUtils "Provides depth features for realtime inputs"
             trainingUtils -> datasetUtils "Trains on prepared datasets"
             trainingUtils -> hf "Pulls/pushes datasets and checkpoints"
@@ -110,7 +107,6 @@ workspace "VBTI Modular Robot Learning Platform" "C4 architecture model focused 
         robotMachine = deploymentEnvironment "Robot / Remote Machine" {
             remoteNode = deploymentNode "Robot PC" "Machine attached to robot workcell" "Linux, USB cameras/servos" {
                 containerInstance vbti.hardwareUtils
-                containerInstance vbti.perceptionUtils
                 containerInstance vbti.depthUtils
                 containerInstance vbti.inferenceUtils
                 containerInstance vbti.evaluationUtils

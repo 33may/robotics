@@ -43,14 +43,6 @@ JOINT_NAMES = [
 
 GRIPPER_IDX = 5
 
-# Detection camera mapping — inference camera names → detection expectations
-DETECTION_CAMERAS = ["left", "right", "top", "gripper"]
-
-# State-augmentation column order — must match the dataset's observation.state layout.
-# v014 dataset: 6 joints + [left,right,top,gripper] × [duck,cup] × [cx,cy] = 22 dims.
-DETECTION_AUG_CAM_ORDER = ["left", "right", "top", "gripper"]
-DETECTION_AUG_OBJ_ORDER = ["duck", "cup"]
-
 REAL_LIMITS_DEG = [
     (-114.5, 125.5),   # shoulder_pan
     (-109.9, 101.0),   # shoulder_lift
@@ -144,112 +136,6 @@ def _show_camera_grid(frames, camera_names, step, action=None,
     )
 
 
-# ── Detection overlay ───────────────────────────────────────────────────────
-
-def _init_detector(device: str = "cuda"):
-    """Load student detector for live detection overlay."""
-    from vla.logic.detection.detect import StudentDetector
-    detector = StudentDetector(device=device)
-    vram_mb = torch.cuda.memory_allocated() / 1e6
-    print(f"[detection] StudentDetector loaded — total VRAM: {vram_mb:.0f} MB")
-    return detector
-
-
-def _run_detection_overlay(detector, images: dict, camera_names: list) -> dict:
-    """Run detection on each camera frame, draw boxes + centers, return results.
-
-    Modifies images IN-PLACE (draws on BGR frames).
-    Returns dict of {cam: {duck: {...}, cup: {...}}} detection results.
-    """
-    results = {}
-    for cam_name in camera_names:
-        if cam_name not in images or cam_name not in DETECTION_CAMERAS:
-            continue
-
-        frame = images[cam_name]  # RGB uint8 from _capture_frames
-        det = detector.detect(frame, cam_name)
-        results[cam_name] = det
-
-        h, w = frame.shape[:2]
-
-        # Draw duck (green) and cup (red)
-        colors = {"duck": (0, 255, 0), "cup": (0, 0, 255)}
-        for obj_name, color in colors.items():
-            obj = det[obj_name]
-            if not obj["found"]:
-                continue
-            # Draw bounding box
-            x1, y1, x2, y2 = obj["bbox"]
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
-            # Draw center crosshair
-            cx, cy = obj["center"]
-            cx, cy = int(cx), int(cy)
-            cv2.drawMarker(frame, (cx, cy), color, cv2.MARKER_CROSS, 15, 2)
-            # Label with confidence
-            label = f"{obj_name} {obj['confidence']:.2f}"
-            cv2.putText(frame, label, (int(x1), int(y1) - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-
-    return results
-
-
-class DetectionStateHolder:
-    """Per-trial hold-last-good for the 16-d state-augmentation vector.
-
-    Mirrors the dataset's offline `apply_confidence_hold`: when an object is
-    not found in the current frame, re-emit the last-known cx/cy instead of
-    zeros, so live state aug matches the training distribution.
-
-    Output order: [left, right, top, gripper] × [duck, cup] × [cx_norm, cy_norm].
-    Before any successful detection for a (cam, obj), values are 0.0 — matching
-    `np.nan_to_num` of pre-first-detection NaNs in the dataset.
-    """
-
-    def __init__(self):
-        self._last: dict[tuple[str, str], tuple[float, float]] = {}
-
-    def reset(self):
-        """Clear held values — call between trials / episodes."""
-        self._last.clear()
-
-    def update_and_vector(self, det_results: dict | None) -> np.ndarray:
-        out: list[float] = []
-        results = det_results or {}
-        for cam in DETECTION_AUG_CAM_ORDER:
-            cam_det = results.get(cam) or {}
-            for obj in DETECTION_AUG_OBJ_ORDER:
-                d = cam_det.get(obj)
-                if d and d.get("found"):
-                    cx, cy = float(d["center_norm"][0]), float(d["center_norm"][1])
-                    self._last[(cam, obj)] = (cx, cy)
-                else:
-                    cx, cy = self._last.get((cam, obj), (0.0, 0.0))
-                out.append(cx)
-                out.append(cy)
-        return np.array(out, dtype=np.float32)
-
-
-def _detection_state_vector(det_results: dict | None) -> np.ndarray:
-    """Stateless 16-d aug vector — zeros on not-found.
-
-    Kept for tests/diagnostics only. Live inference must use
-    `DetectionStateHolder` to match the dataset's hold-last-good behavior.
-    """
-    out: list[float] = []
-    results = det_results or {}
-    for cam in DETECTION_AUG_CAM_ORDER:
-        cam_det = results.get(cam) or {}
-        for obj in DETECTION_AUG_OBJ_ORDER:
-            d = cam_det.get(obj)
-            if d and d.get("found"):
-                cx, cy = d["center_norm"]
-            else:
-                cx, cy = 0.0, 0.0
-            out.append(float(cx))
-            out.append(float(cy))
-    return np.array(out, dtype=np.float32)
-
-
 def _save_video_ffmpeg(frames: list[np.ndarray], output_path: Path, fps: int):
     """Save BGR frames to mp4 using ffmpeg pipe. Produces Obsidian-compatible mp4."""
     import subprocess
@@ -339,21 +225,16 @@ def _load_policy(checkpoint: str, device: torch.device):
 def _build_observation(state_deg: np.ndarray, images: dict[str, np.ndarray],
                        camera_names: list[str], task: str,
                        preprocessor, device: torch.device,
-                       camera_name_map: dict[str, str] | None = None,
-                       state_aug: np.ndarray | None = None) -> dict:
+                       camera_name_map: dict[str, str] | None = None) -> dict:
     """Build policy input from robot state + camera frames.
 
     camera_name_map: optional {physical_name: training_name} remapping.
     Example: {"gripper": "wrist_cam", "top": "top_cam"}
-    state_aug: optional 1-D array concatenated to state_deg before normalization
-               (e.g. detection cx/cy for v014's 22-d state).
     """
     policy_input = {}
 
-    full_state = (np.concatenate([state_deg, state_aug])
-                  if state_aug is not None else state_deg)
     policy_input["observation.state"] = torch.tensor(
-        full_state, dtype=torch.float32
+        state_deg, dtype=torch.float32
     ).unsqueeze(0).to(device)
 
     for name in camera_names:
@@ -392,7 +273,6 @@ def run(
     device: str = "auto",
     print_actions_every: int = 0,
     delta_actions: bool = False,
-    detection: bool = False,
     replay_pkl: str = "",
     depth: bool = False,
     live_prompt_toggle: bool = False,
@@ -536,13 +416,6 @@ def run(
         print(f"Async chunk runner: execution_horizon={action_horizon}, "
               f"RTC={'on' if enable_rtc else 'off'}")
 
-    # ── Load detector (optional) ─────────────────────────────
-    detector = None
-    state_holder = None
-    if detection:
-        detector = _init_detector(device=str(dev))
-        state_holder = DetectionStateHolder()
-
     # ── Init hardware ─────────────────────────────────────────
     print(f"\nInitializing cameras...")
     cameras = _init_cameras(camera_config, fps=fps)
@@ -647,9 +520,6 @@ def run(
     print(f"Safety clamp: {max_relative_target} deg/step")
     if delta_actions:
         print(f"  Delta actions: ENABLED (step-wise delta, joints reconstructed from state + delta)")
-    if detection:
-        vram_total = torch.cuda.memory_allocated() / 1e6
-        print(f"  Detection: ENABLED — total VRAM: {vram_total:.0f} MB")
     print("=" * 60)
     if prompt_gui:
         print("Use the inference GUI for camera view and prompt commands. Close GUI or Ctrl+C to stop\n")
@@ -707,16 +577,6 @@ def run(
             if len(images) < len(camera_names):
                 frame_drops += 1
 
-            # Run detection overlay (draws on frames in-place, returns results)
-            det_results = None
-            if detector is not None:
-                t_det = time.perf_counter()
-                det_results = _run_detection_overlay(detector, images, camera_names)
-                det_ms = (time.perf_counter() - t_det) * 1000
-                if step % 30 == 0:
-                    vram_mb = torch.cuda.memory_allocated() / 1e6
-                    print(f"  [det] step {step}: {det_ms:.0f}ms, VRAM {vram_mb:.0f}MB")
-
             current_prompt, current_prompt_version, current_prompt_source = prompt_state.snapshot()
             current_update_mode = mode_state.snapshot()
             if current_prompt_version != last_seen_prompt_version:
@@ -735,11 +595,8 @@ def run(
                     break
                 action = replay_queue.popleft()
             else:
-                state_aug = (state_holder.update_and_vector(det_results)
-                             if state_holder is not None else None)
                 obs = _build_observation(state_deg, images, camera_names,
-                                         current_prompt, preprocessor, dev, camera_name_map,
-                                         state_aug=state_aug)
+                                         current_prompt, preprocessor, dev, camera_name_map)
                 assert runner is not None
                 action = runner.step(obs)
 

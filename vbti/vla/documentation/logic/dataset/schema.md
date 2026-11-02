@@ -47,7 +47,6 @@ UVA-extended datasets add a video-feature key such as:
 observation.video_features.siglip_output_4x4
 ```
 
-Detection-augmented datasets expand `observation.state` from 6D to 22D.
 
 ## Joint Order
 
@@ -102,22 +101,6 @@ min = 0.05 m
 max = 0.20 m
 scale = 1e-4 m per uint16 unit
 ```
-
-## Detection-State Contract
-
-Detection-augmented state is:
-
-```text
-6 joints + 16 detection values = 22 values
-```
-
-Detection values are ordered as:
-
-```text
-[left, right, top, gripper] x [duck, cup] x [cx, cy]
-```
-
-This order is fixed and is not automatically derived from arbitrary camera order.
 
 ## Resolve Function
 

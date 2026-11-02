@@ -37,7 +37,7 @@ Additional evidence used here:
 | Module | Main paths | Responsibility |
 |---|---|---|
 | Hardware | `logic/cameras`, `logic/servos` | RealSense/OpenCV camera presets, SO-101 servo scan/calibration/recovery/rest. |
-| Dataset | `logic/dataset`, `logic/depth`, `logic/detection` | LeRobot/HDF5 conversion, inspection, curation, depth transforms, detection labels, UVA feature baking. |
+| Dataset | `logic/dataset`, `logic/depth` | LeRobot/HDF5 conversion, inspection, curation, depth transforms, UVA feature baking. |
 | Training | `logic/train`, `experiments/duck_cup_smolvla` | Versioned configs, local engine, remote `lerobot-train`, sequential chains, experiment receipts. |
 | Evaluation | `logic/inference`, `logic/inference/protocols` | Real policy deployment, protocol trials, session JSON/Markdown, heatmaps and breakdowns. |
 | Reconstruction | `logic/reconstruct`, `scripts/3d`, `scripts/sim` | Video-to-mesh reconstruction, USD conversion, Isaac/LeIsaac task export, Cosmos prep. |
@@ -247,7 +247,6 @@ For command-level usage, use the folder tree that mirrors `logic/`:
 - `logic/servos/`
 - `logic/dataset/`
 - `logic/depth/`
-- `logic/detection/`
 - `logic/train/`
 - `logic/inference/`
 - `logic/reconstruct/`

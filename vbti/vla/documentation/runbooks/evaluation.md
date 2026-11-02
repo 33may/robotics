@@ -103,5 +103,5 @@ python -m vla.logic.inference.eval_helpers info latest
 
 - Do not compare different protocols as the same metric.
 - Include numerator/denominator, not only percentage.
-- Record camera preset, depth/detection flags, and action horizon.
+- Record camera preset, depth flag, and action horizon.
 - If hardware changed mid-session, mark the session as compromised.

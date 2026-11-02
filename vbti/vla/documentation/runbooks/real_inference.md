@@ -49,19 +49,7 @@ python -m vla.logic.inference.run_real_inference run \
   --task="Pick up the duck and place it in the red cup"
 ```
 
-## 6. Run Detection-State Policy
-
-Only if trained with 22D detection state:
-
-```bash
-python -m vla.logic.inference.run_real_inference run \
-  --checkpoint=/absolute/path/to/pretrained_model \
-  --port=/dev/ttyACM1 \
-  --detection=true \
-  --task="Pick up the duck and place it in the red cup"
-```
-
-## 7. After Run
+## 6. After Run
 
 Move to rest if needed:
 
@@ -83,5 +71,4 @@ Record notes:
 - Robot moves unexpectedly or too aggressively.
 - Camera freezes.
 - Depth stream missing for depth model.
-- Detection overlay/state missing for detection model.
 - Calibration seems wrong.

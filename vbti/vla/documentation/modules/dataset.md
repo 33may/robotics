@@ -1,4 +1,4 @@
-# Dataset, Depth, And Detection Modules
+# Dataset And Depth Modules
 
 ## Scope
 
@@ -6,7 +6,6 @@ Dataset code lives in:
 
 - `logic/dataset/`
 - `logic/depth/`
-- `logic/detection/`
 
 The dataset layer is the contract between collection, training, inference, and evaluation.
 
@@ -42,14 +41,12 @@ Camera names and order matter because SmolVLA builds its input interface from da
 | `logic/dataset/hdf5_utils.py` | HDF5 tree/report/viewer. |
 | `logic/dataset/convert_utils.py` | HDF5 to LeRobot conversion, verification, recalibration/link helpers. |
 | `logic/dataset/loading_utils.py` | Dataset loading, splitting, aggregation. |
-| `logic/dataset/augment.py` | Bake detection/phase features into `observation.state`. |
 | `logic/dataset/subsample.py` | Deterministic episode-stride dataset slicing. |
 | `logic/dataset/add_video_features.py` | Bake UVA/SigLIP future-window teacher features. |
 | `logic/dataset/strip_feature.py` | Create copy without a feature. |
 | `logic/dataset/add_zero_depth_turbo.py` | Add black `gripper_depth` feature for merge compatibility. |
 | `logic/dataset/depth_viewer.py` | View packed/baked depth. |
 | `logic/depth/*` | Capture, colorize, bake, compare, and prepare depth. |
-| `logic/detection/*` | Grounding DINO/student detector, dataset detection, phase detection, distillation. |
 
 ## Dataset Inspection Commands
 
@@ -138,104 +135,6 @@ python -m vla.logic.dataset.subsample \
 ```
 
 `stride` must be at least `2`. This reindexes episodes/frames and creates a smaller dataset artifact.
-
-## Detection And Phase Augmentation
-
-Current code uses Grounding DINO as the teacher detector, with optional student detector/ONNX paths. Older memory mentions OWLv2; treat that as stale for current code.
-
-Process dataset detections:
-
-```bash
-python -m vla.logic.detection.process_dataset eternalmay33/duck_cup_v020_all \
-  --stride 30 \
-  --gripper-stride 10 \
-  --batch-size 4 \
-  --cameras left right top gripper \
-  --threshold 0.1 \
-  --conf-hold-threshold 0.15 \
-  --device cuda
-```
-
-Output:
-
-```text
-<dataset_root>/detection_results.parquet
-```
-
-Generate phase labels:
-
-```bash
-python -m vla.logic.detection.phases eternalmay33/duck_cup_v020_all --fps 30
-```
-
-Output:
-
-```text
-<dataset_root>/phase_labels.parquet
-```
-
-Bake detection/phase into `observation.state`:
-
-```bash
-python -m vla.logic.dataset.augment eternalmay33/duck_cup_v020_all \
-  --augmentations detection phase \
-  -o eternalmay33/duck_cup_v020_all_aug \
-  --cameras left right top gripper \
-  --include-confidence \
-  --detection-parquet detection_results.parquet
-```
-
-Detection-augmented state order for live inference is fixed:
-
-```text
-6 joint values + [left,right,top,gripper] x [duck,cup] x [cx,cy] = 22 dims
-```
-
-Use `--detection=true` in inference/eval only for models trained with that augmented state.
-
-## Detector Distillation Commands
-
-Export Grounding DINO ONNX:
-
-```bash
-python -m vla.logic.detection.distill.export_onnx --output ~/.cache/vbti/grounding_dino_base.onnx
-```
-
-Stage 1 labels:
-
-```bash
-python -m vla.logic.detection.distill.distill_stage1 \
-  --dataset eternalmay33/duck_cup_v020_all \
-  --output /path/detection_labels_stage1.parquet
-```
-
-Stage 2 cleanup:
-
-```bash
-python -m vla.logic.detection.distill.distill_stage2 \
-  --input /path/stage1.parquet \
-  --output /path/stage2.parquet \
-  --max-gap 30 \
-  --neighbor-k 3
-```
-
-Final filtering/galleries:
-
-```bash
-python -m vla.logic.detection.distill.distill_filter \
-  --dataset eternalmay33/duck_cup_v020_all \
-  --output /path/detection_labels_final.parquet \
-  --gallery-dir /path/data_analysis \
-  --n-samples 24
-```
-
-Train/eval student:
-
-```bash
-python -m vla.logic.detection.distill.distill cache --force
-python -m vla.logic.detection.distill.distill train --all --run m1_baseline --max-epochs 40 --batch-size 128 --model mobilenet_v3_small
-python -m vla.logic.detection.distill.distill eval --cam left --checkpoint /path/best.pt
-```
 
 ## Depth Workflows
 
@@ -364,9 +263,7 @@ python -m vla.logic.dataset.add_video_features \
 ## Pitfalls
 
 - Do not change dataset schema casually; training and inference depend on matching feature names.
-- Detection memory mentioning OWLv2 is stale; current detector path is Grounding DINO/student.
 - Remote training uses `lerobot-train`, so custom local DataLoader code is ignored remotely.
 - Bake transforms into datasets or patch LeRobot for remote training.
 - Prefer new dataset artifacts over destructive in-place edits.
-- `augment_all.py` appears stale against the current `augment_dataset()` signature.
 - Depth model comparisons must distinguish real D405 depth from estimated DA-V2 depth.

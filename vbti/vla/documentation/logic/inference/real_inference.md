@@ -37,7 +37,6 @@ python -m vla.logic.inference.run_real_inference run \
 | `show_cameras` | `True` | Live grid display. |
 | `record` | `""` | Optional video path. |
 | `device` | `auto` | Torch device. |
-| `detection` | `False` | Add live 22D detection-state path. |
 | `depth` | `False` | Add live `gripper_depth` image stream. |
 
 ## Runtime Data Flow
@@ -46,7 +45,6 @@ python -m vla.logic.inference.run_real_inference run \
 SO-101 follower state
 camera frames
 optional D405 depth
-optional detector state
 task text
 -> LeRobot policy observation
 -> preprocessor
@@ -79,16 +77,6 @@ python -m vla.logic.inference.run_real_inference run \
 ```
 
 Requires checkpoint trained with `observation.images.gripper_depth`.
-
-## Detection-State Run
-
-```bash
-python -m vla.logic.inference.run_real_inference run \
-  --checkpoint=/path/to/detection_state_checkpoint/pretrained_model \
-  --detection=true
-```
-
-Requires checkpoint trained with 22D state.
 
 ## Cleanup
 

@@ -43,9 +43,6 @@ from vla.logic.inference.run_real_inference import (
     _build_observation,
     _build_grid_frame,
     _save_video_ffmpeg,
-    _init_detector,
-    _run_detection_overlay,
-    DetectionStateHolder,
     JOINT_NAMES,
     CAMERA_PRESETS,
 )
@@ -421,7 +418,7 @@ class EvalSession:
         # Config
         out.append("## Config")
         for k in ("experiment", "version", "action_horizon", "max_steps", "fps",
-                  "delta_actions", "detection", "enable_rtc", "record"):
+                  "delta_actions", "enable_rtc", "record"):
             if k in cfg:
                 out.append(f"- {k}: `{cfg[k]}`")
         out.append("")
@@ -589,7 +586,6 @@ def run(
     fps:                 int   = 30,
     max_relative_target: float = 10.0,
     delta_actions:       bool       = False,
-    detection:           bool       = False,
     camera_name_map:     dict | None = None,
     device:              str        = "auto",
     start_trial:         int   = 0,
@@ -650,7 +646,6 @@ def run(
         "fps":                 fps,
         "max_relative_target": max_relative_target,
         "delta_actions":       delta_actions,
-        "detection":           detection,
         "device":              device,
         "enable_rtc":          enable_rtc,
         "record":              record,
@@ -751,13 +746,6 @@ def run(
     move_to_rest(robot, fps=fps)
 
     policy, preprocessor, postprocessor = _load_policy(str(ckpt_path), dev)
-
-    detector = None
-    state_holder = None
-    if detection:
-        detector = _init_detector(device=str(dev))
-        state_holder = DetectionStateHolder()
-        print(f"Detection: ENABLED — overlay + state-aug (hold-last-good) active")
 
     runner = AsyncChunkRunner(
         policy,
@@ -886,8 +874,6 @@ def run(
 
             # ── Inference phase ───────────────────────────────────────────────
             runner.reset()   # clear chunk state from previous trial
-            if state_holder is not None:
-                state_holder.reset()  # mirror per-episode reset of dataset's apply_confidence_hold
             recorded_frames = []
             step            = 0
             result          = None
@@ -900,10 +886,6 @@ def run(
                         robot.get_observation()[f"{n}.pos"] for n in JOINT_NAMES
                     ])
                     frames = _capture(cam_devices)
-
-                    det_results = None
-                    if detector is not None:
-                        det_results = _run_detection_overlay(detector, frames, cam_names)
 
                     grid = _build_grid_frame(frames, cam_names, step, None,
                                              right_column=(["gripper_depth"] if depth else None),
@@ -927,11 +909,8 @@ def run(
                         print("  Quit during inference.")
                         raise KeyboardInterrupt
 
-                    state_aug = (state_holder.update_and_vector(det_results)
-                                 if state_holder is not None else None)
                     obs    = _build_observation(obs_state, frames, cam_names,
-                                                trial_task, preprocessor, dev,
-                                                state_aug=state_aug)
+                                                trial_task, preprocessor, dev)
                     action = runner.step(obs)
 
                     if delta_actions:

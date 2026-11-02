@@ -209,7 +209,6 @@ def ls(experiment: str | None = None,
             if ood_t:
                 print(f"   OOD:    {fmt_sr(_success_count(ood_t), len(ood_t))}")
             print(f"   ah={cfg.get('action_horizon')}  "
-                  f"detection={cfg.get('detection')}  "
                   f"delta={cfg.get('delta_actions')}  "
                   f"rtc={cfg.get('enable_rtc')}  "
                   f"record={cfg.get('record', False)}")

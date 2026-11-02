@@ -115,6 +115,5 @@ Before training, write down:
 - camera keys;
 - presence/absence of `gripper_depth`;
 - task text(s);
-- whether detection-state augmentation is present;
 - whether UVA video features are present;
 - action/state distribution sanity.

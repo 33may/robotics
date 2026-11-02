@@ -63,45 +63,6 @@ python -m vla.logic.dataset.add_zero_depth_turbo \
 
 Purpose: make a no-depth dataset schema-compatible with a depth dataset. The feature is black, meaning “no depth signal”.
 
-## Detection/Phase Augmentation
-
-Generate detections:
-
-```bash
-python -m vla.logic.detection.process_dataset <repo_id_or_path>
-```
-
-Generate phases:
-
-```bash
-python -m vla.logic.detection.phases <repo_id_or_path>
-```
-
-Bake features:
-
-```bash
-python -m vla.logic.dataset.augment <repo_id_or_path> \
-  --augmentations detection phase \
-  -o <output_repo_id> \
-  --cameras left right top gripper
-```
-
-Options:
-
-```bash
---drop top_duck
---include-confidence
---detection-parquet detection_results_hold.parquet
---root /optional/root
---dry-run
-```
-
-Warning: detection augmentation changes `observation.state` from 6D to 22D. Only use it for checkpoints/configs expecting 22D state.
-
-## `augment_all.py` Status
-
-`augment_all.py` appears stale because it calls `augment_dataset()` with arguments that no longer match the current signature. Prefer explicit `augment.py` commands unless this file is repaired.
-
 ## Transform Verification
 
 After any transform:
