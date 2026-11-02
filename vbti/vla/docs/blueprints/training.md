@@ -42,7 +42,6 @@ Top-level sections:
 - `training`
 - `logging`
 - `eval`
-- `output`
 
 SmolVLA defaults include:
 
@@ -229,8 +228,8 @@ experiments/{experiment}/
           pretrained_model/
             config.json
             model.safetensors
-            preprocessor.json
-            postprocessor.json
+            policy_preprocessor.json
+            policy_postprocessor.json
             train_config.json
           training_state/
 ```
@@ -251,7 +250,7 @@ Remote receipts include run name, tmux session, remote paths, repo ID, and host.
 | `v021-v024` | Data-efficiency sweep: 6.25/12.5/25/50% slices. |
 | `v025-v029` | SmolVLA-UVA aux video feature sweep. |
 
-Training strategy memory:
+Training notes:
 
 - SmolVLA duck-cup tends to peak around 20-25k steps on some schedules, but v020 long training also produced strong later checkpoints.
 - Size schedules by epoch count when dataset size changes.
@@ -275,5 +274,13 @@ Remote scripts assume:
 - `remote.py status/logs` may look at a different log path than the training launch writes for newer runs.
 - SSH commands disable strict host key checking.
 - `run.md` status can be stale; use notes, receipts, checkpoints, W&B, and eval sessions.
-- LeRobot fork patches are required for some project-specific features: optimizer, vision unfreeze, transforms, depth/image handling, UVA policy registration.
+- LeRobot fork patches are required for some project-specific features: optimizer, vision unfreeze, transforms, depth/image handling, UVA policy registration. Fork: `github.com/33may/lerobot`, branch `vbti/main`.
 - Do not compare training loss as final quality; evaluate on real protocols.
+
+## Rules
+
+- Train a real-data baseline before sim data; v001 (sim) did not transfer and the v005 sim mix hit a loss floor ([timeline](../case-study/README.md#timeline)).
+- Check the dataset distribution before changing hyperparameters ([lessons](../case-study/README.md#5-lessons)).
+- Loss is not the metric: v019 kept lowering loss while `dual_cup_15` fell from 10/15 at 20k to 6/15 at 30k; choose checkpoints by protocol ([v020](../case-study/README.md#v020-the-anchor-model)).
+- No engineered shortcut inputs in the state ([v014](../case-study/README.md#detector-coordinates-v014)).
+- Fix observed failure cells with targeted data first, then adapt the representation (v020: targeted episodes plus unfrozen SigLIP) ([v020](../case-study/README.md#v020-the-anchor-model)).

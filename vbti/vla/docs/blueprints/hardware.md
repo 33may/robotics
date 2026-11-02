@@ -83,7 +83,7 @@ python -m vla.logic.cameras.reset_camera 128422270260
 Install rules:
 
 ```bash
-sudo cp vbti/udev/99-realsense-cams.rules /etc/udev/rules.d/
+sudo cp vbti/vla/udev/99-realsense-cams.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
@@ -230,3 +230,7 @@ python -m vla.logic.servos.quick_recalib \
 - Do not delete profiles unless intentionally removing cache and backup entries.
 - If a model fails, verify servo calibration and camera placement before changing model code.
 - Use X11 for data collection if LeRobot keyboard controls fail under Wayland.
+
+## Rules
+
+- Depth alone isn't enough: the gripper depth stream moved `dual_cup_30` from 11/30 to 14/30 and did not fix the dual-cup failures ([depth](../case-study/README.md#depth-stream-v017-vs-v018)).

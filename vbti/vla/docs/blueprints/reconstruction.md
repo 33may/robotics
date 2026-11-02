@@ -161,7 +161,7 @@ Environment assumptions:
 - `CC=/usr/bin/gcc-14`
 - `CXX=/usr/bin/g++-14`
 - `TORCH_CUDA_ARCH_LIST=8.9`
-- Fedora/CUDA patches described in older docs/memory.
+- Fedora 42 build notes and CUDA header patches: `docs/modules/reconstruct/build.md`.
 
 ## Mesh Cleaning
 
@@ -283,8 +283,8 @@ Poisson reconstruction from object splat:
 
 ```bash
 python scripts/3d/reconstruct_mesh.py \
-  --input vbti/data/so_v1/assets/duck/object_0.ply \
-  --output vbti/data/so_v1/assets/duck/object_0_reconstructed.glb \
+  --input data/so_v1/assets/duck/object_0.ply \
+  --output data/so_v1/assets/duck/object_0_reconstructed.glb \
   --depth 9 \
   --estimate-normals
 ```
@@ -293,8 +293,8 @@ Repair manifold mesh:
 
 ```bash
 python scripts/3d/fix_manifold.py \
-  --input vbti/data/so_v1/assets/duck/object_0.glb \
-  --output vbti/data/so_v1/assets/duck/object_0_fixed.glb
+  --input data/so_v1/assets/duck/object_0.glb \
+  --output data/so_v1/assets/duck/object_0_fixed.glb
 ```
 
 Isaac Script Editor utilities:
@@ -315,12 +315,12 @@ Use surface deformable for the hollow duck; volumetric deformable can create gho
 Run with IsaacLab:
 
 ```bash
-isaaclab -p vbti/scripts/sim/teleop_playground.py
-isaaclab -p vbti/scripts/sim/teleop_playground.py --port /dev/ttyACM1
-isaaclab -p vbti/scripts/sim/teleop_playground.py --recalibrate
+isaaclab -p scripts/sim/teleop_playground.py
+isaaclab -p scripts/sim/teleop_playground.py --port /dev/ttyACM1
+isaaclab -p scripts/sim/teleop_playground.py --recalibrate
 ```
 
-Purpose: minimal IsaacLab playground for physical leader-arm teleop into a simulation scene. It has hardcoded asset paths and writes calibration cache under `scripts/sim/.cache/`.
+Purpose: minimal IsaacLab playground for physical leader-arm teleop into a simulation scene. The robot USD comes from `assets/robots/so101_leisaac_vbti/`; scene and HDRI paths point into `data/so_v1/`, which is not in the repo. Writes a calibration cache under `scripts/sim/.cache/`.
 
 ## Pitfalls
 
@@ -328,3 +328,7 @@ Purpose: minimal IsaacLab playground for physical leader-arm teleop into a simul
 - Reconstruction quality metrics do not automatically imply usefulness for robot policy training.
 - Sim HDF5 actions/states must be converted to the same LeRobot interface as real data before training.
 - Do not claim simulation improved real-robot performance unless evaluated through the same protocol loop.
+
+## Rules
+
+- Build and measure a real baseline before relying on sim data; v001 trained on sim did not transfer ([process](../case-study/README.md#what-drove-the-loop)).

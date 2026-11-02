@@ -267,3 +267,11 @@ python -m vla.logic.dataset.add_video_features \
 - Bake transforms into datasets or patch LeRobot for remote training.
 - Prefer new dataset artifacts over destructive in-place edits.
 - Depth model comparisons must distinguish real D405 depth from estimated DA-V2 depth.
+
+## Rules
+
+- Inspect action distributions and spatial coverage before tuning hyperparameters; rest bias and coverage moved results more ([lessons](../case-study/README.md#5-lessons), [rest bias](../case-study/README.md#what-drove-the-loop)).
+- Keep engineered inputs out of the state; v014 detector coordinates became a shortcut the policy used instead of the images ([v014](../case-study/README.md#detector-coordinates-v014)).
+- Depth is one more image stream, not a fix: v017 to v018 went 11/30 to 14/30 ([depth](../case-study/README.md#depth-stream-v017-vs-v018)).
+- Collect targeted episodes for the failure cells a protocol exposes; v020 added 94 right-side episodes for v019's failing cell ([v020](../case-study/README.md#v020-the-anchor-model)).
+- Sim data is only worth converting once a real baseline exists to measure it against ([process](../case-study/README.md#what-drove-the-loop)).

@@ -269,3 +269,10 @@ Interpretation from v020: dual-cup language disambiguation was solved in the sat
 - Depth requires RealSense gripper depth.
 - Checkpoint shorthand resolution is convenient but should be verified before a long eval.
 - v020 `dual_cup_60` is near saturation; use harder protocols for further progress.
+
+## Rules
+
+- Evaluate with protocols, not loss; better-loss checkpoints did worse on the robot (v019 at 30k) ([lessons](../case-study/README.md#5-lessons)).
+- Evaluate several checkpoints per version under one protocol; the useful window can close before training ends ([process](../case-study/README.md#what-drove-the-loop)).
+- Read the per-cell breakdown and feed failing cells back into targeted collection ([v020](../case-study/README.md#v020-the-anchor-model)).
+- Sim-to-real gains are only measurable against a real baseline under the same protocol ([process](../case-study/README.md#what-drove-the-loop)).
