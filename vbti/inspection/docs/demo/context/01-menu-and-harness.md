@@ -642,13 +642,13 @@ Four, all checkable:
    endpoint; SAM 3 and the OCR are stock checkpoints. Nothing in `inspection/`
    trains or adapts a model. The only "training" is prompt text and menu
    rendering.
-4. **Prior art, one line.** The Aug-2026 field sweep, `docs/research/2026-08-24-agentic-robotics-stack.md`,
+4. **Prior art, one line.** The Aug-2026 field sweep, `docs/research/agentic-robotics-stack.md`,
    headline: *"Nobody ships the cognition layer. Every vendor and framework
    covers a slice; the layer between 'frontier model' and 'robot that inspects
    things' is unclaimed territory"* — citing DeepMind's own study of
    hierarchical robot agents (arXiv:2606.10267), which concludes the field
    "lacks unified design principles"
-   (`docs/research/2026-08-24-agentic-robotics-stack.md:7-14`).
+   (`docs/research/agentic-robotics-stack.md:7-14`).
    Robot-side prior art for *this exact task shape*: **AP-VLM (UR5)** does
    active viewpoint selection on UR hardware with classical motion, not a VLA,
    and lifts an occluded-object scene from 0.0 passive to 1.0

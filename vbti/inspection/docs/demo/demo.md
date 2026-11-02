@@ -37,7 +37,7 @@ Visual: two copies of the same loop, side by side.
   right — agent in robotics:  model ⇄ tools (move, inspect, answer)
   Same shape; only the tools change.
 
-Speaker line (from the Aug-2026 field sweep, docs/research/2026-08-24-agentic-robotics-stack.md):
+Speaker line (from the Aug-2026 field sweep, docs/research/agentic-robotics-stack.md):
 nobody ships the robot-cognition layer yet; the split both schools agree on is adopt the frontier
 agent SDK for cognition, build the thin embodiment harness yourself. That harness is this project.
 

@@ -107,3 +107,4 @@ vbti/inspection/cell/topview.png
 
 # browser-automation snapshots
 .playwright-mcp/
+/.claude/agent-memory/
