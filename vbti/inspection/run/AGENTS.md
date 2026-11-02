@@ -11,7 +11,7 @@ perception, cell, view, motion — and wire them together.
   (plan/preview/exec) talk back only via events on a queue. Commands:
   `view/request`, `view/confirm`, `run/stop`, `run/exit`, all validated
   backend-side (a stale button can never move the arm). Spec:
-  `vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md`.
+  `vbti/inspection/docs/blueprints/ui-driven-loop.md`.
 - `app.py` — composition root. `run` (bus + window + `Supervisor` +
   `RealRig`, SIGINT-safe shutdown) and `teach` (freedrive-then-save the
   survey pose). The native window is a child process (`vbti/inspection/ui/app.py
@@ -35,7 +35,7 @@ perception, cell, view, motion — and wire them together.
   run tier is the only one above both. Backend is injected, so tests use
   `StubBackend` and never touch a GPU. `p vbti/inspection/tests/test_segmenter.py`.
 - `decider.py` — parked for v2-AI; not wired into the run path since loop
-  v2 (see `vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md`). Still holds
+  v2 (see `vbti/inspection/docs/blueprints/ui-driven-loop.md`). Still holds
   the egocentric menu-gloss helpers (`gloss`, `build_menu`) and the v1
   terminal implementation (`Console`, `TerminalDecider`), kept for when
   an AI decider slots into the request/confirm seam.

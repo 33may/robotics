@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Decider seam — parked for v2-AI; not wired into the run path since loop v2
-(see vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md, "Retired / kept /
+(see vbti/inspection/docs/blueprints/ui-driven-loop.md, "Retired / kept /
 deferred"). The judgment this module used to host is, for now, in the
 operator's head, exercised through `ActionsPanel`'s request/confirm click
 pattern; an AI decider slots into exactly that seam later.
 
-D3/D4 (vbti/inspection/docs/2026-08-12-ai-inspection-project-definition.md): the
+D3/D4 (vbti/inspection/docs/report/project-definition.md): the
 decider READs the newest capture (a comment) and DECIDEs look(h, v) or
 answer(text). This module still holds the v1 terminal implementation
 (`Console`, `TerminalDecider`) and the egocentric-gloss helpers (`gloss`,

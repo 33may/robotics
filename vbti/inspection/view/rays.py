@@ -1,4 +1,4 @@
-"""Ray views (design: docs/2026-09-17-ray-views-design.md).
+"""Ray views (design: docs/blueprints/ray-views.md).
 
 A view is a ray, not a point: distance is never computed by a formula —
 it is the closest sample on the ray that is provably safe (sensor range,

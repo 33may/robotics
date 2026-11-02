@@ -3,7 +3,7 @@
 
 The schema IS the spec: docs and diagrams are generated from these models, so
 every rule the disk must obey is asserted here first (TDD).
-Covers schema v1 final: three-pass review fixes (docs/data-engine/schema-review.md).
+Covers schema v1 final: three-pass review fixes (docs/blueprints/data-engine/schema-review.md).
 """
 import json
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Replay bench for ray views — the Stage A gate (design:
-vbti/inspection/docs/2026-09-17-ray-views-design.md).
+vbti/inspection/docs/blueprints/ray-views.md).
 
 What it answers, offline, before any of this touches the machine:
 

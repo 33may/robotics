@@ -1,4 +1,4 @@
-"""Boxguard face geometry (design: docs/2026-09-14-face-evidence-design.md).
+"""Boxguard face geometry (design: docs/blueprints/face-evidence.md).
 
 The boxguard cuboid already carries orthogonality: a face normal IS the
 orthogonal view direction. This module turns a box Primitive into the frames
@@ -8,7 +8,7 @@ camera pose on a normal ray, and the top view's yaw-aligned roll.
 It no longer RESOLVES a view: the exact/z-lift/cone ladder died with Stage D.
 `view/rays.py` builds the face RAY FAMILY (shift, then tilt) out of these
 frames and picks the closest provably-safe sample on it
-(docs/2026-09-17-ray-views-design.md).
+(docs/blueprints/ray-views.md).
 """
 import numpy as np
 

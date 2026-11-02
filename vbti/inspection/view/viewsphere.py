@@ -6,7 +6,7 @@ azimuth bins of 30 deg with h=0 facing the robot base, elevations from
 
 A cell's DISTANCE is no longer a property of this helper. A view is a ray
 and its depth is the closest provably-safe sample on it (`view/rays.py`,
-docs/2026-09-17-ray-views-design.md) — the reachability map, the roll
+docs/blueprints/ray-views.md) — the reachability map, the roll
 search and the shell-radius derivation died with Stage D. `r` here is only
 the radius the cell frame is DRAWN at: the UI's cell markers and the
 nominal `cam_pose` behind them. `run/machine.py:_recenter` feeds it the

@@ -110,7 +110,7 @@ Geometry (`view/faceview.py`), resolution (`view/rays.py`). The split is explici
 
 ### Why (the design docs)
 
-- `docs/2026-09-14-face-evidence-design.md:5-15` — the goal, verbatim: *"The
+- `docs/blueprints/face-evidence.md:5-15` — the goal, verbatim: *"The
   evidence image for an inspected object is the **orthogonal view of the relevant
   face**, derived from geometry — never from a programmed pose. The boxguard
   cuboid already carries the orthogonality: each face's normal IS the orthogonal
@@ -118,20 +118,20 @@ Geometry (`view/faceview.py`), resolution (`view/rays.py`). The split is explici
   views with it, and the cited evidence is the orthogonal shot of the coded side."*
   The *stability gate* (`:37-48`) and the *face addresses* (`:17-35`) survive from
   this doc.
-- `docs/2026-09-17-ray-views-design.md:8-18` — the **1709 keystone lesson**:
+- `docs/blueprints/ray-views.md:8-18` — the **1709 keystone lesson**:
   distance selection had grown into seven interacting mechanisms; face evidence
   views ended 0.28–0.34 m from centre while ring cells sat at 0.24 (40 % farther
   from the surface they inspect), *"and the z-lift ladder then tilted three of
   five faces 35–42° into keystone."*
-- `docs/2026-09-17-ray-views-design.md:51-59` — translating the camera is what
+- `docs/blueprints/ray-views.md:51-59` — translating the camera is what
   works: *"A vertical plane parallel to the sensor projects as a pure similarity —
   zero keystone at any shift."* Whole-rung scan, shallowest wins, tie-break
   smaller shift (bench amendment 2026-09-17), because *"a shift is optically
   free."*
-- `docs/2026-09-17-ray-views-design.md:110-112` — *"Flat-object side faces stay
+- `docs/blueprints/ray-views.md:110-112` — *"Flat-object side faces stay
   servable via the shift rung (~7 cm lift on the 1709 box → fronto-parallel
   instead of 35–42° keystone)."*
-- `docs/2026-09-17-ray-views-design.md:121-125` — the **Dies** list: `CLOSENESS`,
+- `docs/blueprints/ray-views.md:121-125` — the **Dies** list: `CLOSENESS`,
   `FILL_TARGET` + extent rules, static `R_MIN`, `derive_r_floor`,
   `max(want, floor)`, frozen shell radius, the face floor, the z-lift rung.
 
@@ -140,7 +140,7 @@ Geometry (`view/faceview.py`), resolution (`view/rays.py`). The split is explici
 - No fill target, no extent rule, no closeness slider, no radius floor. The
   sampler's stop conditions replace them all and **the closest provably-safe
   sample wins** — `view/AGENTS.md:43-47`, `view/rays.py:1-6`,
-  `docs/2026-09-17-ray-views-design.md:27-35`.
+  `docs/blueprints/ray-views.md:27-35`.
 - `view/rays.py:47` `sample_ray(...)` walks depths ascending from the sensor floor
   to `R_MAX`, cheapest check first: sensor min range → IK branches → collision;
   it returns the whole run of the roll whose closest valid sample is closest
@@ -150,7 +150,7 @@ Geometry (`view/faceview.py`), resolution (`view/rays.py`). The split is explici
   Supervisor records it as `face_unreachable` and the plan fails with
   `"face inaccessible: no safe sample in its ray family"`
   (`run/machine.py:964-967`). No fallback substitution, no silent degradation
-  (`docs/2026-09-17-ray-views-design.md:106-110`).
+  (`docs/blueprints/ray-views.md:106-110`).
 - **`off_angle_deg` is reported to the model** so it knows how oblique a face view
   is: `run/machine.py:1546-1547` puts `off_angle_deg` (the resolved
   `res.theta_deg`, set at `run/machine.py:973-977`) in every face's menu entry;
@@ -400,7 +400,7 @@ nothing is safe, the face is honestly inaccessible and says so.
   "the runtime is configured to boxguard; the registry is the seam where a second
   primitive plugs in."
 - **Do not claim cylinder support.** `fit/cyl.py` does not exist.
-- **Do not present `docs/2026-09-14-face-evidence-design.md`'s resolution ladder
+- **Do not present `docs/blueprints/face-evidence.md`'s resolution ladder
   as current.** Its §"Request-time resolution ladder" (`:65-`) and its
   `radius_for_extent` / `R_MIN` face radius (`:23-26`) were superseded by
   `2026-09-17-ray-views-design.md`. Cite the 09-14 doc for the *goal* and the

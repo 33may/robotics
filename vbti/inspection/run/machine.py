@@ -1,6 +1,6 @@
 """Supervisor: the command-driven state machine for loop v2.
 
-Spec: vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md ("State machine &
+Spec: vbti/inspection/docs/blueprints/ui-driven-loop.md ("State machine &
 commands", "Architecture"). One dispatcher thread (`run()`) owns every bit
 of run state; named worker threads (plan/preview/exec) talk back only by
 putting events on `self.events`. A generation counter makes "a stale button
@@ -36,7 +36,7 @@ flight inside the publisher's cached geom_data). Both waits are bounded:
 a missed handoff degrades to the old timing-based behaviour and logs,
 rather than wedging a run with a robot in it.
 
-MOVES ARE TRANSACTIONS (Stage B, design 2026-09-17-ray-views-design.md
+MOVES ARE TRANSACTIONS (Stage B, design docs/blueprints/ray-views.md
 §Move transaction). A cell or face move is never one plan any more: it is
 `motion/transaction.py`'s three legs — slide-out along the ray the camera
 stands on, hop through open space, slide-in along the target ray. The

@@ -45,7 +45,7 @@ written by `RunWriter.close`, `writer.py:154`).
   `provenance: "native" | "legacy"` — a native run was written by this writer; a legacy
   one is read through an adapter and must list the fields the adapter fabricated
   (`schema.py:48-60`, `record/legacy.py:105`). Canon: "files are the truth, indexes
-  disposable, no server processes" (`docs/data-engine/management-design.md:5`).
+  disposable, no server processes" (`docs/blueprints/data-engine/management-design.md:5`).
 - **Atomic step.** "One atomic step = one robot position. The universal join key"
   (`schema.py:172-173`); survey is step 0; `phase` discriminates the crash window
   (`captured` = geometry not yet written, `fused` = complete), so a crash is never
@@ -59,7 +59,7 @@ written by `RunWriter.close`, `writer.py:154`).
   `cell.yaml` hashed *and inlined*, hand-eye calib file + hash, every tuning constant,
   and the model identities. Motion trajectories are deliberately **not** stored —
   "movement is recomputable; we only care it was safe & doable — which the config
-  snapshot makes verifiable" (`docs/data-engine/schema-draft.md:16-22`).
+  snapshot makes verifiable" (`docs/blueprints/data-engine/schema-draft.md:16-22`).
 - **Transcripts once.** `ai/<seq>/transcripts/<tNNN>.json` is "one VLM subagent run,
   stored ONCE" — verbatim prompt, every turn with a `type` discriminator, final answer,
   usage; images keyed `(transcript, turn, tool)` so collisions are impossible
@@ -377,7 +377,7 @@ Each one grounded.
    `requested → awaiting_approval → approved` in `events.jsonl` before the arm is allowed
    to execute; the UI never moves the arm itself (`ui/AGENTS.md:8-10`). Autonomy is
    written down as a *seam*, not a build: "Autonomy (auto-confirm) — the seam is marked,
-   not built" (`docs/data-engine/flows-design.md:224`). Cost measured: 3.2 s median per
+   not built" (`docs/blueprints/data-engine/flows-design.md:224`). Cost measured: 3.2 s median per
    step, ~6 % of step time.
 8. **The record stopgap: one radius float carries a mean.** A cell is a ray with its own
    resolved depth now, but the schema still keeps a single `r` and the UI draws a single
@@ -389,17 +389,17 @@ Each one grounded.
    Stage C is where rays get their own fields.
 9. **Depth quality on glossy/textureless surfaces is the standing dependency.** "the
    D405's own passive stereo fails on precisely the glossy, textureless surfaces the demo
-   uses" (`docs/2026-08-12-ai-inspection-project-definition.md:151-155`, also `:199-201`).
+   uses" (`docs/report/project-definition.md:151-155`, also `:199-201`).
    *(No document in `inspection/docs/` says "transparent objects are out of scope" —
    see Open questions.)*
 10. **Productisation is explicitly out of scope.** "Cycle time, throughput and robustness
     beyond demo conditions are out of scope"
-    (`docs/2026-08-12-ai-inspection-project-definition.md:95-96`).
+    (`docs/report/project-definition.md:95-96`).
 11. **Planner benchmarking from recorded runs is impossible today.** Trajectories,
     planner reports, IK failure reasons and the per-turn reachability map are all
     ephemeral: "kinematic replay can only **teleport between capture poses**; planner
     benchmarking from recorded runs is **impossible**; re-planning would produce a
-    *different* path (OMPL unseeded)" (`docs/data-engine/loop-data-audit.md:96-99`).
+    *different* path (OMPL unseeded)" (`docs/blueprints/data-engine/loop-data-audit.md:96-99`).
     Cognition replay is fine; motion replay is not.
 12. **A garbled citation used to bounce a finished hunt.** Fixed today by `884d895`: in
     `2209-box-ray-demo4` the hunt at face y+ succeeded, the `done` tick fired at trace
@@ -416,7 +416,7 @@ Each one grounded.
 
 Only items that exist in a file. Nothing invented.
 
-- **VLA as phase two** — `docs/2026-08-12-ai-inspection-project-definition.md:829-843`,
+- **VLA as phase two** — `docs/report/project-definition.md:829-843`,
   "Phase two — the IK system as a data engine": "The VLA is not abandoned, it is
   sequenced. Once the IK loop works, every episode it runs produces exactly the
   supervision a view-selection policy needs: scene, question, candidate set, chosen view,
@@ -429,22 +429,22 @@ Only items that exist in a file. Nothing invented.
   "No obstacle unification in Stage B: padding-on-top-of-decomposition (multi-primitive)
   is a future design of its own." This is the padded-decomposition obstacle item: the
   reason more primitives are a design, not a config change.
-- **Closeness control** — `docs/2026-09-17-ray-views-design.md:129-131`, "Later
+- **Closeness control** — `docs/blueprints/ray-views.md:129-131`, "Later
   (explicitly out of scope): a closeness *cap* as one more stop condition —
   camera-closeness control plugs in with zero new structure." (Note `CLOSENESS` itself
   was deleted today by `48fd128`, per that doc's "Dies" list.)
 - **Benchmark arbitrating the engineering defaults** —
-  `docs/2026-09-14-face-evidence-design.md:106-108`: "No benchmark work in this build —
+  `docs/blueprints/face-evidence.md:106-108`: "No benchmark work in this build —
   the gate tolerance and search defaults are engineering defaults until the benchmark
   arbitrates them." Also `:43`, the 5° face tolerance is "tunable; benchmarked later, not
   sacred".
-- **AI replay harness (E1–E3)** — `docs/data-engine/flows-design.md:222-223`: "AI replay
+- **AI replay harness (E1–E3)** — `docs/blueprints/data-engine/flows-design.md:222-223`: "AI replay
   harness (E1-E3) — next branch; it consumes `Run`, designed for it." Design sketch at
-  `docs/data-engine/management-design.md:66-72`: a new AIRun dir with `mode=replay`, menu
+  `docs/blueprints/data-engine/management-design.md:66-72`: a new AIRun dir with `mode=replay`, menu
   substitution via `MenuDef` + `MenuInput`, exact replay injecting recorded rendered text
   — "Touches brain/loop.py — build phase of its own." This is what makes "benchmarks run
   on replays" true rather than aspirational.
-- **Evaluation, the three `[later]` stories** — `docs/data-engine/management-user-stories.md:81-88`:
+- **Evaluation, the three `[later]` stories** — `docs/blueprints/data-engine/management-user-stories.md:81-88`:
   G1 attach ground-truth labels and compute verdict-vs-label metrics across a set;
   G2 define an eval set (run ids + questions) and get a scorecard; G3 export a selected
   run set to a training format (LeRobot/…) under `exports/` — "a projection, rebuildable,
@@ -456,7 +456,7 @@ Only items that exist in a file. Nothing invented.
   `management-design.md:67` (trace reader, later), `:81` (migration runner F3, later),
   `flows-design.md:225-226` (catalog/API server, exports — later consumers).
 - **Asking the user when the reference is ambiguous** —
-  `docs/2026-08-12-ai-inspection-project-definition.md:276`: "Out of scope, and the
+  `docs/report/project-definition.md:276`: "Out of scope, and the
   natural extension: letting the model ask the user when the reference…".
 
 ---
@@ -499,7 +499,7 @@ Only items that exist in a file. Nothing invented.
 - **Do not mention the SO-ARM101.** Explicitly not used in this project (Anton,
   2026-08-14): "Its 5 DOF makes look-at exactly determined with no branch choice, so it
   would validate plumbing rather than kinematics"
-  (`docs/2026-08-12-ai-inspection-project-definition.md:105`). This is a UR5e with a
+  (`docs/report/project-definition.md:105`). This is a UR5e with a
   wrist D405.
 - **Do not say the model controls the robot (VLA).** The model picks from a discrete
   menu computed by logic; the harness resolves the pick into motion

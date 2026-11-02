@@ -4,7 +4,7 @@ Adapt-on-read (decision 2026-09-03): reads the old layout, returns in-memory
 records with provenance="legacy" and every fabricated field declared in
 `synthesized`. NEVER writes a byte into the run.
 
-Old layout facts (docs/data-engine/loop-data-audit.md §4):
+Old layout facts (docs/blueprints/data-engine/loop-data-audit.md §4):
   run.json = {q_survey, r, turns[{step,target,t,result,stopped}]}
   <NNN>/meta.json = {pose_id, timestamp, joints_rad, T_base_flange, T_base_cam,
                      [rgb_rotation_deg], [mask{score,box,px}|null]}

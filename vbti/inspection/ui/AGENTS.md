@@ -15,7 +15,7 @@ have to wait for the UI to re-enable is not a stop). The judgment `run/decider.p
 `TerminalDecider` used to own is deferred to v2-AI (`decider.py` is parked);
 today it is in the operator's head, exercised through the same two-press
 request/confirm pattern for every view. See
-`vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md`.
+`vbti/inspection/docs/blueprints/ui-driven-loop.md`.
 
 **Nothing in `run/` imports from here.** The existing contract ("nothing imports
 from run/") is preserved in both directions: `publisher.py` takes plain data —
@@ -258,7 +258,7 @@ could see.
 bit of run state, plus its worker threads (`_plan_worker`, `_preview_worker`,
 `_exec_worker`) which call back into it via `self.events`, never directly.
 Read `Supervisor` (module docstring + `_publish_views`/`_publish_all`/
-`_set_phase`) and `vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md` ("State
+`_set_phase`) and `vbti/inspection/docs/blueprints/ui-driven-loop.md` ("State
 machine & commands") for exactly when each `pub.*` call happens — a call
 table here would drift the next time a worker changes; the design doc and
 the code are the source of truth.

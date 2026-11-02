@@ -2,8 +2,8 @@
 
 These pydantic models ARE the spec: schema-on-write validation for every JSON
 file in a run directory, and the single legal source for generated docs and
-diagrams. Design: docs/data-engine/schema-draft.md; three-pass review:
-docs/data-engine/schema-review.md (decisions: Anton 2026-09-03).
+diagrams. Design: docs/blueprints/data-engine/schema-draft.md; three-pass review:
+docs/blueprints/data-engine/schema-review.md (decisions: Anton 2026-09-03).
 
 Layout a run obeys:
 

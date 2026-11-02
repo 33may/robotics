@@ -4,7 +4,7 @@
 The run structure and tool API an AI agent uses to navigate our geometric
 space, inspect captured views, and know what it has seen. Machinery, not a
 question-answerer: **the module owns no question** — the agent does. Design:
-`../docs/2026-08-20-image-machinery-design.md`; plan:
+`../docs/blueprints/image-machinery.md`; plan:
 `docs/superpowers/plans/2026-08-24-image-machinery.md`.
 
 Two agent tiers. The **orchestrator** owns geometry, the run structure and

@@ -831,7 +831,7 @@ For the honest-failure slide (step 004 fell back to depth — no `mask.png`, no 
   detect/OCR scores are *tool* numbers, not model self-assessment — keep them separate.
 - **Transparent / glossy objects are out of scope.** Nothing in the package handles them,
   and the one risk note on record concerns learned stereo on glossy surfaces
-  (`docs/2026-08-12-ai-inspection-project-definition.md:635`). Native stereo depth on
+  (`docs/report/project-definition.md:635`). Native stereo depth on
   transparent surfaces is untested here — say "not addressed", not "works".
 - **Do NOT claim the detect rung fired on any particular demo19 view.** Which rung
   produced the mask (`"detect"` vs `"box"`) is tracked only in memory

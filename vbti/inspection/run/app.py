@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Loop v2 composition root. Design: vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md.
+"""Loop v2 composition root. Design: vbti/inspection/docs/blueprints/ui-driven-loop.md.
 
     p vbti/inspection/run/app.py run --name=box1 --object=box      # -> data/runs/DDMM-box1
     p vbti/inspection/run/app.py collect --name=box1 --object=box  # -> data/datasets/DDMM-box1
@@ -168,7 +168,7 @@ def viewsphere_method(r: float | None = None) -> dict:
 
 
 def face_method() -> dict:
-    """Boxguard face-evidence views (docs/2026-09-14-face-evidence-design.md)."""
+    """Boxguard face-evidence views (docs/blueprints/face-evidence.md)."""
     from inspection.view.faceview import (CONE_MAX_DEG,
                                           FACE_STABLE_TOL_DEG_DEFAULT)
     return {"id": "face", "kind": "boxguard-face", "version": "1",

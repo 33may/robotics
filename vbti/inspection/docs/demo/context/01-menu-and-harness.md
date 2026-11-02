@@ -180,7 +180,7 @@ chainable, read-only tool set lives one tier down, inside the vision subagent:
 — `inspection/eyes/agents/vlm_agent.py:47`.
 
 **"look/move ends the turn; read-only tools chain freely" — status today.**
-The original ruling is design doc D3, `inspection/docs/2026-08-12-ai-inspection-project-definition.md:512-519`
+The original ruling is design doc D3, `inspection/docs/report/project-definition.md:512-519`
 ("Agentic within a step, orchestrated across steps … `look(h, v)` moves the arm,
 and calling it ends the turn"). In the code today:
 
@@ -499,7 +499,7 @@ loop diagram.*
 ### The loop body per turn, and the orchestration rule
 
 - The rule, from the design: **"Agentic within a step, orchestrated across
-  steps."** — `inspection/docs/2026-08-12-ai-inspection-project-definition.md:512`.
+  steps."** — `inspection/docs/report/project-definition.md:512`.
   The split is by action cost: reversible reads chain freely, anything that
   moves the arm is a step the orchestrator owns
   (`…project-definition.md:514-519`).
@@ -517,7 +517,7 @@ loop diagram.*
   pre-anticipated as schema fields instead of emerging
   — `…project-definition.md:560-563`.
 - The image-machinery design doc is
-  `inspection/docs/2026-08-20-image-machinery-design.md` (9.7 kB) — it covers
+  `inspection/docs/blueprints/image-machinery.md` (9.7 kB) — it covers
   the image/crop plumbing, not the loop; the loop rules are in the two docs
   above.
 
@@ -568,7 +568,7 @@ A fresh miss bounces the whole `answer` back as a failed tool call
 
 - **One process** is the composition root: `inspection/run/app.py`
   (`app.py:1-10`, and the design's "One process, `inspection/run/app.py`, the
-  composition root" — `inspection/docs/2026-08-20-ui-driven-loop-design.md:64`).
+  composition root" — `inspection/docs/blueprints/ui-driven-loop.md:64`).
 - Threads, from the design table (`…ui-driven-loop-design.md:66-73`) and the
   code:
   - **main / dispatcher** — signals + command dispatch + the state machine;
@@ -652,7 +652,7 @@ Four, all checkable:
    Robot-side prior art for *this exact task shape*: **AP-VLM (UR5)** does
    active viewpoint selection on UR hardware with classical motion, not a VLA,
    and lifts an occluded-object scene from 0.0 passive to 1.0
-   — `inspection/docs/2026-08-12-ai-inspection-project-definition.md:825`,
+   — `inspection/docs/report/project-definition.md:825`,
    `:999-1000`. (The same doc *retracts* the VAP-TAMP UR5e numbers at
    `:1002-1008` — do not quote those.)
 
@@ -668,7 +668,7 @@ Four, all checkable:
   agent never receives an image.
 - `inspection/eyes/agents/inspect_agent.py:11-18` — what the subagent
   structurally cannot do.
-- `inspection/docs/2026-08-20-ui-driven-loop-design.md:57-110` — the thread
+- `inspection/docs/blueprints/ui-driven-loop.md:57-110` — the thread
   table and the phase diagram, already in ASCII, ready to paste.
 - A live trace screenshot from the UI's AI panel
   (`inspection/ui/src/panels/TracePanel.tsx`), or the existing

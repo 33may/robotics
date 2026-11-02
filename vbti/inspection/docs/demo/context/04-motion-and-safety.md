@@ -389,17 +389,17 @@ plan. It is three legs" (`motion/transaction.py:1-15`):
 
 ### 9. Views are rays (short — section 6 covers evidence views)
 
-Design doc: **`inspection/docs/2026-09-17-ray-views-design.md`**.
+Design doc: **`inspection/docs/blueprints/ray-views.md`**.
 
 - "A view is a ray, not a point. Distance is the closest sample on the ray that is
   provably safe." No fill formula, no floors, no closeness slider
-  (`docs/2026-09-17-ray-views-design.md:25-33`, restated at `view/rays.py:1-6`).
+  (`docs/blueprints/ray-views.md:25-33`, restated at `view/rays.py:1-6`).
 - Anton's requirement, verbatim: *"Get as much object as possible in the frame, never
   collide with the object, and always be able to escape the position."*
-  (`docs/2026-09-17-ray-views-design.md:20-23`). The three mechanisms that replace the
+  (`docs/blueprints/ray-views.md:20-23`). The three mechanisms that replace the
   formulas: closest safe sample wins / every sample validated in the sandbox before
   motion / the exit leg is part of every move's plan
-  (`docs/2026-09-17-ray-views-design.md:29-33`).
+  (`docs/blueprints/ray-views.md:29-33`).
 - **What "provably safe" means, per sample** (`view/rays.py:47-93`): sensor floor
   (`clear_m + MIN_RANGE_M`), IK solves, and the world says the configuration is
   collision-free. Both rolls are candidates at every depth and ONE roll's whole run is

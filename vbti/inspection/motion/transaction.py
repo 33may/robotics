@@ -1,4 +1,4 @@
-"""The three-leg move transaction (design: 2026-09-17-ray-views-design.md,
+"""The three-leg move transaction (design: docs/blueprints/ray-views.md,
 §Move transaction; Stage B task 2).
 
 A move between two ray addresses is never one plan. It is three legs:

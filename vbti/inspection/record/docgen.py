@@ -3,7 +3,7 @@
 pydantic models in `inspection.record.schema` — the models are the only legal
 source for schema docs, so this file writes and the humans never edit.
 
-Run: p vbti/inspection/record/docgen.py  ->  docs/data-engine/generated/schema.md
+Run: p vbti/inspection/record/docgen.py  ->  docs/blueprints/data-engine/generated/schema.md
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from pydantic_core import PydanticUndefined
 from inspection.record import schema
 
 OUT_PATH = (Path(__file__).resolve().parents[1]
-            / "docs" / "data-engine" / "generated" / "schema.md")
+            / "docs" / "blueprints" / "data-engine" / "generated" / "schema.md")
 
 
 def _models() -> list[type[BaseModel]]:

@@ -10,8 +10,8 @@ Nothing in this folder is imported by the robot loop.
 
 | What | Where |
 |---|---|
-| The idea and the research questions | `inspection/docs/2026-10-06-iwm-research-foundation.md` |
-| The experiment ladder | `inspection/docs/plans/2026-10-06-iwm-experiments-plan.md` |
+| The idea and the research questions | `inspection/docs/research/iwm-research-foundation.md` |
+| The experiment ladder | `vbti/inspection/docs/research/iwm-experiments-plan.md` |
 | Literature map | `docs/research/iwm/passes/pass1/` |
 | Papers, as PDF and markdown | `docs/research/iwm/papers/` |
 | Experiments | this folder, one folder each |

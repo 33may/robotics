@@ -4,7 +4,7 @@
 Say where the camera may stand. A view is a RAY (object-anchored direction)
 and its distance is the closest provably-safe sample on it. The VLM picks
 addresses from this enumeration — it replaces the picker, nothing else.
-Design: `docs/2026-09-17-ray-views-design.md`.
+Design: `docs/blueprints/ray-views.md`.
 
 ## Files
 - `grid.py` — the LIGHT half: cell addressing and the words for it.

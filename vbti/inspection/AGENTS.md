@@ -3,7 +3,7 @@
 ## Purpose
 VLM decides how to inspect an object; this package perceives, models the
 workcell, picks viewpoints, solves motion, and orchestrates the loop
-(`run/app.py` + `run/machine.py`; design: `docs/2026-08-20-ui-driven-loop-design.md`).
+(`run/app.py` + `run/machine.py`; design: `docs/blueprints/ui-driven-loop.md`).
 Pure Python, no ROS. Stack: pinocchio+coal, OMPL, EAIK, ur_rtde,
 open3d, meshcat.
 
