@@ -1,9 +1,9 @@
-[submodule "humanoid/vendor/humanoid-rl-deploy-python"]
-	path = humanoid/vendor/humanoid-rl-deploy-python
+[submodule "vbti/humanoid/vendor/humanoid-rl-deploy-python"]
+	path = vbti/humanoid/vendor/humanoid-rl-deploy-python
 	url = https://github.com/limxdynamics/humanoid-rl-deploy-python.git
 
-[submodule "humanoid/vendor/humanoid-mujoco-sim"]
-	path = humanoid/vendor/humanoid-mujoco-sim
+[submodule "vbti/humanoid/vendor/humanoid-mujoco-sim"]
+	path = vbti/humanoid/vendor/humanoid-mujoco-sim
 	url = git@github.com:limxdynamics/humanoid-mujoco-sim.git
 	ignore = untracked
 

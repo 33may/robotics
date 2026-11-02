@@ -22,29 +22,29 @@ MUJOCO_LOG.TXT
 .claude/workflows/
 .claude/worktrees/
 # UI trace screenshots — session scratch from scripts/uitest runs
-inspection/ui/tools/trace-*.png
+vbti/inspection/ui/tools/trace-*.png
 
 # ---- ML training run outputs (regeneratable artifacts) --------------
 wandb/
 outputs/
-vbti/outputs/
-vbti/experiments/**/lerobot_output*/
-vbti/experiments/**/eval/
-vbti/experiments/**/eval_sessions/
-vbti/experiments/**/checkpoints/
+vbti/vla/outputs/
+vbti/vla/experiments/**/lerobot_output*/
+vbti/vla/experiments/**/eval/
+vbti/vla/experiments/**/eval_sessions/
+vbti/vla/experiments/**/checkpoints/
 
 # ---- Heavy experiment data (datasets / raw sensor dumps) ------------
-vbti/experiments/enea/
-vbti/experiments/duck_cup_smolvla/v016/data/d405_gripper_sample/color_uint8.npy
-vbti/experiments/duck_cup_smolvla/v016/data/d405_gripper_sample/depth_uint16.npy
-vbti/research/how_to_mask_right/cached_frames/
-vbti/research/how_to_mask_right/exp01_umap/images/
-vbti/tmp_data/
-vbti/data/
-vbti/env/
+vbti/vla/experiments/enea/
+vbti/vla/experiments/duck_cup_smolvla/v016/data/d405_gripper_sample/color_uint8.npy
+vbti/vla/experiments/duck_cup_smolvla/v016/data/d405_gripper_sample/depth_uint16.npy
+vbti/vla/research/how_to_mask_right/cached_frames/
+vbti/vla/research/how_to_mask_right/exp01_umap/images/
+vbti/vla/tmp_data/
+vbti/vla/data/
+vbti/vla/env/
 
 # ---- Vendored / cloned external libs (re-clone per machine) ---------
-vbti/libs/
+vbti/vla/libs/
 lerobot/
 leisaac/
 datasets/
@@ -61,17 +61,17 @@ old/diffusion/model_src/.ipynb_checkpoints/
 old/diffusion/model_src/*.mp4
 
 # ---- Vendor submodule runtime logs ----------------------------------
-humanoid/vendor/humanoid-mujoco-sim/MUJOCO_LOG.TXT
+vbti/humanoid/vendor/humanoid-mujoco-sim/MUJOCO_LOG.TXT
 
 # ---- Oli Main Software vendored payload (downloaded per-machine) ----
 # Tracked in repo: README + manifest.yaml + .gitignore inside the dir.
 # Untracked: the 2.5 GB install/ payload.
-humanoid/vendor/oli-main-software-*/install/
+vbti/humanoid/vendor/oli-main-software-*/install/
 
 # ---- nvidia-corpus: its OWN separate git repo, parked next to oli-corpus --
 # Adjacent on disk for convenience, but NOT part of this monorepo — it has its
 # own .git and is maintained/committed independently. Keep it fully ignored here.
-humanoid/docs/nvidia-corpus/
+vbti/humanoid/docs/nvidia-corpus/
 
 # ---- Inspection project ---------------------------------------------
 # NOTE: git does NOT support inline comments. `#` only opens a comment at the
@@ -84,7 +84,7 @@ third_party/
 # capture bundles, from back when project data sat in a root-level data/
 data/inspection/
 # accidental capture dirs from running inside vbti/logic
-vbti/logic/data/
+vbti/vla/logic/data/
 
 # Project data lives under inspection/data/ now, which the root-anchored rule
 # above never matched — 417 MB of run captures were one `git add .` away from
@@ -92,17 +92,17 @@ vbti/logic/data/
 # of what the robot did with the code of that day, so they get backed up,
 # never versioned. `inspection/data/isaac_models/` stays TRACKED — those are
 # authored CAD assets, an input rather than an output.
-inspection/data/runs/
-inspection/data/inspection/
+vbti/inspection/data/runs/
+vbti/inspection/data/inspection/
 # regenerable from runs by step_replay + the fit bank (spec 2026-09-03)
-inspection/data/derived/
+vbti/inspection/data/derived/
 # regenerable by investigation/fill_probe.py and hull_blueprint.py
-inspection/data/framing/
-inspection/data/tool/
+vbti/inspection/data/framing/
+vbti/inspection/data/tool/
 # heavy outputs of the IWM research experiments (masks, clouds, arrays); what a
 # report shows is committed next to it in investigation/iwm/<experiment>/evidence/
-inspection/data/iwm/
-inspection/cell/topview.png
+vbti/inspection/data/iwm/
+vbti/inspection/cell/topview.png
 
 # browser-automation snapshots
 .playwright-mcp/
