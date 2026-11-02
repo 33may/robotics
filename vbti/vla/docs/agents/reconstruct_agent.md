@@ -64,7 +64,7 @@ python -m vla.logic.reconstruct.isaac_cfg_utils gen_isaaclab --scene_config scen
 Simulation playground:
 
 ```bash
-isaaclab -p vbti/scripts/sim/teleop_playground.py --port /dev/ttyACM1
+isaaclab -p scripts/sim/teleop_playground.py --port /dev/ttyACM1
 ```
 
 ## Safety Rules

@@ -776,5 +776,5 @@
     "both_black": 5,
     "single_black": 5
   },
-  "_generated_by": "vbti/logic/inference/protocols/generators/make_checkpoint_sweep.py"
+  "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_checkpoint_sweep.py"
 }

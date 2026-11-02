@@ -5,10 +5,10 @@ Wraps nerfstudio's ns-process-data (COLMAP internally) and COLMAP image_undistor
 Produces undistorted PINHOLE output ready for MILo training.
 
 Usage:
-    python -m vla.logic.reconstruct.colmap_utils.py reconstruct --frames_dir data/frames --output_dir data/colmap
-    python -m vla.logic.reconstruct.colmap_utils.py run_colmap --frames_dir data/frames --output_dir data/colmap
-    python -m vla.logic.reconstruct.colmap_utils.py validate_models --colmap_dir data/colmap
-    python -m vla.logic.reconstruct.colmap_utils.py undistort --colmap_dir data/colmap --output_dir data/colmap_undistorted
+    python -m vla.logic.reconstruct.colmap_utils reconstruct --frames_dir data/frames --output_dir data/colmap
+    python -m vla.logic.reconstruct.colmap_utils run_colmap --frames_dir data/frames --output_dir data/colmap
+    python -m vla.logic.reconstruct.colmap_utils validate_models --colmap_dir data/colmap
+    python -m vla.logic.reconstruct.colmap_utils undistort --colmap_dir data/colmap --output_dir data/colmap_undistorted
 """
 
 import shutil

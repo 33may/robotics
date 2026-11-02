@@ -577,5 +577,5 @@
     "single_black": 5,
     "both": 5
   },
-  "_generated_by": "vbti/logic/inference/protocols/generators/make_dual_cup_15.py"
+  "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_dual_cup_15.py"
 }

@@ -58,5 +58,5 @@
 
 ## Key Files
 
-- `vbti/data/ready_export_sov1/config/vbti_so_v1_env_cfg.py` — DR ranges defined here
-- `vbti/data/so_v1/scene_config.json` — Base positions extracted from USDA
+- `vbti/vla/data/ready_export_sov1/config/vbti_so_v1_env_cfg.py` — DR ranges defined here
+- `vbti/vla/data/so_v1/scene_config.json` — Base positions extracted from USDA

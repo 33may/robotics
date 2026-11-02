@@ -275,5 +275,5 @@
   "table_margin_cm": 3.0,
   "table_margin_px": 23,
   "px_per_cm": 7.66,
-  "_generated_by": "vbti/logic/inference/protocols/generators/make_ood_smoke_15.py"
+  "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_ood_smoke_15.py"
 }

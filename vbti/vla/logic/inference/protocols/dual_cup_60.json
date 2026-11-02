@@ -2137,5 +2137,5 @@
     "single_black": 20,
     "both": 20
   },
-  "_generated_by": "vbti/logic/inference/protocols/generators/make_dual_cup_60.py"
+  "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_dual_cup_60.py"
 }

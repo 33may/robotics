@@ -5,9 +5,9 @@ Takes a composed scene USDA and generates leisaac task boilerplate:
 scene assets, env configs (SceneCfg, ObsCfg, EnvCfg), and gym registration.
 
 Usage:
-    python -m vla.logic.reconstruct.isaaclab_cfg_utils.py pipeline scene.usda vbti_mesh_table
-    python -m vla.logic.reconstruct.isaaclab_cfg_utils.py extract scene.usda
-    python -m vla.logic.reconstruct.isaaclab_cfg_utils.py gen_env_cfg scene.usda vbti_mesh_table
+    python -m vla.logic.reconstruct.isaac_cfg_utils pipeline scene.usda vbti_mesh_table
+    python -m vla.logic.reconstruct.isaac_cfg_utils extract scene.usda
+    python -m vla.logic.reconstruct.isaac_cfg_utils gen_env_cfg scene.usda vbti_mesh_table
 """
 
 import sys

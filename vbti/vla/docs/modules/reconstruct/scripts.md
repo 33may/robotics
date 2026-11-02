@@ -6,8 +6,8 @@ Gaussian Splat/object PLY to Poisson GLB:
 
 ```bash
 python scripts/3d/reconstruct_mesh.py \
-  --input vbti/data/so_v1/assets/duck/object_0.ply \
-  --output vbti/data/so_v1/assets/duck/object_0_reconstructed.glb \
+  --input data/so_v1/assets/duck/object_0.ply \
+  --output data/so_v1/assets/duck/object_0_reconstructed.glb \
   --depth 9 \
   --estimate-normals
 ```
@@ -18,8 +18,8 @@ Repair GLB for PhysX/deformables:
 
 ```bash
 python scripts/3d/fix_manifold.py \
-  --input vbti/data/so_v1/assets/duck/object_0.glb \
-  --output vbti/data/so_v1/assets/duck/object_0_fixed.glb
+  --input data/so_v1/assets/duck/object_0.glb \
+  --output data/so_v1/assets/duck/object_0_fixed.glb
 ```
 
 ## Isaac Script Editor Utilities
@@ -46,9 +46,9 @@ Hardcoded quick check, not a general CLI. Read/edit paths before using.
 Run with IsaacLab:
 
 ```bash
-isaaclab -p vbti/scripts/sim/teleop_playground.py
-isaaclab -p vbti/scripts/sim/teleop_playground.py --port /dev/ttyACM1
-isaaclab -p vbti/scripts/sim/teleop_playground.py --recalibrate
+isaaclab -p scripts/sim/teleop_playground.py
+isaaclab -p scripts/sim/teleop_playground.py --port /dev/ttyACM1
+isaaclab -p scripts/sim/teleop_playground.py --recalibrate
 ```
 
 Purpose:

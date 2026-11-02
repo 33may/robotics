@@ -49,7 +49,7 @@ Rules live in `udev/99-realsense-cams.rules`.
 Install:
 
 ```bash
-sudo cp vbti/udev/99-realsense-cams.rules /etc/udev/rules.d/
+sudo cp vbti/vla/udev/99-realsense-cams.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```

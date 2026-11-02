@@ -2,25 +2,25 @@
 
 Commands:
     # Step 1: Replay episode in Isaac Sim with depth+seg cameras, save frames
-    python -m vla.logic.reconstruct.cosmos_transfer.py capture \
+    python -m vla.logic.reconstruct.cosmos_transfer capture \
         --dataset_file=./datasets/vbti_table_v1/vbti_dataset_v1.hdf5 \
         --episode=33
 
     # Step 2: Convert captured frames → mp4 videos + edge maps
-    python -m vla.logic.reconstruct.cosmos_transfer.py process --episode=33
+    python -m vla.logic.reconstruct.cosmos_transfer process --episode=33
 
     # Step 3: Generate Cosmos Transfer config JSON
-    python -m vla.logic.reconstruct.cosmos_transfer.py config \
+    python -m vla.logic.reconstruct.cosmos_transfer config \
         --episode=33 \
         --prompt="realistic kitchen, warm lighting" \
         --variant=kitchen \
         --vis_weight=0.7
 
     # Step 4: Run Cosmos Transfer inference
-    python -m vla.logic.reconstruct.cosmos_transfer.py transfer --episode=33 --variant=kitchen
+    python -m vla.logic.reconstruct.cosmos_transfer transfer --episode=33 --variant=kitchen
 
     # Step 5: Reassemble augmented frames back into HDF5
-    python -m vla.logic.reconstruct.cosmos_transfer.py reassemble --episode=33 --variant=kitchen
+    python -m vla.logic.reconstruct.cosmos_transfer reassemble --episode=33 --variant=kitchen
 """
 
 import base64
