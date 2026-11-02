@@ -222,6 +222,9 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
     is enough); given explicitly it is `<root>/<run id>` and `name` defaults
     to its leaf. `object` must be one of OBJECTS (archive query tag).
 
+    `--cells` (calib/depth_eval.py): survey, then exactly these cells in
+    order, then the run finishes itself — no shell sweep.
+
     `--fit` names the per-step primitive fitter (`fit/apply.py:METHODS`;
     empty or "none" disables it): every fused step then records the same
     `decomposition.json` the offline backfill writes — same registry, same
@@ -392,7 +395,7 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
            port: int = 8767, bus_port: int = 8765, no_window: bool = False,
            seed: int = 0, gui: str = "qt", name: str | None = None,
            object: str | None = None, auto: bool = False,
-           random: bool = False, fit: str = "boxguard"):
+           random: bool = False, fit: str = "boxguard", cells=None):
     """One data-collection sweep — Flow B. `outdir` defaults to
     `data/datasets/<DDMM-name>`: sweeps are training data, not inspection
     runs, and they land in their own archive (`ls --data` lists them).
@@ -474,7 +477,8 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
             # as a property of the method (`mock.py` omits it likewise).
             view_methods=[viewsphere_method(), face_method()],
             q_survey=[float(v) for v in q_survey],
-            tags=(["auto"] if auto else []) + (["random"] if random else []))
+            tags=(["auto"] if auto else []) + (["random"] if random else [])
+            + (["fixed-cells"] if cells else []))
         pub.publish_run_meta(source="data-engine", name=name or outdir.name,
                              object=object, question=None)
         rig = RealRig(None, stop_event, outdir, ip)   # world set below
@@ -503,7 +507,7 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
         driver = SweepDriver(sup, outdir,
                              on_event=make_event_sink(writer, pub,
                                                       label="sweep"),
-                             auto=auto, random_order=random)
+                             auto=auto, random_order=random, cells=cells)
         driver.start()
 
         def pump():

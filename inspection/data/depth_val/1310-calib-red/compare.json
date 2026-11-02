@@ -1,0 +1,36 @@
+{
+ "label": "selftest",
+ "calib_sha": null,
+ "run": "1310-calib-red",
+ "baseline": "1310-calib-red",
+ "rows": {
+  "dots found": [
+   "7/7",
+   "7/7"
+  ],
+  "dot spread between views (median mm)": [
+   6.56,
+   6.56
+  ],
+  "dot depth error |median| mm": [
+   4.46,
+   4.46
+  ],
+  "dot depth error |max| mm": [
+   8.67,
+   8.67
+  ],
+  "table height error |median| mm": [
+   11.7,
+   11.7
+  ],
+  "table height error |max| mm": [
+   20.02,
+   20.02
+  ],
+  "rays miss (depth-free floor) median mm": [
+   3.32,
+   3.32
+  ]
+ }
+}

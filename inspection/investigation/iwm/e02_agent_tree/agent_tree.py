@@ -127,7 +127,7 @@ def normalise_tree(raw):
     out = {}
     for k, v in raw.items():
         try:
-            out[str(int(k))] = str(v)
+            out[str(_id(k))] = str(v)          # the model writes "#3" as often as "3" (e07 step 6 lost 33 names)
         except (TypeError, ValueError):
             continue
     return out

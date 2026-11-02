@@ -1,0 +1,138 @@
+{
+ "heights": [
+  0.18,
+  0.24,
+  0.3
+ ],
+ "tare_json": {
+  "average step count": 20,
+  "step count": 20,
+  "accuracy": 2,
+  "scan parameter": 0,
+  "data sampling": 0,
+  "apply preset": 1,
+  "host assistance": 0
+ },
+ "steps": [
+  {
+   "h_m": 0.18,
+   "q": [
+    1.4532042741775513,
+    -1.8101073704161585,
+    2.1997721830951136,
+    -1.9611841640868128,
+    4.672089576721191,
+    -2.9384666124926966
+   ],
+   "fk_cam_to_slab_mm": 189.94,
+   "before": {
+    "ok": true,
+    "gt_mm": 183.08,
+    "frames_with_board": 15,
+    "tilt_deg": 2.54,
+    "roi_covered_by_board": true,
+    "roi_valid_frac": 1.0,
+    "depth_err_mm": -2.72,
+    "depth_err_pct": -1.48
+   },
+   "fk_minus_gt_mm": 6.86,
+   "candidate": "h180.json",
+   "health": [
+    -0.017199739813804626,
+    -0.0009389574988745153
+   ],
+   "after_same_pose": {
+    "ok": true,
+    "gt_mm": 183.08,
+    "frames_with_board": 15,
+    "tilt_deg": 2.55,
+    "roi_covered_by_board": true,
+    "roi_valid_frac": 1.0,
+    "depth_err_mm": -2.75,
+    "depth_err_pct": -1.5
+   }
+  },
+  {
+   "h_m": 0.24,
+   "q": [
+    1.461663007736206,
+    -1.854586740533346,
+    2.070841614400045,
+    -1.7874046764769496,
+    4.672100067138672,
+    -2.9300013224231165
+   ],
+   "fk_cam_to_slab_mm": 249.85,
+   "before": {
+    "ok": true,
+    "gt_mm": 242.88,
+    "frames_with_board": 15,
+    "tilt_deg": 2.48,
+    "roi_covered_by_board": true,
+    "roi_valid_frac": 1.0,
+    "depth_err_mm": -4.48,
+    "depth_err_pct": -1.84
+   },
+   "fk_minus_gt_mm": 6.97,
+   "candidate": "h240.json",
+   "health": [
+    -0.018872233107686043,
+    0.0011867318535223603
+   ],
+   "after_same_pose": {
+    "ok": true,
+    "gt_mm": 242.88,
+    "frames_with_board": 15,
+    "tilt_deg": 2.49,
+    "roi_covered_by_board": true,
+    "roi_valid_frac": 1.0,
+    "depth_err_mm": -4.56,
+    "depth_err_pct": -1.88
+   }
+  },
+  {
+   "h_m": 0.3,
+   "q": [
+    1.4700629711151123,
+    -1.8705064258971156,
+    1.9273102919207972,
+    -1.6276051006712855,
+    4.672046184539795,
+    -2.921583954487936
+   ],
+   "fk_cam_to_slab_mm": 309.76,
+   "before": {
+    "ok": true,
+    "gt_mm": 302.72,
+    "frames_with_board": 15,
+    "tilt_deg": 2.37,
+    "roi_covered_by_board": false,
+    "roi_valid_frac": 0.999,
+    "depth_err_mm": -7.23,
+    "depth_err_pct": -2.39
+   },
+   "fk_minus_gt_mm": 7.04,
+   "candidate": "h300.json",
+   "health": [
+    -0.026431748643517494,
+    0.0009843178559094667
+   ],
+   "after_same_pose": {
+    "ok": true,
+    "gt_mm": 302.72,
+    "frames_with_board": 15,
+    "tilt_deg": 2.38,
+    "roi_covered_by_board": false,
+    "roi_valid_frac": 1.0,
+    "depth_err_mm": -7.16,
+    "depth_err_pct": -2.37
+   }
+  }
+ ],
+ "board_centre_base": [
+  0.07845503351350937,
+  -0.32260324193671275,
+  0.004782714787727954
+ ],
+ "board_above_slab_mm": 10.19
+}

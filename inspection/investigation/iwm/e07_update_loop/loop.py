@@ -24,10 +24,16 @@ Record: inspection/data/iwm/e07_update_loop/loops/<run>_<stamp>/
   step_<id>/V_display.ply                   V after this step, thinned for display
   step_<id>/iwm/{parts.json, rows.npz, centres.npz}   the STV after the commit
   step_<id>/seg_store/, keep_store/         the agents' own stores (transcripts, images)
+  step_<id>/feedback.json                   Anton's notes on the step (--pause, written by the viewer)
+
+--pause (Anton 2026-10-15, behaviour tuning): one command; the viewer (port 8084) runs inside this
+process and follows the loop. After every inspect step's commit the loop WAITS; type feedback in the
+viewer and press Enter -> step_<id>/feedback.json, the loop continues. The feedback is only stored; it
+is applied in the session after the run, never injected into the agents' prompts.
 
 Run (robo env, GPU, GEMINI_API_KEY set):
   /home/anton/miniconda3/envs/robo/bin/python -u -m inspection.investigation.iwm.e07_update_loop.loop \
-      --run 2209-box-ray-demo1 [--steps 0 1 2 3 4] [--mm 1]
+      --run 2209-box-ray-demo1 [--steps 0 1 2 3 4] [--mm 1] [--pause]
 """
 import argparse
 import json
@@ -53,6 +59,18 @@ from inspection.investigation.iwm.e05_parts_in_v import lift as L
 from inspection.investigation.iwm.e05_parts_in_v.stv import STV, Part, Surface
 
 OUT = C.ROOT / "inspection" / "data" / "iwm" / "e07_update_loop"
+LIVE = {"path": None, "lines": []}       # <loop>/live.json: the viewer's live progress panel
+
+
+def say(msg, **_):
+    """print + append to <loop>/live.json (last 14 lines) so the viewer shows progress during a step"""
+    print(msg, flush=True)
+    if LIVE["path"] is None:
+        return
+    LIVE["lines"] = (LIVE["lines"] + [f"{datetime.now():%H:%M:%S} {msg.strip()}"])[-14:]
+    tmp = LIVE["path"].with_suffix(".tmp")
+    json.dump({"lines": LIVE["lines"]}, open(tmp, "w"), ensure_ascii=False)
+    tmp.replace(LIVE["path"])
 MASKS = OUT / "masks"
 UNSAM_G = [0.9, 0.7, 0.5, 0.3, 0.2, 0.1]
 DISPLAY_M = 0.002
@@ -89,7 +107,8 @@ A2._id = K._id = _robust_id
 SEG_STRUCTURE = """
 
 OBJECT STRUCTURE (rule for box-like objects): #0 is the whole object. Depth 1 = the object's FACES,
-one node per visible face (the top, each side; a bevel / chamfer band counts as its own face).
+one node per visible face (the top, each side). A bevel / chamfer band is NOT a face: make no node
+for it; a detail on it goes under the side it belongs to (Anton 2026-10-15).
 Every detail (sticker, label, port, group of ports, logo, text) goes under the face it physically
 sits on, never directly under #0. The draft tree is given in the task below, so you do not need to
 call tree first."""
@@ -111,8 +130,12 @@ def fmt_box_of(model, rgb):
 
 
 def enforce_structure(decisions, view, stv):
-    """Faces only at depth 1 of the model, details never directly under the object. Returns the
-    corrected decisions and the list of corrections made (shown in the record)."""
+    """Details never directly under the object. Returns the corrected decisions and the list of
+    corrections made (shown in the record).
+
+    A node the segmenter left under #0 is NOT assumed to be a face (2026-10-15: that rule moved the
+    agent's correct 'model label' -> chamfer and 'antenna ports' -> P7 up to the object, P9/P24);
+    the reconcile agent's placement of it stands."""
     nodes, root, fixes = view["nodes"], stv.root, []
     out = dict(decisions)
     if out.get(0) != ("same", root):
@@ -123,10 +146,7 @@ def enforce_structure(decisions, view, stv):
         if nd is None or nid == 0 or d[0] != "under":
             continue
         fparent = nd["parent"]
-        if fparent == 0 and d[1] != root:                       # a face: hangs on the object
-            fixes.append(f"#{nid} face under {d[1]} -> under P{root}")
-            out[nid] = ("under", root, d[2])
-        elif fparent not in (None, 0) and d[1] == root:         # a detail: hangs on its face
+        if fparent not in (None, 0) and d[1] == root:           # a detail: hangs on its face
             pd = out.get(fparent)
             new_parent = pd[1] if pd and pd[0] == "same" else ("node", fparent)
             fixes.append(f"#{nid} detail under P{root} -> under {new_parent}")
@@ -287,7 +307,7 @@ def run_agent(spec, run_obj, rec, store_dir, model, verbs, task, snap):
         if event == "image" and log:
             log[-1]["image"] = fields.get("image")
         if event in ("tool", "done", "exhausted"):
-            print(f"    t{n:02d} {event:9s} {fields.get('tool', '')} {json.dumps(fields.get('args', ''), default=str)[:70]} -> "
+            say(f"    t{n:02d} {event:9s} {fields.get('tool', '')} {json.dumps(fields.get('args', ''), default=str)[:70]} -> "
                   f"{str(fields.get('result', fields.get('answer', '')))[:90]}", flush=True)
 
     try:
@@ -344,11 +364,31 @@ def first_inspect(stv, view, rows):
 
 
 # ====================================================================== the loop
+def wait_feedback(out, sd, sid, info):
+    """--pause: block until the viewer marks this step's feedback done."""
+    info["waiting"] = sid
+    json.dump(info, open(out / "loop.json", "w"), indent=1, default=str)
+    say(f"step {sid}: PAUSED - review it in the viewer, type feedback + Enter to continue", flush=True)
+    fb = sd / "feedback.json"
+    while True:
+        try:
+            if json.load(open(fb)).get("done"):
+                break
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+        time.sleep(1.0)
+    info["waiting"] = None
+    json.dump(info, open(out / "loop.json", "w"), indent=1, default=str)
+    say(f"step {sid}: continuing ({len(json.load(open(fb)).get('notes', []))} notes)", flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", default="2209-box-ray-demo1")
     ap.add_argument("--steps", nargs="*", type=int)
     ap.add_argument("--mm", type=int, default=1)
+    ap.add_argument("--pause", action="store_true", help="live viewer in-process; wait for feedback after every inspect step")
+    ap.add_argument("--port", type=int, default=8084)
     args = ap.parse_args()
     from inspection.eyes.models import GeminiVlm
     from inspection.eyes.tools import ViewRecord
@@ -362,6 +402,7 @@ def main():
         steps = [s for s in steps if s["id"] in args.steps]
     out = OUT / "loops" / f"{run}_{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
+    LIVE["path"] = out / "live.json"     # set before the masks so their progress shows too
     text = Sam3Backend()
     backend = SamOcrBackend(sam3=text)
     backend.instances = text.instances          # find{} needs instances(); SamOcrBackend only delegates detect
@@ -372,13 +413,18 @@ def main():
         if st["address"] is not None:
             t0 = time.time()
             mask_roots[st["id"]] = ensure_masks(run, st["id"], text)
-            print(f"masks step {st['id']}: {mask_roots[st['id']][1]} {time.time() - t0:.0f}s", flush=True)
+            say(f"masks step {st['id']}: {mask_roots[st['id']][1]} {time.time() - t0:.0f}s", flush=True)
     vbg = new_grid(size, dev)
     stv = None
     info = {"run": run, "mm": args.mm, "steps": [s["id"] for s in steps], "started": datetime.now().isoformat(timespec="seconds"),
-            "segmentation": "blind (e02 agent)", "reconcile": "e05 keep agent", "lift": "L3", "per_step": []}
+            "segmentation": "blind (e02 agent)", "reconcile": "e05 keep agent", "lift": "L3", "pause": args.pause,
+            "waiting": None, "per_step": []}
     json.dump(info, open(out / "loop.json", "w"), indent=1)
-    print(f"loop -> {out}", flush=True)
+    say(f"loop -> {out.name}")
+    if args.pause:                       # the viewer lives in this process; it waits for the first step by itself
+        import threading
+        from inspection.investigation.iwm.e07_update_loop.loop_viewer import serve
+        threading.Thread(target=serve, args=(out, args.port), daemon=True).start()
     for st in steps:
         sid = st["id"]
         sd = out / f"step_{sid:03d}"
@@ -386,6 +432,7 @@ def main():
         t_step = time.time()
         ev = [{"stage": "capture", "kind": "capture", "tool": "capture arrives",
                "text": f"step {sid} · view {st['address']}"}]
+        say(f"step {sid}: capture arrives ({st['address'] or 'survey'}), fusing depth")
         fuse(vbg, st, intr, scale, size, dev)
         surf = Surface.from_vbg(vbg, size, C5.trunc_m(size))
         if stv is not None:
@@ -399,7 +446,7 @@ def main():
             json.dump(ev, open(sd / "events.json", "w"), indent=1)
             info["per_step"].append({**rec_info, "seconds": round(time.time() - t_step, 1)})
             json.dump(info, open(out / "loop.json", "w"), indent=1)
-            print(f"step {sid}: survey, V {len(surf):,} rows", flush=True)
+            say(f"step {sid}: survey, V {len(surf):,} rows", flush=True)
             continue
         frame = {"id": f"s{sid}", "run": run, "step": sid}
         mroot, mhow = mask_roots[sid]
@@ -420,7 +467,7 @@ def main():
             return tree_snap(tree)
 
         _run, rec = A2.step_record(frame)
-        print(f"step {sid}: segmenting ({len(tree.nodes)} draft nodes)", flush=True)
+        say(f"step {sid}: segmenting ({len(tree.nodes)} draft nodes)", flush=True)
         task = "Build the levelled tree of this view: sides, the things on them, their parts. Name every node you keep, drop the noise."
         fmt_box = fmt_box_of(model, tree.rgb)
         task_full = task + "\n\nThe draft tree (what tree{} returns):\n" + tree.tree_text(fmt_box)
@@ -467,7 +514,7 @@ def main():
         else:
             keeper = K.Keeper(stv, vbg, size, view, rows)
             K.CURRENT["keeper"] = keeper
-            print(f"step {sid}: reconciling ({len(keeper.visible)} model parts visible)", flush=True)
+            say(f"step {sid}: reconciling ({len(keeper.visible)} model parts visible)", flush=True)
             ktask = ("Place every node of this frame's tree in the model: same for parts the model already "
                      "holds, under for new parts, drop for noise.")
             kspec = K.make_spec()
@@ -507,11 +554,17 @@ def main():
         info["per_step"].append({**rec_info, "parts": len(stv.parts), "conflicts": len(stv.conflicts),
                                  "seconds": round(time.time() - t_step, 1)})
         json.dump(info, open(out / "loop.json", "w"), indent=1, default=str)
-        print(f"step {sid}: committed, {len(stv.parts)} parts, {len(stv.conflicts)} conflicts, "
+        say(f"step {sid}: committed, {len(stv.parts)} parts, {len(stv.conflicts)} conflicts, "
               f"{time.time() - t_step:.0f}s", flush=True)
+        if args.pause:
+            wait_feedback(out, sd, sid, info)
     info["finished"] = datetime.now().isoformat(timespec="seconds")
     json.dump(info, open(out / "loop.json", "w"), indent=1, default=str)
     print("LOOP-DONE", out, flush=True)
+    if args.pause:                       # keep the viewer up after the last step
+        print("viewer stays up - Ctrl+C to quit", flush=True)
+        while True:
+            time.sleep(10)
 
 
 if __name__ == "__main__":

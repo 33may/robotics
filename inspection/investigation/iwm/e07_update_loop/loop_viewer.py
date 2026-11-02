@@ -9,12 +9,19 @@ Per event you see the state as it was at that moment, nothing from later:
            full result, the image the tool returned, the final reply, the prompt); the frame tree
            and the IWM tree as node-link diagrams (decisions and change tags next to the nodes).
 
+Feedback (loop.py --pause, Anton 2026-10-15): loop.py starts this viewer in its own process and the
+viewer follows it (each new step opens by itself). When the loop pauses, type in the feedback box and
+press Enter: the note is saved to step_<id>/feedback.json (tied to the event you are looking at) and
+the loop continues (an empty Enter just continues). A note is one line. Notes are only stored.
+
 Run:  /home/anton/miniconda3/envs/robo/bin/python -m inspection.investigation.iwm.e07_update_loop.loop_viewer \
           [--loop inspection/data/iwm/e07_update_loop/loops/<dir>] [--run 2209-box-ray-demo1] [--port 8084]
 """
 import argparse
 import json
+import threading
 import time
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -99,6 +106,23 @@ def load(loop_dir):
     return info, blocks
 
 
+def read_feedback(sd):
+    try:
+        return json.load(open(sd / "feedback.json"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"notes": [], "done": False}
+
+
+def write_feedback(sd, fb):
+    tmp = sd / "feedback.json.tmp"
+    json.dump(fb, open(tmp, "w"), indent=1, ensure_ascii=False)
+    tmp.replace(sd / "feedback.json")                          # atomic: the loop never reads half a file
+
+
+def n_done(loop_dir):
+    return sum(1 for sd in loop_dir.glob("step_*") if (sd / "events.json").exists())
+
+
 def depth_of(tree, i):
     d = 0
     while tree[i]["parent"] is not None and tree[i]["parent"] in tree:
@@ -136,20 +160,19 @@ def event_md(e, k, n):
     return f"{head}\n\n{e.get('text', '')}"
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--loop")
-    ap.add_argument("--run", default="2209-box-ray-demo1")
-    ap.add_argument("--port", type=int, default=8084)
-    args = ap.parse_args()
-    loop_dir = Path(args.loop) if args.loop else sorted((OUT / "loops").glob(f"{args.run}_*"))[-1]
+def serve(loop_dir, port=8084):
+    """Build the viewer on loop_dir and return (the server runs in its own threads)."""
+    loop_dir = Path(loop_dir)
+    while n_done(loop_dir) == 0:                               # the loop is still making masks / on its first step
+        print(f"waiting for the first step in {loop_dir} ...", flush=True)
+        time.sleep(5)
     info, blocks = load(loop_dir)
     run = info["run"]
     steps, intr, _ = B.load_steps(run)
     fov = 2 * np.arctan(intr["height"] / 2 / intr["fy"])
     aspect = intr["width"] / intr["height"]
 
-    server = viser.ViserServer(port=args.port)
+    server = viser.ViserServer(port=port)
     server.gui.configure_theme(dark_mode=True, control_width="large", show_logo=False)
     server.scene.set_up_direction("+z")
 
@@ -159,6 +182,13 @@ def main():
         ev_bg = server.gui.add_button_group("event", ["◀ stage", "◀", "▶", "stage ▶"])
         ev_sl = server.gui.add_slider("event", 0, max(1, len(blocks[0]["events"]) - 1), 1, 0)
         reload_bt = server.gui.add_button("reload record (loop still running)")
+    with server.gui.add_folder("Feedback"):
+        fb_status = server.gui.add_markdown("")
+        fb_text = server.gui.add_text("feedback", "", multiline=True,
+                                      hint="one line; Enter = save + continue (empty Enter = just continue)")
+        follow_cb = server.gui.add_checkbox("follow the loop (jump to each new step)", initial_value=True)
+        live_md = server.gui.add_markdown("")
+        fb_md = server.gui.add_markdown("")
     with server.gui.add_folder("Frame + current masks"):
         frame_img = server.gui.add_image(np.full((8, 8, 3), 30, np.uint8))
         frame_md = server.gui.add_markdown("")
@@ -181,6 +211,27 @@ def main():
         look_bt = server.gui.add_button("look from this capture")
 
     S = {"b": 0, "e": 0, "busy": False, "mesh_b": None, "mesh_h": None, "blocks": blocks}
+    lock = threading.RLock()
+
+    def waiting():
+        try:
+            return json.load(open(loop_dir / "loop.json")).get("waiting")
+        except (FileNotFoundError, json.JSONDecodeError):
+            return None
+
+    def refresh_feedback():
+        b = B_()
+        fb = read_feedback(b["dir"])
+        w = waiting()
+        if w is None:
+            fb_status.content = "loop **running** (or finished) · Enter saves a note to the step you are on"
+        else:
+            fb_status.content = (f"### ⏸ PAUSED after step {w}\ntype feedback, **Enter** = save + continue"
+                                 + ("" if w == b["step"] else f" (you are looking at step {b['step']})"))
+        lines = [f"- **ev {n['event']}** · {n['stage']} · {n['tool']}"
+                 + (f" · focus {n['focus']}" if n.get("focus") else "") + f"  \n  {n['text']}" for n in fb["notes"]]
+        fb_md.content = (f"**notes on step {b['step']}** ({len(lines)})" + (" · done" if fb.get("done") else "")
+                         + "\n\n" + "\n".join(lines)) if lines else f"_no notes on step {b['step']} yet_"
 
     def B_():
         return S["blocks"][S["b"]]
@@ -302,6 +353,7 @@ def main():
             itree_img.image = np.full((40, 300, 3), 22, np.uint8)
             itree_md.content = f"**{label}**"
         draw_3d(tree, focus)
+        refresh_feedback()
         if ev_sl.value != k:
             S["busy"] = True
             ev_sl.value = k
@@ -359,12 +411,78 @@ def main():
         if S["mesh_h"] is not None:
             S["mesh_h"].visible = mesh_cb.value
 
+    def reload(jump=False):
+        with lock:
+            _, bl = load(loop_dir)
+            S["blocks"] = bl
+            S["mesh_b"] = None
+            if jump:
+                ev_sl.max = max(1, len(bl[-1]["events"]) - 1)
+                go(len(bl) - 1, 0)
+            else:
+                go(S["b"], S["e"])
+
     @reload_bt.on_click
     def _(_):
-        _, bl = load(loop_dir)
-        S["blocks"] = bl
-        S["mesh_b"] = None
-        go(S["b"], S["e"])
+        reload()
+
+    def save_note(sd, b, k, txt):
+        e = b["events"][k] if b is not None else {}
+        fb = read_feedback(sd)
+        fb["step"] = int(sd.name.split("_")[1])
+        if txt:
+            fb["notes"].append({"event": k + 1 if b is not None else None, "stage": e.get("stage"), "tool": e.get("tool"),
+                                "focus": None if focus_dd.value == "-" else focus_dd.value, "text": txt,
+                                "at": datetime.now().isoformat(timespec="seconds")})
+        return fb
+
+    @fb_text.on_update
+    def _(_):
+        v = fb_text.value
+        if not v.endswith("\n"):
+            return                                              # still typing (each keystroke arrives here)
+        txt = v.strip()
+        with lock:
+            fb_text.value = ""
+            b, k, w = B_(), S["e"], waiting()
+            if w is not None:                                   # paused: the note belongs to the paused step
+                sd = loop_dir / f"step_{w:03d}"
+                fb = save_note(sd, b if b["step"] == w else None, k, txt)
+                fb.update(done=True, done_at=datetime.now().isoformat(timespec="seconds"))
+                write_feedback(sd, fb)
+            elif txt:
+                write_feedback(b["dir"], save_note(b["dir"], b, k, txt))
+            refresh_feedback()
+
+    def live():
+        try:
+            lines = json.load(open(loop_dir / "live.json"))["lines"]
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
+            return
+        txt = "**live** (the loop right now)\n```\n" + "\n".join(l[:110] for l in lines) + "\n```"
+        if live_md.content != txt:
+            live_md.content = txt
+
+    def follow():
+        seen, last_w = n_done(loop_dir), waiting()
+        while True:
+            time.sleep(2)
+            live()
+            n, w = n_done(loop_dir), waiting()
+            if n != seen:
+                seen = n
+                reload(jump=follow_cb.value)
+            elif w != last_w:
+                with lock:
+                    if w is not None and follow_cb.value:       # paused: show the paused step
+                        bi = next((j for j, bl in enumerate(S["blocks"]) if bl["step"] == w), None)
+                        if bi is not None and bi != S["b"]:
+                            ev_sl.max = max(1, len(S["blocks"][bi]["events"]) - 1)
+                            go(bi, 0)
+                    refresh_feedback()
+            last_w = w
+
+    threading.Thread(target=follow, daemon=True).start()
 
     @look_bt.on_click
     def _(event):
@@ -382,8 +500,18 @@ def main():
             event.client.camera.look_at = T[:3, 3] + R[:, 2] * 0.2
             event.client.camera.up_direction = -R[:, 1]
 
-    go(0, 0)
-    print(f"e07 loop viewer on http://localhost:{args.port}  {loop_dir}  {len(blocks)} steps", flush=True)
+    go(len(blocks) - 1, 0)                                      # the newest step (the paused one in a live run)
+    print(f"e07 loop viewer on http://localhost:{port}  {loop_dir}  {len(blocks)} steps", flush=True)
+    return server
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--loop")
+    ap.add_argument("--run", default="2209-box-ray-demo1")
+    ap.add_argument("--port", type=int, default=8084)
+    args = ap.parse_args()
+    serve(Path(args.loop) if args.loop else sorted((OUT / "loops").glob(f"{args.run}_*"))[-1], args.port)
     while True:
         time.sleep(10)
 

@@ -1,0 +1,36 @@
+{
+ "label": "h180",
+ "calib_sha": "590795dc6ce3",
+ "run": "1510-depth-eval-h180",
+ "baseline": "1310-calib-red",
+ "rows": {
+  "dots found": [
+   "7/7",
+   "7/7"
+  ],
+  "dot spread between views (median mm)": [
+   6.56,
+   4.78
+  ],
+  "dot depth error |median| mm": [
+   4.46,
+   1.41
+  ],
+  "dot depth error |max| mm": [
+   8.67,
+   3.46
+  ],
+  "table height error |median| mm": [
+   11.7,
+   5.79
+  ],
+  "table height error |max| mm": [
+   20.02,
+   8.99
+  ],
+  "rays miss (depth-free floor) median mm": [
+   3.32,
+   3.52
+  ]
+ }
+}

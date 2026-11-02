@@ -293,6 +293,30 @@ def _upright(a, rot):
     return a[::-1, ::-1] if rot == 180 else a
 
 
+
+def _solid(m, close=7, min_px=40):
+    """Projected voxels -> a solid region: close the speckle, fill holes, drop crumbs."""
+    from scipy.ndimage import binary_closing, binary_fill_holes, label
+    if not m.any():
+        return m
+    m = binary_fill_holes(binary_closing(m, structure=np.ones((close, close), bool)))
+    lab, n = label(m)
+    if n:
+        sizes = np.bincount(lab.ravel())
+        keep = np.nonzero(sizes >= min_px)[0]
+        m = np.isin(lab, keep[keep != 0])
+    return m
+
+
+def _anchor(m):
+    """Label position: top-left of the largest blob's centre pixel (always ON the part)."""
+    from scipy.ndimage import label
+    lab, n = label(m)
+    big = np.argmax(np.bincount(lab.ravel())[1:]) + 1 if n else 0
+    ys, xs = np.nonzero(lab == big) if n else np.nonzero(m)
+    k = np.argmin((ys - ys.mean()) ** 2 + (xs - xs.mean()) ** 2)
+    return int(max(0, ys[k] - 9)), int(max(0, xs[k] - 30))
+
 class Keeper:
     """One new view against the current STV; holds the label render and the agent's decisions."""
 
@@ -350,37 +374,56 @@ class Keeper:
         return "\n".join(lines)
 
     def show_existing(self, nid, img, margin=0.3, max_w=1100):
+        """The model parts in this frame, ONE level at a time, as filled regions (2026-10-15: the
+        projected voxels are speckle; outlines of speckle at every level told the agent nothing).
+        Level = the node's own depth in the frame tree (#0 -> the faces): those parts filled and
+        labelled at their main blob, the level below them as thin outlines, the node in white."""
         if nid not in self.view["nodes"]:
             return f"show_existing: no node #{nid}", None
         nd = self.view["nodes"][nid]
         h, w = self.rgb_up.shape[:2]
         x0, y0, x1, y1 = C.expand_box(nd["bbox"], (h, w), margin)
         sub = self.rgb_up[y0:y1, x0:x1]
-        parts = [p for p in self.visible if self.pixels(p)[y0:y1, x0:x1].sum() >= 50 and p != self.stv.root]
-        parts = sorted(parts, key=lambda p: (self.stv.depth(p), p))
-        masks = [self.pixels(p)[y0:y1, x0:x1] for p in parts]
-        cols = [COLORS[j % len(COLORS)] for j in range(len(parts))]
+        level = max(1, self._frame_depth(nid))
+        cand = [p for p in self.visible if p != self.stv.root and self.stv.depth(p) in (level, level + 1)]
+        regs = {p: _solid(self.pixels(p)[y0:y1, x0:x1]) for p in cand}
+        regs = {p: m for p, m in regs.items() if m.sum() >= 50}
+        top = sorted((p for p in regs if self.stv.depth(p) == level), key=lambda p: -regs[p].sum())
+        below = [p for p in regs if self.stv.depth(p) == level + 1]
+        col = {p: COLORS[j % len(COLORS)] for j, p in enumerate(top + below)}
+        out = sub.astype(np.float32) * 0.55 + 255 * 0.1
+        for p in top:                                           # largest first, small ones stay on top
+            m = regs[p]
+            out[m] = out[m] * 0.45 + np.array(col[p], np.float32) * 0.55
+        out = out.clip(0, 255).astype(np.uint8)
         own = self.tree.nodes[nid]["mask"][y0:y1, x0:x1]
-        out = C.outlines(sub, masks + [own], cols + [(255, 255, 255)], thick=2, dim=0.15)
+        out = C.outlines(out, [regs[p] for p in below] + [own], [col[p] for p in below] + [(255, 255, 255)],
+                         thick=2, dim=0.0)
         im = Image.fromarray(out)
         d = ImageDraw.Draw(im)
         font = C._font(15)
-        for j, p in enumerate(parts):
-            b = self.box_of(p)
-            tx, ty = max(0, b[0] - x0), max(0, b[1] - y0 - 18)
+        for p in top + below:
+            ty, tx = _anchor(regs[p])
             label = f"P{p} {self.stv.parts[p].name}"
             tb = d.textbbox((tx, ty), label, font=font)
-            d.rectangle([tb[0] - 2, tb[1] - 1, tb[2] + 2, tb[3] + 1], fill=cols[j])
+            d.rectangle([tb[0] - 2, tb[1] - 1, tb[2] + 2, tb[3] + 1], fill=col[p] if p in top else (30, 30, 30))
             d.text((tx, ty), label, fill="white", font=font)
         out = np.array(im)
         if out.shape[1] > max_w:
             out = C.resize(out, max_w)
         ov = ", ".join(f"P{p} {self.stv.parts[p].name} ({100 * s:.0f}%)" for p, s in self.overlaps(nid))
-        text = (f"show_existing #{nid} {nd['name']}: region {x0},{y0}-{x1},{y1}; the node's own outline is white; "
-                f"model parts drawn here: {', '.join(f'P{p} {self.stv.parts[p].name}' for p in parts) or 'none'}; "
-                f"the node's pixels fall on: {ov or 'nothing'}")
+        name = lambda ps: ", ".join(f"P{p} {self.stv.parts[p].name}" for p in ps) or "none"
+        text = (f"show_existing #{nid} {nd['name']}: region {x0},{y0}-{x1},{y1}; model level {level} FILLED and "
+                f"labelled: {name(top)}; level {level + 1} as thin outlines: {name(below)}; the node's own outline "
+                f"is white; the node's pixels fall on: {ov or 'nothing'}")
         view = replace(img, rgb=out, box=(x0, y0, x1, y1), text=f"{img.text} · show_existing #{nid}")
         return text, view
+
+    def _frame_depth(self, nid):
+        nodes, dpt = self.tree.nodes, 0
+        while nid in nodes and nodes[nid]["parent"] is not None:
+            nid, dpt = nodes[nid]["parent"], dpt + 1
+        return dpt
 
     def decide_same(self, nid, part):
         if nid not in self.view["nodes"]:

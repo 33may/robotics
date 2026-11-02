@@ -209,9 +209,14 @@ class SweepDriver(threading.Thread):
     """
 
     def __init__(self, sup, run_dir, on_event=None, planner=None,
-                 auto: bool = False, random_order: bool = False):
+                 auto: bool = False, random_order: bool = False,
+                 cells=None):
         super().__init__(name="sweep-driver", daemon=True)
         self.sup = sup
+        #: Fixed cell list (calib/depth_eval.py): survey, then exactly these
+        #: cells in this order, then `run/finish`. Cells, not joint configs —
+        #: the object moves between eval runs and a cell follows it.
+        self.cells = [tuple(c) for c in cells] if cells else None
         self.run_dir = run_dir
         self.on_event = on_event or (lambda *a, **k: None)
         self.finished = False
@@ -267,6 +272,19 @@ class SweepDriver(threading.Thread):
         """
         self._stop_flag.set()
 
+    def _run_fixed(self):
+        """Request each fixed cell once, in order; a refusal is recorded and
+        skipped (the eval scores what was captured). Then end the run."""
+        for cell in self.cells:
+            if self._should_stop():
+                return
+            ok, reason = self.mover.request(cell)
+            if not ok:
+                logging.getLogger(__name__).warning("cell %s refused: %s", cell, reason)
+                self.on_event("cell_refused", cell=list(cell), reason=reason)
+        self.finished = True
+        self.sup.events.put({"cmd": "run/finish"})
+
     def _should_stop(self) -> bool:
         """Both ways out. `fault`/`done` are terminal for the whole run —
         no request can ever be accepted again — so continuing to rank from
@@ -289,6 +307,9 @@ class SweepDriver(threading.Thread):
                 "survey pose (move the arm to a normal front-of-cell pose "
                 "and restart).", reason)
             self.on_event("sweep_aborted", reason=reason)
+            return
+        if self.cells is not None:
+            self._run_fixed()
             return
         while True:
             if self._should_stop():

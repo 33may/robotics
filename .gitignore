@@ -103,3 +103,6 @@ inspection/data/tool/
 # report shows is committed next to it in investigation/iwm/<experiment>/evidence/
 inspection/data/iwm/
 inspection/cell/topview.png
+
+# browser-automation snapshots
+.playwright-mcp/
