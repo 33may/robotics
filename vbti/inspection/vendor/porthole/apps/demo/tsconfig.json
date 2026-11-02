@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vite/client"],
+    "paths": {
+      "@porthole/framework": ["../../packages/framework/src/index.ts"],
+      "@porthole/registry/*": ["../../packages/registry/src/*"]
+    }
+  },
+  "include": ["src/**/*", "vite.config.ts"]
+}

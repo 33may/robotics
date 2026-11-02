@@ -1,0 +1,45 @@
+{
+  "$schema": "./registry.schema.json",
+  "name": "porthole",
+  "version": "0.1.0",
+  "items": {
+    "camera": {
+      "title": "Camera panel",
+      "description": "Live JPEG stream painted to a canvas",
+      "files": ["panels/CameraPanel.tsx"],
+      "framework": "0.1.0"
+    },
+    "point-cloud": {
+      "title": "Point cloud panel",
+      "description": "Orbitable 3D point cloud with grid and axes",
+      "files": ["panels/PointCloudPanel.tsx"],
+      "framework": "0.1.0",
+      "npmDependencies": ["three", "@react-three/fiber", "@react-three/drei"]
+    },
+    "media-grid": {
+      "title": "Media grid panel",
+      "description": "Grid of live image/video cells, auto-shaped to the panel",
+      "files": ["panels/MediaGridPanel.tsx"],
+      "framework": "0.1.0"
+    },
+    "scene-view": {
+      "title": "Scene view panel",
+      "description": "Backend-driven 3D scene: boxes, meshes, animated poses",
+      "files": ["panels/SceneViewPanel.tsx"],
+      "framework": "0.1.0",
+      "npmDependencies": ["three", "@react-three/fiber", "@react-three/drei"]
+    },
+    "event-log": {
+      "title": "Event log panel",
+      "description": "Streaming log with follow-tail and level colouring",
+      "files": ["panels/EventLogPanel.tsx"],
+      "framework": "0.1.0"
+    },
+    "command": {
+      "title": "Command panel",
+      "description": "Options, note field, and a submit that sends a command",
+      "files": ["panels/CommandPanel.tsx"],
+      "framework": "0.1.0"
+    }
+  }
+}

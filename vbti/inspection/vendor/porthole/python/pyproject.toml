@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "porthole"
+version = "0.1.0"
+description = "A window into a running Python process — bus server for the Porthole UI toolkit"
+requires-python = ">=3.10"
+dependencies = [
+    "websockets>=14",
+    "msgpack>=1.0",
+]
+
+[project.optional-dependencies]
+# numpy is only needed for nd()/jpeg(); the bus itself has no array dependency.
+arrays = ["numpy>=1.24"]
+# The native shell. Browsers work without it.
+#
+# qtpy is not optional: pywebview's Qt backend imports it, not PySide6 directly,
+# and without it pywebview reports "QT cannot be loaded" even with PySide6
+# installed. The Qt backend rather than GTK because a conda interpreter cannot
+# import the distro's PyGObject — it is built against the system Python's ABI.
+native = [
+    "pywebview>=6.0",
+    "qtpy>=2.4",
+    "PySide6-Essentials>=6.7",
+    "PySide6-Addons>=6.7",
+]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+
+[tool.setuptools.packages.find]
+include = ["porthole*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

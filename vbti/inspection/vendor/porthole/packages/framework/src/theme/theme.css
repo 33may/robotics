@@ -1,0 +1,337 @@
+/**
+ * Porthole theme tokens.
+ *
+ * A monitoring dashboard is read at a glance, often for hours, often beside a
+ * running machine. So: dark by default, one accent, generous contrast on data
+ * and almost none on chrome. Chrome that competes with data is a bug.
+ *
+ * Override any token in your app's stylesheet. The `--dv-*` block re-skins
+ * dockview from these same tokens so panel chrome and panel content cannot
+ * drift apart.
+ */
+
+:root {
+  --porthole-bg: #0e1116;
+  --porthole-surface: #151a21;
+  --porthole-surface-raised: #1c222b;
+  --porthole-border: #262d38;
+  --porthole-border-strong: #39414f;
+
+  --porthole-text: #e6eaf0;
+  --porthole-text-dim: #9aa4b2;
+  --porthole-text-faint: #626b78;
+
+  --porthole-accent: #8ab4f8;
+  --porthole-accent-dim: #3d5a8a;
+
+  --porthole-ok: #7ee2a8;
+  --porthole-warn: #f2c76b;
+  --porthole-error: #f2777a;
+
+  --porthole-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --porthole-font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+  --porthole-radius: 3px;
+}
+
+/* dockview chrome, driven from the tokens above */
+:root {
+  --dv-background-color: var(--porthole-bg);
+  --dv-group-view-background-color: var(--porthole-surface);
+  --dv-tabs-and-actions-container-background-color: var(--porthole-bg);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--porthole-surface);
+  --dv-activegroup-visiblepanel-tab-color: var(--porthole-text);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--porthole-bg);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--porthole-text-faint);
+  --dv-separator-border: var(--porthole-border);
+  --dv-paneview-header-border-color: var(--porthole-border);
+  --dv-active-sash-color: var(--porthole-accent);
+  --dv-border-radius: var(--porthole-radius);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--porthole-bg);
+  color: var(--porthole-text);
+  font-family: var(--porthole-font);
+  font-size: 13px;
+}
+
+/* ── panel primitives ─────────────────────────────────────────────────────── */
+
+.porthole-camera-panel,
+.porthole-pointcloud-panel {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.porthole-camera-panel canvas[data-fit='contain'] {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.porthole-camera-panel canvas[data-fit='cover'] {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── media grid ───────────────────────────────────────────────────────────── */
+
+.porthole-media-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  background: #000;
+  overflow: hidden;
+}
+
+.porthole-media-cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #07090c;
+  overflow: hidden;
+}
+
+.porthole-media-cell canvas,
+.porthole-media-cell img,
+.porthole-media-cell video {
+  display: block;
+}
+
+.porthole-media-cell [data-fit='contain'] {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.porthole-media-cell [data-fit='cover'] {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.porthole-media-label {
+  position: absolute;
+  left: 4px;
+  bottom: 3px;
+  padding: 0 4px;
+  background: rgb(0 0 0 / 55%);
+  color: var(--porthole-text-dim);
+  font-family: var(--porthole-font-mono);
+  font-size: 11px;
+  line-height: 15px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* ── scene view ───────────────────────────────────────────────────────────── */
+
+.porthole-scene-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--porthole-bg);
+  overflow: hidden;
+}
+
+.porthole-scene-groups {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.porthole-scene-groups button {
+  padding: 1px 7px;
+  background: rgb(21 26 33 / 85%);
+  color: var(--porthole-text-dim);
+  border: 1px solid var(--porthole-border);
+  border-radius: var(--porthole-radius);
+  font-family: var(--porthole-font-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.porthole-scene-groups button[data-hidden='true'] {
+  color: var(--porthole-text-faint);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.porthole-event-log {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--porthole-surface);
+  font-family: var(--porthole-font-mono);
+  font-size: 12px;
+}
+
+.porthole-event-log table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.porthole-event-log td {
+  padding: 1px 8px 1px 0;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+
+.porthole-event-log-time {
+  color: var(--porthole-text-faint);
+  width: 1%;
+  white-space: nowrap;
+  padding-left: 8px;
+}
+
+.porthole-event-log-topic {
+  color: var(--porthole-text-dim);
+  width: 1%;
+  white-space: nowrap;
+}
+
+.porthole-event-log tr[data-level='warn'] .porthole-event-log-text {
+  color: var(--porthole-warn);
+}
+
+.porthole-event-log tr[data-level='error'] .porthole-event-log-text {
+  color: var(--porthole-error);
+}
+
+.porthole-command-panel {
+  height: 100%;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: var(--porthole-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.porthole-command-prompt {
+  margin: 0;
+  color: var(--porthole-text);
+}
+
+.porthole-command-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.porthole-command-options button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 9px;
+  background: var(--porthole-surface-raised);
+  color: var(--porthole-text);
+  border: 1px solid var(--porthole-border);
+  border-radius: var(--porthole-radius);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.porthole-command-options button:hover {
+  border-color: var(--porthole-border-strong);
+}
+
+.porthole-command-options button[data-selected='true'] {
+  border-color: var(--porthole-accent);
+  color: var(--porthole-accent);
+}
+
+.porthole-command-meta {
+  color: var(--porthole-text-faint);
+  font-family: var(--porthole-font-mono);
+}
+
+.porthole-command-note {
+  background: var(--porthole-bg);
+  color: var(--porthole-text);
+  border: 1px solid var(--porthole-border);
+  border-radius: var(--porthole-radius);
+  padding: 6px 8px;
+  font: inherit;
+  resize: vertical;
+}
+
+.porthole-command-submit {
+  align-self: flex-start;
+  padding: 5px 14px;
+  background: var(--porthole-accent);
+  color: var(--porthole-bg);
+  border: 0;
+  border-radius: var(--porthole-radius);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.porthole-command-submit:disabled {
+  background: var(--porthole-border);
+  color: var(--porthole-text-faint);
+  cursor: default;
+}
+
+.porthole-command-failed {
+  margin: 0;
+  color: var(--porthole-error);
+}
+
+/* ── connection status ────────────────────────────────────────────────────── */
+
+.porthole-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 22px;
+  padding: 0 10px;
+  background: var(--porthole-bg);
+  border-top: 1px solid var(--porthole-border);
+  color: var(--porthole-text-faint);
+  font-family: var(--porthole-font-mono);
+  font-size: 11px;
+}
+
+.porthole-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--porthole-text-faint);
+}
+
+.porthole-status-dot[data-status='open'] {
+  background: var(--porthole-ok);
+}
+
+.porthole-status-dot[data-status='connecting'] {
+  background: var(--porthole-warn);
+}
+
+.porthole-status-dot[data-status='closed'] {
+  background: var(--porthole-error);
+}

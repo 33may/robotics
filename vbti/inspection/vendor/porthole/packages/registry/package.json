@@ -1,0 +1,17 @@
+{
+  "name": "@porthole/registry",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Copyable panel source. Consumers own these files; the framework stays a pinned dependency.",
+  "type": "module",
+  "exports": {
+    "./panels/*": "./src/panels/*"
+  },
+  "peerDependencies": {
+    "@porthole/framework": "0.1.0",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "react": "^19.0.0",
+    "three": "^0.180.0"
+  }
+}

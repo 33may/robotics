@@ -1,0 +1,41 @@
+{
+  "name": "porthole",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A window into a running Python process — UI toolkit for live monitor and manager dashboards",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @porthole/demo",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run build -w @porthole/framework && tsc -p apps/demo/tsconfig.json",
+    "lint": "eslint .",
+    "check": "npm run check:unit && npm run check:python && npm run check:contract && npm run check:scene && npm run check:fork && npm run check:render",
+    "check:unit": "vitest run",
+    "check:python": "${PORTHOLE_PYTHON:-$HOME/miniconda3/envs/robo/bin/python} -m pytest python/tests -q",
+    "check:contract": "npm run build -w @porthole/framework && node tools/verify-contract.mjs",
+    "check:scene": "npm run build -w @porthole/framework && node tools/verify-scene-protocol.mjs",
+    "check:fork": "node tools/verify-fork-merge.mjs",
+    "check:render": "npm run build -w @porthole/demo && node tools/screenshot-demo.mjs",
+    "check:native": "${PORTHOLE_PYTHON:-$HOME/miniconda3/envs/robo/bin/python} tools/verify-native-shell.py",
+    "porthole": "node tools/porthole.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.3",
+    "dockview-react": "8.1.0",
+    "eslint": "10.8.1",
+    "playwright-core": "^1.62.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "typescript": "5.9.3",
+    "vite": "8.2.1",
+    "vitest": "4.1.11"
+  }
+}

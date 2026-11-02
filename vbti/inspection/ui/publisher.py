@@ -7,7 +7,7 @@ both directions), it never decides anything, and it never raises into a caller
 that might have a robot in the middle of a move.
 
 Contract it implements: ``vbti/inspection/ui/AGENTS.md``.
-Wire protocol: ``~/projects/porthole/docs/scene-protocol.md``.
+Wire protocol: ``vbti/inspection/vendor/porthole/docs/scene-protocol.md``.
 
 Typical use, from the dispatcher (`run/machine.py`'s `Supervisor`)::
 

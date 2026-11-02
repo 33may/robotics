@@ -11,7 +11,7 @@ into it. That split exists because there can be exactly one bus on a port, and
 the bus belongs to whoever owns the robot.
 
 Build the frontend first:
-    cd ~/projects/porthole && npm run build -w @porthole/framework
+    cd vbti/inspection/vendor/porthole && npm run build -w @porthole/framework
     cd vbti/inspection/ui && npm install && npm run build
 """
 

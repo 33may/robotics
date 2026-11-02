@@ -9,11 +9,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json",
-    "porthole": "node ../../../porthole/tools/porthole.mjs",
+    "porthole": "node ../vendor/porthole/tools/porthole.mjs",
     "check": "node tools/verify-ui.mjs"
   },
   "dependencies": {
-    "@porthole/framework": "file:../../../porthole/packages/framework",
+    "@porthole/framework": "file:../vendor/porthole/packages/framework",
     "@react-three/drei": "10.7.8",
     "@react-three/fiber": "9.7.0",
     "dockview-react": "8.1.0",
