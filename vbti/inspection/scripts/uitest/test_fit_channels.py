@@ -76,8 +76,8 @@ from imgdiff import diff as img_diff  # noqa: E402
 
 from inspection.record.rr import log as rr_log  # noqa: E402
 
-REPO = HERE.parents[1]
-DERIVED = REPO / "vbti" / "inspection" / "data" / "derived"
+PKG = HERE.parents[1]  # vbti/inspection
+DERIVED = PKG / "data" / "derived"
 ART = C.ART
 
 # ---------------------------------------------------------------- geometry

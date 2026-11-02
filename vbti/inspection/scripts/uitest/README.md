@@ -21,7 +21,7 @@ repo or into any dataset directory.
 
 ```bash
 PY=/home/anton/miniconda3/envs/robo/bin/python
-cd scripts/uitest
+cd vbti/inspection/scripts/uitest
 
 $PY make_toy_rrd.py                       # -> /tmp/rrd/_toy.rrd
 $PY launch.py /tmp/rrd/_toy.rrd           # -> JSON with url, pids, ws_url

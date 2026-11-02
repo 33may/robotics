@@ -27,7 +27,6 @@ python -m vla.logic.servos.rest --port=<follower_port> --robot_id=<name>
 | `python -m vla.logic.servos.rest --port <p>` | Move the follower to rest |
 | `python -m vla.logic.servos.calibrate_interactive` | TUI: nudge per-joint offsets until 0° matches the simulation zero |
 | `python -m vla.logic.servos.quick_recalib` | Set the current pose as the new zero |
-| `python -m vla.logic.servos.teleop` | Leader→follower teleop over raw scservo_sdk (no LeRobot), for checking motion |
 | `python -m vla.logic.servos.unlock_all` | Unlock EEPROM on all servos so calibration can be written |
 | `python -m vla.logic.servos.change_id` | Change a servo's ID (new / replaced motor) |
 | `python -m vla.logic.servos.factory_reset_motors` | Factory-reset specific motors |

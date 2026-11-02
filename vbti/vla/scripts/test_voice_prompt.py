@@ -2,12 +2,12 @@
 """Robot-free voice prompt test.
 
 Examples:
-    conda run -n lerobot python scripts/test_voice_prompt.py --list-devices
-    conda run -n lerobot python scripts/test_voice_prompt.py --duration 4 --model tiny.en
-    conda run -n lerobot python scripts/test_voice_prompt.py --device 0 --duration 4
+    conda run -n vla python scripts/test_voice_prompt.py --list-devices
+    conda run -n vla python scripts/test_voice_prompt.py --duration 4 --model tiny.en
+    conda run -n vla python scripts/test_voice_prompt.py --device 0 --duration 4
 
 Press-to-record mode:
-    conda run -n lerobot python scripts/test_voice_prompt.py --model tiny.en
+    conda run -n vla python scripts/test_voice_prompt.py --model tiny.en
 """
 
 from __future__ import annotations
@@ -18,9 +18,6 @@ import time
 from pathlib import Path
 
 # Allow running from repo root without installing the package.
-ROOT = Path(__file__).resolve().parents[1] / "vbti"  # holds the vla package
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 
 def list_devices():

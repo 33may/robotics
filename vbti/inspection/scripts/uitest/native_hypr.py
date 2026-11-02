@@ -16,7 +16,7 @@ blueprint's horizontal split had nowhere to go. Floating + an explicit
 `resizewindowpixel` is the only way two captures on different days are the
 same picture.
 
-    p scripts/uitest/native_hypr.py --rrd /tmp/rrd/2408-cup3.rrd \
+    p vbti/inspection/scripts/uitest/native_hypr.py --rrd /tmp/rrd/2408-cup3.rrd \
         --out /tmp/rrd_ui_test/native_cup3.png
 
 Leaves nothing running: the window is killed after the capture unless

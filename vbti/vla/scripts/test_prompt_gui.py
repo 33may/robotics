@@ -7,9 +7,6 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1] / "vbti"  # holds the vla package
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 import cv2
 import numpy as np
