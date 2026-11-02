@@ -14,8 +14,6 @@ Read first:
 - `docs/modules/reconstruct/usd_isaac.md`
 - `docs/modules/reconstruct/scripts.md`
 - `docs/modules/reconstruct/cosmos.md`
-- `.august/memory/project/pipeline_architecture.md`
-- `.august/memory/project/depth_estimation_3d_reconstruction.md`
 
 ## Code Scope
 

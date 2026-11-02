@@ -36,7 +36,7 @@ workspace "VBTI Modular Robot Learning Platform" "C4 architecture model focused 
                 evaluationUtils = container "Evaluation Utilities" "Defines protocols, checkpoint sweeps, rendering, trial helpers, eval engine, and generated evaluation scenarios." "logic/inference/eval_*, protocols/"
                 simulationUtils = container "Simulation Utilities" "Runs simulation playgrounds, generated Isaac/LeIsaac tasks, synthetic data paths, and domain-randomized environments." "scripts/sim/, generated IsaacLab/LeIsaac configs"
                 remoteExecution = container "Remote Execution Utilities" "Synchronizes code/data/checkpoints and launches training/evaluation jobs on the robot or training machine." "logic/train/remote.py, remote.yaml"
-                knowledgeBase = container "Design Knowledge Base" "Generated codegraph, August memory, module docs, process docs, and design DSL used to ground future architecture work." ".august/knowledge, .august/memory, docs/"
+                knowledgeBase = container "Design Knowledge Base" "Module docs, runbooks, blueprints, and design DSL used to ground future architecture work." "docs/"
             }
 
             operator -> reconstructionCli "Starts reconstruction and scene-generation workflows"

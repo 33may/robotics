@@ -13,8 +13,6 @@ Read first:
 - `docs/modules/inference/evaluation_engine.md`
 - `docs/modules/inference/protocols.md`
 - `docs/modules/inference/session_analysis.md`
-- `.august/memory/project/duck_cup_sota_plan.md`
-- `.august/memory/project/v018_v019_training_analysis.md`
 - experiment `eval_sessions/*/session.md` files
 
 ## Code Scope

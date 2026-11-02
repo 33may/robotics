@@ -15,10 +15,6 @@ Read first:
 - `docs/modules/dataset/transforms.md`
 - `docs/modules/dataset/uva_features.md`
 - `docs/modules/depth/README.md`
-- `.august/memory/project/lerobot_dataset_format.md`
-- `.august/memory/project/dataset_resolve_function.md`
-- `.august/memory/project/feedback_no_destructive_inplace.md`
-- `.august/memory/project/project_remote_training_path.md`
 
 ## Code Scope
 

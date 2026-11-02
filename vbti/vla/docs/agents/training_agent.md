@@ -14,12 +14,6 @@ Read first:
 - `docs/modules/train/remote_training.md`
 - `docs/modules/train/chains.md`
 - `docs/modules/train/experiments.md`
-- `.august/memory/project/project_remote_training_path.md`
-- `.august/memory/project/project_smolvla_step_peak.md`
-- `.august/memory/project/project_smolvla_vram_anchor.md`
-- `.august/memory/project/v018_v019_training_analysis.md`
-- `.august/memory/project/project_smolvla_uva.md`
-- `.august/memory/project/remote_lerobot_patches.md`
 
 ## Code Scope
 

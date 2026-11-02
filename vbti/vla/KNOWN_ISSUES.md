@@ -18,6 +18,4 @@ Found while writing the tutorials (2026-11). Not fixed.
 - `logic/inference/run_real_inference.py`: `run()` connects to the robot twice without disconnecting; the first connection ignores `--max_relative_target` (move to rest always uses 10.0). An unknown `--cameras` preset silently falls back to `realsense`.
 
 **Repo**
-- `docs/blueprints/design/workspace.json` still contains the removed Detection container; regenerate from the `.dsl`.
-- `docs/agents/*.md` link to `.august/memory/...` paths that are not in the repo.
 - Calibration profiles are tracked in the root `calibration/registry.json`, outside `vbti/vla`.

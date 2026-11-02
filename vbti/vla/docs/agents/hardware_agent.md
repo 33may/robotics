@@ -16,9 +16,6 @@ Read first:
 - `docs/modules/servos/commands.md`
 - `docs/modules/servos/calibration.md`
 - `docs/modules/servos/recovery.md`
-- `.august/memory/project/servo_leader_follower_voltage.md`
-- `.august/memory/project/camera_udev_setup.md`
-- `.august/memory/project/camera_viewer_preset_fix.md`
 
 ## Code Scope
 
@@ -48,7 +45,7 @@ python -m vla.logic.servos.scan_all
 python -m vla.logic.servos.profiles list
 python -m vla.logic.servos.profiles show frodeo-test
 python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --port=/dev/ttyACM1 --speed=3.0
+python -m vla.logic.servos.rest --port=/dev/ttyACM1 --speed=3.0
 ```
 
 Cameras:
@@ -64,7 +61,7 @@ python -m vla.logic.cameras.capture --save_dir ./captures/debug --preset realsen
 Reset:
 
 ```bash
-python /home/may33/projects/ml_portfolio/robotics/vbti/logic/cameras/reset_camera.py
+python -m vla.logic.cameras.reset_camera
 ```
 
 ## Hardware Facts

@@ -32,7 +32,7 @@ This layer contains reusable utilities for robot learning, from hardware setup t
 - **Evaluation Utilities** (`logic/inference/eval_*`, `logic/inference/protocols/`): eval engine, helpers, renderers, checkpoint sweeps, protocol/scenario generators.
 - **Simulation Utilities** (`scripts/sim/`, generated Isaac/LeIsaac configs): simulation playgrounds, generated environments, synthetic/domain-randomized task execution.
 - **Remote Execution Utilities** (`logic/train/remote.py`, `remote.yaml`): remote sync and job launch for training/evaluation.
-- **Design Knowledge Base** (`.august/knowledge`, `.august/memory`, `docs/`): codegraph, memory, and docs that ground design decisions.
+- **Design Knowledge Base** (`docs/`): module docs, runbooks, blueprints, and the design DSL that ground design decisions.
 
 Show the main AI model flow as:
 
