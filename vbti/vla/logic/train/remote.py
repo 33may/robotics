@@ -27,6 +27,7 @@ Usage:
 """
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -48,10 +49,16 @@ def _load_remote_config() -> dict:
     return cfg
 
 
+def _auth(remote_cfg: dict) -> list[str]:
+    """sshpass prefix when a password is given (env VLA_REMOTE_PASSWORD), else plain ssh key auth."""
+    pw = os.environ.get("VLA_REMOTE_PASSWORD") or remote_cfg.get("password")
+    return ["sshpass", "-p", pw] if pw else []
+
+
 def _ssh(remote_cfg: dict, cmd: str, capture: bool = False) -> subprocess.CompletedProcess:
     """Run a command on remote via ssh."""
     full_cmd = [
-        "sshpass", "-p", remote_cfg["password"],
+        *_auth(remote_cfg),
         "ssh", "-o", "StrictHostKeyChecking=no",
         remote_cfg["host"], cmd
     ]
@@ -64,7 +71,7 @@ def _ssh(remote_cfg: dict, cmd: str, capture: bool = False) -> subprocess.Comple
 def _rsync_to_remote(remote_cfg: dict, local_path: str, remote_path: str, delete: bool = False):
     """Rsync local → remote."""
     cmd = [
-        "sshpass", "-p", remote_cfg["password"],
+        *_auth(remote_cfg),
         "rsync", "-avL", "--progress", "--partial",
         "-e", "ssh -o StrictHostKeyChecking=no",
     ]
@@ -77,7 +84,7 @@ def _rsync_to_remote(remote_cfg: dict, local_path: str, remote_path: str, delete
 def _rsync_from_remote(remote_cfg: dict, remote_path: str, local_path: str):
     """Rsync remote → local."""
     cmd = [
-        "sshpass", "-p", remote_cfg["password"],
+        *_auth(remote_cfg),
         "rsync", "-avz", "--progress",
         "-e", "ssh -o StrictHostKeyChecking=no",
         f"{remote_cfg['host']}:{remote_path}", local_path,
@@ -326,7 +333,7 @@ def train(
 
     # Stream logs immediately
     tail_cmd = [
-        "sshpass", "-p", remote_cfg["password"],
+        *_auth(remote_cfg),
         "ssh", "-o", "StrictHostKeyChecking=no",
         "-t", remote_cfg["host"],
         f"tail -n 50 -f --retry {log_file}"
@@ -389,7 +396,7 @@ def logs(experiment: str = None, version: str = None, lines: int = 50):
 
     print(f"Tailing {log_file} (Ctrl+C to stop)\n")
     cmd = [
-        "sshpass", "-p", remote_cfg["password"],
+        *_auth(remote_cfg),
         "ssh", "-o", "StrictHostKeyChecking=no",
         "-t", remote_cfg["host"],
         f"tail -n {lines} -f --retry {log_file}"

@@ -259,7 +259,7 @@ Training strategy memory:
 
 ## Remote Assumptions
 
-`remote.yaml` stores host/path settings and a plaintext password. Do not copy the password into docs or commits.
+`remote.yaml` stores host/path settings only. Auth is an ssh key, or `VLA_REMOTE_PASSWORD` in the environment for sshpass.
 
 Remote scripts assume:
 

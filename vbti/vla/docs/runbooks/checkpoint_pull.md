@@ -54,8 +54,8 @@ Expected files:
 ```text
 config.json
 model.safetensors
-preprocessor.json
-postprocessor.json
+policy_preprocessor.json
+policy_postprocessor.json
 train_config.json
 ```
 

@@ -12,7 +12,7 @@ Config file:
 remote.yaml
 ```
 
-It contains host, user, password, Python/env paths, remote data root, and remote experiment root. It includes plaintext secrets; do not copy them into docs or commits.
+It contains host, user, Python/env paths, remote data root, and remote experiment root. Auth is an ssh key, or `VLA_REMOTE_PASSWORD` in the environment (sshpass).
 
 ## Commands
 

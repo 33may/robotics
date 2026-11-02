@@ -37,7 +37,7 @@ pip install -e vbti/vla
 
 ```
 docs/
-  tutorial/     hands-on, in order: 01 cameras · 02 robot · 03 teleoperation · 04 dataset
+  tutorial/     hands-on, in order: 01 cameras · 02 robot · 03 teleoperation · 04 dataset · 05 training · 06 evaluation · 07 inference
   runbooks/     task recipes — preflight, collection, training (local / remote / chains), evaluation, checkpoints
   modules/      reference per code module, mirrors logic/ — commands, arguments, contracts
   blueprints/   how each subsystem is designed and why — dataset, training, evaluation, hardware, reconstruction; C4 model in design/
@@ -48,4 +48,4 @@ docs/
 
 **How to read:** start with `tutorial/` on the real hardware. When you start a concrete task, open its runbook. Go to `modules/` for exact commands and arguments, and to `blueprints/` before changing how a subsystem works. `case-study/` shows the whole loop used end to end.
 
-**Code layout:** `logic/` framework code · `experiments/` versioned experiment configs and eval sessions · `envs/` conda specs · `udev/` camera rules · `research/` past research experiments.
+**Code layout:** `logic/` framework code · `experiments/` versioned experiment configs and eval sessions · `envs/` conda specs · `udev/` camera rules · `research/` past research experiments. Open bugs: `KNOWN_ISSUES.md`.

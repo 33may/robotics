@@ -3,7 +3,7 @@
 
 # host: vbti@10.11.100.151
 host: vbti@10.11.100.156
-password: vbti25robot
+# auth: ssh key, or export VLA_REMOTE_PASSWORD for sshpass
 
 # Remote paths
 python: /home/vbti/anton/env/bin/python
