@@ -1,0 +1,63 @@
+# Inspection track env. Direct deps only, pinned to the versions of the
+# working dev env (`robo`, py3.11). Everything below python is a pip wheel.
+#   conda env create -f vbti/inspection/envs/inspection.yml
+#   conda activate inspection
+#   pip install -e vbti/inspection
+#   pip install -e vbti/inspection/vendor/porthole/python   # vendored UI bus
+name: inspection
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu128
+      # core: workcell model, collision, IK, planning (cell/, motion/, view/)
+      - numpy==2.3.5
+      - scipy==1.17.1
+      - pin==4.0.0                    # pinocchio + coal (cmeel wheels)
+      - ompl==2.0.1
+      - EAIK==1.2.2
+      - robot_descriptions==3.1.0     # UR5e URDF loader
+      - xacrodoc==2.0.1               # robot_descriptions needs it to expand the UR5e xacro
+      - pyyaml==6.0.2
+      - fire==0.7.1
+      - meshcat==0.3.2
+      - shapely==2.1.2
+      - trimesh==5.0.0
+      - mapbox_earcut==2.0.0
+      - usd-core==26.8                # cell/usd_preview.py
+      # perception, calibration, fitting (perception/, calib/, fit/)
+      - open3d==0.19.0
+      - opencv-contrib-python==4.10.0.84
+      - pillow==12.3.0
+      - matplotlib==3.10.9
+      # hardware: UR5e RTDE + RealSense D405
+      - ur_rtde==1.6.5
+      - pyrealsense2==2.58.3.10794
+      # agents: brain/ (Claude Agent SDK) and eyes/ (Gemini)
+      - claude-agent-sdk==0.2.144
+      - google-genai==2.19.0
+      # eyes/verbs_local.py: local SAM3 / OCR verbs (lazy imports)
+      - torch==2.11.0+cu128
+      - torchvision==0.26.0+cu128
+      - transformers==5.15.1
+      - huggingface_hub==1.28.0
+      - paddlex==3.7.2
+      # record/ schema + rerun views (record/rr/, viewplan/)
+      - pydantic==2.13.4
+      - rerun-sdk==0.37.0
+      # operator UI: porthole bus deps + native window (run/app.py, ui/app.py)
+      - websockets==16.1.1
+      - msgpack==1.2.1
+      - pywebview==6.2.1
+      - QtPy==2.4.3
+      - PySide6-Essentials==6.11.2
+      - PySide6-Addons==6.11.2
+      # tests (default suite + tests/e2e headless browser)
+      - pytest==9.1.1
+      - playwright==1.62.0
+      - pytest-playwright==0.9.0
+      # investigation/ (research only, not needed for the PoC loop):
+      # - viser==1.1.1                # iwm/e03..e07 3D viewers
+      # - sam2                        # iwm/e01_all_masks/unsamv2_masks.py

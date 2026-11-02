@@ -1,0 +1,86 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robotics-inspection"
+version = "0.1.0"
+description = "UR5e AI-driven inspection track (vbti/inspection)"
+requires-python = ">=3.10"
+# Minimal runtime deps only. The full pinned stack (torch cu128, open3d,
+# pyrealsense2, ur_rtde, the agent SDKs, ...) comes from envs/inspection.yml.
+# porthole is vendored: pip install -e vendor/porthole/python.
+dependencies = [
+    "numpy",
+    "scipy",             # cKDTree: seeded object growth in cell/geometry.py
+    "pin>=3.0",          # pinocchio + coal: the collision world and FK
+    "ompl>=2.0.1",       # tier-2 sampling search (2.0 switched to nanobind)
+    "eaik",              # analytic UR5e IK, all branches
+    "pyyaml",
+    "meshcat",           # 3D verdicts — the primary way we inspect behaviour
+    "shapely",           # keep-out footprint union (cell/world.py, display)
+    "trimesh",           # extrude the merged footprint into one clean mesh
+    "mapbox-earcut",     # trimesh's polygon triangulation engine
+    "fire",              # the CLI shell — every module main
+]
+
+# Flat layout: this directory IS the `inspection` package.
+[tool.setuptools]
+package-dir = { "inspection" = "." }
+# Explicit list — keeps data/ docs/ scripts/ vendor/ ui/node_modules and the
+# test dirs out of the installed package. investigation/iwm/e06_view_offset
+# has no __init__.py (implicit namespace package) and is listed explicitly.
+packages = [
+    "inspection",
+    "inspection.brain",
+    "inspection.calib",
+    "inspection.cell",
+    "inspection.eyes",
+    "inspection.eyes.agents",
+    "inspection.eyes.bench",
+    "inspection.fit",
+    "inspection.motion",
+    "inspection.perception",
+    "inspection.record",
+    "inspection.record.rr",
+    "inspection.run",
+    "inspection.ui",
+    "inspection.view",
+    "inspection.viewplan",
+    "inspection.investigation",
+    "inspection.investigation.iwm",
+    "inspection.investigation.iwm.e01_all_masks",
+    "inspection.investigation.iwm.e02_agent_tree",
+    "inspection.investigation.iwm.e03_tree_3d",
+    "inspection.investigation.iwm.e04_voxel_scene",
+    "inspection.investigation.iwm.e04_voxel_scene.normals",
+    "inspection.investigation.iwm.e05_parts_in_v",
+    "inspection.investigation.iwm.e06_view_offset",
+    "inspection.investigation.iwm.e07_update_loop",
+    "inspection.investigation.partial_prompt",
+    "inspection.investigation.ray_views",
+    "inspection.investigation.run_replay",
+    "inspection.investigation.tool_hull",
+    "inspection.investigation.view_framing",
+    "inspection.investigation.view_hints",
+]
+
+[tool.setuptools.package-data]
+"inspection.cell" = ["*.yaml"]
+"inspection.calib" = ["*.yaml"]
+"inspection.run" = ["*.json"]
+
+[tool.pytest.ini_options]
+markers = [
+    "e2e: headless-browser end-to-end tests over a live mock app subprocess (slow; excluded from the default collection by norecursedirs below — run explicitly with `pytest vbti/inspection/tests/e2e -m e2e`)",
+]
+# Keeps `pytest vbti/inspection/tests` fast and hardware/browser-free by
+# default. Pattern includes pytest's own defaults (docs: "norecursedirs") plus
+# the e2e dir; a pattern containing a path separator is matched against the
+# whole path, not just the directory's basename, so this excludes it wherever
+# the repo is checked out.
+norecursedirs = [
+    "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv",
+    "{arch}",
+    "inspection/tests/e2e",
+]
