@@ -15,6 +15,7 @@ from __future__ import annotations
 import contextlib
 import socket
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -23,8 +24,8 @@ from pathlib import Path
 
 import pytest
 
-PYTHON = str(Path.home() / "miniconda3" / "envs" / "robo" / "bin" / "python")
-REPO_ROOT = Path(__file__).resolve().parents[3]
+PYTHON = sys.executable
+REPO_ROOT = Path(__file__).resolve().parents[3]  # vbti/, where inspection is importable for -m
 READY_TIMEOUT_S = 30.0
 
 
