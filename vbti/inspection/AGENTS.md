@@ -1,23 +1,19 @@
-# inspection — language-driven UR5e inspection
+# inspection — system
 
-## Purpose
-VLM decides how to inspect an object; this package perceives, models the
-workcell, picks viewpoints, solves motion, and orchestrates the loop
-(`run/app.py` + `run/machine.py`; design: `docs/blueprints/ui-driven-loop.md`).
-Pure Python, no ROS. Stack: pinocchio+coal, OMPL, EAIK, ur_rtde,
-open3d, meshcat.
+**Two layers.** The reasoning layer decides *what* to look at, and the execution layer does *how*.
 
-## Files
-Pipeline shape: perceive (`perception/`) → model world (`cell/`) → pick
-view (`view/`) → solve motion (`motion/`) → orchestrate (`run/`).
-`calib/` holds registration scripts and data. Design docs live in `docs/`.
+- **Planner** (`brain/`): a Claude Agent SDK loop that owns the question, the plan and the answer. It never sees images. Its tools are plan, move, inspect and answer.
+- **Eyes** (`eyes/`): VLM subagents that read one captured view and return text. All visual knowledge reaches the planner this way.
+- **World** (`cell/`): one model of the workcell (robot, table, object primitive) that every other part queries.
+- **Views** (`view/`): the camera positions the planner can address, as rays around the object at a safe distance.
+- **Motion** (`motion/`): IK on the UR5e plus OMPL. Every move runs as a transaction.
+- **Loop** (`run/machine.py`): a state machine that wires it together. The operator UI (`ui/`) watches and confirms; STOP is always live.
+- **Record** (`record/`): each run is written to one schema for review and replay.
 
-## Contracts & decisions
-- Self-contained: new code never imports `vbti.*`. When touching a file
-  that still has a vbti import, migrate the dependency into this package.
-- Dependency direction: run → view/motion → cell ← perception.
-  `cell/` imports nothing from siblings. Nothing imports from `run/`.
+Dependency direction: run → view/motion → cell ← perception. `cell/` imports nothing from sibling modules.
+
+Each module's `AGENTS.md` holds its main details.
 
 ## Does NOT belong here
 - ROS, launch files, message definitions.
-- Anything that grows a new `vbti.*` dependency.
+- Imports from `vla.*` or `humanoid.*`: the projects are decoupled.
