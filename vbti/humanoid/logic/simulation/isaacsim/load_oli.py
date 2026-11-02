@@ -12,9 +12,9 @@ Copy this loop into any recon / nav / SLAM / RL host app.
 
 Run:
   conda activate isaac
-  python humanoid/logic/simulation/isaacsim/load_oli.py            # bridge mode
-  python humanoid/logic/simulation/isaacsim/load_oli.py --no-bridge
-  python humanoid/logic/simulation/isaacsim/load_oli.py --headless --ip 127.0.0.1
+  python vbti/humanoid/logic/simulation/isaacsim/load_oli.py            # bridge mode
+  python vbti/humanoid/logic/simulation/isaacsim/load_oli.py --no-bridge
+  python vbti/humanoid/logic/simulation/isaacsim/load_oli.py --headless --ip 127.0.0.1
 
 Then (bridge mode), in the limx env:
   ROBOT_TYPE=HU_D04_01 python <humanoid-rl-deploy-python>/main.py 127.0.0.1

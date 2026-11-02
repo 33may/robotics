@@ -16,7 +16,7 @@ Labels are ground truth ABOUT a run, produced by a human — they are not part
 of the run structure's trust levels, which govern what CODE and MODELS may
 write. Hence a separate file.
 
-Run: p inspection/eyes/bench/labels.py <run_dir> [question]
+Run: p vbti/inspection/eyes/bench/labels.py <run_dir> [question]
 """
 import json
 from pathlib import Path

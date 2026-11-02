@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ground-truth labels for a run. Run: p inspection/tests/test_eyes_labels.py"""
+"""Ground-truth labels for a run. Run: p vbti/inspection/tests/test_eyes_labels.py"""
 import tempfile
 from pathlib import Path
 

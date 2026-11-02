@@ -21,6 +21,7 @@ set -euo pipefail
 export CONDA_RUN="conda run -n lerobot --no-capture-output python -u"
 REPO_ROOT="/home/may33/projects/ml_portfolio/robotics"
 cd "$REPO_ROOT"
+export PYTHONPATH="$REPO_ROOT/vbti${PYTHONPATH:+:$PYTHONPATH}"  # vla package lives under vbti/
 
 TRAINING_ROOT="/home/may33/Documents/vbti/vbti/researches/engineering tricks/detection/distillation/training"
 
@@ -60,7 +61,7 @@ for run in "${RUN_ORDER[@]}"; do
     log_file="/tmp/sweep_${run}.log"
 
     # Train 4 cams
-    $CONDA_RUN -m vbti.logic.detection.distill train --all \
+    $CONDA_RUN -m vla.logic.detection.distill train --all \
         --run "$run" \
         --max-epochs 40 --min-epochs 15 --patience 10 \
         --batch-size 128 --num-workers 4 --lr 1e-3 \

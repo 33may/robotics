@@ -18,7 +18,7 @@ Design:
   - Seed=13, deterministic, matching the id_scale family.
 
 Run:
-  python vbti/logic/inference/protocols/generators/make_id_single_cup_30.py
+  python vbti/vla/logic/inference/protocols/generators/make_id_single_cup_30.py
 """
 
 import json
@@ -27,7 +27,7 @@ import random
 from collections import Counter
 from pathlib import Path
 
-from vbti.logic.inference.protocols.render_protocol import render
+from vla.logic.inference.protocols.render_protocol import render
 
 PROTO_DIR = Path(__file__).resolve().parent.parent  # protocols/
 OUT_PATH  = PROTO_DIR / "id_single_cup_30.json"
@@ -140,7 +140,7 @@ def main():
             "min_duck_to_cup": MIN_DUCK_TO_CUP,
             "duck_nogo_for":   ["duck"],
         },
-        "_generated_by": "vbti/logic/inference/protocols/generators/make_id_single_cup_30.py",
+        "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_id_single_cup_30.py",
     }
 
     OUT_PATH.write_text(json.dumps(proto, indent=2))

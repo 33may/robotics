@@ -23,7 +23,7 @@ Anything beyond that — model code, optimizer, schedule, data — must stay byt
 | 07_red_cup_black_bg_depth | 11 | 4 363 | red cup, black bg |
 | **merged** | **175** | **70 384** | duck-into-cup, mixed bg/cup |
 
-Aggregated once as `eternalmay33/04_05_06_07_merged_may-sim_depth` (full, with depth), then **stripped** of `observation.images.gripper_depth` via `vbti.logic.dataset.strip_feature` to produce `eternalmay33/04_05_06_07_merged_may-sim` (2.3 GB; depth-included version is 11 GB). v017 trains on the stripped twin, v018 trains on the full version. Both share byte-identical RGB videos, identical episode/frame indexing, identical RGB stats — only difference is whether `gripper_depth` exists.
+Aggregated once as `eternalmay33/04_05_06_07_merged_may-sim_depth` (full, with depth), then **stripped** of `observation.images.gripper_depth` via `vla.logic.dataset.strip_feature` to produce `eternalmay33/04_05_06_07_merged_may-sim` (2.3 GB; depth-included version is 11 GB). v017 trains on the stripped twin, v018 trains on the full version. Both share byte-identical RGB videos, identical episode/frame indexing, identical RGB stats — only difference is whether `gripper_depth` exists.
 
 ## Hyperparams (= v013, = v014)
 - 50 000 steps, batch 32, lr 1e-4, cosine decay → 2.5e-6, warmup 1000.

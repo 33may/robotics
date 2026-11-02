@@ -26,9 +26,9 @@ Changing names or ordering changes the model interface. Training, inference, and
 Common patterns:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference preview
-python -m vbti.logic.inference.run_real_inference run --cameras=realsense
-python -m vbti.logic.inference.run_real_inference run --cameras=opencv_depth --depth=true
+python -m vla.logic.inference.run_real_inference preview
+python -m vla.logic.inference.run_real_inference run --cameras=realsense
+python -m vla.logic.inference.run_real_inference run --cameras=opencv_depth --depth=true
 ```
 
 If `depth=true`, the gripper camera must be RealSense-backed. The inference code injects a virtual `gripper_depth` image into the observation.
@@ -42,8 +42,8 @@ The top camera is used for placement overlays. If camera placement drifts, proto
 Before serious evaluation:
 
 ```bash
-python -m vbti.logic.cameras.view_cameras --preset <preset>
-python -m vbti.logic.cameras.calibrate --ref_dir <reference_capture_dir> --preset <preset>
+python -m vla.logic.cameras.view_cameras --preset <preset>
+python -m vla.logic.cameras.calibrate --ref_dir <reference_capture_dir> --preset <preset>
 ```
 
 ## Depth Integration

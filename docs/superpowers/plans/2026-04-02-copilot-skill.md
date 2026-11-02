@@ -808,25 +808,25 @@ Each copilot has its own `cli_reference.md` with full command docs. Don't duplic
 
 | Module | CLI Entry | Purpose |
 |--------|-----------|---------|
-| `master.py` | `python -m vbti.logic.reconstruct.master <stage>` | Pipeline orchestrator: video_processing → gs_reconstruction → ply_to_usda → scene_composition → export_isaaclab_task |
+| `master.py` | `python -m vla.logic.reconstruct.master <stage>` | Pipeline orchestrator: video_processing → gs_reconstruction → ply_to_usda → scene_composition → export_isaaclab_task |
 | `video_utils.py` | via master | Frame extraction, rotation fix, sharp frame selection |
 | `colmap_utils.py` | via master | SfM reconstruction (COLMAP + nerfstudio) |
 | `gs_milo_utils.py` | via master | Gaussian Splatting training + MILo mesh extraction |
 | `format_utils.py` | via master | PLY→USD conversion (sRGB, PCA alignment, physics properties) |
-| `robot_utils.py` | `python -m vbti.logic.reconstruct.robot_utils <cmd>` | USD robot: inspect, fix_base, set_drives, make_ready |
+| `robot_utils.py` | `python -m vla.logic.reconstruct.robot_utils <cmd>` | USD robot: inspect, fix_base, set_drives, make_ready |
 | `isaac_cfg_utils.py` | via master | LeIsaac/IsaacLab env code generation from USD scenes |
-| `cosmos_transfer.py` | `python -m vbti.logic.reconstruct.cosmos_transfer <cmd>` | Sim data augmentation (extract, process, config, transfer) — transfer step incomplete |
+| `cosmos_transfer.py` | `python -m vla.logic.reconstruct.cosmos_transfer <cmd>` | Sim data augmentation (extract, process, config, transfer) — transfer step incomplete |
 | `clean_mesh.py` | `python vbti/logic/reconstruct/clean_mesh.py` | Interactive Polyscope mesh cleaner |
 
 ### Training (`vbti/logic/train/`)
 
 | Module | CLI Entry | Purpose |
 |--------|-----------|---------|
-| `engine.py` | `python -m vbti.logic.train.engine train [opts]` | Unified training loop (SmolVLA + GR00T) |
-| `experiment_utils.py` | `python -m vbti.logic.train.experiment_utils <cmd>` | Experiment lifecycle: create, use, active, lse, lsv, status, version, config, dir, complete, log, summary |
-| `config_utils.py` | `python -m vbti.logic.train.config_utils <cmd>` | Config management: schema, default, create, show. Dotted overrides for any field. |
-| `monitor.py` | `python -m vbti.logic.train.monitor <cmd>` | Training monitoring: snapshot, logs, trend, compare, history, metrics |
-| `remote.py` | `python -m vbti.logic.train.remote <cmd>` | Remote RTX 5090 training: train, status, logs, pull, push_data |
+| `engine.py` | `python -m vla.logic.train.engine train [opts]` | Unified training loop (SmolVLA + GR00T) |
+| `experiment_utils.py` | `python -m vla.logic.train.experiment_utils <cmd>` | Experiment lifecycle: create, use, active, lse, lsv, status, version, config, dir, complete, log, summary |
+| `config_utils.py` | `python -m vla.logic.train.config_utils <cmd>` | Config management: schema, default, create, show. Dotted overrides for any field. |
+| `monitor.py` | `python -m vla.logic.train.monitor <cmd>` | Training monitoring: snapshot, logs, trend, compare, history, metrics |
+| `remote.py` | `python -m vla.logic.train.remote <cmd>` | Remote RTX 5090 training: train, status, logs, pull, push_data |
 | `backends/smolvla.py` | via engine | SmolVLA training backend |
 | `backends/groot.py` | via engine | GR00T N1.6 training backend |
 
@@ -834,10 +834,10 @@ Each copilot has its own `cli_reference.md` with full command docs. Don't duplic
 
 | Module | CLI Entry | Purpose |
 |--------|-----------|---------|
-| `check_utils.py` | `python -m vbti.logic.dataset.check_utils <cmd>` | ls, info, cameras, report, compare_actions, compare_trimmed, trajectories |
-| `convert_utils.py` | `python -m vbti.logic.dataset.convert_utils <cmd>` | discover, convert (HDF5→LeRobot), verify, link, roundtrip_test |
-| `hdf5_utils.py` | `python -m vbti.logic.dataset.hdf5_utils <cmd>` | info, view, report, tree, episodes |
-| `replay_utils.py` | `python -m vbti.logic.dataset.replay_utils <cmd>` | replay (on real robot), show (print actions) |
+| `check_utils.py` | `python -m vla.logic.dataset.check_utils <cmd>` | ls, info, cameras, report, compare_actions, compare_trimmed, trajectories |
+| `convert_utils.py` | `python -m vla.logic.dataset.convert_utils <cmd>` | discover, convert (HDF5→LeRobot), verify, link, roundtrip_test |
+| `hdf5_utils.py` | `python -m vla.logic.dataset.hdf5_utils <cmd>` | info, view, report, tree, episodes |
+| `replay_utils.py` | `python -m vla.logic.dataset.replay_utils <cmd>` | replay (on real robot), show (print actions) |
 | `trim_utils.py` | via dataset tools | Trim rest-pose frames from episodes |
 
 ### Inference (`vbti/logic/inference/`)
@@ -971,7 +971,7 @@ Gripper is special: [0, 54] sim degrees → [0, 100] real degrees. NOT symmetric
 - Required: `LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64`
 - `num_workers: 0` causes GPU starvation → use 8+
 - Dataset `eternalmay33/08-merged` is local-only → must rsync before training
-- CLI: `python -m vbti.logic.train.remote {train|status|logs|pull|push_data}`
+- CLI: `python -m vla.logic.train.remote {train|status|logs|pull|push_data}`
 ```
 
 - [ ] **Step 2: Verify file exists and line count**

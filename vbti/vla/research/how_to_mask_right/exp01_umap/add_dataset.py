@@ -4,7 +4,7 @@ Streams frames via DataLoader, embeds with SigLIP, saves JPEGs.
 Appends to existing images/manifest.csv and results/records.npz.
 
 Usage:
-    python vbti/research/how_to_mask_right/add_dataset.py \
+    python vbti/vla/research/how_to_mask_right/add_dataset.py \
         --repo_id eternalmay33/09_merged --n_frames 1000 --tag 09_merged
 """
 from __future__ import annotations

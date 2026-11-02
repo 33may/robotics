@@ -3,7 +3,7 @@
 
 Wraps `planner.plan_step` and nothing else — the research path and the
 loop path are the same call, so a verdict formed here transfers. Mirrors
-`inspection/fit/cli.py` flag-for-flag: same `steps_of`/`select` helpers,
+`vbti/inspection/fit/cli.py` flag-for-flag: same `steps_of`/`select` helpers,
 same merge-never-truncate `scores.jsonl`, same top-level `_job` for
 multiprocessing `spawn`.
 
@@ -29,15 +29,15 @@ the mesh, grows 2.8-3.4x over the run. See `planner.score_views`.
 
 Canonical entrypoint (the one operational CLI):
 
-    p inspection/viewplan/cli.py run   --run 2408-cup3 --steps all --variant base,binary --seed 0 --jobs 4
-    p inspection/viewplan/cli.py run   --run 2408-cup3,2408-cup4,2408-cup5 --steps all --variant all
-    p inspection/viewplan/cli.py show  --run 2408-cup3 --variant base --steps final
-    p inspection/viewplan/cli.py variants
-    p inspection/viewplan/cli.py crosseval --run 2408-cup3 --variant all
-    p inspection/viewplan/cli.py budget --run 2408-cup3 --variant base
-    p inspection/viewplan/cli.py curves --run 2408-cup3,2408-cup4,2408-cup5
+    p vbti/inspection/viewplan/cli.py run   --run 2408-cup3 --steps all --variant base,binary --seed 0 --jobs 4
+    p vbti/inspection/viewplan/cli.py run   --run 2408-cup3,2408-cup4,2408-cup5 --steps all --variant all
+    p vbti/inspection/viewplan/cli.py show  --run 2408-cup3 --variant base --steps final
+    p vbti/inspection/viewplan/cli.py variants
+    p vbti/inspection/viewplan/cli.py crosseval --run 2408-cup3 --variant all
+    p vbti/inspection/viewplan/cli.py budget --run 2408-cup3 --variant base
+    p vbti/inspection/viewplan/cli.py curves --run 2408-cup3,2408-cup4,2408-cup5
 
-Standalone still works, same subcommands: `p inspection/viewplan/cli.py run ...`
+Standalone still works, same subcommands: `p vbti/inspection/viewplan/cli.py run ...`
 """
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Faces reach the orchestrator: nav block + prompt language.
-Run: p inspection/tests/test_live_faces.py"""
+Run: p vbti/inspection/tests/test_live_faces.py"""
 from inspection.view.rays import RayResolution
 
 #: `sup._reach` holds resolved RAYS everywhere else (Stage B), and `nav()`

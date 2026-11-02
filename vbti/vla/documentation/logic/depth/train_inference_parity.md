@@ -19,7 +19,7 @@ packed uint16 depth image in LeRobot dataset
 Command:
 
 ```bash
-python -m vbti.logic.depth.bake_packed_depth \
+python -m vla.logic.depth.bake_packed_depth \
   --repo_id=<source> \
   --out-repo-id=<output> \
   --depth-key=observation.images.gripper_depth \
@@ -43,8 +43,8 @@ RealSense gripper D405 z16
 Inference examples:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run --depth=true --cameras=opencv_depth
-python -m vbti.logic.inference.eval_engine --checkpoint=v18-20k --protocol=dual_cup_30 --depth=true --cameras=opencv_depth
+python -m vla.logic.inference.run_real_inference run --depth=true --cameras=opencv_depth
+python -m vla.logic.inference.eval_engine --checkpoint=v18-20k --protocol=dual_cup_30 --depth=true --cameras=opencv_depth
 ```
 
 ## Fixed Clip
@@ -65,7 +65,7 @@ Depth Anything V2 metric indoor depth can be useful as a structural signal, but 
 Command:
 
 ```bash
-python -m vbti.logic.depth.compare_real_vs_estimated --d405-dir <sample> --src-dataset <dataset> --out <results>
+python -m vla.logic.depth.compare_real_vs_estimated --d405-dir <sample> --src-dataset <dataset> --out <results>
 ```
 
 ## Checklist Before Training A Depth Model

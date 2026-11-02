@@ -35,7 +35,7 @@ Main file: `logic/reconstruct/master.py`.
 Video processing:
 
 ```bash
-python -m vbti.logic.reconstruct.master video_processing \
+python -m vla.logic.reconstruct.master video_processing \
   --video_path data/scene.mp4 \
   --output_dir data/frames \
   --mode count \
@@ -45,7 +45,7 @@ python -m vbti.logic.reconstruct.master video_processing \
 COLMAP + MILo:
 
 ```bash
-python -m vbti.logic.reconstruct.master gs_reconstruction \
+python -m vla.logic.reconstruct.master gs_reconstruction \
   --frames_dir data/frames \
   --output_dir data/recon \
   --matching_method exhaustive
@@ -54,7 +54,7 @@ python -m vbti.logic.reconstruct.master gs_reconstruction \
 Mesh to USD:
 
 ```bash
-python -m vbti.logic.reconstruct.master ply_to_usda \
+python -m vla.logic.reconstruct.master ply_to_usda \
   --mesh_path data/recon/milo/mesh_learnable_sdf.ply \
   --output_path data/scene.usda
 ```
@@ -62,7 +62,7 @@ python -m vbti.logic.reconstruct.master ply_to_usda \
 Scene composition/export:
 
 ```bash
-python -m vbti.logic.reconstruct.master scene_composition \
+python -m vla.logic.reconstruct.master scene_composition \
   --scene_usda_path data/scene_composed.usda \
   --task_name vbti_so_v1
 ```
@@ -70,7 +70,7 @@ python -m vbti.logic.reconstruct.master scene_composition \
 Standalone IsaacLab export:
 
 ```bash
-python -m vbti.logic.reconstruct.master export_isaaclab \
+python -m vla.logic.reconstruct.master export_isaaclab \
   --scene_config_path data/scene_config.json \
   --task_name vbti_so_v1
 ```
@@ -82,12 +82,12 @@ File: `logic/reconstruct/video_utils.py`.
 Commands:
 
 ```bash
-python -m vbti.logic.reconstruct.video_utils stats --video_path scene.mp4
-python -m vbti.logic.reconstruct.video_utils count --video_path scene.mp4 --percentage 0.7
-python -m vbti.logic.reconstruct.video_utils fix_rotation --video_path scene.MOV
-python -m vbti.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode count --value 200
-python -m vbti.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode every --value 2
-python -m vbti.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode percentage --value 0.7
+python -m vla.logic.reconstruct.video_utils stats --video_path scene.mp4
+python -m vla.logic.reconstruct.video_utils count --video_path scene.mp4 --percentage 0.7
+python -m vla.logic.reconstruct.video_utils fix_rotation --video_path scene.MOV
+python -m vla.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode count --value 200
+python -m vla.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode every --value 2
+python -m vla.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode percentage --value 0.7
 ```
 
 Defaults:
@@ -106,10 +106,10 @@ File: `logic/reconstruct/colmap_utils.py`.
 Commands:
 
 ```bash
-python -m vbti.logic.reconstruct.colmap_utils run_colmap --frames_dir data/frames --output_dir data/colmap --matching_method exhaustive
-python -m vbti.logic.reconstruct.colmap_utils validate_models --colmap_dir data/colmap
-python -m vbti.logic.reconstruct.colmap_utils undistort --colmap_dir data/colmap --output_dir data/undistorted
-python -m vbti.logic.reconstruct.colmap_utils reconstruct --frames_dir data/frames --output_dir data/recon --matching_method exhaustive
+python -m vla.logic.reconstruct.colmap_utils run_colmap --frames_dir data/frames --output_dir data/colmap --matching_method exhaustive
+python -m vla.logic.reconstruct.colmap_utils validate_models --colmap_dir data/colmap
+python -m vla.logic.reconstruct.colmap_utils undistort --colmap_dir data/colmap --output_dir data/undistorted
+python -m vla.logic.reconstruct.colmap_utils reconstruct --frames_dir data/frames --output_dir data/recon --matching_method exhaustive
 ```
 
 Output:
@@ -129,10 +129,10 @@ File: `logic/reconstruct/gs_milo_utils.py`.
 Commands:
 
 ```bash
-python -m vbti.logic.reconstruct.gs_milo_utils create_config --output_dir data/recon/gs
-python -m vbti.logic.reconstruct.gs_milo_utils train_gs --source_dir data/recon/undistorted --model_dir data/recon/milo
-python -m vbti.logic.reconstruct.gs_milo_utils extract_mesh --source_dir data/recon/undistorted --model_dir data/recon/milo
-python -m vbti.logic.reconstruct.gs_milo_utils reconstruct --source_dir data/recon/undistorted --model_dir data/recon/milo
+python -m vla.logic.reconstruct.gs_milo_utils create_config --output_dir data/recon/gs
+python -m vla.logic.reconstruct.gs_milo_utils train_gs --source_dir data/recon/undistorted --model_dir data/recon/milo
+python -m vla.logic.reconstruct.gs_milo_utils extract_mesh --source_dir data/recon/undistorted --model_dir data/recon/milo
+python -m vla.logic.reconstruct.gs_milo_utils reconstruct --source_dir data/recon/undistorted --model_dir data/recon/milo
 ```
 
 Defaults:
@@ -168,7 +168,7 @@ Environment assumptions:
 File: `logic/reconstruct/clean_mesh.py`.
 
 ```bash
-python -m vbti.logic.reconstruct.clean_mesh --mesh /path/to/mesh_learnable_sdf.ply
+python -m vla.logic.reconstruct.clean_mesh --mesh /path/to/mesh_learnable_sdf.ply
 ```
 
 Interactive Polyscope operations:
@@ -187,9 +187,9 @@ File: `logic/reconstruct/format_utils.py`.
 Commands:
 
 ```bash
-python -m vbti.logic.reconstruct.format_utils splat_to_pointcloud --input_path splat.ply --output_path pointcloud.ply
-python -m vbti.logic.reconstruct.format_utils glb_to_usd --input_path object.glb --output_path object.usda
-python -m vbti.logic.reconstruct.format_utils mesh_to_usd --mesh_path mesh_learnable_sdf.ply --output_path scene.usda
+python -m vla.logic.reconstruct.format_utils splat_to_pointcloud --input_path splat.ply --output_path pointcloud.ply
+python -m vla.logic.reconstruct.format_utils glb_to_usd --input_path object.glb --output_path object.usda
+python -m vla.logic.reconstruct.format_utils mesh_to_usd --mesh_path mesh_learnable_sdf.ply --output_path scene.usda
 ```
 
 Important defaults:
@@ -217,13 +217,13 @@ File: `logic/reconstruct/isaac_cfg_utils.py`.
 Commands:
 
 ```bash
-python -m vbti.logic.reconstruct.isaac_cfg_utils no_robot_scene --scene_path scene.usda
-python -m vbti.logic.reconstruct.isaac_cfg_utils extract --scene_path scene.usda --robot_prim_path /World/so101_simready_follower_leisaac
-python -m vbti.logic.reconstruct.isaac_cfg_utils gen_scene --task_name vbti_so_v1 --scene_usd_path scene_no_robot.usda
-python -m vbti.logic.reconstruct.isaac_cfg_utils gen_task_folders --task_name vbti_so_v1
-python -m vbti.logic.reconstruct.isaac_cfg_utils gen_leisaac --scene_usda_path scene.usda --task_name vbti_so_v1
-python -m vbti.logic.reconstruct.isaac_cfg_utils gen_isaaclab --scene_config data/scene_config.json --task_name vbti_so_v1 --output_dir data/vbti_so_v1_isaaclab
-python -m vbti.logic.reconstruct.isaac_cfg_utils pipeline --scene_usda_path scene.usda --task_name vbti_so_v1
+python -m vla.logic.reconstruct.isaac_cfg_utils no_robot_scene --scene_path scene.usda
+python -m vla.logic.reconstruct.isaac_cfg_utils extract --scene_path scene.usda --robot_prim_path /World/so101_simready_follower_leisaac
+python -m vla.logic.reconstruct.isaac_cfg_utils gen_scene --task_name vbti_so_v1 --scene_usd_path scene_no_robot.usda
+python -m vla.logic.reconstruct.isaac_cfg_utils gen_task_folders --task_name vbti_so_v1
+python -m vla.logic.reconstruct.isaac_cfg_utils gen_leisaac --scene_usda_path scene.usda --task_name vbti_so_v1
+python -m vla.logic.reconstruct.isaac_cfg_utils gen_isaaclab --scene_config data/scene_config.json --task_name vbti_so_v1 --output_dir data/vbti_so_v1_isaaclab
+python -m vla.logic.reconstruct.isaac_cfg_utils pipeline --scene_usda_path scene.usda --task_name vbti_so_v1
 ```
 
 Generated artifacts:
@@ -249,12 +249,12 @@ Known pitfalls:
 File: `logic/reconstruct/robot_utils.py`.
 
 ```bash
-python -m vbti.logic.reconstruct.robot_utils inspect --robot_path robot.usd
-python -m vbti.logic.reconstruct.robot_utils fix_base --robot_path robot.usd
-python -m vbti.logic.reconstruct.robot_utils fix_base --robot_path robot.usd --unfix True
-python -m vbti.logic.reconstruct.robot_utils set_drives --robot_path robot.usd --stiffness 17.8 --damping 0.60 --max_force 10.0 --max_velocity 10.0
-python -m vbti.logic.reconstruct.robot_utils extract --robot_path robot.usd
-python -m vbti.logic.reconstruct.robot_utils make_ready --robot_path robot.usd --save_path robot_ready.usd
+python -m vla.logic.reconstruct.robot_utils inspect --robot_path robot.usd
+python -m vla.logic.reconstruct.robot_utils fix_base --robot_path robot.usd
+python -m vla.logic.reconstruct.robot_utils fix_base --robot_path robot.usd --unfix True
+python -m vla.logic.reconstruct.robot_utils set_drives --robot_path robot.usd --stiffness 17.8 --damping 0.60 --max_force 10.0 --max_velocity 10.0
+python -m vla.logic.reconstruct.robot_utils extract --robot_path robot.usd
+python -m vla.logic.reconstruct.robot_utils make_ready --robot_path robot.usd --save_path robot_ready.usd
 ```
 
 Defaults match LeIsaac-style actuator values: `stiffness=17.8`, `damping=0.60`, `max_force=10.0`, `max_velocity=10.0`.
@@ -264,11 +264,11 @@ Defaults match LeIsaac-style actuator values: `stiffness=17.8`, `damping=0.60`, 
 File: `logic/reconstruct/cosmos_transfer.py`.
 
 ```bash
-python -m vbti.logic.reconstruct.cosmos_transfer extract --episode 0 --dataset_file ./datasets/vbti_table_v2_cosmos/raw.hdf5
-python -m vbti.logic.reconstruct.cosmos_transfer process --episode 0 --fps 30
-python -m vbti.logic.reconstruct.cosmos_transfer config --episode 0 --camera side_cam --prompt "photorealistic scene, natural lighting" --variant default
-python -m vbti.logic.reconstruct.cosmos_transfer transfer --config_file ./datasets/vbti_table_v2_cosmos/cosmos/configs/episode_000_side_cam_default.json
-python -m vbti.logic.reconstruct.cosmos_transfer prepare --dataset_file ./datasets/vbti_table_v2_cosmos/raw.hdf5 --output_dir ./datasets/vbti_table_v2_cosmos/cosmos/cosmos_ready
+python -m vla.logic.reconstruct.cosmos_transfer extract --episode 0 --dataset_file ./datasets/vbti_table_v2_cosmos/raw.hdf5
+python -m vla.logic.reconstruct.cosmos_transfer process --episode 0 --fps 30
+python -m vla.logic.reconstruct.cosmos_transfer config --episode 0 --camera side_cam --prompt "photorealistic scene, natural lighting" --variant default
+python -m vla.logic.reconstruct.cosmos_transfer transfer --config_file ./datasets/vbti_table_v2_cosmos/cosmos/configs/episode_000_side_cam_default.json
+python -m vla.logic.reconstruct.cosmos_transfer prepare --dataset_file ./datasets/vbti_table_v2_cosmos/raw.hdf5 --output_dir ./datasets/vbti_table_v2_cosmos/cosmos/cosmos_ready
 ```
 
 Status:

@@ -8,9 +8,9 @@ Handles:
   - Skips empty episodes (no actions)
 
 Usage:
-    python vbti/logic/dataset/convert_utils.py discover /path/to/dataset.hdf5
-    python vbti/logic/dataset/convert_utils.py convert /path/to/dataset.hdf5 may33/my_dataset "Pick up the duck" --camera_map '{"cam_top":"top","cam_left":"left"}'
-    python vbti/logic/dataset/convert_utils.py roundtrip_test
+    python vbti/vla/logic/dataset/convert_utils.py discover /path/to/dataset.hdf5
+    python vbti/vla/logic/dataset/convert_utils.py convert /path/to/dataset.hdf5 may33/my_dataset "Pick up the duck" --camera_map '{"cam_top":"top","cam_left":"left"}'
+    python vbti/vla/logic/dataset/convert_utils.py roundtrip_test
 """
 import re
 from pathlib import Path
@@ -314,7 +314,7 @@ def to_delta(
         push_to_hub: push to HuggingFace Hub after conversion
 
     Usage:
-        python vbti/logic/dataset/convert_utils.py to_delta \
+        python vbti/vla/logic/dataset/convert_utils.py to_delta \
             datasets/so101_v1_mix/sim/duck_cup_130eps \
             datasets/so101_v1_mix/sim/duck_cup_130eps_delta
     """
@@ -323,7 +323,7 @@ def to_delta(
 
     import pandas as pd
 
-    from vbti.logic.dataset import resolve_dataset_path, LEROBOT_CACHE
+    from vla.logic.dataset import resolve_dataset_path, LEROBOT_CACHE
     source = resolve_dataset_path(source)
     # For output: if it looks like a repo_id, place in HF lerobot cache
     output = Path(output)
@@ -451,7 +451,7 @@ def link(dataset_path: str, repo_id: str):
         repo_id: HF-style repo ID, e.g. "may33/so101_sim_duck_cup".
 
     Usage:
-        python vbti/logic/dataset/convert_utils.py link datasets/so101_v1_mix/sim/duck_cup_130eps may33/so101_sim_duck_cup
+        python vbti/vla/logic/dataset/convert_utils.py link datasets/so101_v1_mix/sim/duck_cup_130eps may33/so101_sim_duck_cup
     """
     import os
     from lerobot.utils.constants import HF_LEROBOT_HOME
@@ -514,7 +514,7 @@ def recalibrate(
         new_calib: name of the target calibration profile
 
     Usage:
-        python vbti/logic/dataset/convert_utils.py recalibrate \
+        python vbti/vla/logic/dataset/convert_utils.py recalibrate \
             eternalmay33/02_black_full_center frodeo-test may-sim
     """
     import json
@@ -522,8 +522,8 @@ def recalibrate(
 
     import pandas as pd
 
-    from vbti.logic.dataset import resolve_dataset_path, LEROBOT_CACHE
-    from vbti.logic.servos.profiles import _calib_path
+    from vla.logic.dataset import resolve_dataset_path, LEROBOT_CACHE
+    from vla.logic.servos.profiles import _calib_path
 
     source_path = resolve_dataset_path(source)
 

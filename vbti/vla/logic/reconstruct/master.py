@@ -6,25 +6,25 @@ Each phase calls one entry function from its module. Phases run sequentially
 with manual checkpoints between them for human verification.
 
 Usage:
-    python -m vbti.logic.reconstruct.master video_processing  --video_path scene.mp4 --output_dir data/frames
-    python -m vbti.logic.reconstruct.master gs_reconstruction --frames_dir data/frames --output_dir data/recon
-    python -m vbti.logic.reconstruct.master gs_reconstruction --frames_dir data/frames --output_dir data/recon --config_path data/recon/gs/recon_config.yaml
-    python -m vbti.logic.reconstruct.master ply_to_usda       --mesh_path data/recon/milo/mesh.ply --output_path data/recon/scene.usda
-    python -m vbti.logic.reconstruct.master scene_composition  --scene_usda_path data/scene/scene.usda --task_name vbti_so_v1
-    python -m vbti.logic.reconstruct.master scene_composition  --scene_usda_path data/scene/scene.usda --task_name vbti_so_v1 --robot_usd_path /path/to/custom_robot.usd
-    python -m vbti.logic.reconstruct.master data_collection    (TODO)
+    python -m vla.logic.reconstruct.master video_processing  --video_path scene.mp4 --output_dir data/frames
+    python -m vla.logic.reconstruct.master gs_reconstruction --frames_dir data/frames --output_dir data/recon
+    python -m vla.logic.reconstruct.master gs_reconstruction --frames_dir data/frames --output_dir data/recon --config_path data/recon/gs/recon_config.yaml
+    python -m vla.logic.reconstruct.master ply_to_usda       --mesh_path data/recon/milo/mesh.ply --output_path data/recon/scene.usda
+    python -m vla.logic.reconstruct.master scene_composition  --scene_usda_path data/scene/scene.usda --task_name vbti_so_v1
+    python -m vla.logic.reconstruct.master scene_composition  --scene_usda_path data/scene/scene.usda --task_name vbti_so_v1 --robot_usd_path /path/to/custom_robot.usd
+    python -m vla.logic.reconstruct.master data_collection    (TODO)
 """
 
 from pathlib import Path
 
 from loguru import logger
 
-from vbti.logic.reconstruct.video_utils import extract_frames
-from vbti.logic.reconstruct.colmap_utils import process_colmap
-from vbti.logic.reconstruct.gs_milo_utils import reconstruct_mesh
-from vbti.logic.reconstruct.format_utils import mesh_to_usd
-from vbti.logic.reconstruct.isaac_cfg_utils import pipeline as isaaclab_pipeline
-from vbti.logic.reconstruct.isaac_cfg_utils import generate_isaaclab_env
+from vla.logic.reconstruct.video_utils import extract_frames
+from vla.logic.reconstruct.colmap_utils import process_colmap
+from vla.logic.reconstruct.gs_milo_utils import reconstruct_mesh
+from vla.logic.reconstruct.format_utils import mesh_to_usd
+from vla.logic.reconstruct.isaac_cfg_utils import pipeline as isaaclab_pipeline
+from vla.logic.reconstruct.isaac_cfg_utils import generate_isaaclab_env
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -73,7 +73,7 @@ def gs_reconstruction(
 
     mesh_ply = Path(milo_dir) / "mesh_learnable_sdf.ply"
     logger.success(f"Done. Mesh at: {mesh_ply}")
-    logger.info(f"Next: python -m vbti.logic.reconstruct.master ply_to_usda --mesh_path {mesh_ply} --output_path {output_path / 'scene.usda'}")
+    logger.info(f"Next: python -m vla.logic.reconstruct.master ply_to_usda --mesh_path {mesh_ply} --output_path {output_path / 'scene.usda'}")
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

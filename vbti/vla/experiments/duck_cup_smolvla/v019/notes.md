@@ -198,7 +198,7 @@ Failures (10):
 
 ![grid](eval_sweep_grid.png)
 
-5 rows × 3 columns. Each row is one eval session; columns are ALL trials · target=RED · target=BLACK. Generated via `python -m vbti.logic.inference.eval_render grid <session1> <session2> ...`.
+5 rows × 3 columns. Each row is one eval session; columns are ALL trials · target=RED · target=BLACK. Generated via `python -m vla.logic.inference.eval_render grid <session1> <session2> ...`.
 
 Reading the grid top to bottom:
 1. **v018 @ 20k (n=30)** — baseline. target=BLACK is dominated by red.

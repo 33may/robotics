@@ -18,8 +18,8 @@ Common protocols:
 Render/verify protocol if needed:
 
 ```bash
-python -m vbti.logic.inference.protocols.protocols render checkpoint_sweep
-python -m vbti.logic.inference.protocols.protocols verify checkpoint_sweep
+python -m vla.logic.inference.protocols.protocols render checkpoint_sweep
+python -m vla.logic.inference.protocols.protocols verify checkpoint_sweep
 ```
 
 ## 3. Choose Checkpoint
@@ -35,7 +35,7 @@ v17-20k
 ## 4. Run RGB Evaluation
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=checkpoint_sweep \
   --experiment=duck_cup_smolvla \
@@ -52,7 +52,7 @@ python -m vbti.logic.inference.eval_engine \
 Only if checkpoint expects depth:
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v18-20k \
   --protocol=dual_cup_30 \
   --experiment=duck_cup_smolvla \
@@ -68,7 +68,7 @@ python -m vbti.logic.inference.eval_engine \
 ## 6. Resume Interrupted Evaluation
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=checkpoint_sweep \
   --experiment=duck_cup_smolvla \
@@ -96,7 +96,7 @@ experiments/duck_cup_smolvla/vNNN/eval_sessions/chkpt_step_<step>_ah_<horizon>_p
 Immediately inspect:
 
 ```bash
-python -m vbti.logic.inference.eval_helpers info latest
+python -m vla.logic.inference.eval_helpers info latest
 ```
 
 ## Validity Rules

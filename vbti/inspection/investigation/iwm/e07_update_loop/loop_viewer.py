@@ -15,7 +15,7 @@ press Enter: the note is saved to step_<id>/feedback.json (tied to the event you
 the loop continues (an empty Enter just continues). A note is one line. Notes are only stored.
 
 Run:  /home/anton/miniconda3/envs/robo/bin/python -m inspection.investigation.iwm.e07_update_loop.loop_viewer \
-          [--loop inspection/data/iwm/e07_update_loop/loops/<dir>] [--run 2209-box-ray-demo1] [--port 8084]
+          [--loop vbti/inspection/data/iwm/e07_update_loop/loops/<dir>] [--run 2209-box-ray-demo1] [--port 8084]
 """
 import argparse
 import json

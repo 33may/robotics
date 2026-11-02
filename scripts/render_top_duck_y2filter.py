@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from torchcodec.decoders import VideoDecoder
 
-from vbti.logic.dataset import resolve_dataset_path
+from vla.logic.dataset import resolve_dataset_path
 
 SEED = 42
 N_PASS = 50

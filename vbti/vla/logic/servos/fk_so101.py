@@ -7,17 +7,17 @@ so the mapping is per-joint sign/offset only — tuned by physical check
 (``jog_check``), not trusted from documentation.
 
 Usage:
-    python -m vbti.logic.servos.fk_so101 pose                 # live flange pose
-    python -m vbti.logic.servos.fk_so101 jog_check --joint=shoulder_pan
+    python -m vla.logic.servos.fk_so101 pose                 # live flange pose
+    python -m vla.logic.servos.fk_so101 jog_check --joint=shoulder_pan
 """
 
 from pathlib import Path
 
 import numpy as np
 
-from vbti.logic.servos.so101 import JOINT_NAMES, connect
+from vla.logic.servos.so101 import JOINT_NAMES, connect
 
-URDF_PATH = (Path(__file__).resolve().parents[3] / "third_party" / "SO-ARM100"
+URDF_PATH = (Path(__file__).resolve().parents[4] / "third_party" / "SO-ARM100"
              / "Simulation" / "SO101" / "so101_new_calib.urdf")
 FLANGE_FRAME = "gripper_frame_link"
 

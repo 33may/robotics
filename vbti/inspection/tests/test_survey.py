@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The survey agent and the bearing math. Run: p inspection/tests/test_survey.py
+"""The survey agent and the bearing math. Run: p vbti/inspection/tests/test_survey.py
 
 The bearing uses only camera POSITIONS against the reconstruction centroid —
 no boresight, no axis convention to get wrong. Pinned against real data: on

@@ -6,12 +6,12 @@ depth to disk. Proves RGBD crosses the process boundary from a REAL Isaac World 
 control loop is paced by a separate brain (`brain_main.py --mode stand`).
 
     # terminal 1 (World):  cameras on, headless, self-terminating
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/sim_world_main.py \
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/sim_world_main.py \
         --cameras --headless --pin-root --duration 30
     # terminal 2 (brain):  stand policy paces the lockstep loop → renders → frames
-    conda run -n brain python humanoid/logic/oli/brain_main.py --mode stand --duration 28
+    conda run -n brain python vbti/humanoid/logic/oli/brain_main.py --mode stand --duration 28
     # terminal 3 (this):   read + save the frames
-    conda run -n brain python humanoid/logic/oli/frame_smoke.py --n 5
+    conda run -n brain python vbti/humanoid/logic/oli/frame_smoke.py --n 5
 
 Runs in the `brain` env (CameraStreamReader is pure stdlib + numpy — no isaacsim).
 """

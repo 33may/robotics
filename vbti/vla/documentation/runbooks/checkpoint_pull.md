@@ -24,7 +24,7 @@ Verify `run_name`, `remote_run_dir`, `remote_ckpt_dir`, and host.
 ## 2. Pull Checkpoint
 
 ```bash
-python -m vbti.logic.train.remote pull \
+python -m vla.logic.train.remote pull \
   --experiment=duck_cup_smolvla \
   --version=v020 \
   --run_name=lerobot_output_r12 \
@@ -35,7 +35,7 @@ python -m vbti.logic.train.remote pull \
 If pulling all:
 
 ```bash
-python -m vbti.logic.train.remote pull \
+python -m vla.logic.train.remote pull \
   --experiment=duck_cup_smolvla \
   --version=v020 \
   --run_name=lerobot_output_r12
@@ -66,7 +66,7 @@ Naming may differ by LeRobot version, but both preprocessor and postprocessor mu
 For a shorthand checkpoint:
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=checkpoint_sweep \
   --experiment=duck_cup_smolvla \
@@ -77,7 +77,7 @@ python -m vbti.logic.inference.eval_engine \
 For explicit path:
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=/absolute/path/to/pretrained_model \
   --protocol=checkpoint_sweep \
   --experiment=duck_cup_smolvla \

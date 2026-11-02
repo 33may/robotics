@@ -45,32 +45,32 @@ Read first:
 Config:
 
 ```bash
-python -m vbti.logic.train.config_utils schema
-python -m vbti.logic.train.config_utils default smolvla
-python -m vbti.logic.train.config_utils show experiments/duck_cup_smolvla/v020/config.yaml
+python -m vla.logic.train.config_utils schema
+python -m vla.logic.train.config_utils default smolvla
+python -m vla.logic.train.config_utils show experiments/duck_cup_smolvla/v020/config.yaml
 ```
 
 Status/dry-run:
 
 ```bash
-python -m vbti.logic.train.engine status
-python -m vbti.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --version=v020 --dry_run
+python -m vla.logic.train.engine status
+python -m vla.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --version=v020 --dry_run
 ```
 
 Remote:
 
 ```bash
-python -m vbti.logic.train.remote train --experiment=duck_cup_smolvla --version=v020 --run_name=lerobot_output_r1
-python -m vbti.logic.train.remote status --experiment=duck_cup_smolvla --version=v020
-python -m vbti.logic.train.remote logs --experiment=duck_cup_smolvla --version=v020 --lines=100
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=all
+python -m vla.logic.train.remote train --experiment=duck_cup_smolvla --version=v020 --run_name=lerobot_output_r1
+python -m vla.logic.train.remote status --experiment=duck_cup_smolvla --version=v020
+python -m vla.logic.train.remote logs --experiment=duck_cup_smolvla --version=v020 --lines=100
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=all
 ```
 
 Chains:
 
 ```bash
-python -m vbti.logic.train.chain --versions v021,v022,v023,v024 --run_name=lerobot_output_r1
-python -m vbti.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name=lerobot_output_r4_aux0003 --wait_for_session uva_bake
+python -m vla.logic.train.chain --versions v021,v022,v023,v024 --run_name=lerobot_output_r1
+python -m vla.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name=lerobot_output_r4_aux0003 --wait_for_session uva_bake
 ```
 
 ## Experiment Anchors

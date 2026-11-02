@@ -7,9 +7,9 @@ welded to the flange + calibrated cell boxes from cell.yaml (bounds are
 modeled as boxes too — e.g. the floor slab; there is no keep-in mechanism).
 
 Usage (from repo root, robo env active):
-    p inspection/cell/world.py            # headless smoke: truth table + timings
-    p inspection/cell/world.py --demo     # meshcat: show truth-table poses colored
-    p inspection/cell/world.py --replay   # meshcat: replay a path, freeze at impact
+    p vbti/inspection/cell/world.py            # headless smoke: truth table + timings
+    p vbti/inspection/cell/world.py --demo     # meshcat: show truth-table poses colored
+    p vbti/inspection/cell/world.py --replay   # meshcat: replay a path, freeze at impact
 
 Design contract (do not break — MAY-184 builds on it):
 - pinocchio internals are PUBLIC: .model .data .geom_model .geom_data — used by

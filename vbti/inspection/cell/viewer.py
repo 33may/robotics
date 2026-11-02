@@ -1,9 +1,9 @@
 """Live 3D preview of cell.yaml — CAD-less workcell modeling (MAY-183).
 
 Usage (from repo root, robo env active):
-    p inspection/cell/viewer.py            # boxes + UR5e model
-    p inspection/cell/viewer.py --no-robot # boxes only, faster start
-    p inspection/cell/viewer.py --once     # render once and exit (smoke test)
+    p vbti/inspection/cell/viewer.py            # boxes + UR5e model
+    p vbti/inspection/cell/viewer.py --no-robot # boxes only, faster start
+    p vbti/inspection/cell/viewer.py --once     # render once and exit (smoke test)
 
 Opens a meshcat server and prints its URL — open it in a browser.
 Then edit cell.yaml; every save re-renders the scene within ~0.5 s.

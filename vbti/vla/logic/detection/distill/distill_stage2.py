@@ -29,12 +29,12 @@ NO post-interp re-filtering.  (will be added in a later stage after
 visual verification)
 
 Usage:
-    python -m vbti.logic.detection.distill_stage2 \\
+    python -m vla.logic.detection.distill_stage2 \\
         --input /home/may33/.cache/vbti/detection_labels_stage1.parquet \\
         --output /home/may33/.cache/vbti/detection_labels_stage2.parquet
 
     # Visually verify:
-    python -m vbti.logic.dataset.viewer eternalmay33/01_02_03_merged_may-sim \\
+    python -m vla.logic.dataset.viewer eternalmay33/01_02_03_merged_may-sim \\
         --parq /home/may33/.cache/vbti/detection_labels_stage2.parquet
 """
 from __future__ import annotations
@@ -46,7 +46,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from vbti.logic.detection.distill.distill_filter import (
+from vla.logic.detection.distill.distill_filter import (
     CAMERAS,
     OBJECTS,
     R_CUP_JAW,

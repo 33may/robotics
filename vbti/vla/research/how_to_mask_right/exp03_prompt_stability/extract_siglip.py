@@ -25,7 +25,7 @@ from tqdm import tqdm
 
 # ── Config ──────────────────────────────────────────────────────────────────
 
-EXP_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/research/how_to_mask_right/exp03_prompt_stability")
+EXP_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/vla/research/how_to_mask_right/exp03_prompt_stability")
 DATASETS = {
     "fixed_duck_free_red": EXP_DIR / "captures_fixed_duck_free_red",
     "free_duck_fixed_red": EXP_DIR / "captures_free_duck_fixed_red",

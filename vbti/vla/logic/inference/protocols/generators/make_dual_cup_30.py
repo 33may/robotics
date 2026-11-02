@@ -28,7 +28,7 @@ Constraints:
   - duck-cup ≥ 35 px (each cup)
 
 Run:
-  python vbti/logic/inference/protocols/generators/make_dual_cup_30.py
+  python vbti/vla/logic/inference/protocols/generators/make_dual_cup_30.py
 """
 
 import json
@@ -36,7 +36,7 @@ import math
 import random
 from collections import Counter
 from pathlib import Path
-from vbti.logic.inference.protocols.render_protocol import render
+from vla.logic.inference.protocols.render_protocol import render
 
 PROTO_DIR = Path(__file__).resolve().parent.parent
 OUT_PATH  = PROTO_DIR / "dual_cup_30.json"
@@ -307,7 +307,7 @@ def main():
             "single_black": N_SINGLE_BLACK,
             "both":         N_DUAL,
         },
-        "_generated_by": "vbti/logic/inference/protocols/generators/make_dual_cup_30.py",
+        "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_dual_cup_30.py",
     }
 
     OUT_PATH.write_text(json.dumps(proto, indent=2))

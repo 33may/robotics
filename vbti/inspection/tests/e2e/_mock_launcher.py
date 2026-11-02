@@ -11,8 +11,8 @@ against `inspection.motion.plan.plan_viewpoint` while writing this suite),
 so the REAL `Supervisor`/`SweepDriver` planners never reach "previewing" —
 no confirm-button ever appears for a browser to click.
 
-This is not new: `inspection/tests/test_flow_a.py:DirectPlanSupervisor` and
-`inspection/tests/test_collect.py:_stub_planner` already carry this exact
+This is not new: `vbti/inspection/tests/test_flow_a.py:DirectPlanSupervisor` and
+`vbti/inspection/tests/test_collect.py:_stub_planner` already carry this exact
 workaround for every other mock-driven test in this checkout. This file
 applies the SAME two substitutions to the real `ui/app.py mock` subprocess
 the e2e fixtures launch, rather than inventing a third version.

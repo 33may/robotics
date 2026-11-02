@@ -20,7 +20,7 @@ from pathlib import Path
 
 import torch
 
-from vbti.logic.detection.distill_model import DistilledDetector
+from vla.logic.detection.distill_model import DistilledDetector
 
 TRAINING_ROOT = Path(
     "/home/may33/Documents/vbti/vbti/researches/"

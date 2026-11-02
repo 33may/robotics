@@ -11,7 +11,7 @@ The three seams are swappable on purpose (reusable collection flow):
   camera poses   = read from the RENDERED prims, not base ∘ mount (mimic-proof)
   sink           = DriveRecorder      (neutral dump; rosbag synth in the container)
 
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/coverage_drive_main.py \
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/coverage_drive_main.py \
         --out /tmp/coverage_drive --headless [--duration 40]
 """
 

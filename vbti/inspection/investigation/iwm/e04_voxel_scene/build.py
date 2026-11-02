@@ -7,12 +7,12 @@ Scopes:
   object : depth outside the step's object mask (mask.png) is zeroed
   scene  : full depth up to MAX_RANGE_M; the result is cropped to the workspace box
 
-Per (run, scope, voxel size) -> inspection/data/iwm/e04_voxel_scene/<run>/<scope>/<mm>mm/
+Per (run, scope, voxel size) -> vbti/inspection/data/iwm/e04_voxel_scene/<run>/<scope>/<mm>mm/
   vbg.npz      the grid (Open3D save format)
   mesh.ply     marching-cubes surface, vertex colours
   stats.json   blocks, active voxels, memory, build time, mesh size
 
-Run:  p inspection/investigation/iwm/e04_voxel_scene/build.py [--runs ...] [--sizes 1 2 3 5 10]
+Run:  p vbti/inspection/investigation/iwm/e04_voxel_scene/build.py [--runs ...] [--sizes 1 2 3 5 10]
 """
 import argparse
 import json

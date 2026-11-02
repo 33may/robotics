@@ -1,8 +1,8 @@
 """Fit the base->table transform from probed touch points (MAY-183 Phase B).
 
 Usage (from repo root, robo env active):
-    p inspection/calib/probe_fit.py                 # newest table_probe_*.yaml
-    p inspection/calib/probe_fit.py --data <yaml>   # specific session
+    p vbti/inspection/calib/probe_fit.py                 # newest table_probe_*.yaml
+    p vbti/inspection/calib/probe_fit.py --data <yaml>   # specific session
 
 Data format (see table_probe_*.yaml): a list of points, each with the location
 in the cell.yaml `table` frame [m] and the pendant TCP reading in the robot

@@ -16,8 +16,8 @@ not from a meta.json):
                                               T_base_cam, timestamp
 
 Usage:
-    p inspection/perception/capture.py snap --outdir=data/inspection/test
-    p inspection/perception/capture.py snap --outdir=... --no_arm   # camera only
+    p vbti/inspection/perception/capture.py snap --outdir=data/inspection/test
+    p vbti/inspection/perception/capture.py snap --outdir=... --no_arm   # camera only
 """
 
 import json

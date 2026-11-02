@@ -9,7 +9,7 @@ a descendant of the row's label. Grouped by (old, new) pair and classified:
   boundary       small overlap on both sides (mask edges)
 With a re-parent / insert rule the first two kinds would vanish; this script only counts.
 
-Run:  p inspection/investigation/iwm/e05_parts_in_v/conflict_kinds.py [--mm 1] [--mode agent]
+Run:  p vbti/inspection/investigation/iwm/e05_parts_in_v/conflict_kinds.py [--mm 1] [--mode agent]
 Output  evidence/conflict_kinds.json
 """
 import argparse

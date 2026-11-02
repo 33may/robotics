@@ -104,21 +104,21 @@ After cloning, install with pip (see Environment Setup above). MILo requires add
 conda activate gsplat-pt25
 
 # 1. Extract frames from video
-python -m vbti.logic.reconstruct.master video_processing \
+python -m vla.logic.reconstruct.master video_processing \
   --video_path data/scene.mp4 --output_dir data/frames --mode count --value 200
 
 # 2. COLMAP + MILo reconstruction → mesh
-python -m vbti.logic.reconstruct.master gs_reconstruction \
+python -m vla.logic.reconstruct.master gs_reconstruction \
   --frames_dir data/frames --output_dir data/gs
 
 # 3. Mesh → USD with physics
-python -m vbti.logic.reconstruct.master ply_to_usda \
+python -m vla.logic.reconstruct.master ply_to_usda \
   --mesh_path data/gs/milo/mesh_learnable_sdf.ply --output_path data/scene.usda
 
 # 4. Compose scene in Isaac Sim GUI (place robot, cameras, objects, lights)
 # Then generate LeIsaac task:
 conda activate isaac
-python -m vbti.logic.reconstruct.master scene_composition \
+python -m vla.logic.reconstruct.master scene_composition \
   --scene_usda_path data/scene_composed.usda --task_name my_task
 ```
 
@@ -136,14 +136,14 @@ python teleop_se3_agent.py \
 
 ```bash
 conda activate isaac
-python -m vbti.logic.train.train_smolvla_custom
+python -m vla.logic.train.train_smolvla_custom
 ```
 
 ### Inference
 
 ```bash
 conda activate isaac
-python -m vbti.logic.inference.run_smolvla_inference \
+python -m vla.logic.inference.run_smolvla_inference \
   --checkpoint outputs/train/smolvla_lift_cube_3cams/best \
   --task LeIsaac-SO101-LiftCube-v0 --enable_cameras
 ```
@@ -199,15 +199,15 @@ vbti/
 
 | Module | What it does | Entry point |
 |--------|-------------|-------------|
-| `reconstruct/master.py` | Orchestrates full pipeline | `python -m vbti.logic.reconstruct.master <command>` |
+| `reconstruct/master.py` | Orchestrates full pipeline | `python -m vla.logic.reconstruct.master <command>` |
 | `reconstruct/video_utils.py` | Extract frames, fix phone rotation | Called by master |
 | `reconstruct/colmap_utils.py` | COLMAP SfM + model validation + undistortion | Called by master |
 | `reconstruct/gs_milo_utils.py` | MILo GS training + learnable SDF mesh extraction | Called by master |
 | `reconstruct/format_utils.py` | PLY→USD (sRGB→linear, COLMAP→USD coords, PCA align) | Called by master |
 | `reconstruct/clean_mesh.py` | Interactive Polyscope GUI for mesh artifact removal | Standalone |
-| `reconstruct/robot_utils.py` | Robot USD prep (drives, kinematic base, joint config) | `python -m vbti.logic.reconstruct.robot_utils <command>` |
+| `reconstruct/robot_utils.py` | Robot USD prep (drives, kinematic base, joint config) | `python -m vla.logic.reconstruct.robot_utils <command>` |
 | `reconstruct/isaac_cfg_utils.py` | Generate LeIsaac/IsaacLab task code from composed USDA | Called by master or robot_utils |
-| `reconstruct/cosmos_transfer.py` | Cosmos Transfer augmentation (experimental, not production) | `python -m vbti.logic.reconstruct.cosmos_transfer <command>` |
+| `reconstruct/cosmos_transfer.py` | Cosmos Transfer augmentation (experimental, not production) | `python -m vla.logic.reconstruct.cosmos_transfer <command>` |
 | `dataset/inspect_dataset.py` | Dataset inspection reports (LeRobot + HDF5) | Standalone |
 
 ---

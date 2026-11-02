@@ -221,7 +221,7 @@ class PrimitiveShape(BaseModel):
     """One shape in a step's decomposition — structurally validated only.
 
     The closed kind vocabulary and per-kind params contract live with the
-    producer (`inspection/fit/contract.py`); the record layer stays generic
+    producer (`vbti/inspection/fit/contract.py`); the record layer stays generic
     so a new fitting method needs no schema change here.
     """
 

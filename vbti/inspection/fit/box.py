@@ -16,7 +16,7 @@ Two faces of the same fit:
 HARD RULE (inherited from the bench): nothing here may read `truth/`.
 Priors come from the cloud and the probed scene only.
 
-    p inspection/fit/box.py fit data/derived/0809-box6/steps/step_026.ply
+    p vbti/inspection/fit/box.py fit data/derived/0809-box6/steps/step_026.ply
 """
 from __future__ import annotations
 

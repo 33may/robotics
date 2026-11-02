@@ -28,8 +28,8 @@ import numpy as np
 import pandas as pd
 import torch
 
-from vbti.logic.detection.distill_model import DistilledDetector
-from vbti.logic.detection.process_dataset import (
+from vla.logic.detection.distill_model import DistilledDetector
+from vla.logic.detection.process_dataset import (
     VideoReader,
     get_video_path,
     load_dataset_meta,

@@ -18,8 +18,8 @@ The reported result is the BEST CASE over theta_f. If the most favourable
 possible front still cannot order the phrases by angle, no prompt tuning to
 this schema will fix it.
 
-    p inspection/investigation/view_hints/phrase_calib.py
-    p inspection/investigation/view_hints/phrase_calib.py --out /tmp/phrase_calib
+    p vbti/inspection/investigation/view_hints/phrase_calib.py
+    p vbti/inspection/investigation/view_hints/phrase_calib.py --out /tmp/phrase_calib
 
 DATA CAVEAT: these runs were recorded with the local vision verbs on a STUB
 backend (every `detect` returned the same box, `read_text` returned nothing).

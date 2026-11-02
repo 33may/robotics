@@ -5,10 +5,10 @@ Wraps MILo train.py (GS training) and mesh_extract_sdf.py (mesh extraction).
 Takes undistorted COLMAP output and produces a mesh PLY.
 
 Usage:
-    python -m vbti.logic.reconstruct.gs_milo_utils.py reconstruct --source_dir data/undistorted --model_dir data/milo_output
-    python -m vbti.logic.reconstruct.gs_milo_utils.py train_gs --source_dir data/undistorted --model_dir data/milo_output
-    python -m vbti.logic.reconstruct.gs_milo_utils.py extract_mesh --source_dir data/undistorted --model_dir data/milo_output
-    python -m vbti.logic.reconstruct.gs_milo_utils.py create_config --output_dir data/my_scene/gs
+    python -m vla.logic.reconstruct.gs_milo_utils.py reconstruct --source_dir data/undistorted --model_dir data/milo_output
+    python -m vla.logic.reconstruct.gs_milo_utils.py train_gs --source_dir data/undistorted --model_dir data/milo_output
+    python -m vla.logic.reconstruct.gs_milo_utils.py extract_mesh --source_dir data/undistorted --model_dir data/milo_output
+    python -m vla.logic.reconstruct.gs_milo_utils.py create_config --output_dir data/my_scene/gs
 """
 
 import os
@@ -20,7 +20,7 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
-# MILo lives in vbti/libs/MILo/milo/
+# MILo lives in vbti/vla/libs/MILo/milo/
 MILO_DIR = Path(__file__).resolve().parents[2] / "libs" / "MILo" / "milo"
 
 # Fedora 42 build environment — GCC 15 unsupported by CUDA, use 14

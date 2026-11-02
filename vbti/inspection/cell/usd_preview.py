@@ -2,8 +2,8 @@
 the gripper in the flange frame (-> TCP candidate + collision envelope box).
 
 Usage (from repo root, robo env active):
-    p inspection/cell/usd_preview.py            # serve + keep running for review
-    p inspection/cell/usd_preview.py --print    # just print measurements, no viewer
+    p vbti/inspection/cell/usd_preview.py            # serve + keep running for review
+    p vbti/inspection/cell/usd_preview.py --print    # just print measurements, no viewer
 
 Needs: pip install usd-core (already in robo env).
 """

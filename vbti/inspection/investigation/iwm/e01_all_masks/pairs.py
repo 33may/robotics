@@ -5,7 +5,7 @@
 
 Each: nested outlines coloured by depth for both frames, and the per-depth counts.
 Output: evidence/pair_<a>_<b>_<tree>.png
-Run:    p inspection/investigation/iwm/e01_all_masks/pairs.py
+Run:    p vbti/inspection/investigation/iwm/e01_all_masks/pairs.py
 """
 import json
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Docs/diagrams generated FROM the schema models — no hand-maintained spec.
-Run: p inspection/tests/test_record_docgen.py
+Run: p vbti/inspection/tests/test_record_docgen.py
 """
 import pytest
 

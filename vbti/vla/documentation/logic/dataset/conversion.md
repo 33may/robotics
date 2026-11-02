@@ -3,7 +3,7 @@
 ## Discover HDF5 Structure
 
 ```bash
-python -m vbti.logic.dataset.convert_utils discover /path/to/data.hdf5
+python -m vla.logic.dataset.convert_utils discover /path/to/data.hdf5
 ```
 
 Use this before conversion to identify camera names, action/state paths, and episode structure.
@@ -11,7 +11,7 @@ Use this before conversion to identify camera names, action/state paths, and epi
 ## Convert HDF5 To LeRobot
 
 ```bash
-python -m vbti.logic.dataset.convert_utils convert \
+python -m vla.logic.dataset.convert_utils convert \
   /path/to/data.hdf5 \
   eternalmay33/my_dataset \
   "Pick up the duck and place it in the cup"
@@ -20,7 +20,7 @@ python -m vbti.logic.dataset.convert_utils convert \
 With explicit camera map:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils convert \
+python -m vla.logic.dataset.convert_utils convert \
   /path/to/data.hdf5 \
   eternalmay33/my_dataset \
   "Pick up the duck and place it in the cup" \
@@ -30,17 +30,17 @@ python -m vbti.logic.dataset.convert_utils convert \
 ## Verify Output
 
 ```bash
-python -m vbti.logic.dataset.convert_utils verify ~/.cache/huggingface/lerobot/eternalmay33/my_dataset
-python -m vbti.logic.dataset.check_utils report eternalmay33/my_dataset
+python -m vla.logic.dataset.convert_utils verify ~/.cache/huggingface/lerobot/eternalmay33/my_dataset
+python -m vla.logic.dataset.check_utils report eternalmay33/my_dataset
 ```
 
 ## Other Conversion Helpers
 
 ```bash
-python -m vbti.logic.dataset.convert_utils to_delta <source> <output>
-python -m vbti.logic.dataset.convert_utils recalibrate <source> <old_calib> <new_calib>
-python -m vbti.logic.dataset.convert_utils link <dataset_path> <repo_id>
-python -m vbti.logic.dataset.convert_utils ls
+python -m vla.logic.dataset.convert_utils to_delta <source> <output>
+python -m vla.logic.dataset.convert_utils recalibrate <source> <old_calib> <new_calib>
+python -m vla.logic.dataset.convert_utils link <dataset_path> <repo_id>
+python -m vla.logic.dataset.convert_utils ls
 ```
 
 ## Units

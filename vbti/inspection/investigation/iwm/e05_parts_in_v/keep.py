@@ -15,8 +15,8 @@ tree / show / existing / show_existing / same / under / drop + crop / read_text 
 baseline is always computed for the comparison; the agent's decisions are what gets applied in
 agent mode. Both are scored against evidence/truth_pairs.json.
 
-Run:  p inspection/investigation/iwm/e05_parts_in_v/keep.py --run 2209-compute-ray-demo5 --mm 1 --mode baseline|agent
-Outputs  inspection/data/iwm/e05_parts_in_v/<run>/<mm>mm/keep_<mode>/after_<view>/ (STV, run.json, transcripts)
+Run:  p vbti/inspection/investigation/iwm/e05_parts_in_v/keep.py --run 2209-compute-ray-demo5 --mm 1 --mode baseline|agent
+Outputs  vbti/inspection/data/iwm/e05_parts_in_v/<run>/<mm>mm/keep_<mode>/after_<view>/ (STV, run.json, transcripts)
          evidence/agent_vs_truth.json, evidence/conflicts.json, evidence/keep_<run>_<mm>mm_<mode>.jpg
 """
 import argparse

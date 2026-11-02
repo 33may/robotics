@@ -13,9 +13,9 @@ Input per step is the recorded accumulated cloud `steps/NNN/fused/cloud.npy`
 (StepRecord v2) — exactly what the loop held at that step. v1 steps without
 the pair are reported missing, never guessed.
 
-    p inspection/fit/apply.py run 1009-cam1
-    p inspection/fit/apply.py run 1009-cup1 --method boxguard --overwrite
-    p inspection/fit/apply.py sweep 1009-cam1 1009-lan1 1009-lan2 1009-lan3
+    p vbti/inspection/fit/apply.py run 1009-cam1
+    p vbti/inspection/fit/apply.py run 1009-cup1 --method boxguard --overwrite
+    p vbti/inspection/fit/apply.py sweep 1009-cam1 1009-lan1 1009-lan2 1009-lan3
 """
 from __future__ import annotations
 

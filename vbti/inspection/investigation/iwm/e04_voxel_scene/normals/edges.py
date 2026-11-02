@@ -16,7 +16,7 @@ Methods, all at radius R (16 mm), flipped to the capture camera:
   M5    semantic: RANSAC + PCA on the points of the point's OWN FACE within R (needs T)
 
 Outputs evidence/normals/edges_<mm>mm.jpg, edges_field_<frame>.jpg, edges.json
-Run:  p inspection/investigation/iwm/e04_voxel_scene/normals/edges.py [--sizes 1 2]
+Run:  p vbti/inspection/investigation/iwm/e04_voxel_scene/normals/edges.py [--sizes 1 2]
 """
 import argparse
 import json

@@ -7,8 +7,8 @@ File: `logic/train/chain.py`.
 Command:
 
 ```bash
-python -m vbti.logic.train.chain --versions v021,v022,v023,v024
-python -m vbti.logic.train.chain --versions v021,v022,v023,v024 --run_name=lerobot_output_r1 --poll_interval=300
+python -m vla.logic.train.chain --versions v021,v022,v023,v024
+python -m vla.logic.train.chain --versions v021,v022,v023,v024 --run_name=lerobot_output_r1 --poll_interval=300
 ```
 
 Workflow per version:
@@ -30,8 +30,8 @@ File: `logic/train/chain_remote.py`.
 Command:
 
 ```bash
-python -m vbti.logic.train.chain_remote --versions v021,v022,v023
-python -m vbti.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name=lerobot_output_r4_aux0003 --wait_for_session uva_bake
+python -m vla.logic.train.chain_remote --versions v021,v022,v023
+python -m vla.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name=lerobot_output_r4_aux0003 --wait_for_session uva_bake
 ```
 
 Workflow:
@@ -65,13 +65,13 @@ Local chain also supports:
 Data-efficiency sweep:
 
 ```bash
-python -m vbti.logic.train.chain --versions v021,v022,v023,v024 --run_name=lerobot_output_r1
+python -m vla.logic.train.chain --versions v021,v022,v023,v024 --run_name=lerobot_output_r1
 ```
 
 UVA sweep after feature bake:
 
 ```bash
-python -m vbti.logic.train.chain_remote \
+python -m vla.logic.train.chain_remote \
   --versions v025,v026,v027,v028,v029 \
   --run_name=lerobot_output_r4_aux0003 \
   --wait_for_session uva_bake

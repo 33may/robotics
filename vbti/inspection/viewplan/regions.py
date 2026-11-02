@@ -33,8 +33,8 @@ zero every pair at r~0.24. All other gates untouched.
 
 Prototype honesty: not scalable, not wired into the loop, no reachability.
 
-    p inspection/viewplan/regions.py --run 0809-box6 --open
-    p inspection/viewplan/regions.py --run 0809-box2 --steps 5,12,26
+    p vbti/inspection/viewplan/regions.py --run 0809-box6 --open
+    p vbti/inspection/viewplan/regions.py --run 0809-box2 --steps 5,12,26
 """
 from __future__ import annotations
 

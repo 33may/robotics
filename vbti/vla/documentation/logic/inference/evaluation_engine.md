@@ -5,7 +5,7 @@
 Preferred module form:
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=dual_cup_60 \
   --experiment=duck_cup_smolvla \
@@ -74,7 +74,7 @@ videos/trial_XX_failure.mp4
 ## Resume
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=dual_cup_60 \
   --experiment=duck_cup_smolvla \
@@ -100,7 +100,7 @@ Always verify resolved checkpoint path before long evaluation.
 ## Depth Evaluation
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v18-20k \
   --protocol=dual_cup_30 \
   --cameras=opencv_depth \

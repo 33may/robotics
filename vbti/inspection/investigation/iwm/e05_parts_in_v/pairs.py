@@ -6,7 +6,7 @@ view's rigid vector (median offset over pairs wider than 20 mm), the IoU after r
 (diagnostic only; V is never corrected), and the render test: the first view's labels rendered
 from the second view's pose against the second view's own masks.
 
-Run:  p inspection/investigation/iwm/e05_parts_in_v/pairs.py [--sizes 1 2] [--lift L3]
+Run:  p vbti/inspection/investigation/iwm/e05_parts_in_v/pairs.py [--sizes 1 2] [--lift L3]
 Outputs  evidence/pairs.json, evidence/pairs_<run>_<mm>mm.jpg, evidence/pairs_render_<view>_<mm>mm.jpg
 """
 import argparse

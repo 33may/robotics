@@ -10,8 +10,8 @@ import json
 import torch
 from pathlib import Path
 
-from vbti.logic.dataset import load_and_split_dataset, create_dataloaders
-from vbti.logic.train.backends.base import TrainingBackend, ModelBundle
+from vla.logic.dataset import load_and_split_dataset, create_dataloaders
+from vla.logic.train.backends.base import TrainingBackend, ModelBundle
 
 
 def _lazy_import_groot():

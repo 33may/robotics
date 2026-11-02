@@ -6,10 +6,10 @@ so every read/write here is already in the calibrated frame. Degrees are
 centered on tick 2048: deg = (ticks - 2048) * 360 / 4096.
 
 Usage:
-    python -m vbti.logic.servos.so101 status
-    python -m vbti.logic.servos.so101 test            # wrist_roll wiggle + return
-    python -m vbti.logic.servos.so101 move --shoulder_pan=10 --wrist_roll=-20
-    python -m vbti.logic.servos.so101 torque_off
+    python -m vla.logic.servos.so101 status
+    python -m vla.logic.servos.so101 test            # wrist_roll wiggle + return
+    python -m vla.logic.servos.so101 move --shoulder_pan=10 --wrist_roll=-20
+    python -m vla.logic.servos.so101 torque_off
 """
 
 import time

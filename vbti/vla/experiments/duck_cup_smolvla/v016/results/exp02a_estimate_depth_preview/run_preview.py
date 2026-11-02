@@ -15,7 +15,7 @@ import matplotlib as mpl
 from PIL import Image
 
 DATASET_ROOT = Path("/home/may33/.cache/huggingface/lerobot/eternalmay33/01_02_03_merged_may-sim_detection")
-OUT_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v016/results/exp02a_estimate_depth_preview")
+OUT_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/vla/experiments/duck_cup_smolvla/v016/results/exp02a_estimate_depth_preview")
 PLOTS_DIR = OUT_DIR / "plots"
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 

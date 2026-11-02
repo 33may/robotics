@@ -72,7 +72,7 @@ Package import note: the `vbti` package is expected to be importable from `/home
 Run servo scan before blaming a model:
 
 ```bash
-python -m vbti.logic.servos.scan_all
+python -m vla.logic.servos.scan_all
 ```
 
 Use voltage to identify arms:
@@ -83,16 +83,16 @@ Use voltage to identify arms:
 Check camera layout:
 
 ```bash
-python -m vbti.logic.cameras.view_cameras --preset realsense
-python -m vbti.logic.cameras.view_cameras --preset opencv
-python -m vbti.logic.cameras.check_usb
+python -m vla.logic.cameras.view_cameras --preset realsense
+python -m vla.logic.cameras.view_cameras --preset opencv
+python -m vla.logic.cameras.check_usb
 ```
 
 Load known calibration when needed:
 
 ```bash
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
 ```
 
 Move follower to rest before/after risky runs:
@@ -112,22 +112,22 @@ Known recording caveat: LeRobot keyboard controls are more reliable under X11 th
 List/inspect datasets:
 
 ```bash
-python -m vbti.logic.dataset.check_utils ls
-python -m vbti.logic.dataset.check_utils report eternalmay33/duck_cup_v020_all
-python -m vbti.logic.dataset.check_utils cameras eternalmay33/duck_cup_v020_all
+python -m vla.logic.dataset.check_utils ls
+python -m vla.logic.dataset.check_utils report eternalmay33/duck_cup_v020_all
+python -m vla.logic.dataset.check_utils cameras eternalmay33/duck_cup_v020_all
 ```
 
 Inspect HDF5 simulation data:
 
 ```bash
-python -m vbti.logic.dataset.hdf5_utils report /path/to/data.hdf5
-python -m vbti.logic.dataset.convert_utils discover /path/to/data.hdf5
+python -m vla.logic.dataset.hdf5_utils report /path/to/data.hdf5
+python -m vla.logic.dataset.convert_utils discover /path/to/data.hdf5
 ```
 
 Convert HDF5 to LeRobot:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils convert /path/to/data.hdf5 eternalmay33/my_dataset "Pick up the duck and place it in the cup"
+python -m vla.logic.dataset.convert_utils convert /path/to/data.hdf5 eternalmay33/my_dataset "Pick up the duck and place it in the cup"
 ```
 
 Depth and feature transforms should normally produce a new dataset artifact. Avoid destructive in-place transformations unless explicitly intended.
@@ -137,16 +137,16 @@ Depth and feature transforms should normally produce a new dataset artifact. Avo
 Inspect active experiment:
 
 ```bash
-python -m vbti.logic.train.engine status
-python -m vbti.logic.train.config_utils show /home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/config.yaml
+python -m vla.logic.train.engine status
+python -m vla.logic.train.config_utils show /home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/config.yaml
 ```
 
 Remote training is the main path for larger SmolVLA runs:
 
 ```bash
-python -m vbti.logic.train.remote train --experiment=duck_cup_smolvla --version=v020 --run_name=lerobot_output_r1
-python -m vbti.logic.train.remote status --experiment=duck_cup_smolvla --version=v020
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=all
+python -m vla.logic.train.remote train --experiment=duck_cup_smolvla --version=v020 --run_name=lerobot_output_r1
+python -m vla.logic.train.remote status --experiment=duck_cup_smolvla --version=v020
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=all
 ```
 
 Important: remote training launches `lerobot-train`. It does not execute local `SmolVLABackend` code. If a transform must affect remote training, bake it into the dataset or patch the LeRobot fork.
@@ -156,13 +156,13 @@ Important: remote training launches `lerobot-train`. It does not execute local `
 Preview cameras:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference preview
+python -m vla.logic.inference.run_real_inference preview
 ```
 
 Run policy interactively:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/path/to/pretrained_model \
   --port=/dev/ttyACM1 \
   --cameras=realsense \
@@ -174,7 +174,7 @@ python -m vbti.logic.inference.run_real_inference run \
 For depth models, enable depth and ensure the gripper camera is RealSense-backed:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/path/to/pretrained_model \
   --depth=true \
   --cameras=opencv_depth
@@ -185,7 +185,7 @@ python -m vbti.logic.inference.run_real_inference run \
 Run structured evaluation:
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=dual_cup_60 \
   --experiment=duck_cup_smolvla \
@@ -204,10 +204,10 @@ Operator flow:
 Analyze sessions:
 
 ```bash
-python -m vbti.logic.inference.eval_helpers ls --detailed
-python -m vbti.logic.inference.eval_helpers info latest
-python -m vbti.logic.inference.eval_helpers play latest 3
-python -m vbti.logic.inference.eval_render heatmap /path/to/session --output=/tmp/heatmap.png
+python -m vla.logic.inference.eval_helpers ls --detailed
+python -m vla.logic.inference.eval_helpers info latest
+python -m vla.logic.inference.eval_helpers play latest 3
+python -m vla.logic.inference.eval_render heatmap /path/to/session --output=/tmp/heatmap.png
 ```
 
 ## Experiment History Anchor

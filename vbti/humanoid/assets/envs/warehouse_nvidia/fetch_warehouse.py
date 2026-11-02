@@ -7,7 +7,7 @@ this mirrors the whole scene subtree from NVIDIA's public S3 bucket, preserving 
 directory layout so every relative reference — including full_warehouse's one `../../Props/
 Forklift/...` escape — resolves locally with no USD editing.
 
-    conda run -n isaac python humanoid/assets/envs/warehouse_nvidia/fetch_warehouse.py
+    conda run -n isaac python vbti/humanoid/assets/envs/warehouse_nvidia/fetch_warehouse.py
 
 Re-runnable: files already present with the right size are skipped. ~570 MB, ~2730 files.
 """

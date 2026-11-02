@@ -1,6 +1,6 @@
 """Supervisor: the command-driven state machine for loop v2.
 
-Spec: inspection/docs/2026-08-20-ui-driven-loop-design.md ("State machine &
+Spec: vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md ("State machine &
 commands", "Architecture"). One dispatcher thread (`run()`) owns every bit
 of run state; named worker threads (plan/preview/exec) talk back only by
 putting events on `self.events`. A generation counter makes "a stale button

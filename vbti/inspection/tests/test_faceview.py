@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Face-evidence geometry: frames, poses, stability delta.
-Run: p inspection/tests/test_faceview.py"""
+Run: p vbti/inspection/tests/test_faceview.py"""
 import numpy as np
 
 from inspection.fit.contract import Primitive

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """AIRunWriter — the brain thread's own pen, ai/<seq>/ subtree only.
-Run: p inspection/tests/test_ai_writer.py
+Run: p vbti/inspection/tests/test_ai_writer.py
 """
 import json
 

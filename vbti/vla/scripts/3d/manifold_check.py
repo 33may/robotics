@@ -58,5 +58,5 @@ def check_manifold(input_path, depth=10):
 
 
 if __name__ == "__main__":
-    is_watertight = check_manifold('vbti/data/so_v1/assets/duck/object_0.ply')
+    is_watertight = check_manifold('vbti/vla/data/so_v1/assets/duck/object_0.ply')
     exit(0 if is_watertight else 1)

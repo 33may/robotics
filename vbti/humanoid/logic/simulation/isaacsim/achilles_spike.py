@@ -8,9 +8,9 @@ loop-closure equality constraints) through Isaac's MJCF importer, then:
 
 This decides whether the faithful linkage is viable in PhysX before we integrate it.
 
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/achilles_spike.py
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/achilles_spike.py
     # windowed (watch the ankle/rods):
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/achilles_spike.py --gui
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/achilles_spike.py --gui
 """
 
 from __future__ import annotations

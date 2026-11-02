@@ -11,7 +11,7 @@
 #              -o cuvslam.cfg_enable_imu_fusion=true
 
 set -u
-H=/home/may33/projects/ml_portfolio/robotics/humanoid
+H=/home/may33/projects/ml_portfolio/robotics/vbti/humanoid
 DUMP=${1:?dump dir}
 OUT=${2:?output map name}
 shift 2

@@ -39,7 +39,7 @@ Total wire sizes (header + payload):
   STATE_IMU    428 B
 
 References:
-  - Design: `humanoid/openspec/changes/may-147-oli-deployment-interface/design.md` (Contracts; D10, D11)
+  - Design: `vbti/humanoid/openspec/changes/may-147-oli-deployment-interface/design.md` (Contracts; D10, D11)
   - Origin: moved verbatim from the archived `may-147-isaac-limx-sdk-bridge` bridge wire
   - Wire reality: `humanoid/docs/vendor/humanoid-rl-deploy-python.md` § 11
   - Canonical structs: `oli-corpus://limxsdk#datatypes.h`

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Run the inspection UI.
 
-    p inspection/ui/app.py mock                       # fake run, no robot, no camera
-    p inspection/ui/app.py mock --no_window           # same, browser at :8767
-    p inspection/ui/app.py serve --run_dir=data/...   # window only; your loop owns the bus
+    p vbti/inspection/ui/app.py mock                       # fake run, no robot, no camera
+    p vbti/inspection/ui/app.py mock --no_window           # same, browser at :8767
+    p vbti/inspection/ui/app.py serve --run_dir=data/...   # window only; your loop owns the bus
 
 `mock` owns a bus and drives every topic itself. `serve` owns no bus at all: it
 serves the built frontend and opens the window, and the loop process publishes
@@ -12,7 +12,7 @@ the bus belongs to whoever owns the robot.
 
 Build the frontend first:
     cd ~/projects/porthole && npm run build -w @porthole/framework
-    cd inspection/ui && npm install && npm run build
+    cd vbti/inspection/ui && npm install && npm run build
 """
 
 from __future__ import annotations
@@ -152,7 +152,7 @@ def trace(run_dir: str, port: int = 8767, bus_port: int = 8765,
           no_window: bool = False, gui: str = "qt", poll: float = 0.5) -> int:
     """Open a brain run's trace: every stage of the agentic loop, as a stream.
 
-        p inspection/ui/app.py trace --run_dir=inspection/data/runs/2408-cup1
+        p vbti/inspection/ui/app.py trace --run_dir=vbti/inspection/data/runs/2408-cup1
 
     Owns a bus, but drives no robot and plans nothing — it reads the newest
     `<run>/ai/<seq>/trace.jsonl` and republishes it whenever the file changes.
@@ -170,7 +170,7 @@ def trace(run_dir: str, port: int = 8767, bus_port: int = 8765,
     ai_dir = latest_trace_dir(run_path)
     if ai_dir is None:
         print(f"no trace under {run_path}/ai/*/{TRACE_NAME} — "
-              f"run inspection/brain/loop.py first")
+              f"run vbti/inspection/brain/loop.py first")
         return 1
     trace_file = ai_dir / TRACE_NAME
 

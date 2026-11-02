@@ -18,7 +18,7 @@ from PIL import Image
 
 # ── Config ──────────────────────────────────────────────────────────────────
 
-EXP_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/research/how_to_mask_right/exp03_prompt_stability")
+EXP_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/vla/research/how_to_mask_right/exp03_prompt_stability")
 PLOT_DIR = EXP_DIR / "plots"
 PLOT_DIR.mkdir(exist_ok=True)
 

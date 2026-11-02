@@ -2,13 +2,13 @@
 
 Per node: the mask's pixels through the step's aligned depth (colour intrinsics,
 depth scale) and T_base_cam -> points in the base frame, colours from rgb, centroid
-and extent in mm. Saved per frame in inspection/data/iwm/e03_tree_3d/<frame>/.
+and extent in mm. Saved per frame in vbti/inspection/data/iwm/e03_tree_3d/<frame>/.
 
 Orientation: rgb / depth_aligned / mask on disk are upright, T_base_cam and the
 intrinsics are raw; on rgb_rotation_deg == 180 views the pixels are turned back before
 deprojection (a 180-degree turn with raw intrinsics would mirror the geometry).
 
-Run:  p inspection/investigation/iwm/e03_tree_3d/project.py [--frames c5.6 ...] [--variant full]
+Run:  p vbti/inspection/investigation/iwm/e03_tree_3d/project.py [--frames c5.6 ...] [--variant full]
 """
 import argparse
 import json

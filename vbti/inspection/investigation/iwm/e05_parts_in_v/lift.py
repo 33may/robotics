@@ -11,9 +11,9 @@ Check (Anton's validation): render the labels from the same pose and compare wit
 node: IoU, precision, recall; plus the smear (share of the node's rows > OFF_PLANE_M off the
 RANSAC plane of its face) and the hit / depth share (TSDF and depth holes).
 
-Run:  p inspection/investigation/iwm/e05_parts_in_v/lift.py --frames c5.6 b1.4 --sizes 1 2 --lifts L1 L2
+Run:  p vbti/inspection/investigation/iwm/e05_parts_in_v/lift.py --frames c5.6 b1.4 --sizes 1 2 --lifts L1 L2
 Outputs  evidence/lift.json, evidence/lift_<frame>_<mm>mm_<lift>.jpg,
-         inspection/data/iwm/e05_parts_in_v/<run>/<mm>mm/single_<frame>_<lift>/ (STV + run.json)
+         vbti/inspection/data/iwm/e05_parts_in_v/<run>/<mm>mm/single_<frame>_<lift>/ (STV + run.json)
 """
 import argparse
 import json

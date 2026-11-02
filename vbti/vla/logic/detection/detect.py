@@ -451,7 +451,7 @@ class StudentDetector:
         device: str = "cuda",
         conf_threshold: float = STUDENT_CONF_THRESHOLD,
     ):
-        from vbti.logic.detection.distill.distill_model import DistilledDetector
+        from vla.logic.detection.distill.distill_model import DistilledDetector
         self.device = torch.device(device if torch.cuda.is_available() else "cpu")
         self.conf_threshold = conf_threshold
         self.models: dict[str, DistilledDetector] = {}

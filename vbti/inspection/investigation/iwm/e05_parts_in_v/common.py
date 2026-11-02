@@ -4,7 +4,7 @@ Orientation rule (e03/e04): rgb / depth / masks on disk are upright; T_base_cam 
 intrinsics are raw; on rgb_rotation_deg == 180 steps everything is flipped back to raw
 before any geometry.
 
-Smoke:  p inspection/investigation/iwm/e05_parts_in_v/common.py c5.6
+Smoke:  p vbti/inspection/investigation/iwm/e05_parts_in_v/common.py c5.6
 """
 import json
 import sys

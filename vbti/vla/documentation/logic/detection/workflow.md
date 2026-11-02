@@ -3,7 +3,7 @@
 ## 1. Generate Detection Results
 
 ```bash
-python -m vbti.logic.detection.process_dataset <repo_id_or_path> \
+python -m vla.logic.detection.process_dataset <repo_id_or_path> \
   --stride 30 \
   --gripper-stride 10 \
   --batch-size 4 \
@@ -24,7 +24,7 @@ The script decodes videos, runs detection sparsely, and interpolates/holds detec
 ## 2. Generate Phase Labels
 
 ```bash
-python -m vbti.logic.detection.phases <repo_id_or_path> --fps 30
+python -m vla.logic.detection.phases <repo_id_or_path> --fps 30
 ```
 
 Output:
@@ -44,7 +44,7 @@ Phases are motion/state-machine labels such as:
 ## 3. Bake Into Dataset State
 
 ```bash
-python -m vbti.logic.dataset.augment <repo_id_or_path> \
+python -m vla.logic.dataset.augment <repo_id_or_path> \
   --augmentations detection phase \
   -o <output_repo_id> \
   --cameras left right top gripper \
@@ -62,7 +62,7 @@ Options:
 ## 4. Verify
 
 ```bash
-python -m vbti.logic.dataset.check_utils report <output_repo_id>
+python -m vla.logic.dataset.check_utils report <output_repo_id>
 ```
 
 Check that `observation.state` dimension matches the intended model.

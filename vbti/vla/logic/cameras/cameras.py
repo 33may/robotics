@@ -1,7 +1,7 @@
 """Shared camera config, init, capture, and display utilities.
 
 Import from anywhere:
-    from vbti.logic.cameras.cameras import (
+    from vla.logic.cameras.cameras import (
         CAMERA_PRESETS, init_cameras, capture_frames, get_latest_depth,
         stop_cameras, build_grid_frame, show_camera_grid,
     )

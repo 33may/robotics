@@ -191,12 +191,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruct mesh from Gaussian Splat point cloud")
     parser.add_argument(
         "--input",
-        default="vbti/data/so_v1/assets/duck/object_0.ply",
+        default="vbti/vla/data/so_v1/assets/duck/object_0.ply",
         help="Input PLY point cloud"
     )
     parser.add_argument(
         "--output",
-        default="vbti/data/so_v1/assets/duck/object_0_reconstructed.glb",
+        default="vbti/vla/data/so_v1/assets/duck/object_0_reconstructed.glb",
         help="Output GLB mesh"
     )
     parser.add_argument(

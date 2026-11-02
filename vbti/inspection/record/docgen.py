@@ -3,7 +3,7 @@
 pydantic models in `inspection.record.schema` — the models are the only legal
 source for schema docs, so this file writes and the humans never edit.
 
-Run: p inspection/record/docgen.py  ->  docs/data-engine/generated/schema.md
+Run: p vbti/inspection/record/docgen.py  ->  docs/data-engine/generated/schema.md
 """
 from __future__ import annotations
 
@@ -137,14 +137,14 @@ def _table(m: type[BaseModel]) -> str:
 def generate() -> str:
     models = _models()
     parts = [
-        "<!-- GENERATED from inspection/record/schema.py — do not edit. "
-        "Regenerate: p inspection/record/docgen.py -->",
+        "<!-- GENERATED from vbti/inspection/record/schema.py — do not edit. "
+        "Regenerate: p vbti/inspection/record/docgen.py -->",
         "",
         "# Single Recording schema — generated reference",
         "",
         f"`schema_version` = **{schema.SCHEMA_VERSION}**. "
-        "Source of truth: `inspection/record/schema.py` "
-        "(validated by `inspection/tests/test_record_schema.py`).",
+        "Source of truth: `vbti/inspection/record/schema.py` "
+        "(validated by `vbti/inspection/tests/test_record_schema.py`).",
         "",
         "## ER diagram",
         "",

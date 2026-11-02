@@ -42,16 +42,16 @@ Camera names are part of the model interface. Do not swap physical cameras witho
 Live view:
 
 ```bash
-python -m vbti.logic.cameras.view_cameras --preset realsense
-python -m vbti.logic.cameras.view_cameras --preset realsense_depth
-python -m vbti.logic.cameras.view_cameras --preset opencv --fps 15
+python -m vla.logic.cameras.view_cameras --preset realsense
+python -m vla.logic.cameras.view_cameras --preset realsense_depth
+python -m vla.logic.cameras.view_cameras --preset opencv --fps 15
 ```
 
 Capture snapshots:
 
 ```bash
-python -m vbti.logic.cameras.capture --save_dir ./captures/cup_center
-python -m vbti.logic.cameras.capture --save_dir ./captures/cup_left --preset opencv
+python -m vla.logic.cameras.capture --save_dir ./captures/cup_center
+python -m vla.logic.cameras.capture --save_dir ./captures/cup_left --preset opencv
 ```
 
 Controls: `c` captures, `q` or Esc quits.
@@ -59,8 +59,8 @@ Controls: `c` captures, `q` or Esc quits.
 Visual alignment against references:
 
 ```bash
-python -m vbti.logic.cameras.calibrate --ref_dir /tmp/current_cams
-python -m vbti.logic.cameras.calibrate --ref_dir /tmp/current_cams --camera top
+python -m vla.logic.cameras.calibrate --ref_dir /tmp/current_cams
+python -m vla.logic.cameras.calibrate --ref_dir /tmp/current_cams --camera top
 ```
 
 This is visual placement alignment, not geometric camera calibration.
@@ -68,7 +68,7 @@ This is visual placement alignment, not geometric camera calibration.
 USB diagnostics:
 
 ```bash
-python -m vbti.logic.cameras.check_usb
+python -m vla.logic.cameras.check_usb
 ```
 
 RealSense reset:
@@ -144,7 +144,7 @@ Baud rate is `1000000`.
 Scan all `/dev/ttyACM*` ports:
 
 ```bash
-python -m vbti.logic.servos.scan_all
+python -m vla.logic.servos.scan_all
 ```
 
 Use voltage to identify arms:
@@ -155,19 +155,19 @@ Use voltage to identify arms:
 Profile manager:
 
 ```bash
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles show frodeo-test
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
-python -m vbti.logic.servos.profiles export frodeo-test
-python -m vbti.logic.servos.profiles register my-new --description "New calib"
-python -m vbti.logic.servos.profiles sync
-python -m vbti.logic.servos.profiles activate frodeo-test
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles show frodeo-test
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.profiles export frodeo-test
+python -m vla.logic.servos.profiles register my-new --description "New calib"
+python -m vla.logic.servos.profiles sync
+python -m vla.logic.servos.profiles activate frodeo-test
 ```
 
 Backward-compatible loader:
 
 ```bash
-python -m vbti.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frodeo-test
+python -m vla.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frodeo-test
 ```
 
 Move to rest:
@@ -210,7 +210,7 @@ Warning: `factory_reset_motors.py` has hardcoded `PORT`, `MOTORS_TO_RESET`, and 
 Interactive recalibration:
 
 ```bash
-python -m vbti.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=sim_accurate --base=frodeo-test
+python -m vla.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=sim_accurate --base=frodeo-test
 ```
 
 Quick recalibration:

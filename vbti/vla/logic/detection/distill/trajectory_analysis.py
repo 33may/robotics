@@ -16,13 +16,13 @@ import numpy as np
 from scipy import interpolate, stats
 
 # Add project root to path
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))  # vbti/ (holds the vla package)
 
-from vbti.logic.dataset import resolve_dataset_path
-from vbti.logic.detection.detect import (
+from vla.logic.dataset import resolve_dataset_path
+from vla.logic.detection.detect import (
     create_detector, DEFAULT_MAX_AREA, GRIPPER_MAX_AREA,
 )
-from vbti.logic.detection.process_dataset import (
+from vla.logic.detection.process_dataset import (
     VideoReader, load_dataset_meta, get_video_path,
 )
 

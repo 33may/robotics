@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Migration gate — add-only, recorded, idempotent, dry-run first.
-Run: p inspection/tests/test_record_migrate.py
+Run: p vbti/inspection/tests/test_record_migrate.py
 """
 import json
 

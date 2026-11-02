@@ -8,15 +8,15 @@ active (moving) portions of each episode.
 
 Usage:
     # Preview what would be trimmed (fast — reads parquet only, shows plot)
-    python vbti/logic/dataset/trim_utils.py preview \
+    python vbti/vla/logic/dataset/trim_utils.py preview \
         --dataset_path=~/.cache/huggingface/lerobot/eternalmay33/so101_real_pick_place_50eps
 
     # Create trimmed dataset
-    python vbti/logic/dataset/trim_utils.py trim \
+    python vbti/vla/logic/dataset/trim_utils.py trim \
         --dataset_path=~/.cache/huggingface/lerobot/eternalmay33/so101_real_pick_place_50eps
 
     # Custom threshold (higher = more aggressive trim)
-    python vbti/logic/dataset/trim_utils.py trim \
+    python vbti/vla/logic/dataset/trim_utils.py trim \
         --dataset_path=~/.cache/huggingface/lerobot/eternalmay33/so101_real_pick_place_50eps \
         --dist_thresh=10.0
 """
@@ -413,7 +413,7 @@ def trajectories(dataset_path: str, episodes: list[int] = None, ep: str = None,
         save: save to file instead of showing
     """
     import matplotlib.pyplot as plt
-    from vbti.logic.dataset.check_utils import lerobot_info
+    from vla.logic.dataset.check_utils import lerobot_info
 
     resolved = _resolve_dataset_path(dataset_path)
     all_episodes = _load_episodes_from_parquet(resolved)
@@ -479,7 +479,7 @@ def compare_trimmed(datasets: dict[str, str], dist_thresh: float = 5.0,
                     bins: int = 80, save: str = None):
     """Compare action distributions after trimming rest poses."""
     import matplotlib.pyplot as plt
-    from vbti.logic.dataset.check_utils import lerobot_info
+    from vla.logic.dataset.check_utils import lerobot_info
 
     loaded = {}
     for label, path in datasets.items():
@@ -530,7 +530,7 @@ def compare_trimmed(datasets: dict[str, str], dist_thresh: float = 5.0,
 
 
 def _resolve_dataset_path(dataset_path: str) -> Path:
-    from vbti.logic.dataset import resolve_dataset_path
+    from vla.logic.dataset import resolve_dataset_path
     return resolve_dataset_path(dataset_path)
 
 
@@ -541,7 +541,7 @@ def distribution(dataset_path: str, bins: int = 80, save: str = None):
         dataset_path: path to dataset root OR repo_id (e.g. eternalmay33/so101_real_pick_place_50eps)
     """
     import matplotlib.pyplot as plt
-    from vbti.logic.dataset.check_utils import lerobot_info
+    from vla.logic.dataset.check_utils import lerobot_info
 
     resolved = _resolve_dataset_path(dataset_path)
     episodes = _load_episodes_from_parquet(resolved)

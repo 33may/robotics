@@ -52,8 +52,8 @@ which is genuinely read-only (own docstring: "never writes a byte into the
 run"). This probe still avoids it and reads with plain `json.loads`
 throughout, to keep the guarantee visible at every call site.
 
-    p inspection/investigation/view_hints/normal_probe.py
-    p inspection/investigation/view_hints/normal_probe.py --out /tmp/normal_probe
+    p vbti/inspection/investigation/view_hints/normal_probe.py
+    p vbti/inspection/investigation/view_hints/normal_probe.py --out /tmp/normal_probe
 """
 import argparse
 import json

@@ -2,7 +2,7 @@
 """Build the review workspace: one `.rrd` per recorded run.
 
 Reads the derived tree for a run — the step-k clouds `step_replay.py`
-wrote to inspection/data/derived/<run>/steps/ and every primitive
+wrote to vbti/inspection/data/derived/<run>/steps/ and every primitive
 decomposition the fit bank wrote to .../fits/<method>/step_NNN.json — plus
 what the run itself recorded (poses, intrinsics, rgb, mask, chain renders,
 the stored final cloud), and hands all of it to `rr/log.py`, which owns
@@ -13,13 +13,13 @@ layout (legacy NNN/meta.json or native steps/NNN/step.json) — both come in
 through `Run` (record/run.py). A native run that recorded its own per-step
 clouds (steps/NNN/fused/) uses those directly, replay optional.
 
-    p inspection/record/rr/workspace.py --run 2408-cup3
-    p inspection/record/rr/workspace.py --all
+    p vbti/inspection/record/rr/workspace.py --run 2408-cup3
+    p vbti/inspection/record/rr/workspace.py --all
 
-Writes inspection/data/derived/<run>/rrd/<run>.rrd — durable, gitignored,
+Writes vbti/inspection/data/derived/<run>/rrd/<run>.rrd — durable, gitignored,
 regeneratable, next to the inputs it was built from. Open it with:
 
-    p inspection/record/rr/view.py show 2408-cup3
+    p vbti/inspection/record/rr/view.py show 2408-cup3
 
 The run directories are read-only artifacts. The only thing this script
 writes outside the run's own `rrd/` directory is the handful of rgb frames
@@ -112,7 +112,7 @@ def _replay_dir(run: str) -> Path:
             return d
     raise SystemExit(f"no step clouds for {run} in {DERIVED / run / 'steps'} "
                      f"or {REPLAY / run} — run "
-                     f"inspection/investigation/run_replay/step_replay.py --run {run}")
+                     f"vbti/inspection/investigation/run_replay/step_replay.py --run {run}")
 
 
 def _recorded_pair(step: Step) -> tuple[np.ndarray, np.ndarray | None] | None:
@@ -458,7 +458,7 @@ def main() -> int:
                     help="every run with step clouds on disk")
     ap.add_argument("--out", default=None,
                     help="override the output DIRECTORY (default: "
-                         "inspection/data/derived/<run>/rrd)")
+                         "vbti/inspection/data/derived/<run>/rrd)")
     ap.add_argument("--overlay-on", action="store_true",
                     help="ship the stored/replayed overlay VISIBLE (the "
                          "spec's default is off)")

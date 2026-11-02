@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """RunWriter — the single writer both the live loop and the data engine use.
-Run: p inspection/tests/test_record_writer.py
+Run: p vbti/inspection/tests/test_record_writer.py
 """
 import json
 

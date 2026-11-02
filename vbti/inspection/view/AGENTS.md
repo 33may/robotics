@@ -12,7 +12,7 @@ Design: `docs/2026-09-17-ray-views-design.md`.
   `neighbors` (4-connected, v clamps), `cell_gloss` ("two steps right,
   higher"), `coverage_map` (ASCII bitmap), `moves_from` (order + name an
   allowed set). numpy only — `eyes/` and `AgentDecider` both import it, so
-  it must never grow a motion/IK dependency. `p inspection/tests/test_grid.py`.
+  it must never grow a motion/IK dependency. `p vbti/inspection/tests/test_grid.py`.
 - `rays.py` — the sampler and the vocabulary built on it.
   `sample_ray` walks depths in `RAY_STEP_M` steps from the object surface
   out to `R_MAX`, cheapest check first: sensor min range (`MIN_RANGE_M`,
@@ -27,7 +27,7 @@ Design: `docs/2026-09-17-ray-views-design.md`.
   projects as a pure similarity — no keystone at any shift), then the 5..60
   deg cone. `resolve_face` scans the WHOLE shift rung and takes the member
   whose closest sample is shallowest (tie: smaller shift); tilt is consulted
-  only when no shift has a sample. `p inspection/tests/test_rays.py`.
+  only when no shift has a sample. `p vbti/inspection/tests/test_rays.py`.
 - `faceview.py` — boxguard face GEOMETRY: `FACES`, `face_frame` (center,
   outward normal, wall extents), `face_corners`, `face_cam_pose` (camera on a
   normal ray), `top_align_roll` (lay the footprint's wider side along the

@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 CORPUS_ROOT = Path(__file__).resolve().parents[2]
-# CORPUS_ROOT = humanoid/docs/oli-corpus; the repo root is two parents above that
-# (.../humanoid is parents[1], the project root is parents[2]).
+# CORPUS_ROOT = vbti/humanoid/docs/oli-corpus; REPO_ROOT (really the import root vbti/) is two parents above
+# that (.../humanoid is parents[1], vbti/ is parents[2]); stored paths stay "humanoid/...".
 REPO_ROOT = CORPUS_ROOT.parents[2]
 INDEX_PATH = CORPUS_ROOT / "index" / "corpus.sqlite"
 VECTORS_PATH = CORPUS_ROOT / "index" / "vectors.npz"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """End-to-end: commands over a real websocket drive the real Supervisor.
-Run: p inspection/tests/test_mock_bus.py"""
+Run: p vbti/inspection/tests/test_mock_bus.py"""
 import json
 import tempfile
 import time

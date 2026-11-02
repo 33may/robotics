@@ -7,7 +7,7 @@
 ## Command
 
 ```bash
-python -m vbti.logic.dataset.add_video_features \
+python -m vla.logic.dataset.add_video_features \
   --dataset <repo_id> \
   --teacher /path/to/pretrained_model \
   --layer siglip_output \
@@ -40,7 +40,7 @@ Important args:
 Observed remote workflow:
 
 ```bash
-python -m vbti.logic.dataset.add_video_features \
+python -m vla.logic.dataset.add_video_features \
   --dataset eternalmay33/duck_cup_v020_all \
   --root /home/vbti/anton/data/eternalmay33/duck_cup_v020_all \
   --teacher /home/vbti/anton/data/uva_teacher_v020_150k \
@@ -79,7 +79,7 @@ Remote training runs `lerobot-train`. It does not execute local custom dataloade
 After baking:
 
 ```bash
-python -m vbti.logic.dataset.check_utils report <new_dataset>
+python -m vla.logic.dataset.check_utils report <new_dataset>
 ```
 
 Check that:

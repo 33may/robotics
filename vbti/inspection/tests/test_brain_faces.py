@@ -14,7 +14,7 @@ through `Run.at()` at all — proved separately by
 `test_machine.py::test_face_request_full_cycle`, and exercised again here
 from the READING side.
 
-Run: p inspection/tests/test_brain_faces.py
+Run: p vbti/inspection/tests/test_brain_faces.py
 """
 import asyncio
 import tempfile

@@ -8,9 +8,9 @@ Subcommands:
 Outputs go to ``protocols/renders/<name>_{overview,verify}.png`` by default.
 
 Examples:
-    python vbti/logic/inference/protocols/protocols.py render id_scale_60
-    python vbti/logic/inference/protocols/protocols.py verify id_scale_60
-    python vbti/logic/inference/protocols/protocols.py edit   id_scale_60
+    python vbti/vla/logic/inference/protocols/protocols.py render id_scale_60
+    python vbti/vla/logic/inference/protocols/protocols.py verify id_scale_60
+    python vbti/vla/logic/inference/protocols/protocols.py edit   id_scale_60
 """
 
 import json

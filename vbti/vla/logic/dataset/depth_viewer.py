@@ -12,16 +12,16 @@ renders them as turbo-colorized depth panels. Supports two modes:
 
 Usage:
     # Single frame to PNG
-    python -m vbti.logic.dataset.depth_viewer frame \\
+    python -m vla.logic.dataset.depth_viewer frame \\
         eternalmay33/16_gripper_depth --episode 0 --frame 50 \\
         --out /tmp/v016_frame.png
 
     # Single frame on screen
-    python -m vbti.logic.dataset.depth_viewer frame \\
+    python -m vla.logic.dataset.depth_viewer frame \\
         eternalmay33/16_gripper_depth --episode 0 --frame 50
 
     # Replay a whole episode
-    python -m vbti.logic.dataset.depth_viewer replay \\
+    python -m vla.logic.dataset.depth_viewer replay \\
         eternalmay33/16_gripper_depth --episode 0
 
 Controls (replay):
@@ -43,8 +43,8 @@ import numpy as np
 import torch
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
-from vbti.logic.dataset import resolve_dataset_path
-from vbti.logic.depth.colorize import colorize_fixed_clip, unpack_rgb_to_uint16
+from vla.logic.dataset import resolve_dataset_path
+from vla.logic.depth.colorize import colorize_fixed_clip, unpack_rgb_to_uint16
 
 CAMERA_GRID = ["top", "left", "right", "gripper"]
 DEFAULT_DEPTH_KEY = "observation.images.gripper_depth"
@@ -74,7 +74,7 @@ def decode_depth_packed_rgb(
 ) -> np.ndarray:
     """uint8 (H, W, 3) packed RGB → float32 (H, W) depth in meters.
 
-    Inverse of ``vbti.logic.depth.colorize.pack_uint16_to_rgb`` and of
+    Inverse of ``vla.logic.depth.colorize.pack_uint16_to_rgb`` and of
     ``RealSenseCamera.read_latest_depth_packed``.
     """
     rgb = _tensor_to_rgb(rgb_packed)

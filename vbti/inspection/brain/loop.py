@@ -25,7 +25,7 @@ here jumps to a cell that a data-engine sweep already captured, so the whole
 loop runs and benches with no arm, no IK and no risk. The live executor binds
 at exactly one place — `_gate` — and the seam is marked.
 
-    p inspection/brain/loop.py inspection/data/runs/2408-cup1 "is there a logo on the cup?"
+    p vbti/inspection/brain/loop.py vbti/inspection/data/runs/2408-cup1 "is there a logo on the cup?"
 """
 import asyncio
 import json

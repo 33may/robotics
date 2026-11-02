@@ -45,25 +45,25 @@ Read first:
 Master flow:
 
 ```bash
-python -m vbti.logic.reconstruct.master video_processing --video_path data/scene.mp4 --output_dir data/frames --mode count --value 200
-python -m vbti.logic.reconstruct.master gs_reconstruction --frames_dir data/frames --output_dir data/recon
-python -m vbti.logic.reconstruct.master ply_to_usda --mesh_path data/recon/milo/mesh_learnable_sdf.ply --output_path data/scene.usda
-python -m vbti.logic.reconstruct.master scene_composition --scene_usda_path data/scene_composed.usda --task_name my_task
+python -m vla.logic.reconstruct.master video_processing --video_path data/scene.mp4 --output_dir data/frames --mode count --value 200
+python -m vla.logic.reconstruct.master gs_reconstruction --frames_dir data/frames --output_dir data/recon
+python -m vla.logic.reconstruct.master ply_to_usda --mesh_path data/recon/milo/mesh_learnable_sdf.ply --output_path data/scene.usda
+python -m vla.logic.reconstruct.master scene_composition --scene_usda_path data/scene_composed.usda --task_name my_task
 ```
 
 Mesh/object utilities:
 
 ```bash
-python -m vbti.logic.reconstruct.clean_mesh --mesh /path/to/mesh.ply
-python -m vbti.logic.reconstruct.format_utils glb_to_usd --input_path object.glb --output_path object.usda
-python -m vbti.logic.reconstruct.robot_utils make_ready --robot_path robot.usd --save_path robot_ready.usd
+python -m vla.logic.reconstruct.clean_mesh --mesh /path/to/mesh.ply
+python -m vla.logic.reconstruct.format_utils glb_to_usd --input_path object.glb --output_path object.usda
+python -m vla.logic.reconstruct.robot_utils make_ready --robot_path robot.usd --save_path robot_ready.usd
 ```
 
 Isaac/LeIsaac generation:
 
 ```bash
-python -m vbti.logic.reconstruct.isaac_cfg_utils pipeline --scene_usda_path scene.usda --task_name vbti_so_v1
-python -m vbti.logic.reconstruct.isaac_cfg_utils gen_isaaclab --scene_config scene_config.json --task_name vbti_so_v1 --output_dir /tmp/task
+python -m vla.logic.reconstruct.isaac_cfg_utils pipeline --scene_usda_path scene.usda --task_name vbti_so_v1
+python -m vla.logic.reconstruct.isaac_cfg_utils gen_isaaclab --scene_config scene_config.json --task_name vbti_so_v1 --output_dir /tmp/task
 ```
 
 Simulation playground:

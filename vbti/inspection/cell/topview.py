@@ -6,7 +6,7 @@ tree), safety plane traces with their keep-out side hatched, the robot base
 and its 850 mm reach circle. Tool boxes are flange-mounted, so they have no
 fixed world pose and are skipped.
 
-Usage:  p inspection/cell/topview.py [--yaml cell/cell.yaml] [-o topview.png]
+Usage:  p vbti/inspection/cell/topview.py [--yaml cell/cell.yaml] [-o topview.png]
 """
 
 import argparse

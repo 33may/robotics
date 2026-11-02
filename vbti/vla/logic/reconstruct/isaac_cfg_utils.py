@@ -5,9 +5,9 @@ Takes a composed scene USDA and generates leisaac task boilerplate:
 scene assets, env configs (SceneCfg, ObsCfg, EnvCfg), and gym registration.
 
 Usage:
-    python -m vbti.logic.reconstruct.isaaclab_cfg_utils.py pipeline scene.usda vbti_mesh_table
-    python -m vbti.logic.reconstruct.isaaclab_cfg_utils.py extract scene.usda
-    python -m vbti.logic.reconstruct.isaaclab_cfg_utils.py gen_env_cfg scene.usda vbti_mesh_table
+    python -m vla.logic.reconstruct.isaaclab_cfg_utils.py pipeline scene.usda vbti_mesh_table
+    python -m vla.logic.reconstruct.isaaclab_cfg_utils.py extract scene.usda
+    python -m vla.logic.reconstruct.isaaclab_cfg_utils.py gen_env_cfg scene.usda vbti_mesh_table
 """
 
 import sys
@@ -1219,7 +1219,7 @@ def pipeline(scene_usda_path: str, task_name: str,
         cosmos_sensors: If True, cameras capture depth + segmentation for Cosmos Transfer.
 
     Usage:
-        python robot_utils.py pipeline vbti/data/vbti_table/scene/scene_v3.usda vbti_mesh_table
+        python robot_utils.py pipeline vbti/vla/data/vbti_table/scene/scene_v3.usda vbti_mesh_table
         python robot_utils.py pipeline scene.usda my_task --cosmos_sensors
     """
     from pathlib import Path

@@ -14,7 +14,7 @@ def _legacy_run(root, run_id="2408-cup9", *, with_answer=False,
                 with_session=True, old_meta_on_view=1):
     """Mimic the 2408-era layout: run.json{q_survey,r,turns} + NNN/meta.json.
 
-    Copied from inspection/tests/test_record_legacy.py — kept standalone here
+    Copied from vbti/inspection/tests/test_record_legacy.py — kept standalone here
     rather than imported, per the task-3 brief.
     """
     d = root / run_id

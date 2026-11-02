@@ -11,7 +11,7 @@ reduced to what the fit needs:
   per run: v_i (base and camera frame) from least squares over the pairs, sum v_i = 0.
 Matches are saved with their CAMERA-frame points so fit.py can re-lift them under any model.
 
-Run:  p inspection/investigation/iwm/e06_view_offset/pairs.py [--runs ...]
+Run:  p vbti/inspection/investigation/iwm/e06_view_offset/pairs.py [--runs ...]
 Out:  evidence/pairs.json, data/iwm/e06_view_offset/pairs/<run>.npz, evidence/pairs_matches_<run>_<i>_<j>.jpg (a few)
 """
 import argparse

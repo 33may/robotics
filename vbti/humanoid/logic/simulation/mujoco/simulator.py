@@ -23,16 +23,16 @@ Ctrl+C also quits cleanly.
 Run:
 
   conda activate limx
-  python humanoid/logic/simulation/mujoco/simulator.py
+  python vbti/humanoid/logic/simulation/mujoco/simulator.py
 
 Run without joystick (headless tests):
 
-  python humanoid/logic/simulation/mujoco/simulator.py --no-joystick
+  python vbti/humanoid/logic/simulation/mujoco/simulator.py --no-joystick
 
 Run sim + kinematic_projection ELF ONLY — no LimX deploy policy — so OUR limx edge
 (`limx_world_main.py`) drives it as the policy peer (implies --no-joystick):
 
-  python humanoid/logic/simulation/mujoco/simulator.py --no-deploy
+  python vbti/humanoid/logic/simulation/mujoco/simulator.py --no-deploy
 
 Notes
 -----

@@ -7,7 +7,7 @@ notebook's settings, then generate(image, gra=G). The notebook's optional Cascad
 refinement (CUDA-only, extra package) is NOT applied; the HF demo does not use it either.
 
 Run (conda env `unsam`, from anywhere except ~/projects/UnSAMv2 itself):
-  CUDA_VISIBLE_DEVICES="" python inspection/investigation/iwm/e01_all_masks/unsamv2_masks.py \
+  CUDA_VISIBLE_DEVICES="" python vbti/inspection/investigation/iwm/e01_all_masks/unsamv2_masks.py \
       --image PATH.png --granularity 0.3 --out OUTDIR [--variant base|plus] [--device cpu|cuda]
 
 Writes into OUTDIR:

@@ -10,9 +10,9 @@ flow as the walk World, so the brain is byte-identical across modes — swapping
 walk means launching `sim_world_main.py` instead of this, with the joystick unchanged.
 
     # terminal 1 (World):
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/glide_world_main.py
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/glide_world_main.py
     # terminal 2 (brain, glide mode):
-    conda run -n brain python humanoid/logic/oli/brain_main.py --mode glide --joystick socket
+    conda run -n brain python vbti/humanoid/logic/oli/brain_main.py --mode glide --joystick socket
     conda run -n isaac python -m humanoid.logic.oli.reason.teleoperation.joystick.app
 """
 

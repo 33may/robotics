@@ -5,10 +5,10 @@ drives the real mock app through the real DOM (`ask-input`/`ask-send`,
 would hit — and the resulting run is read back exactly the way
 `record show`/`record validate` would, through `Run.load`.
 
-Excluded from the default `pytest inspection/tests` run (see the
+Excluded from the default `pytest vbti/inspection/tests` run (see the
 `norecursedirs` entry in `pyproject.toml`); run explicitly:
 
-    p -m pytest inspection/tests/e2e -m e2e -q
+    p -m pytest vbti/inspection/tests/e2e -m e2e -q
 """
 from __future__ import annotations
 

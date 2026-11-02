@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """rigs: FakeRig interpolation+stop, CameraWorker freshness, PoseStreamer gating.
-Run: p inspection/tests/test_rigs.py"""
+Run: p vbti/inspection/tests/test_rigs.py"""
 import threading
 import time
 

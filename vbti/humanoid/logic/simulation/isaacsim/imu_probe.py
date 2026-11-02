@@ -9,7 +9,7 @@ Two tests, both comparing the IMU against `get_world_pose` (the body's TRUE orie
      and watch whether the IMU quat follows the true base quat.
 
 Runs in the `isaac` env:
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/imu_probe.py
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/imu_probe.py
 """
 
 from __future__ import annotations

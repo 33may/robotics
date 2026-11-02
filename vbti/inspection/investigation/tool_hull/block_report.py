@@ -11,10 +11,10 @@
 This walks every cell, enumerates IK branches for each allowed roll, and
 attributes each rejection to a named geometry pair via `first_collision`.
 
-    p inspection/investigation/tool_hull/block_report.py --run 2408-cup1
-    p inspection/investigation/tool_hull/block_report.py --run 2408-cup1 --r 0.30
-    p inspection/investigation/tool_hull/block_report.py --run 2408-cup1 --raw-cloud
-    p inspection/investigation/tool_hull/block_report.py --run 1509-lan-ai_bench5 \\
+    p vbti/inspection/investigation/tool_hull/block_report.py --run 2408-cup1
+    p vbti/inspection/investigation/tool_hull/block_report.py --run 2408-cup1 --r 0.30
+    p vbti/inspection/investigation/tool_hull/block_report.py --run 2408-cup1 --raw-cloud
+    p vbti/inspection/investigation/tool_hull/block_report.py --run 1509-lan-ai_bench5 \\
         --rs 0.26 0.24 0.22 0.20 0.18 0.16   # sweep: re-derive the R_MIN floor
 """
 import argparse

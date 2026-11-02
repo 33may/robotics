@@ -8,11 +8,11 @@ Strategies
   crop64       grid 64x64 over the object crop
   text         SAM 3 text prompts with the planner's nouns
 
-Output: inspection/data/iwm/e01_all_masks/masks/<frame>/sam3_<strategy>/
+Output: vbti/inspection/data/iwm/e01_all_masks/masks/<frame>/sam3_<strategy>/
         masks.npz masks.json overlay.png run.json
 
 Run (robo env, GPU):
-  p inspection/investigation/iwm/e01_all_masks/sam3_masks.py --frames c5.6 --strategies grid32
+  p vbti/inspection/investigation/iwm/e01_all_masks/sam3_masks.py --frames c5.6 --strategies grid32
 """
 import argparse
 import time

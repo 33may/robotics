@@ -16,7 +16,7 @@ had is lifted into the V of that step (L3) so the viewer can draw it in 3D.
 V grows: one TSDF, the step integrated before its agents run; the STV's rows are re-indexed onto
 the new surface after each fusion (rows are voxels; a voxel that left the surface is dropped).
 
-Record: inspection/data/iwm/e07_update_loop/loops/<run>_<stamp>/
+Record: vbti/inspection/data/iwm/e07_update_loop/loops/<run>_<stamp>/
   loop.json                                 run, steps, settings, timings
   step_<id>/events.json                     the inspect block (see EVENT KINDS in the viewer)
   step_<id>/frame/{masks.npz, ids.json}     the mask pool of the frame (node id -> mask, upright)

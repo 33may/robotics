@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 def phase_bake(args: argparse.Namespace) -> None:
     log.info("[Phase 1] Baking video features → %s", args.baked_output)
     cmd = [
-        sys.executable, "-m", "vbti.logic.dataset.add_video_features",
+        sys.executable, "-m", "vla.logic.dataset.add_video_features",
         "--dataset", args.dataset,
         "--teacher", args.teacher,
         "--layer", "siglip_output",

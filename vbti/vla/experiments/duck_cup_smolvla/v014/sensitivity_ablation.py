@@ -27,7 +27,7 @@ from lerobot.processor.pipeline import PolicyProcessorPipeline
 
 # ------------------------------------------------------------------ paths
 CKPT = Path(
-    "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/"
+    "/home/may33/projects/ml_portfolio/robotics/vbti/vla/experiments/"
     "duck_cup_smolvla/v014/lerobot_output_r1/checkpoints/020000/pretrained_model"
 )
 OUT_DIR = CKPT.parent.parent.parent.parent  # .../v014/

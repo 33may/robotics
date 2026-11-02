@@ -10,7 +10,7 @@ import math
 import torch
 import torch.nn.functional as F
 
-from vbti.logic.dataset.target_extractors import register
+from vla.logic.dataset.target_extractors import register
 
 
 @register("siglip_output")

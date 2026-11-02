@@ -12,7 +12,7 @@ whole job is to hand over arrays.
 The load-bearing part is `log_primitives`. A fitter backend — o3d planes,
 RANSAC cylinders, superquadrics, whatever lands next — never learns a
 Rerun symbol. It returns a list of plain dicts, the five CLOSED kinds of
-`inspection/fit/contract.py`::
+`vbti/inspection/fit/contract.py`::
 
     {"kind":   "box" | "cylinder" | "plane_patch" | "superquadric" | "mesh",
      "pose":   4x4 matrix, or (center, 3x3 rotation), or None,
@@ -78,7 +78,7 @@ CHAIN = "/chain"                # /chain/<slot>, 2D images       (per step)
 ACTIVE = "/active_cam"          # step-k rgb + pinhole, ONE path (per step)
 STEP_PLY = "/world/step_cloud"  # per-view cloud.ply, legacy      (off)
 
-#: The accumulator voxel is 3 mm (`inspection/cell/geometry.py:46`), so a
+#: The accumulator voxel is 3 mm (`vbti/inspection/cell/geometry.py:46`), so a
 #: 1.5 mm radius draws one ball per occupied voxel with no gaps and no mush.
 R_CLOUD = 0.0015
 R_FRESH = 0.0028                # deliberately fatter — the glow must win
@@ -117,7 +117,7 @@ FRUSTUM_M = 0.06
 
 #: Colours are per METHOD and deterministic, so "the blue boxes" means the
 #: same fitter in every run and in every screenshot. Hand-pinned for the
-#: bank methods that exist (`inspection/fit`); hashed for the ones that do
+#: bank methods that exist (`vbti/inspection/fit`); hashed for the ones that do
 #: not exist yet.
 #:
 #: The three pinned hues are chosen to be scoreable in a screenshot: each
@@ -817,7 +817,7 @@ def _quat_from_z(n: np.ndarray) -> tuple[float, float, float, float]:
 
 
 # ---- viewplan additions (additive only) ------------------------------
-# Six small functions for `inspection/viewplan/workspace.py`
+# Six small functions for `vbti/inspection/viewplan/workspace.py`
 # (docs/research/view-planning/poc/structure.md). Nothing above this line
 # is touched: viewplan gets its own subtree, its own colour, and its own
 # blueprint builder, so the record session's schema and this one cannot

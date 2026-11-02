@@ -27,8 +27,8 @@ This order is fixed.
 Bake detection features before training:
 
 ```bash
-python -m vbti.logic.detection.process_dataset <dataset>
-python -m vbti.logic.dataset.augment <dataset> --augmentations detection -o <dataset_detection>
+python -m vla.logic.detection.process_dataset <dataset>
+python -m vla.logic.dataset.augment <dataset> --augmentations detection -o <dataset_detection>
 ```
 
 Training config must point at the augmented dataset.
@@ -38,13 +38,13 @@ Training config must point at the augmented dataset.
 Use:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run --checkpoint=<ckpt> --detection=true
+python -m vla.logic.inference.run_real_inference run --checkpoint=<ckpt> --detection=true
 ```
 
 Evaluation:
 
 ```bash
-python -m vbti.logic.inference.eval_engine --checkpoint=<ckpt> --protocol=<protocol> --detection=true
+python -m vla.logic.inference.eval_engine --checkpoint=<ckpt> --protocol=<protocol> --detection=true
 ```
 
 ## Live Detector Rules

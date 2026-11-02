@@ -5,11 +5,11 @@ List, inspect, load, export, and register calibration profiles stored in
 the LeRobot cache and tracked in calibration/registry.json.
 
 Usage:
-    python -m vbti.logic.servos.profiles list
-    python -m vbti.logic.servos.profiles show frodeo-test
-    python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
-    python -m vbti.logic.servos.profiles export frodeo-test
-    python -m vbti.logic.servos.profiles register my-new --description "New calib"
+    python -m vla.logic.servos.profiles list
+    python -m vla.logic.servos.profiles show frodeo-test
+    python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+    python -m vla.logic.servos.profiles export frodeo-test
+    python -m vla.logic.servos.profiles register my-new --description "New calib"
 """
 import json
 import shutil
@@ -24,7 +24,7 @@ JOINT_NAMES = [
 LEROBOT_CALIB_DIR = (
     Path.home() / ".cache/huggingface/lerobot/calibration/robots/so_follower"
 )
-PROJECT_ROOT = Path(__file__).resolve().parents[3]  # vbti/logic/servos -> root
+PROJECT_ROOT = Path(__file__).resolve().parents[4]  # vbti/vla/logic/servos -> repo root
 REGISTRY_PATH = PROJECT_ROOT / "calibration" / "registry.json"
 PROFILES_BACKUP_DIR = PROJECT_ROOT / "calibration" / "profiles"
 

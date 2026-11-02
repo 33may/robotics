@@ -1,4 +1,4 @@
-"""Fixture-driven tests for `inspection/viewplan/workspace.py`.
+"""Fixture-driven tests for `vbti/inspection/viewplan/workspace.py`.
 
 Deliberately independent of `inspection.viewplan.contract` / `mesh` /
 `planner` — per `docs/research/view-planning/poc/structure.md`, the

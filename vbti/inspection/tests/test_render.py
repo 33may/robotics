@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The state hook renderer. Run: p inspection/tests/test_render.py
+"""The state hook renderer. Run: p vbti/inspection/tests/test_render.py
 
 These pin the 2026-08-26 hook format: stamped STATE + a complete, uncapped
 MOVES ring with visited cells at other elevations blended in, and the

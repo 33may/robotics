@@ -3,7 +3,7 @@
 ## List Datasets
 
 ```bash
-python -m vbti.logic.dataset.check_utils ls
+python -m vla.logic.dataset.check_utils ls
 ```
 
 Lists available local LeRobot datasets from the default cache.
@@ -11,7 +11,7 @@ Lists available local LeRobot datasets from the default cache.
 ## Basic Info
 
 ```bash
-python -m vbti.logic.dataset.check_utils info <repo_id_or_path>
+python -m vla.logic.dataset.check_utils info <repo_id_or_path>
 ```
 
 Use this before training to check:
@@ -26,7 +26,7 @@ Use this before training to check:
 ## Camera Keys
 
 ```bash
-python -m vbti.logic.dataset.check_utils cameras <repo_id_or_path>
+python -m vla.logic.dataset.check_utils cameras <repo_id_or_path>
 ```
 
 Use this to verify the dataset has the same image keys that the config/inference will use.
@@ -34,7 +34,7 @@ Use this to verify the dataset has the same image keys that the config/inference
 ## Full Report
 
 ```bash
-python -m vbti.logic.dataset.check_utils report <repo_id_or_path>
+python -m vla.logic.dataset.check_utils report <repo_id_or_path>
 ```
 
 Full report checks metadata, schema, stats, camera keys, action/state ranges, episode lengths, and video information.
@@ -42,7 +42,7 @@ Full report checks metadata, schema, stats, camera keys, action/state ranges, ep
 ## Action Plots
 
 ```bash
-python -m vbti.logic.dataset.check_utils plot_actions <repo_id_or_path> --save=/tmp/actions.png
+python -m vla.logic.dataset.check_utils plot_actions <repo_id_or_path> --save=/tmp/actions.png
 ```
 
 Use this to detect:
@@ -56,7 +56,7 @@ Use this to detect:
 ## Compare Action Distributions
 
 ```bash
-python -m vbti.logic.dataset.check_utils compare_actions --datasets='{"real":"/path/real","sim":"/path/sim"}'
+python -m vla.logic.dataset.check_utils compare_actions --datasets='{"real":"/path/real","sim":"/path/sim"}'
 ```
 
 Use before mixing datasets. Similar schema does not mean similar action distribution.
@@ -64,9 +64,9 @@ Use before mixing datasets. Similar schema does not mean similar action distribu
 ## HDF5 Reports
 
 ```bash
-python -m vbti.logic.dataset.hdf5_utils info /path/to/file.hdf5
-python -m vbti.logic.dataset.hdf5_utils report /path/to/file.hdf5
-python -m vbti.logic.dataset.hdf5_utils view /path/to/file.hdf5 0 all --sensor all
+python -m vla.logic.dataset.hdf5_utils info /path/to/file.hdf5
+python -m vla.logic.dataset.hdf5_utils report /path/to/file.hdf5
+python -m vla.logic.dataset.hdf5_utils view /path/to/file.hdf5 0 all --sensor all
 ```
 
 The HDF5 report is used for simulation episodes before conversion to LeRobot.
@@ -93,9 +93,9 @@ data/demo_NNN/
 ## Depth Viewer
 
 ```bash
-python -m vbti.logic.dataset.depth_viewer raw /path/to/packed.png --out=/tmp/depth.png
-python -m vbti.logic.dataset.depth_viewer frame <repo_id> --episode 0 --frame 50 --out=/tmp/frame.png
-python -m vbti.logic.dataset.depth_viewer replay <repo_id> --episode 0
+python -m vla.logic.dataset.depth_viewer raw /path/to/packed.png --out=/tmp/depth.png
+python -m vla.logic.dataset.depth_viewer frame <repo_id> --episode 0 --frame 50 --out=/tmp/frame.png
+python -m vla.logic.dataset.depth_viewer replay <repo_id> --episode 0
 ```
 
 Defaults:

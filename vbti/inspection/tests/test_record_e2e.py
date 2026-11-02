@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """End-to-end: write -> validate -> catalog -> derive -> tamper-detect.
-The step-4 API layer proven as one chain. Run: p inspection/tests/test_record_e2e.py
+The step-4 API layer proven as one chain. Run: p vbti/inspection/tests/test_record_e2e.py
 """
 import pytest
 

@@ -2,7 +2,7 @@
 
 Writes evidence/traces.md (one block per frame and variant: numbers, the tool sequence
 with results, the final tree as text) and evidence/summary.json.
-Run:  p inspection/investigation/iwm/e02_agent_tree/traces.py
+Run:  p vbti/inspection/investigation/iwm/e02_agent_tree/traces.py
 """
 import json
 from pathlib import Path

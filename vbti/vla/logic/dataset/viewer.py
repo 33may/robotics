@@ -1,11 +1,11 @@
 """Augmented dataset viewer — plays episodes with detection overlays.
 
 Usage:
-    python -m vbti.logic.dataset.viewer eternalmay33/02_black_full_center_aug
-    python -m vbti.logic.dataset.viewer eternalmay33/02_black_full_center_aug --episode 5
+    python -m vla.logic.dataset.viewer eternalmay33/02_black_full_center_aug
+    python -m vla.logic.dataset.viewer eternalmay33/02_black_full_center_aug --episode 5
 
     # Overlay the filter output parquet (what actually gets used in training):
-    python -m vbti.logic.dataset.viewer eternalmay33/01_02_03_merged_may-sim \\
+    python -m vla.logic.dataset.viewer eternalmay33/01_02_03_merged_may-sim \\
         --parq /home/may33/.cache/vbti/detection_labels_final.parquet
 
 Controls:
@@ -34,7 +34,7 @@ import pandas as pd
 import torch
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
-from vbti.logic.dataset import resolve_dataset_path
+from vla.logic.dataset import resolve_dataset_path
 
 PHASE_NAMES = ["reach", "pregrasp", "grasp", "transport", "release"]
 PHASE_COLORS_BGR = {

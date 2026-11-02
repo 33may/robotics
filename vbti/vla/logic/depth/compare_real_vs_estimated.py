@@ -16,7 +16,7 @@ estimated depth (backfilled into v013/v014/v015) and real depth (newly
 captured) look visually consistent to the SmolVLA encoder.
 
 Usage:
-    conda run -n lerobot python -m vbti.logic.depth.compare_real_vs_estimated \\
+    conda run -n lerobot python -m vla.logic.depth.compare_real_vs_estimated \\
         --d405-dir <v016/data/d405_gripper_sample> \\
         --src-dataset eternalmay33/01_02_03_merged_may-sim_detection \\
         --out <v016/results/exp02b_real_vs_estimated>

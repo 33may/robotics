@@ -9,17 +9,17 @@ experiments/duck_cup_smolvla/vNNN/config.yaml
 ## Config CLI
 
 ```bash
-python -m vbti.logic.train.config_utils schema
-python -m vbti.logic.train.config_utils schema training
-python -m vbti.logic.train.config_utils default smolvla
-python -m vbti.logic.train.config_utils default groot
-python -m vbti.logic.train.config_utils show experiments/duck_cup_smolvla/v020/config.yaml
+python -m vla.logic.train.config_utils schema
+python -m vla.logic.train.config_utils schema training
+python -m vla.logic.train.config_utils default smolvla
+python -m vla.logic.train.config_utils default groot
+python -m vla.logic.train.config_utils show experiments/duck_cup_smolvla/v020/config.yaml
 ```
 
 Create with overrides:
 
 ```bash
-python -m vbti.logic.train.config_utils create smolvla \
+python -m vla.logic.train.config_utils create smolvla \
   --dataset.repo_id=eternalmay33/duck_cup_v020_all \
   --training.lr=1e-4 \
   --training.steps=50000 \

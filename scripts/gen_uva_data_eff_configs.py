@@ -27,14 +27,14 @@ adds a column, not rows, so per-episode frame counts are identical.
 
 Run once; review the generated config.yaml files; then launch the chain:
     python scripts/gen_uva_data_eff_configs.py
-    python -m vbti.logic.train.chain_remote --versions v025,v026,v027,v028,v029
+    python -m vla.logic.train.chain_remote --versions v025,v026,v027,v028,v029
 """
 from __future__ import annotations
 
 import yaml
 
-from vbti.logic.train.chain import EXP_ROOT, n_frames_for
-from vbti.logic.train.config_utils import TrainConfig
+from vla.logic.train.chain import EXP_ROOT, n_frames_for
+from vla.logic.train.config_utils import TrainConfig
 
 BASE_VERSION   = "v020"
 SOURCE_REPO    = "eternalmay33/duck_cup_v020_all"       # local — for frame counts

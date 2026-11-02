@@ -7,7 +7,7 @@ Dataset transforms should normally write a new dataset. Do not rename-over-sourc
 ## Aggregate Datasets
 
 ```bash
-python -m vbti.logic.dataset.loading_utils aggregate \
+python -m vla.logic.dataset.loading_utils aggregate \
   --datasets="eternalmay33/ds1,eternalmay33/ds2" \
   --output="eternalmay33/mix_name"
 ```
@@ -17,7 +17,7 @@ Use only when schemas match. If one dataset has depth and the other does not, ad
 ## Subsample Episodes
 
 ```bash
-python -m vbti.logic.dataset.subsample \
+python -m vla.logic.dataset.subsample \
   --src=eternalmay33/duck_cup_v020_all \
   --stride=4 \
   --dst=eternalmay33/duck_cup_v020_every4 \
@@ -35,7 +35,7 @@ Used for data-efficiency sweeps, e.g. every 16th/8th/4th/2nd episode.
 ## Strip Feature
 
 ```bash
-python -m vbti.logic.dataset.strip_feature \
+python -m vla.logic.dataset.strip_feature \
   --src=<repo_id> \
   --dst=<new_repo_id> \
   --feature=observation.images.gripper_depth
@@ -53,7 +53,7 @@ Use when creating an RGB-only comparison dataset from a depth dataset.
 ## Add Zero Depth Placeholder
 
 ```bash
-python -m vbti.logic.dataset.add_zero_depth_turbo \
+python -m vla.logic.dataset.add_zero_depth_turbo \
   --src=<no_depth_repo> \
   --dst=<padded_repo> \
   --reference=<depth_repo> \
@@ -68,19 +68,19 @@ Purpose: make a no-depth dataset schema-compatible with a depth dataset. The fea
 Generate detections:
 
 ```bash
-python -m vbti.logic.detection.process_dataset <repo_id_or_path>
+python -m vla.logic.detection.process_dataset <repo_id_or_path>
 ```
 
 Generate phases:
 
 ```bash
-python -m vbti.logic.detection.phases <repo_id_or_path>
+python -m vla.logic.detection.phases <repo_id_or_path>
 ```
 
 Bake features:
 
 ```bash
-python -m vbti.logic.dataset.augment <repo_id_or_path> \
+python -m vla.logic.dataset.augment <repo_id_or_path> \
   --augmentations detection phase \
   -o <output_repo_id> \
   --cameras left right top gripper
@@ -107,8 +107,8 @@ Warning: detection augmentation changes `observation.state` from 6D to 22D. Only
 After any transform:
 
 ```bash
-python -m vbti.logic.dataset.check_utils report <new_repo_id>
-python -m vbti.logic.dataset.check_utils cameras <new_repo_id>
+python -m vla.logic.dataset.check_utils report <new_repo_id>
+python -m vla.logic.dataset.check_utils cameras <new_repo_id>
 ```
 
 For state-changing transforms, inspect action/state dimensions and stats.

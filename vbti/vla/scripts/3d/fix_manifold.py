@@ -155,12 +155,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--input",
-        default="vbti/data/so_v1/assets/duck/object_0.glb",
+        default="vbti/vla/data/so_v1/assets/duck/object_0.glb",
         help="Input GLB mesh path",
     )
     parser.add_argument(
         "--output",
-        default="vbti/data/so_v1/assets/duck/object_0_fixed.glb",
+        default="vbti/vla/data/so_v1/assets/duck/object_0_fixed.glb",
         help="Output GLB mesh path",
     )
 

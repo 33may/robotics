@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Loop v2 composition root. Design: inspection/docs/2026-08-20-ui-driven-loop-design.md.
+"""Loop v2 composition root. Design: vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md.
 
-    p inspection/run/app.py run --name=box1 --object=box      # -> data/runs/DDMM-box1
-    p inspection/run/app.py collect --name=box1 --object=box  # -> data/datasets/DDMM-box1
-    p inspection/run/app.py teach                             # save survey pose
+    p vbti/inspection/run/app.py run --name=box1 --object=box      # -> data/runs/DDMM-box1
+    p vbti/inspection/run/app.py collect --name=box1 --object=box  # -> data/datasets/DDMM-box1
+    p vbti/inspection/run/app.py teach                             # save survey pose
 
 `--outdir` still works on both and overrides the default; without it, `run`
 lands in data/runs/ and `collect` in data/datasets/ (the runs-vs-data split,
@@ -71,7 +71,7 @@ def _open_ui(outdir, port, bus_port, no_window, gui):
     The native window is a CHILD PROCESS, not a thread: pywebview refuses to
     start off the main thread, and this process's main thread is the
     dispatcher (and the only thread that may receive signals). So the window
-    gets a main thread of its own — `inspection/ui/app.py serve`, which serves
+    gets a main thread of its own — `vbti/inspection/ui/app.py serve`, which serves
     the built frontend and dials this process's bus over the socket like any
     other client. It owns no run state; killing it, or closing the window,
     cannot touch the run.
@@ -277,7 +277,7 @@ def run(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = None,
     if not pf["go"]:
         raise SystemExit(f"preflight NO-GO: {pf}")
     if not SURVEY_POSE_FILE.exists():
-        raise SystemExit("no survey pose — run `p inspection/run/app.py teach`")
+        raise SystemExit("no survey pose — run `p vbti/inspection/run/app.py teach`")
     if not _require_build():
         raise SystemExit(1)
     q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])
@@ -448,7 +448,7 @@ def collect(outdir: str | None = None, ip: str = ROBOT_IP, r: float | None = Non
     if not pf["go"]:
         raise SystemExit(f"preflight NO-GO: {pf}")
     if not SURVEY_POSE_FILE.exists():
-        raise SystemExit("no survey pose — run `p inspection/run/app.py teach`")
+        raise SystemExit("no survey pose — run `p vbti/inspection/run/app.py teach`")
     if not _require_build():
         raise SystemExit(1)
     q_survey = np.array(json.loads(SURVEY_POSE_FILE.read_text())["q_rad"])

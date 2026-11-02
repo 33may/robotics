@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The evidence agent and the answer-time hunt flow.
-Run: p inspection/tests/test_evidence.py
+Run: p vbti/inspection/tests/test_evidence.py
 """
 import tempfile
 from pathlib import Path

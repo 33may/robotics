@@ -2,10 +2,10 @@
 """HDF5 dataset inspection, viewing and reporting utilities.
 
 Usage:
-    python -m vbti.logic.dataset.hdf5_utils info /path/to/file.hdf5
-    python -m vbti.logic.dataset.hdf5_utils view /path/to/file.hdf5 0 cam_top
-    python -m vbti.logic.dataset.hdf5_utils view /path/to/file.hdf5 0 all --sensor all
-    python -m vbti.logic.dataset.hdf5_utils report /path/to/file.hdf5
+    python -m vla.logic.dataset.hdf5_utils info /path/to/file.hdf5
+    python -m vla.logic.dataset.hdf5_utils view /path/to/file.hdf5 0 cam_top
+    python -m vla.logic.dataset.hdf5_utils view /path/to/file.hdf5 0 all --sensor all
+    python -m vla.logic.dataset.hdf5_utils report /path/to/file.hdf5
 """
 import math
 import os

@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-sys.path.insert(0, str(Path.home() / "projects/robotics/inspection/investigation"))
+sys.path.insert(0, str(Path.home() / "projects/robotics/vbti/inspection/investigation"))
 from ray_views.ray_replay import (box_aabb, box_world, last_box,
                                   resolve_step, run_dir_for)
 from inspection.motion.ik import UR5eIK

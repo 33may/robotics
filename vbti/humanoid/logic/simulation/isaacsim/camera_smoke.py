@@ -7,7 +7,7 @@ target cube ahead of the head camera, renders, saves RGB + depth per camera, and
   - horizontal FOV == D435i (69°)
   - depth renders with finite returns on the target
 
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/camera_smoke.py
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/camera_smoke.py
     conda run -n isaac python .../camera_smoke.py --out /tmp/oli_cam --res 640 360 --gui
 """
 

@@ -8,7 +8,7 @@ ray into that mesh (Open3D RaycastingScene) and shows:
   - the crop of the best such step (most face-on) with the point marked
 Step cameras can be drawn as frustums.
 
-Run:  p inspection/investigation/iwm/e04_voxel_scene/viewer.py [--run 2209-compute-ray-demo5]
+Run:  p vbti/inspection/investigation/iwm/e04_voxel_scene/viewer.py [--run 2209-compute-ray-demo5]
       [--scope scene] [--port 8082]
 """
 import argparse

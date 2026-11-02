@@ -10,11 +10,11 @@ docs/research/view-planning/completion/GUIDE.md for the loop protocol.
 HARD RULE: nothing in this file may read `truth/box.json`. Priors must
 come from the CLOUD (e.g. `min_yaw_aabb`), never from the ground truth.
 
-`boxguard` graduated to `inspection/fit/box.py` (the shipped cuboid
+`boxguard` graduated to `vbti/inspection/fit/box.py` (the shipped cuboid
 guard); it stays registered here for the bench.
 
-    p inspection/viewplan/complete.py list
-    p inspection/viewplan/complete.py show --run 0809-box6 --step 26 --algo poisson20
+    p vbti/inspection/viewplan/complete.py list
+    p vbti/inspection/viewplan/complete.py show --run 0809-box6 --step 26 --algo poisson20
 """
 from __future__ import annotations
 

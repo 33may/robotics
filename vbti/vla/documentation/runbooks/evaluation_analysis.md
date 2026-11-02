@@ -5,32 +5,32 @@ Use after one or more protocol sessions are complete.
 ## 1. List Sessions
 
 ```bash
-python -m vbti.logic.inference.eval_helpers ls --detailed
+python -m vla.logic.inference.eval_helpers ls --detailed
 ```
 
 ## 2. Inspect Latest
 
 ```bash
-python -m vbti.logic.inference.eval_helpers info latest
+python -m vla.logic.inference.eval_helpers info latest
 ```
 
 ## 3. Inspect A Specific Session
 
 ```bash
-python -m vbti.logic.inference.eval_helpers info /absolute/path/to/session
+python -m vla.logic.inference.eval_helpers info /absolute/path/to/session
 ```
 
 Or shorthand if supported:
 
 ```bash
-python -m vbti.logic.inference.eval_helpers info v020-150k
+python -m vla.logic.inference.eval_helpers info v020-150k
 ```
 
 ## 4. Group By Tags
 
 ```bash
-python -m vbti.logic.inference.eval_helpers info latest --group_by=scene
-python -m vbti.logic.inference.eval_helpers info latest --group_by=target_color
+python -m vla.logic.inference.eval_helpers info latest --group_by=scene
+python -m vla.logic.inference.eval_helpers info latest --group_by=target_color
 ```
 
 Available group keys depend on protocol trial tags.
@@ -38,13 +38,13 @@ Available group keys depend on protocol trial tags.
 ## 5. Open Trial Video
 
 ```bash
-python -m vbti.logic.inference.eval_helpers play latest 3
+python -m vla.logic.inference.eval_helpers play latest 3
 ```
 
 ## 6. Render Heatmap
 
 ```bash
-python -m vbti.logic.inference.eval_render heatmap /absolute/path/to/session --output=/tmp/eval_heatmap.png
+python -m vla.logic.inference.eval_render heatmap /absolute/path/to/session --output=/tmp/eval_heatmap.png
 ```
 
 ## 7. Write Result Summary

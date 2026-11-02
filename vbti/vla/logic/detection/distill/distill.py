@@ -2,16 +2,16 @@
 
 Usage:
     # Cache all frames (one-time, ~80GB on disk):
-    python -m vbti.logic.detection.distill cache
+    python -m vla.logic.detection.distill cache
 
     # Train a single camera:
-    python -m vbti.logic.detection.distill train --cam top
+    python -m vla.logic.detection.distill train --cam top
 
     # Train all cameras in sequence:
-    python -m vbti.logic.detection.distill train --all
+    python -m vla.logic.detection.distill train --all
 
     # Evaluate:
-    python -m vbti.logic.detection.distill eval --cam top --checkpoint PATH
+    python -m vla.logic.detection.distill eval --cam top --checkpoint PATH
 """
 from __future__ import annotations
 
@@ -34,8 +34,8 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from vbti.logic.detection.distill.distill_model import DistilledDetector, count_params
-from vbti.logic.detection.process_dataset import (
+from vla.logic.detection.distill.distill_model import DistilledDetector, count_params
+from vla.logic.detection.process_dataset import (
     VideoReader,
     get_video_path,
     load_dataset_meta,

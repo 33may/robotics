@@ -7,7 +7,7 @@ mixed chunks. Episode indices are reindexed 0..M-1 in the output.
 
 Usage
 -----
-    python -m vbti.logic.dataset.subsample \\
+    python -m vla.logic.dataset.subsample \\
         --src=eternalmay33/duck_cup_v020_all \\
         --stride=4 \\
         --dst=eternalmay33/duck_cup_v020_every4

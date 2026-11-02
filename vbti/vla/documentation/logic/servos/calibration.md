@@ -20,14 +20,14 @@ Known caveat: `quick_recalib.py` references `so101_follower`, while `profiles.py
 ## Profile Commands
 
 ```bash
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles show frodeo-test
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
-python -m vbti.logic.servos.profiles export frodeo-test
-python -m vbti.logic.servos.profiles register my-new --description "New calibration"
-python -m vbti.logic.servos.profiles sync
-python -m vbti.logic.servos.profiles activate frodeo-test
-python -m vbti.logic.servos.profiles delete old-profile
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles show frodeo-test
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.profiles export frodeo-test
+python -m vla.logic.servos.profiles register my-new --description "New calibration"
+python -m vla.logic.servos.profiles sync
+python -m vla.logic.servos.profiles activate frodeo-test
+python -m vla.logic.servos.profiles delete old-profile
 ```
 
 `delete` removes registry/cache/backup entries. Do not use it as cleanup unless explicitly intended.
@@ -47,7 +47,7 @@ These values define how raw Feetech encoder ticks become the joint degrees used 
 ## Interactive Calibration
 
 ```bash
-python -m vbti.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=sim_accurate --base=frodeo-test
+python -m vla.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=sim_accurate --base=frodeo-test
 ```
 
 Main controls:
@@ -82,9 +82,9 @@ python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/quick_recali
 Typical sequence:
 
 ```bash
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
 python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/quick_recalib.py --port=/dev/ttyACM1 --old_profile=frodeo-test --new_profile=sim_accurate
-python -m vbti.logic.servos.profiles load sim_accurate --port /dev/ttyACM1
+python -m vla.logic.servos.profiles load sim_accurate --port /dev/ttyACM1
 ```
 
 ## Calibration And Sim-Real

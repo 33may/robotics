@@ -6,7 +6,7 @@ sensors the deploy uses, comparing against the analytic ground truth. Confirms t
 deploy's IMU convention and gives the reference to align Isaac against. Runs in `limx`
 (mujoco 3.2.3):
 
-    conda run -n limx python humanoid/logic/simulation/mujoco/imu_probe.py
+    conda run -n limx python vbti/humanoid/logic/simulation/mujoco/imu_probe.py
 """
 
 from __future__ import annotations

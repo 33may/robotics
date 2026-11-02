@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """validate_run — per-file schema + cross-refs + manifest + crash-on-read.
-Run: p inspection/tests/test_record_validate.py
+Run: p vbti/inspection/tests/test_record_validate.py
 """
 import json
 import os

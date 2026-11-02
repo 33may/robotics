@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """publish_decomposition: boxguard fit -> orange fit/ box in the description;
 abstain clears it; unknown method/kind skipped without raising.
-Run: p inspection/tests/test_publisher_decomposition.py"""
+Run: p vbti/inspection/tests/test_publisher_decomposition.py"""
 import numpy as np
 from inspection.ui.publisher import (
     FIT_COLOR,

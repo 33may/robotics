@@ -17,7 +17,7 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from vbti.logic.detection.process_dataset import VideoReader, get_video_path, load_dataset_meta
+from vla.logic.detection.process_dataset import VideoReader, get_video_path, load_dataset_meta
 
 DATASET = Path("/home/may33/.cache/huggingface/lerobot/eternalmay33/01_02_03_merged_may-sim")
 CLEAN_PARQUET = Path("/home/may33/.cache/vbti/detection_labels_clean.parquet")

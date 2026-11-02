@@ -11,12 +11,12 @@ Contains protocol JSON files, render/edit tools, and generators.
 ## Protocol Tools
 
 ```bash
-python -m vbti.logic.inference.protocols.protocols render id_scale_60
-python -m vbti.logic.inference.protocols.protocols verify id_scale_60
-python -m vbti.logic.inference.protocols.protocols edit id_scale_60
-python -m vbti.logic.inference.protocols.render_protocol dual_cup_60
-python -m vbti.logic.inference.protocols.generators.make_checkpoint_sweep
-python -m vbti.logic.inference.protocols.generators.make_dual_cup_60
+python -m vla.logic.inference.protocols.protocols render id_scale_60
+python -m vla.logic.inference.protocols.protocols verify id_scale_60
+python -m vla.logic.inference.protocols.protocols edit id_scale_60
+python -m vla.logic.inference.protocols.render_protocol dual_cup_60
+python -m vla.logic.inference.protocols.generators.make_checkpoint_sweep
+python -m vla.logic.inference.protocols.generators.make_dual_cup_60
 ```
 
 Outputs:

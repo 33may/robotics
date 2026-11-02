@@ -2,12 +2,12 @@
 """Open review workspaces (.rrd) in the native Rerun viewer.
 
 The workspaces are built by `workspace.py` into the durable derived tree,
-`inspection/data/derived/<run>/rrd/<run>.rrd` — gitignored, regeneratable,
+`vbti/inspection/data/derived/<run>/rrd/<run>.rrd` — gitignored, regeneratable,
 sitting next to the step clouds and fit JSONs it was built from. This is
 just the front door:
 
-    p inspection/record/rr/view.py list
-    p inspection/record/rr/view.py show 2408-cup3
+    p vbti/inspection/record/rr/view.py list
+    p vbti/inspection/record/rr/view.py show 2408-cup3
 
 /tmp/rrd is still searched, second, so workspaces built before the move
 (and any scratch file a test rig drops there) still open by name.

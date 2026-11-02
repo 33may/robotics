@@ -50,8 +50,8 @@ from pathlib import Path
 
 import numpy as np
 
-from vbti.logic.inference import eval_engine
-from vbti.logic.inference.async_chunk_runner import AsyncChunkRunner
+from vla.logic.inference import eval_engine
+from vla.logic.inference.async_chunk_runner import AsyncChunkRunner
 
 JOINT_NAMES = eval_engine.JOINT_NAMES
 

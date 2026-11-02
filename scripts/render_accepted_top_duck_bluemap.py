@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from vbti.logic.dataset import resolve_dataset_path
+from vla.logic.dataset import resolve_dataset_path
 
 SEED = 42
 N_SAMPLES = 50

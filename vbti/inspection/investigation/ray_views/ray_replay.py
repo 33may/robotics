@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Replay bench for ray views — the Stage A gate (design:
-inspection/docs/2026-09-17-ray-views-design.md).
+vbti/inspection/docs/2026-09-17-ray-views-design.md).
 
 What it answers, offline, before any of this touches the machine:
 
@@ -61,14 +61,14 @@ mean, which is where `machine._cell_map`/`collect._default_planner` anchor
 them (`cell_anchor`). Boxguard mode keeps the box centre, unchanged — it is
 the committed Stage A record, not a thing to re-measure.
 
-    p inspection/investigation/ray_views/ray_replay.py --run 1709-cam-ai-demo1
-    p inspection/investigation/ray_views/ray_replay.py --run 1509-cam-ai_bench5 --margin 0.04
-    p inspection/investigation/ray_views/ray_replay.py --run all
-    p inspection/investigation/ray_views/ray_replay.py --run all --world guard
+    p vbti/inspection/investigation/ray_views/ray_replay.py --run 1709-cam-ai-demo1
+    p vbti/inspection/investigation/ray_views/ray_replay.py --run 1509-cam-ai_bench5 --margin 0.04
+    p vbti/inspection/investigation/ray_views/ray_replay.py --run all
+    p vbti/inspection/investigation/ray_views/ray_replay.py --run all --world guard
 
 Writes /tmp/ray_views/<run>/comparison.png (+ .../timings.txt) and prints
 the per-view table plus the measured-vs-estimated timing table. It never
-writes a byte into inspection/data/runs/.
+writes a byte into vbti/inspection/data/runs/.
 """
 import time
 from pathlib import Path

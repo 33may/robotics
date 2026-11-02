@@ -6,7 +6,7 @@ material the point-grid strategies filter; it shows why a plain metal
 surface yields blobs and a port yields clean parts.
 
 Output: evidence/c5.6_points3.png
-Run:    p inspection/investigation/iwm/e01_all_masks/points3.py
+Run:    p vbti/inspection/investigation/iwm/e01_all_masks/points3.py
 """
 import numpy as np
 from PIL import Image, ImageDraw

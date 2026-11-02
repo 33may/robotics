@@ -11,9 +11,9 @@ Honest about what it is: framing is exact, sharpness is pessimistic — a real
 capture at the shorter distance resolves more detail than this upscaled crop,
 never less. So if a candidate radius looks good here, the real one looks better.
 
-    p inspection/investigation/view_framing/frame_preview.py --run 2408-seeded
-    p inspection/investigation/view_framing/frame_preview.py --run 2408-seeded --fill 0.60
-    p inspection/investigation/view_framing/frame_preview.py --run 2408-seeded --rule upright
+    p vbti/inspection/investigation/view_framing/frame_preview.py --run 2408-seeded
+    p vbti/inspection/investigation/view_framing/frame_preview.py --run 2408-seeded --fill 0.60
+    p vbti/inspection/investigation/view_framing/frame_preview.py --run 2408-seeded --rule upright
 """
 import argparse
 import json

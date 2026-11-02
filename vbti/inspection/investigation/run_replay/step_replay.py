@@ -54,13 +54,13 @@ OpenMP-parallel, seeding does not make it repeatable), and only there does
 exact. That is not fitting to the answer: `fused/cloud.npy` is never an
 input, only the verdict.
 
-    p inspection/investigation/run_replay/step_replay.py 0809-box2
-    p inspection/investigation/run_replay/step_replay.py --run 0809-box2
-    p inspection/investigation/run_replay/step_replay.py --run 0809-box2 --nopin
+    p vbti/inspection/investigation/run_replay/step_replay.py 0809-box2
+    p vbti/inspection/investigation/run_replay/step_replay.py --run 0809-box2
+    p vbti/inspection/investigation/run_replay/step_replay.py --run 0809-box2 --nopin
 
 Everything it writes goes to /tmp/step_replay/<run>/ — step_NNN.ply/.npy
 (NNN is the steps/ dir the step fused), the three renders, summary.json.
-Copy that into inspection/data/derived/<run>/steps/ to make it durable —
+Copy that into vbti/inspection/data/derived/<run>/steps/ to make it durable —
 `record/rr/workspace.py` reads the derived tree first, /tmp as fallback.
 """
 import json

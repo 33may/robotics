@@ -19,13 +19,13 @@ controller (pendant must be in Remote Control) but moves nothing.
 Run with the inspection app STOPPED — its own recv is a confound.
 
 Usage (robo env active, from repo root):
-    p inspection/motion/rtde_soak.py recv                # baseline, 10 min
-    p inspection/motion/rtde_soak.py recv --minutes=3
-    p inspection/motion/rtde_soak.py ctrl                # + RTDEControl, 5 repeats
-    p inspection/motion/rtde_soak.py io_leaked           # + leaked RTDEIO (app's bug)
-    p inspection/motion/rtde_soak.py preflight_churn     # + recv/dashboard churn
-    p inspection/motion/rtde_soak.py full_mix            # exact UR5eArm.__init__ order
-    p inspection/motion/rtde_soak.py recv --frequency=125   # H3 probe, any scenario
+    p vbti/inspection/motion/rtde_soak.py recv                # baseline, 10 min
+    p vbti/inspection/motion/rtde_soak.py recv --minutes=3
+    p vbti/inspection/motion/rtde_soak.py ctrl                # + RTDEControl, 5 repeats
+    p vbti/inspection/motion/rtde_soak.py io_leaked           # + leaked RTDEIO (app's bug)
+    p vbti/inspection/motion/rtde_soak.py preflight_churn     # + recv/dashboard churn
+    p vbti/inspection/motion/rtde_soak.py full_mix            # exact UR5eArm.__init__ order
+    p vbti/inspection/motion/rtde_soak.py recv --frequency=125   # H3 probe, any scenario
 """
 import gc
 import threading
@@ -215,7 +215,7 @@ def full_mix(ip=ROBOT_IP, hold_s=120.0, frequency=None, repeats=5):
 def ui_launch(ip=ROBOT_IP, hold_s=60.0, frequency=None, repeats=3):
     """E6: does launching the UI window (Chromium, software Vulkan) kill recv?
 
-    Replays the app's exact child spawn: `inspection/ui/app.py serve`. The
+    Replays the app's exact child spawn: `vbti/inspection/ui/app.py serve`. The
     window will appear on screen each repeat and be closed again — it dials
     a bus that isn't there, which is irrelevant to the CPU-spike question.
     """

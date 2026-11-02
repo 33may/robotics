@@ -19,13 +19,13 @@ It contains host, user, password, Python/env paths, remote data root, and remote
 Push dataset:
 
 ```bash
-python -m vbti.logic.train.remote push-data --repo_id=eternalmay33/duck_cup_v020_all
+python -m vla.logic.train.remote push-data --repo_id=eternalmay33/duck_cup_v020_all
 ```
 
 Launch one version:
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=v020 \
   --run_name=lerobot_output_r1
@@ -34,7 +34,7 @@ python -m vbti.logic.train.remote train \
 Dry run:
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=v020 \
   --run_name=lerobot_output_r1 \
@@ -44,7 +44,7 @@ python -m vbti.logic.train.remote train \
 Resume:
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=v020 \
   --run_name=lerobot_output_r2 \
@@ -54,16 +54,16 @@ python -m vbti.logic.train.remote train \
 Status/logs:
 
 ```bash
-python -m vbti.logic.train.remote status --experiment=duck_cup_smolvla --version=v020
-python -m vbti.logic.train.remote logs --experiment=duck_cup_smolvla --version=v020 --lines=100
+python -m vla.logic.train.remote status --experiment=duck_cup_smolvla --version=v020
+python -m vla.logic.train.remote logs --experiment=duck_cup_smolvla --version=v020 --lines=100
 ```
 
 Pull:
 
 ```bash
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000 --pretrained_only=true
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000 --pretrained_only=true
 ```
 
 ## What `train` Does

@@ -31,7 +31,7 @@ VECTORS = ROOT / "index" / "vectors.npz"
 TOKEN_LIMIT = 500
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
-# Repo root: ROOT is humanoid/docs/oli-corpus; repo root is two parents up.
+# ROOT is vbti/humanoid/docs/oli-corpus; REPO_ROOT (the import root vbti/) is two parents up.
 REPO_ROOT = ROOT.parents[2]
 
 # Source roots for the structured extractors. Each maps doc_id → vendored dir.

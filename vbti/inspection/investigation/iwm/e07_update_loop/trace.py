@@ -6,8 +6,8 @@ capture arrives -> depth fused into V -> agentic segmentation (e02 trace) -> rec
 "before" (the state the capture started from) or "after" (the committed state).
 
 Sources (read-only):
-  e02  inspection/data/iwm/e02_agent_tree/<fid>/full/{tree_before,tree_final}.txt, store/
-  e05  inspection/data/iwm/e05_parts_in_v/<run>/<mm>mm/keep_agent/after_<fid>/{parts.json,rows.npz,store/}
+  e02  vbti/inspection/data/iwm/e02_agent_tree/<fid>/full/{tree_before,tree_final}.txt, store/
+  e05  vbti/inspection/data/iwm/e05_parts_in_v/<run>/<mm>mm/keep_agent/after_<fid>/{parts.json,rows.npz,store/}
 The agent's per-turn thinking is not in the stores (only tool calls and the final reply's
 evidence/reasoning), so the trace shows what was logged, nothing more.
 """

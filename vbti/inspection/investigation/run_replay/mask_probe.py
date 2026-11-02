@@ -16,9 +16,9 @@ stored upright; `depth_raw` and `T_base_cam` are raw. The loop works in RAW
 orientation throughout, so this un-rotates the stored pair to reconstruct the
 `cap` dict a rig would have returned.
 
-    p inspection/investigation/run_replay/mask_probe.py --run 2408-cup2
-    p inspection/investigation/run_replay/mask_probe.py --run 2408-cup2 --save /tmp/masks
-    p inspection/investigation/run_replay/mask_probe.py --run 2408-cup2 --no-segment
+    p vbti/inspection/investigation/run_replay/mask_probe.py --run 2408-cup2
+    p vbti/inspection/investigation/run_replay/mask_probe.py --run 2408-cup2 --save /tmp/masks
+    p vbti/inspection/investigation/run_replay/mask_probe.py --run 2408-cup2 --no-segment
 """
 import argparse
 import json

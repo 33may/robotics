@@ -1,7 +1,7 @@
 """Export Grounding DINO to ONNX for fast inference.
 
 Usage:
-    python -m vbti.logic.detection.export_onnx [--output path/to/model.onnx]
+    python -m vla.logic.detection.export_onnx [--output path/to/model.onnx]
 
 Exports the IDEA-Research/grounding-dino-base model with a fixed text prompt
 ("a blue rubber duck. a red cup.") baked in. The exported model takes only
@@ -20,7 +20,7 @@ import onnx
 import torch
 from transformers import AutoModelForZeroShotObjectDetection, AutoProcessor
 
-from vbti.logic.detection.detect import MODEL_ID, TEXT_PROMPT, DEFAULT_ONNX_PATH
+from vla.logic.detection.detect import MODEL_ID, TEXT_PROMPT, DEFAULT_ONNX_PATH
 
 # Image size for the cameras used in this project (480x640 and 240x320 both
 # produce 800x1066 after the HF processor's resize+pad). The ONNX model is

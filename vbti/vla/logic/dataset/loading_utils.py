@@ -305,7 +305,7 @@ def _aggregate_cli(
         output_root: output directory (default: HF cache)
 
     Example:
-        python -m vbti.logic.dataset.loading_utils aggregate \\
+        python -m vla.logic.dataset.loading_utils aggregate \\
             --datasets="eternalmay33/08-merged_trimmed,eternalmay33/so101_real_pick_place_50eps_trimmed,eternalmay33/so101_sim_pick_place_130eps" \\
             --output="eternalmay33/duck_cup_v005_mix"
     """

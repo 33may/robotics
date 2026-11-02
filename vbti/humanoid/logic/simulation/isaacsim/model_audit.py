@@ -6,7 +6,7 @@ total/per-link mass, joint armature, and the FOOT COLLIDER geometry (type/approx
 extent) — so we compare against the MJCF reference (total 54.05 kg, joint damping 0.01,
 foot = box 0.13×0.047×0.01 m + heel/center/tip contact spheres).
 
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/model_audit.py
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/model_audit.py
 """
 
 from __future__ import annotations

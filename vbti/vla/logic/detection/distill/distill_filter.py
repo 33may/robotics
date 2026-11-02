@@ -41,7 +41,7 @@ V6 filters (2026-04-20):
 Priority A > B > E. Each (cam, obj, frame) row gets at most one reason code.
 
 Usage:
-    python -m vbti.logic.detection.distill_filter \\
+    python -m vla.logic.detection.distill_filter \\
         --dataset eternalmay33/01_02_03_merged_may-sim \\
         --output /home/may33/.cache/vbti/detection_labels_clean.parquet \\
         --gallery-dir "/path/to/data_analysis/"
@@ -63,9 +63,9 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
-from vbti.logic.dataset import resolve_dataset_path
-from vbti.logic.detection.phases import PHASE_NAMES, detect_phases_episode
-from vbti.logic.detection.process_dataset import (
+from vla.logic.dataset import resolve_dataset_path
+from vla.logic.detection.phases import PHASE_NAMES, detect_phases_episode
+from vla.logic.detection.process_dataset import (
     VideoReader,
     get_video_path,
     load_dataset_meta,

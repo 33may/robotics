@@ -10,7 +10,7 @@ sum): visible share of the part's rows, occluded share, off-frame share, centrin
 incidence angle, pixel extent, distance. Ranking: visible >= 0.9 first, then incidence, then
 centring.
 
-Run:  p inspection/investigation/iwm/e05_parts_in_v/views.py --run 2209-compute-ray-demo5 --mm 1 [--mode agent]
+Run:  p vbti/inspection/investigation/iwm/e05_parts_in_v/views.py --run 2209-compute-ray-demo5 --mm 1 [--mode agent]
 Outputs  evidence/views.json, evidence/sets.json, evidence/queries.json,
          evidence/view_<run>_<part>.jpg, evidence/pivot_<run>_<part>.jpg, evidence/set_<run>_<name>.jpg
 """

@@ -25,7 +25,7 @@ There are two training paths:
 | Local/custom engine | Local experiments and backend development | Runs `logic/train/engine.py` and backend classes. |
 | Remote LeRobot path | Main SmolVLA training path | Builds a `lerobot-train` command and launches it remotely in `tmux`. |
 
-Important: `python -m vbti.logic.train.remote train` does not run `SmolVLABackend`. It builds a `lerobot-train` command from the VBTI config. If a change must affect remote training, bake it into the dataset or patch the LeRobot fork.
+Important: `python -m vla.logic.train.remote train` does not run `SmolVLABackend`. It builds a `lerobot-train` command from the VBTI config. If a change must affect remote training, bake it into the dataset or patch the LeRobot fork.
 
 ## Config Schema
 
@@ -84,17 +84,17 @@ If `training.epochs` is set, `engine._build_lerobot_command()` derives steps fro
 ## Config Commands
 
 ```bash
-python -m vbti.logic.train.config_utils schema
-python -m vbti.logic.train.config_utils schema training
-python -m vbti.logic.train.config_utils default smolvla
-python -m vbti.logic.train.config_utils default groot
-python -m vbti.logic.train.config_utils show /home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/config.yaml
+python -m vla.logic.train.config_utils schema
+python -m vla.logic.train.config_utils schema training
+python -m vla.logic.train.config_utils default smolvla
+python -m vla.logic.train.config_utils default groot
+python -m vla.logic.train.config_utils show /home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v020/config.yaml
 ```
 
 Create config with overrides:
 
 ```bash
-python -m vbti.logic.train.config_utils create smolvla \
+python -m vla.logic.train.config_utils create smolvla \
   --dataset.repo_id=eternalmay33/duck_cup_v020_all \
   --training.lr=1e-4 \
   --training.steps=50000 \
@@ -104,18 +104,18 @@ python -m vbti.logic.train.config_utils create smolvla \
 ## Local Engine Commands
 
 ```bash
-python -m vbti.logic.train.engine status
-python -m vbti.logic.train.engine train --config=/path/to/config.yaml --experiment=duck_cup_smolvla
-python -m vbti.logic.train.engine train --experiment=duck_cup_smolvla --version=v020
-python -m vbti.logic.train.engine train --resume
-python -m vbti.logic.train.engine train --resume --reset_lr
+python -m vla.logic.train.engine status
+python -m vla.logic.train.engine train --config=/path/to/config.yaml --experiment=duck_cup_smolvla
+python -m vla.logic.train.engine train --experiment=duck_cup_smolvla --version=v020
+python -m vla.logic.train.engine train --resume
+python -m vla.logic.train.engine train --resume --reset_lr
 ```
 
 Generate/print LeRobot CLI:
 
 ```bash
-python -m vbti.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --version=v020 --dry_run
-python -m vbti.logic.train.engine train-lerobot
+python -m vla.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --version=v020 --dry_run
+python -m vla.logic.train.engine train-lerobot
 ```
 
 ## Remote Training Commands
@@ -123,13 +123,13 @@ python -m vbti.logic.train.engine train-lerobot
 Push dataset:
 
 ```bash
-python -m vbti.logic.train.remote push-data --repo_id=eternalmay33/duck_cup_v020_all
+python -m vla.logic.train.remote push-data --repo_id=eternalmay33/duck_cup_v020_all
 ```
 
 Launch training:
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=v020 \
   --run_name=lerobot_output_r1
@@ -138,7 +138,7 @@ python -m vbti.logic.train.remote train \
 Resume from checkpoint:
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=v020 \
   --run_name=lerobot_output_r2 \
@@ -148,7 +148,7 @@ python -m vbti.logic.train.remote train \
 Dry run:
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=v020 \
   --run_name=lerobot_output_r1 \
@@ -158,11 +158,11 @@ python -m vbti.logic.train.remote train \
 Monitor/pull:
 
 ```bash
-python -m vbti.logic.train.remote status --experiment=duck_cup_smolvla --version=v020
-python -m vbti.logic.train.remote logs --experiment=duck_cup_smolvla --version=v020 --lines=100
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000 --pretrained_only=true
+python -m vla.logic.train.remote status --experiment=duck_cup_smolvla --version=v020
+python -m vla.logic.train.remote logs --experiment=duck_cup_smolvla --version=v020 --lines=100
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000 --pretrained_only=true
 ```
 
 Remote `train()` defaults:
@@ -177,15 +177,15 @@ Remote `train()` defaults:
 Local polling chain:
 
 ```bash
-python -m vbti.logic.train.chain --versions v021,v022,v023,v024
-python -m vbti.logic.train.chain --versions v021,v022,v023,v024 --run_name=lerobot_output_r1 --poll_interval=300
+python -m vla.logic.train.chain --versions v021,v022,v023,v024
+python -m vla.logic.train.chain --versions v021,v022,v023,v024 --run_name=lerobot_output_r1 --poll_interval=300
 ```
 
 Remote chain script:
 
 ```bash
-python -m vbti.logic.train.chain_remote --versions v021,v022,v023
-python -m vbti.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name=lerobot_output_r4_aux0003 --wait_for_session uva_bake
+python -m vla.logic.train.chain_remote --versions v021,v022,v023
+python -m vla.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name=lerobot_output_r4_aux0003 --wait_for_session uva_bake
 ```
 
 The remote chain creates one remote script and launches one `tmux` chain. Use this for long sequential sweeps when mid-run intervention is unlikely.

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Build the viewplan review workspace: `<run>-viewplan.rrd`, one variant in it.
 
-    p inspection/viewplan/workspace.py --run 2408-cup3
-    p inspection/viewplan/workspace.py --run 2408-cup3 --variant continuity
-    p inspection/viewplan/workspace.py --run 2408-cup3 --open
+    p vbti/inspection/viewplan/workspace.py --run 2408-cup3
+    p vbti/inspection/viewplan/workspace.py --run 2408-cup3 --variant continuity
+    p vbti/inspection/viewplan/workspace.py --run 2408-cup3 --open
 
 Standalone still works, byte-identical flags:
 
-    p inspection/viewplan/workspace.py --run 2408-cup3 --open
+    p vbti/inspection/viewplan/workspace.py --run 2408-cup3 --open
 
 The file name carries the run and NOT the variant (the path is fixed by
 `structure.md`), so a second `--variant` for the same run **overwrites** the
@@ -20,7 +20,7 @@ Reads ONLY: `derived/<run>/steps/` (clouds + `summary.json`),
 sidecars via `np.load`, mesh `.ply` via open3d), and
 `runs/<run>/session.json` (colour intrinsics). Never touches
 `derived/<run>/rrd/<run>.rrd` — the main record session's file — and
-imports nothing from `inspection/record/` except `record.rr.log`. This
+imports nothing from `vbti/inspection/record/` except `record.rr.log`. This
 module also never imports `inspection.viewplan` itself: the JSON/npz
 schema in `docs/research/view-planning/poc/structure.md` IS the interface,
 so it runs against ANY producer that writes that schema — including the
@@ -92,7 +92,7 @@ def _variant_dir(run: str, variant: str, derived: Path) -> Path:
     d = derived / run / "viewplan" / variant
     if not d.is_dir():
         raise SystemExit(f"no plans for {run}/{variant} in {d} — run "
-                         f"inspection/viewplan/cli.py run --run {run} "
+                         f"vbti/inspection/viewplan/cli.py run --run {run} "
                          f"--variant {variant} first")
     return d
 
@@ -340,7 +340,7 @@ def workspace(run, variant=DEFAULT_VARIANT, out=None, open=False,
     run:     e.g. 2408-cup3.
     variant: viewplan variant name (default: base).
     out:     override the output DIRECTORY (default:
-             inspection/data/derived/<run>/rrd).
+             vbti/inspection/data/derived/<run>/rrd).
     open:    open the built .rrd in the native viewer.
     probe:   log N raw surface samples per step as individual point+normal
              probe entities (sampler debug view).

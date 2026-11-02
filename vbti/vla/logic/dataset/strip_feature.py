@@ -23,7 +23,7 @@ What is preserved byte-identical:
   - RGB stats in info.json/stats.json/meta/episodes parquet
 
 Usage:
-    conda run -n lerobot python -m vbti.logic.dataset.strip_feature \\
+    conda run -n lerobot python -m vla.logic.dataset.strip_feature \\
         --src=eternalmay33/04_05_06_07_merged_may-sim_depth \\
         --dst=eternalmay33/04_05_06_07_merged_may-sim \\
         --feature=observation.images.gripper_depth

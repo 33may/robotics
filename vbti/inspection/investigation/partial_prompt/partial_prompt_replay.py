@@ -27,7 +27,7 @@ The recorded runs themselves are the baseline: they ran the identical loop
 with the box-only prompt. Every per-step number here is compared against
 step.json written live by the robot.
 
-    p inspection/investigation/partial_prompt/partial_prompt_replay.py --run 1009-lan1
+    p vbti/inspection/investigation/partial_prompt/partial_prompt_replay.py --run 1009-lan1
 
 Writes /tmp/partial_prompt_replay/<run>/{steps.json,curves.png,masks_NNN.png}.
 Recorded runs stay read-only.

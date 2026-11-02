@@ -22,9 +22,9 @@ solve() holding the GIL cannot be interrupted from Python. A killed round is
 reported as "killed", never silently retried.
 
 Usage (from repo root, robo env active):
-    p inspection/motion/bench.py                # current tier 2, 15 cases
-    p inspection/motion/bench.py --compare      # vs AORRTC / BIT* / SORRT*
-    p inspection/motion/bench.py --cases 25
+    p vbti/inspection/motion/bench.py                # current tier 2, 15 cases
+    p vbti/inspection/motion/bench.py --compare      # vs AORRTC / BIT* / SORRT*
+    p vbti/inspection/motion/bench.py --cases 25
 """
 
 import argparse

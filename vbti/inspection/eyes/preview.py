@@ -8,7 +8,7 @@ a human can check the verbs are looking at the right thing.
 
 Writes into the run's own folder: <run>/eyes/preview/<cell>.png
 
-Run: p inspection/eyes/preview.py <run_dir> [--cells 2,0 3,1] [--phrase cup]
+Run: p vbti/inspection/eyes/preview.py <run_dir> [--cells 2,0 3,1] [--phrase cup]
 """
 import argparse
 import sys

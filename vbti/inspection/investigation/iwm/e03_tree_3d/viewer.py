@@ -15,7 +15,7 @@ Drill-down (default):
 Right panel: name, size, parents, children, the source frame crop with the node and its
 children painted, Back / Clear.
 
-Run:  p inspection/investigation/iwm/e03_tree_3d/viewer.py --frames c5.6 [c5.7 c9.6] [--port 8080]
+Run:  p vbti/inspection/investigation/iwm/e03_tree_3d/viewer.py --frames c5.6 [c5.7 c9.6] [--port 8080]
 then open http://localhost:8080
 """
 import argparse

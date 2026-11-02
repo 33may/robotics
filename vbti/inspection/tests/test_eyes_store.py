@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""View store: facts tier. Run: p inspection/tests/test_eyes_store.py"""
+"""View store: facts tier. Run: p vbti/inspection/tests/test_eyes_store.py"""
 import tempfile
 from pathlib import Path
 

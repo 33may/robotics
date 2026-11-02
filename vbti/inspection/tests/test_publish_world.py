@@ -2,7 +2,7 @@
 """publish_world must survive the taught keep-outs (Convex prisms, no
 `halfSide`) and render them the SAME way cell/viewer.py does: the union
 footprint extruded once — watertight blobs as mesh nodes, not per-shape
-translucent boxes. Run: p inspection/tests/test_publish_world.py"""
+translucent boxes. Run: p vbti/inspection/tests/test_publish_world.py"""
 import tempfile
 from pathlib import Path
 

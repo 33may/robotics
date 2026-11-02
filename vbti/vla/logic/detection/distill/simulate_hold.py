@@ -6,7 +6,7 @@ produces a version where each episode samples detections at random intervals
 inference sees with async TRT detection + hold strategy.
 
 Usage:
-    python -m vbti.logic.detection.simulate_hold \
+    python -m vla.logic.detection.simulate_hold \
         eternalmay33/01_02_03_merged_may-sim \
         --stride-min 5 --stride-max 20 \
         --seed 42
@@ -21,8 +21,8 @@ import numpy as np
 import pandas as pd
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from vbti.logic.dataset import resolve_dataset_path
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))  # vbti/ (holds the vla package)
+from vla.logic.dataset import resolve_dataset_path
 
 
 COORD_COLS = [

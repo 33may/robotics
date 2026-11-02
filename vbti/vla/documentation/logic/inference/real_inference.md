@@ -3,13 +3,13 @@
 ## Preview Cameras
 
 ```bash
-python -m vbti.logic.inference.run_real_inference preview
+python -m vla.logic.inference.run_real_inference preview
 ```
 
 ## Run Policy
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/path/to/checkpoint/pretrained_model \
   --port=/dev/ttyACM1 \
   --cameras=realsense \
@@ -72,7 +72,7 @@ postprocessor.json or policy_postprocessor.json
 ## Depth Run
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/path/to/depth_checkpoint/pretrained_model \
   --cameras=opencv_depth \
   --depth=true
@@ -83,7 +83,7 @@ Requires checkpoint trained with `observation.images.gripper_depth`.
 ## Detection-State Run
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/path/to/detection_state_checkpoint/pretrained_model \
   --detection=true
 ```

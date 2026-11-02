@@ -2,7 +2,7 @@
 
 No real run data is touched — `cli.DERIVED` is monkeypatched to a `tmp_path`
 tree for every test, so this suite cannot write into
-`inspection/data/derived/`.
+`vbti/inspection/data/derived/`.
 
 The cross-evaluation tests are the ones that matter most: `plan_step` scores
 a plan on its own step's mesh, whose area grows over a run, so that curve

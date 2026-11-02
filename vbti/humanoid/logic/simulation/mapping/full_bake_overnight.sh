@@ -12,7 +12,7 @@
 # Watch :  tail -f /tmp/overnight_full_bake.log
 
 set -u
-H=/home/may33/projects/ml_portfolio/robotics/humanoid
+H=/home/may33/projects/ml_portfolio/robotics/vbti/humanoid
 DUMP=data/coverage_drives/warehouse_coverage_v1
 BAG=data/coverage_drives/warehouse_coverage_v1_bag_full
 OUT=wc_v1_full

@@ -10,7 +10,7 @@ proposed view; "look from proposed" moves this browser's camera there), a set qu
 ("P3, P7, P9" -> the view for the set), "look from step". Click the surface -> the part under
 the click and its ancestor chain.
 
-Run:  p inspection/investigation/iwm/e05_parts_in_v/viewer.py [--run 2209-compute-ray-demo5] [--mm 1] [--mode agent] [--port 8083]
+Run:  p vbti/inspection/investigation/iwm/e05_parts_in_v/viewer.py [--run 2209-compute-ray-demo5] [--mm 1] [--mode agent] [--port 8083]
       p .../viewer.py --render-only        writes evidence/labels_<run>_<mm>mm.jpg (capture poses + top + side)
 """
 import argparse

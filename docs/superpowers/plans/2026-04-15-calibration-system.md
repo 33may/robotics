@@ -70,10 +70,10 @@ Create `vbti/logic/servos/profiles.py`:
 """Manage calibration profiles for SO-ARM101.
 
 Usage:
-    python -m vbti.logic.servos.profiles list
-    python -m vbti.logic.servos.profiles show <name>
-    python -m vbti.logic.servos.profiles load <name> --port=/dev/ttyACM1
-    python -m vbti.logic.servos.profiles export <name>
+    python -m vla.logic.servos.profiles list
+    python -m vla.logic.servos.profiles show <name>
+    python -m vla.logic.servos.profiles load <name> --port=/dev/ttyACM1
+    python -m vla.logic.servos.profiles export <name>
 """
 from __future__ import annotations
 
@@ -269,9 +269,9 @@ if __name__ == "__main__":
 ```bash
 cd ~/projects/ml_portfolio/robotics
 conda activate lerobot
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles show frodeo-test
-python -m vbti.logic.servos.profiles export frodeo-test
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles show frodeo-test
+python -m vla.logic.servos.profiles export frodeo-test
 ls calibration/profiles/
 ```
 
@@ -300,7 +300,7 @@ This task builds the servo communication layer that the TUI will use. No curses 
 """Interactive keyframe-based calibration TUI for SO-ARM101.
 
 Usage:
-    python -m vbti.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=frodeo-v2
+    python -m vla.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=frodeo-v2
 """
 from __future__ import annotations
 
@@ -843,7 +843,7 @@ if __name__ == "__main__":
 ```bash
 cd ~/projects/ml_portfolio/robotics
 conda activate lerobot
-python -m vbti.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=test-tui
+python -m vla.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=test-tui
 ```
 
 Test:
@@ -880,7 +880,7 @@ Replace the body of `load_calibration.py`:
 Delegates to profiles.load(). Kept for backward compatibility.
 
 Usage:
-    python -m vbti.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frodeo-test
+    python -m vla.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frodeo-test
 """
 from .profiles import load
 
@@ -898,7 +898,7 @@ if __name__ == "__main__":
 - [ ] **Step 2: Test backward compatibility**
 
 ```bash
-python -m vbti.logic.servos.load_calibration --port=/dev/ttyACM1 --robot_id=frodeo-test
+python -m vla.logic.servos.load_calibration --port=/dev/ttyACM1 --robot_id=frodeo-test
 ```
 
 Expected: same behavior as before — loads calibration to motors.
@@ -919,7 +919,7 @@ This is a manual integration test — create a new profile using the TUI and ver
 - [ ] **Step 1: Create a new calibration profile via TUI**
 
 ```bash
-python -m vbti.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=frodeo-v2
+python -m vla.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=frodeo-v2
 ```
 
 For each joint:
@@ -934,14 +934,14 @@ Save when all 6 joints are done.
 - [ ] **Step 2: Verify profile appears in registry**
 
 ```bash
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles show frodeo-v2
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles show frodeo-v2
 ```
 
 - [ ] **Step 3: Load profile and test with goto**
 
 ```bash
-python -m vbti.logic.servos.profiles load frodeo-v2 --port=/dev/ttyACM1
+python -m vla.logic.servos.profiles load frodeo-v2 --port=/dev/ttyACM1
 python vbti/logic/dataset/replay_utils.py goto --port=/dev/ttyACM1 --robot_id=frodeo-v2 --wrist_roll=0
 ```
 
@@ -950,7 +950,7 @@ Verify: wrist_roll=0 now produces vertical gripper orientation.
 - [ ] **Step 4: Verify old profile still works**
 
 ```bash
-python -m vbti.logic.servos.profiles load frodeo-test --port=/dev/ttyACM1
+python -m vla.logic.servos.profiles load frodeo-test --port=/dev/ttyACM1
 python vbti/logic/dataset/replay_utils.py goto --port=/dev/ttyACM1 --robot_id=frodeo-test --wrist_roll=0
 ```
 
@@ -959,7 +959,7 @@ Verify: wrist_roll=0 produces horizontal gripper (old behavior).
 - [ ] **Step 5: Export and commit new profile**
 
 ```bash
-python -m vbti.logic.servos.profiles export frodeo-v2
+python -m vla.logic.servos.profiles export frodeo-v2
 git add calibration/
 git commit -m "feat: add frodeo-v2 sim-matched calibration profile"
 ```

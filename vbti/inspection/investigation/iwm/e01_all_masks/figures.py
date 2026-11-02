@@ -4,7 +4,7 @@
   strategies  per frame, one row: SAM 3 grid32 | SAM 3 obj3 | SAM 3 text | UnSAMv2 g0.3 | UnSAMv2 g0.1 eval
   summary  counts table -> evidence/mask_counts.json
 
-Run:  p inspection/investigation/iwm/e01_all_masks/figures.py [--frames c5.6 ...]
+Run:  p vbti/inspection/investigation/iwm/e01_all_masks/figures.py [--frames c5.6 ...]
 """
 import argparse
 import json

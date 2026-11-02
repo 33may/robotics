@@ -10,7 +10,7 @@ Per captured step of every 2209 run, from the view's OWN depth and the RECORDED 
   - profile per-pixel range residual dr = r_measured - r_truth binned by r_truth (mm);
   - I4      the same from depth_raw + depth intrinsics; the difference in h and tilt.
 
-Run:  p inspection/investigation/iwm/e06_view_offset/table.py [--runs ...] [--no-fig]
+Run:  p vbti/inspection/investigation/iwm/e06_view_offset/table.py [--runs ...] [--no-fig]
 Out:  evidence/table.json, evidence/table_profile.png, evidence/table_height.png,
       data/iwm/e06_view_offset/table/<run>_<step>_<src>.npz (inlier points, camera frame)
 """

@@ -33,7 +33,7 @@ Run
 ================================================================================
 
     conda activate limx
-    python humanoid/logic/simulation/mujoco/probe_contract.py \\
+    python vbti/humanoid/logic/simulation/mujoco/probe_contract.py \\
         [--role both|sim|policy] [--duration 3.0] [robot_ip]
 
 Defaults: --role both, --duration 3.0, robot_ip 127.0.0.1.

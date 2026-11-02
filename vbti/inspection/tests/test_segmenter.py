@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ObjectSegmenter policy, on stubs — no GPU, no weights, no downloads.
 
-Run: p inspection/tests/test_segmenter.py
+Run: p vbti/inspection/tests/test_segmenter.py
 """
 import numpy as np
 

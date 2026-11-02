@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 # Allow running from repo root without installing the package.
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "vbti"  # holds the vla package
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -44,7 +44,7 @@ def main():
         list_devices()
         return
 
-    from vbti.logic.inference.voice_prompt import VoicePromptListener
+    from vla.logic.inference.voice_prompt import VoicePromptListener
 
     recognized: list[str] = []
 

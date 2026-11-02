@@ -27,7 +27,7 @@ unchanged (it's already 110+ px clear of any table edge).
     RIGHT OOD band: x ∈ [424, 517], y ∈ [191, 313]   (93 × 122 px)
 
 Run:
-  python vbti/logic/inference/protocols/generators/make_ood_smoke_15.py
+  python vbti/vla/logic/inference/protocols/generators/make_ood_smoke_15.py
 """
 
 import json
@@ -177,7 +177,7 @@ def main():
         "table_margin_cm": TABLE_MARGIN_CM,
         "table_margin_px": TABLE_MARGIN_PX,
         "px_per_cm": PX_PER_CM,
-        "_generated_by": "vbti/logic/inference/protocols/generators/make_ood_smoke_15.py",
+        "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_ood_smoke_15.py",
     }
 
     OUT_PATH.write_text(json.dumps(proto, indent=2))

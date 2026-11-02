@@ -35,7 +35,7 @@ Total wire sizes (header + payload):
   STATE_IMU    428 B
 
 References:
-  - Design: `humanoid/openspec/changes/may-147-isaac-limx-sdk-bridge/design.md` D3, D4, D13
+  - Design: `vbti/humanoid/openspec/changes/may-147-isaac-limx-sdk-bridge/design.md` D3, D4, D13
   - Spec: spec.md "IPC protocol is fixed-size, versioned, and Py3.8/3.11 byte-identical"
   - Wire reality: `humanoid/docs/vendor/humanoid-rl-deploy-python.md` § 11
   - Canonical structs: `oli-corpus://limxsdk#datatypes.h`

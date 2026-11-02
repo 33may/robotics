@@ -15,7 +15,7 @@ Convention: plane = {point, normal}, normal points to the SAFE side —
 oriented so the robot base origin has positive signed distance. Keep-out
 is behind the plane (negative side).
 
-Usage:  p inspection/calib/plane_fit.py [session.yaml]
+Usage:  p vbti/inspection/calib/plane_fit.py [session.yaml]
 Prints a `planes:` snippet ready for the cell yaml.
 """
 

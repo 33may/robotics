@@ -46,21 +46,21 @@ Read first:
 Servos:
 
 ```bash
-python -m vbti.logic.servos.scan_all
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles show frodeo-test
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.scan_all
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles show frodeo-test
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
 python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --port=/dev/ttyACM1 --speed=3.0
 ```
 
 Cameras:
 
 ```bash
-python -m vbti.logic.cameras.view_cameras --preset realsense
-python -m vbti.logic.cameras.view_cameras --preset opencv
-python -m vbti.logic.cameras.view_cameras --preset opencv_depth
-python -m vbti.logic.cameras.check_usb
-python -m vbti.logic.cameras.capture --save_dir ./captures/debug --preset realsense
+python -m vla.logic.cameras.view_cameras --preset realsense
+python -m vla.logic.cameras.view_cameras --preset opencv
+python -m vla.logic.cameras.view_cameras --preset opencv_depth
+python -m vla.logic.cameras.check_usb
+python -m vla.logic.cameras.capture --save_dir ./captures/debug --preset realsense
 ```
 
 Reset:

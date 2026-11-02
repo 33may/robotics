@@ -13,7 +13,7 @@ from pathlib import Path
 
 # ── Config — tweak these ────────────────────────────────────────────────────
 
-DATA_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/research/how_to_mask_right/exp02_clip_surgery")
+DATA_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/vla/research/how_to_mask_right/exp02_clip_surgery")
 PLOT_DIR = DATA_DIR / "plots"
 PLOT_DIR.mkdir(exist_ok=True)
 

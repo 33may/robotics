@@ -4,7 +4,7 @@ Streams shards one at a time — peak RAM = 1 shard (~1GB).
 Outputs JPEG images + a CSV manifest with all metadata.
 
 Usage:
-    python vbti/research/how_to_mask_right/save_images.py [--n_masked 500]
+    python vbti/vla/research/how_to_mask_right/save_images.py [--n_masked 500]
 """
 from __future__ import annotations
 

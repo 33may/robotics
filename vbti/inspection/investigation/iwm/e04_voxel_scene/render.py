@@ -11,7 +11,7 @@ Per run and scope:
   evidence/render_stats.json  per size and step: median / p90 |diff| mm, share > 5 mm,
      share of object pixels V renders at all
 
-Run:  p inspection/investigation/iwm/e04_voxel_scene/render.py [--runs ...] [--scopes object scene]
+Run:  p vbti/inspection/investigation/iwm/e04_voxel_scene/render.py [--runs ...] [--scopes object scene]
 """
 import argparse
 import json

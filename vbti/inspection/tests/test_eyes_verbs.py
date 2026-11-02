@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local verbs over a stub backend. Run: p inspection/tests/test_eyes_verbs.py"""
+"""Local verbs over a stub backend. Run: p vbti/inspection/tests/test_eyes_verbs.py"""
 import numpy as np
 
 from inspection.eyes.tools import ViewImage

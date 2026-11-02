@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Grid vocabulary — index math, gloss, coverage ASCII.
-Run: p inspection/tests/test_grid.py"""
+Run: p vbti/inspection/tests/test_grid.py"""
 import sys
 from pathlib import Path
 

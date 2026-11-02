@@ -3,12 +3,12 @@
 ## Video Utilities
 
 ```bash
-python -m vbti.logic.reconstruct.video_utils stats --video_path scene.mp4
-python -m vbti.logic.reconstruct.video_utils count --video_path scene.mp4 --percentage 0.7
-python -m vbti.logic.reconstruct.video_utils fix_rotation --video_path scene.MOV
-python -m vbti.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode count --value 200
-python -m vbti.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode every --value 2
-python -m vbti.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode percentage --value 0.7
+python -m vla.logic.reconstruct.video_utils stats --video_path scene.mp4
+python -m vla.logic.reconstruct.video_utils count --video_path scene.mp4 --percentage 0.7
+python -m vla.logic.reconstruct.video_utils fix_rotation --video_path scene.MOV
+python -m vla.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode count --value 200
+python -m vla.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode every --value 2
+python -m vla.logic.reconstruct.video_utils extract --video_path scene.mp4 --output_dir data/frames --mode percentage --value 0.7
 ```
 
 Outputs frames under:
@@ -26,10 +26,10 @@ Dependencies:
 ## COLMAP
 
 ```bash
-python -m vbti.logic.reconstruct.colmap_utils run_colmap --frames_dir data/frames --output_dir data/colmap --matching_method exhaustive
-python -m vbti.logic.reconstruct.colmap_utils validate_models --colmap_dir data/colmap
-python -m vbti.logic.reconstruct.colmap_utils undistort --colmap_dir data/colmap --output_dir data/undistorted
-python -m vbti.logic.reconstruct.colmap_utils reconstruct --frames_dir data/frames --output_dir data/recon --matching_method exhaustive
+python -m vla.logic.reconstruct.colmap_utils run_colmap --frames_dir data/frames --output_dir data/colmap --matching_method exhaustive
+python -m vla.logic.reconstruct.colmap_utils validate_models --colmap_dir data/colmap
+python -m vla.logic.reconstruct.colmap_utils undistort --colmap_dir data/colmap --output_dir data/undistorted
+python -m vla.logic.reconstruct.colmap_utils reconstruct --frames_dir data/frames --output_dir data/recon --matching_method exhaustive
 ```
 
 Outputs:
@@ -45,10 +45,10 @@ For small frame sets, `exhaustive` matching is usually appropriate.
 ## MILo
 
 ```bash
-python -m vbti.logic.reconstruct.gs_milo_utils create_config --output_dir data/recon/gs
-python -m vbti.logic.reconstruct.gs_milo_utils train_gs --source_dir data/recon/undistorted --model_dir data/recon/milo
-python -m vbti.logic.reconstruct.gs_milo_utils extract_mesh --source_dir data/recon/undistorted --model_dir data/recon/milo
-python -m vbti.logic.reconstruct.gs_milo_utils reconstruct --source_dir data/recon/undistorted --model_dir data/recon/milo
+python -m vla.logic.reconstruct.gs_milo_utils create_config --output_dir data/recon/gs
+python -m vla.logic.reconstruct.gs_milo_utils train_gs --source_dir data/recon/undistorted --model_dir data/recon/milo
+python -m vla.logic.reconstruct.gs_milo_utils extract_mesh --source_dir data/recon/undistorted --model_dir data/recon/milo
+python -m vla.logic.reconstruct.gs_milo_utils reconstruct --source_dir data/recon/undistorted --model_dir data/recon/milo
 ```
 
 Default config:

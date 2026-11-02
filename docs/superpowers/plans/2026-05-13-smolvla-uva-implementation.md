@@ -1051,7 +1051,7 @@ Run:
 ```bash
 cd /home/may33/projects/ml_portfolio/robotics
 python -c "
-from vbti.logic.dataset.target_extractors import register, get, list_available
+from vla.logic.dataset.target_extractors import register, get, list_available
 
 @register('dummy')
 def dummy_extractor(teacher, imgs, **kwargs):
@@ -1098,7 +1098,7 @@ import math
 import torch
 import torch.nn.functional as F
 
-from vbti.logic.dataset.target_extractors import register
+from vla.logic.dataset.target_extractors import register
 
 
 @register("siglip_output")
@@ -1145,8 +1145,8 @@ python -c "
 import torch
 from unittest.mock import MagicMock
 # Lazy import so registry registers the extractor
-import vbti.logic.dataset.target_extractors.siglip_output  # noqa
-from vbti.logic.dataset.target_extractors import get
+import vla.logic.dataset.target_extractors.siglip_output  # noqa
+from vla.logic.dataset.target_extractors import get
 
 # Build a mock teacher that returns 256 patch tokens of dim 64
 mock_teacher = MagicMock()
@@ -1189,7 +1189,7 @@ tensors of shape (S, S, feat_dim) per row, where S = --spatial-size and feat_dim
 comes from the teacher's SigLIP last layer.
 
 Usage:
-  python -m vbti.logic.dataset.add_video_features \
+  python -m vla.logic.dataset.add_video_features \
       --dataset eternalmay33/06_black_cup_red_bg_depth \
       --teacher vbti/experiments/duck_cup_smolvla/v020/lerobot_output_r12/checkpoints/150000/pretrained_model \
       --layer siglip_output \
@@ -1207,8 +1207,8 @@ from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
 
 # Import to trigger registry registration
-import vbti.logic.dataset.target_extractors.siglip_output  # noqa: F401
-from vbti.logic.dataset.target_extractors import get as get_extractor
+import vla.logic.dataset.target_extractors.siglip_output  # noqa: F401
+from vla.logic.dataset.target_extractors import get as get_extractor
 
 
 def build_feature_key(layer: str, spatial_size: int) -> str:
@@ -1302,7 +1302,7 @@ if __name__ == "__main__":
 Run:
 ```bash
 cd /home/may33/projects/ml_portfolio/robotics
-python -m vbti.logic.dataset.add_video_features --help
+python -m vla.logic.dataset.add_video_features --help
 ```
 Expected: argparse usage printed without import errors.
 
@@ -1351,7 +1351,7 @@ from lerobot.policies.smolvla_uva.modeling_smolvla_uva import SmolVLAUVAPolicy
 
 def run_bake(dataset_path: str, teacher: str, spatial_size: int = 4):
     cmd = [
-        sys.executable, "-m", "vbti.logic.dataset.add_video_features",
+        sys.executable, "-m", "vla.logic.dataset.add_video_features",
         "--dataset", dataset_path,
         "--teacher", teacher,
         "--layer", "siglip_output",

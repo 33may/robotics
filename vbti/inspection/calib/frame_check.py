@@ -20,8 +20,8 @@ frame is rotated relative to the controller's, the vector swings wildly.
 Commands nothing. Never moves the arm — it only reads joint angles and the
 controller's own Cartesian readout, so it is safe to run at any time.
 
-    p inspection/calib/frame_check.py            # one sample, at the current pose
-    p inspection/calib/frame_check.py --n=3      # freedrive between samples
+    p vbti/inspection/calib/frame_check.py            # one sample, at the current pose
+    p vbti/inspection/calib/frame_check.py --n=3      # freedrive between samples
 """
 
 import numpy as np

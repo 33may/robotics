@@ -18,9 +18,9 @@ Dataset copy layout:
                            new column added (sliced by the file's `index` values).
 
 Usage:
-  python -m vbti.logic.dataset.add_video_features \\
+  python -m vla.logic.dataset.add_video_features \\
       --dataset eternalmay33/06_black_cup_red_bg_depth \\
-      --teacher vbti/experiments/duck_cup_smolvla/v020/lerobot_output_r12/checkpoints/150000/pretrained_model \\
+      --teacher vbti/vla/experiments/duck_cup_smolvla/v020/lerobot_output_r12/checkpoints/150000/pretrained_model \\
       --layer siglip_output \\
       --spatial-size 4 \\
       --t-future 4 \\
@@ -45,8 +45,8 @@ from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy, resize_with
 DEFAULT_REWRITE_CHUNK_ROWS = 256
 
 # Import to trigger registry registration of siglip_output
-import vbti.logic.dataset.target_extractors.siglip_output  # noqa: F401
-from vbti.logic.dataset.target_extractors import get as get_extractor, list_available
+import vla.logic.dataset.target_extractors.siglip_output  # noqa: F401
+from vla.logic.dataset.target_extractors import get as get_extractor, list_available
 
 
 def build_feature_key(layer: str, spatial_size: int) -> str:

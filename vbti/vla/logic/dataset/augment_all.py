@@ -1,14 +1,14 @@
 """Augment all 3 black gripper datasets with detection + phase features.
 
 Run after detection processing is complete:
-    conda run -n lerobot python -m vbti.logic.dataset.augment_all
+    conda run -n lerobot python -m vla.logic.dataset.augment_all
 
 Checks that both detection_results.parquet and phase_labels.parquet exist
 for each dataset before proceeding.
 """
 
-from vbti.logic.dataset import resolve_dataset_path
-from vbti.logic.dataset.augment import augment_dataset
+from vla.logic.dataset import resolve_dataset_path
+from vla.logic.dataset.augment import augment_dataset
 
 DATASETS = [
     "eternalmay33/01_black_gripper_front",
@@ -42,7 +42,7 @@ def main():
     if not all_ready:
         print("\nSome datasets not ready. Run detection first:")
         print("  conda run -n lerobot python /tmp/run_all_detections.py")
-        print("  conda run -n lerobot python -m vbti.logic.detection.phases <dataset>")
+        print("  conda run -n lerobot python -m vla.logic.detection.phases <dataset>")
         return
 
     print("\nAll datasets ready. Starting augmentation...\n")

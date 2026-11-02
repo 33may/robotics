@@ -5,9 +5,9 @@ The views are CELLS, not joint configs (Anton 2026-10-15): the object moves betw
 and a cell follows it. Same cells as the baseline run 1310-calib-red (survey + 6 cells).
 Motion goes through the normal collect path (approval gate auto-confirmed, UI shows each move).
 
-  p inspection/calib/depth_eval.py --label=h240            # object with the yellow dot on the table
-  p inspection/calib/depth_eval.py --label=h240 --no_window
-  p inspection/calib/depth_eval.py --label=h240 --skip_capture=<run>   # re-score, no motion
+  p vbti/inspection/calib/depth_eval.py --label=h240            # object with the yellow dot on the table
+  p vbti/inspection/calib/depth_eval.py --label=h240 --no_window
+  p vbti/inspection/calib/depth_eval.py --label=h240 --skip_capture=<run>   # re-score, no motion
 
 Out: data/runs/<DDMM>-depth-eval-<label>/ (a normal run), data/depth_val/<run>/{depth_val.json,
 dots.jpg, compare.json}

@@ -5,10 +5,10 @@ A second pair of eyes on the bus, independent of the window: it answers
 "is the backend publishing, or is the UI not drawing it?" — the one question a
 screenshot cannot. Run it in another terminal while a run is going:
 
-    p inspection/ui/tap.py                        # rates per topic, once a second
-    p inspection/ui/tap.py --topic=scene/poses    # only that topic
-    p inspection/ui/tap.py --show                 # ...and how much the pose MOVED
-    p inspection/ui/tap.py --show --rtde          # ...against the arm's own joints
+    p vbti/inspection/ui/tap.py                        # rates per topic, once a second
+    p vbti/inspection/ui/tap.py --topic=scene/poses    # only that topic
+    p vbti/inspection/ui/tap.py --show                 # ...and how much the pose MOVED
+    p vbti/inspection/ui/tap.py --show --rtde          # ...against the arm's own joints
 
 `--show` answers the follow-up question a rate cannot: a pose stream running at
 30/s still leaves the 3D frozen if every frame carries the SAME configuration.

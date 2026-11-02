@@ -4,11 +4,11 @@ Right now: ``render_session_heatmap`` renders a 3-panel duck-position
 success-rate heatmap (ALL + per target_color) for a single eval session.
 
 Usage as a CLI:
-    python -m vbti.logic.inference.eval_render heatmap \\
+    python -m vla.logic.inference.eval_render heatmap \\
         /path/to/session_dir [--output=/path/to/plot.png]
 
 Programmatic:
-    from vbti.logic.inference.eval_render import render_session_heatmap
+    from vla.logic.inference.eval_render import render_session_heatmap
     render_session_heatmap(session_dir, output_png)
 """
 from __future__ import annotations
@@ -189,7 +189,7 @@ def render_session_heatmap(session, output, *,
     Args:
         session:       path to session.json or session directory
         output:        output PNG path
-        protocol_dir:  override for protocols/ dir (default: vbti/logic/inference/protocols)
+        protocol_dir:  override for protocols/ dir (default: vbti/vla/logic/inference/protocols)
         grid:          KDE grid resolution per axis
 
     Returns:

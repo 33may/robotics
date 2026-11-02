@@ -43,11 +43,11 @@ The script temporarily moves ID 1 out of the way, resets the target, restores ID
 ## Recovery Workflow
 
 ```bash
-python -m vbti.logic.servos.scan_all
+python -m vla.logic.servos.scan_all
 python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/unlock_all.py --port=/dev/ttyACM1
 python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/change_id.py /dev/ttyACM1 <current_id> <new_id>
 python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/factory_reset_motors.py
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
 ```
 
 Do not run the whole workflow blindly. Pick the exact recovery step needed.

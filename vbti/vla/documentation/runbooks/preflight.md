@@ -14,7 +14,7 @@ conda activate lerobot
 ## 2. Scan Servos
 
 ```bash
-python -m vbti.logic.servos.scan_all
+python -m vla.logic.servos.scan_all
 ```
 
 Check:
@@ -32,9 +32,9 @@ Expected voltage clue:
 ## 3. Load Known Calibration If Needed
 
 ```bash
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles show frodeo-test
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles show frodeo-test
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
 ```
 
 Use the actual follower port from the scan. Do not blindly use `/dev/ttyACM1` if scan shows a different mapping.
@@ -50,19 +50,19 @@ python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --po
 RGB-only:
 
 ```bash
-python -m vbti.logic.cameras.view_cameras --preset realsense
+python -m vla.logic.cameras.view_cameras --preset realsense
 ```
 
 OpenCV symlink path:
 
 ```bash
-python -m vbti.logic.cameras.view_cameras --preset opencv
+python -m vla.logic.cameras.view_cameras --preset opencv
 ```
 
 Depth path:
 
 ```bash
-python -m vbti.logic.cameras.view_cameras --preset opencv_depth
+python -m vla.logic.cameras.view_cameras --preset opencv_depth
 ```
 
 Check:
@@ -75,7 +75,7 @@ Check:
 ## 6. USB Diagnostics If Cameras Are Unstable
 
 ```bash
-python -m vbti.logic.cameras.check_usb
+python -m vla.logic.cameras.check_usb
 ```
 
 If RealSense is stuck:

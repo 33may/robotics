@@ -17,7 +17,7 @@ constructors signal subprocess ownership:
     ...
     bridge.close()
 
-See `humanoid/openspec/changes/may-147-isaac-limx-sdk-bridge/design.md` D6, D11, D15.
+See `vbti/humanoid/openspec/changes/may-147-isaac-limx-sdk-bridge/design.md` D6, D11, D15.
 """
 
 from __future__ import annotations

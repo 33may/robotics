@@ -4,7 +4,7 @@ Memory-conscious: no duplicate embedding copies, PCA before UMAP,
 batched sample ingestion.
 
 Usage:
-    python vbti/research/how_to_mask_right/explore_fiftyone.py [--port 5151]
+    python vbti/vla/research/how_to_mask_right/explore_fiftyone.py [--port 5151]
 """
 from __future__ import annotations
 

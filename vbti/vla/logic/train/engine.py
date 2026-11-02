@@ -2,8 +2,8 @@
 Training engine — the shared training loop for all model backends.
 
 Usage:
-    from vbti.logic.train.engine import train
-    from vbti.logic.train.config_utils import TrainConfig
+    from vla.logic.train.engine import train
+    from vla.logic.train.config_utils import TrainConfig
 
     config = TrainConfig.load("path/to/config.yaml")
     train(config, experiment="lift_cube_smolvla", notes="baseline run")
@@ -14,13 +14,13 @@ import torch
 from pathlib import Path
 from tqdm import tqdm
 
-from vbti.logic.train.config_utils import TrainConfig, ModelType, DatasetSource
-from vbti.logic.train.experiment_utils import (
+from vla.logic.train.config_utils import TrainConfig, ModelType, DatasetSource
+from vla.logic.train.experiment_utils import (
     create_version, complete_version, log_metrics, save_summary,
     get_version_dir, active, use, load_config, list_checkpoints,
 )
-from vbti.logic.train.monitor import update_status
-from vbti.logic.dataset.loading_utils import resolve_dataset_source
+from vla.logic.train.monitor import update_status
+from vla.logic.dataset.loading_utils import resolve_dataset_source
 
 
 def _get_backend(model_type: ModelType):
@@ -29,10 +29,10 @@ def _get_backend(model_type: ModelType):
         # UVA reuses the SmolVLA backend — same lerobot-train command path.
         # The smolvla_uva policy class is selected by lerobot from --policy.path
         # (the smolvla_uva_base checkpoint's config.json says type=smolvla_uva).
-        from vbti.logic.train.backends.smolvla import SmolVLABackend
+        from vla.logic.train.backends.smolvla import SmolVLABackend
         return SmolVLABackend()
     elif model_type == ModelType.GROOT:
-        from vbti.logic.train.backends.groot import GR00TBackend
+        from vla.logic.train.backends.groot import GR00TBackend
         return GR00TBackend()
     else:
         raise ValueError(f"Unknown model type: {model_type}")
@@ -248,7 +248,7 @@ def train(config: TrainConfig | str | None = None, experiment: str | None = None
             if reset_lr and start_step > 0:
                 remaining = cfg_t.steps - start_step
                 if cfg_t.lr_schedule == "wsd":
-                    from vbti.logic.train.backends.smolvla import SmolVLABackend
+                    from vla.logic.train.backends.smolvla import SmolVLABackend
                     scheduler = SmolVLABackend._build_wsd_scheduler(optimizer, config)
                     # Advance scheduler to match resume position
                     for _ in range(start_step):
@@ -411,19 +411,19 @@ def _train_cli(config: str = None, experiment: str = None, version: str = None,
 
     Examples:
         # New version from config:
-        python -m vbti.logic.train.engine train --config=path/to/config.yaml --experiment=lift_cube
+        python -m vla.logic.train.engine train --config=path/to/config.yaml --experiment=lift_cube
 
         # Run active version (already created, config already there):
-        python -m vbti.logic.train.engine train
+        python -m vla.logic.train.engine train
 
         # Resume from latest checkpoint:
-        python -m vbti.logic.train.engine train --resume
+        python -m vla.logic.train.engine train --resume
 
         # Resume with fresh LR schedule over remaining steps:
-        python -m vbti.logic.train.engine train --resume --reset_lr
+        python -m vla.logic.train.engine train --resume --reset_lr
 
         # Run specific existing version:
-        python -m vbti.logic.train.engine train --experiment=lift_cube --version=v001
+        python -m vla.logic.train.engine train --experiment=lift_cube --version=v001
     """
     cfg = TrainConfig.load(config) if config else None
     return train(cfg, experiment=experiment, version=version, notes=notes,
@@ -449,7 +449,7 @@ def _build_lerobot_command(config: TrainConfig, output_dir: str, job_name: str) 
     # epochs × num_frames / batch_size = total optimizer steps for one full pass × `epochs` times.
     # This makes BS changes safe: epoch budget stays constant, steps auto-adjust.
     if training_cfg.epochs is not None:
-        from vbti.logic.dataset import resolve_dataset_path
+        from vla.logic.dataset import resolve_dataset_path
         src = dataset_cfg.sources[0]
         ep_filter = getattr(src, "episodes", None)
         dataset_root = resolve_dataset_path(src.repo_id)
@@ -584,13 +584,13 @@ def _train_lerobot_cli(config: str = None, experiment: str = None,
 
     Examples:
         # From config file:
-        python -m vbti.logic.train.engine train-lerobot --config=path/to/config.yaml --experiment=duck_cup
+        python -m vla.logic.train.engine train-lerobot --config=path/to/config.yaml --experiment=duck_cup
 
         # From active version:
-        python -m vbti.logic.train.engine train-lerobot
+        python -m vla.logic.train.engine train-lerobot
 
         # Dry run — just print the command:
-        python -m vbti.logic.train.engine train-lerobot --dry_run
+        python -m vla.logic.train.engine train-lerobot --dry_run
     """
     import subprocess, shlex
 

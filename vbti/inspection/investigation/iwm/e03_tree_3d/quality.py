@@ -10,7 +10,7 @@ Per frame, three figures in evidence/quality/:
                  its own masks are drawn as white outlines
 Numbers: evidence/projection_quality.json.
 
-Run:  p inspection/investigation/iwm/e03_tree_3d/quality.py [--frames c5.6 ...]
+Run:  p vbti/inspection/investigation/iwm/e03_tree_3d/quality.py [--frames c5.6 ...]
 """
 import argparse
 import json

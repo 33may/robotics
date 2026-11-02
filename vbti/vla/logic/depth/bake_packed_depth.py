@@ -19,7 +19,7 @@ inputs (``use_imagenet_stats: true``) so the per-feature dataset stats for
 ``gripper_depth`` are unused. The leftover stale stats remain harmless.
 
 Usage:
-    conda run -n lerobot python -m vbti.logic.depth.bake_packed_depth \\
+    conda run -n lerobot python -m vla.logic.depth.bake_packed_depth \\
         --repo_id=eternalmay33/04_05_06_07_merged_may-sim_depth \\
         --depth-key=observation.images.gripper_depth \\
         --clip-min-m=0.05 --clip-max-m=0.20 --overwrite
@@ -41,7 +41,7 @@ from lerobot.datasets.utils import (
     get_hf_features_from_features,
     to_parquet_with_hf_images,
 )
-from vbti.logic.depth.colorize import colorize_fixed_clip, unpack_rgb_to_uint16
+from vla.logic.depth.colorize import colorize_fixed_clip, unpack_rgb_to_uint16
 
 
 LEROBOT_CACHE = Path("~/.cache/huggingface/lerobot").expanduser()

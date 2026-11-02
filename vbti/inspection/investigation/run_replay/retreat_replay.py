@@ -11,7 +11,7 @@ worlds offline and answers, stage by stage:
   2. does `_retreat_worker`'s exact math find a move under the STANCE box —
      free IK at +RETREAT_M radial, then tier-1 `direct_move`?
 
-    p inspection/investigation/run_replay/retreat_replay.py \
+    p vbti/inspection/investigation/run_replay/retreat_replay.py \
         --run 1509-cam-ai_bench1 --stance-step 3 --approved-step 2
 """
 import argparse

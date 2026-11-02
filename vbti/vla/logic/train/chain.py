@@ -15,8 +15,8 @@ Per-version flow:
   5. Check the done-predicate; halt if it fails
 
 Usage:
-    python -m vbti.logic.train.chain --versions v021,v022,v023,v024
-    nohup python -m vbti.logic.train.chain --versions v021 > chain.log 2>&1 &
+    python -m vla.logic.train.chain --versions v021,v022,v023,v024
+    nohup python -m vla.logic.train.chain --versions v021 > chain.log 2>&1 &
 """
 
 from __future__ import annotations
@@ -29,14 +29,14 @@ from pathlib import Path
 
 import yaml
 
-from vbti.logic.train.remote import _load_remote_config, _rsync_from_remote, _ssh
+from vla.logic.train.remote import _load_remote_config, _rsync_from_remote, _ssh
 
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
 EXPERIMENT      = "duck_cup_smolvla"
 REPO_ROOT       = Path("/home/may33/projects/ml_portfolio/robotics")
-EXP_ROOT        = REPO_ROOT / "vbti/experiments" / EXPERIMENT
+EXP_ROOT        = REPO_ROOT / "vbti/vla/experiments" / EXPERIMENT
 
 POLL_INTERVAL_SEC = 300   # 5 min — overridable via --poll_interval
 
@@ -107,7 +107,7 @@ def derive_from_config(version: str) -> dict:
 def launch_remote(version: str, run_name: str) -> dict:
     """Invoke remote.py train via subprocess. Returns parsed remote_session.json."""
     cmd = [
-        sys.executable, "-m", "vbti.logic.train.remote", "train",
+        sys.executable, "-m", "vla.logic.train.remote", "train",
         f"--version={version}",
         f"--run_name={run_name}",
         "--stream=false",   # non-blocking launch; chain owns polling

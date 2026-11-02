@@ -25,7 +25,7 @@ turn budget. The loop lives in `vlm_agent.py` once and no variant rebuilds it
   string, a spec, normalisers, and a thin entry function with a stable
   signature. Nothing else.
 
-Tests: `p inspection/tests/test_vlm_agent.py` (the loop and its structural
+Tests: `p vbti/inspection/tests/test_vlm_agent.py` (the loop and its structural
 guarantees), `test_eyes_inspect.py`, `test_survey.py`, `test_evidence.py`
 (one per variant).
 

@@ -7,9 +7,9 @@ the Orchestrator loop (read→reason→act→write, stamp-paced). Joystick sourc
   --joystick socket  live axes from the joystick app (UDP JoyPacket on --joy-port)
 
     # scripted demo, no operator:
-    conda run -n brain python humanoid/logic/oli/brain_main.py --walk-after 3 --vx 0.3
+    conda run -n brain python vbti/humanoid/logic/oli/brain_main.py --walk-after 3 --vx 0.3
     # live keyboard joystick (run the app in any env that has pygame, e.g. isaac):
-    conda run -n brain python humanoid/logic/oli/brain_main.py --joystick socket
+    conda run -n brain python vbti/humanoid/logic/oli/brain_main.py --joystick socket
     conda run -n isaac python -m humanoid.logic.oli.reason.teleoperation.joystick.app
 
 --service boots the isolated goal-driven brain instead (locbench design.md D5): Nav as the
@@ -18,7 +18,7 @@ dev_app later) sends `GoalCoordinate`s over the goal socket and reads pose/path/
 telemetry back. Requires --mode glide, --debug-pose (the GT pose channel Nav drives on in
 Stage 1) and --map-dir (the baked occupancy map):
 
-    conda run -n brain python humanoid/logic/oli/brain_main.py --mode glide --service \\
+    conda run -n brain python vbti/humanoid/logic/oli/brain_main.py --mode glide --service \\
         --debug-pose /tmp/oli-debug-pose.sock --map-dir <scene's baked map dir>
 """
 

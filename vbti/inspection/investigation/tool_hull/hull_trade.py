@@ -17,7 +17,7 @@ position (X=+142.4, Z=-47.5 mm), then inflated. A hull that scores well by
 under-modelling the tool is how you crash one — score is not the objective,
 it only breaks ties between hulls that are all truthful.
 
-    p inspection/investigation/tool_hull/hull_trade.py --run 2408-cup1
+    p vbti/inspection/investigation/tool_hull/hull_trade.py --run 2408-cup1
 """
 import argparse
 import sys

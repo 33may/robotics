@@ -7,7 +7,7 @@ Distillation creates lighter detector models or filtered labels from teacher det
 ## Export Grounding DINO ONNX
 
 ```bash
-python -m vbti.logic.detection.distill.export_onnx \
+python -m vla.logic.detection.distill.export_onnx \
   --output ~/.cache/vbti/grounding_dino_base.onnx
 ```
 
@@ -16,7 +16,7 @@ Also writes a sibling `.json` with fixed prompt/tokenization metadata.
 ## Stage 1 Labels
 
 ```bash
-python -m vbti.logic.detection.distill.distill_stage1 \
+python -m vla.logic.detection.distill.distill_stage1 \
   --dataset <repo_id> \
   --output /path/detection_labels_stage1.parquet \
   --rgb-cache /path/cache.parquet \
@@ -35,7 +35,7 @@ Optional drop controls:
 ## Stage 2 Cleanup
 
 ```bash
-python -m vbti.logic.detection.distill.distill_stage2 \
+python -m vla.logic.detection.distill.distill_stage2 \
   --input /path/stage1.parquet \
   --output /path/stage2.parquet \
   --max-gap 30 \
@@ -45,7 +45,7 @@ python -m vbti.logic.detection.distill.distill_stage2 \
 ## Final Filter And Galleries
 
 ```bash
-python -m vbti.logic.detection.distill.distill_filter \
+python -m vla.logic.detection.distill.distill_filter \
   --dataset <repo_id> \
   --output /path/detection_labels_final.parquet \
   --gallery-dir /path/data_analysis \
@@ -58,9 +58,9 @@ Outputs include filtered parquet, stats, galleries, and findings under the galle
 ## Train Student
 
 ```bash
-python -m vbti.logic.detection.distill.distill cache --force
-python -m vbti.logic.detection.distill.distill train --all --run m1_baseline --max-epochs 40 --batch-size 128 --model mobilenet_v3_small
-python -m vbti.logic.detection.distill.distill eval --cam left --checkpoint /path/best.pt
+python -m vla.logic.detection.distill.distill cache --force
+python -m vla.logic.detection.distill.distill train --all --run m1_baseline --max-epochs 40 --batch-size 128 --model mobilenet_v3_small
+python -m vla.logic.detection.distill.distill eval --cam left --checkpoint /path/best.pt
 ```
 
 ## Pitfalls

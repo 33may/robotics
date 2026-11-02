@@ -9,7 +9,7 @@ Supervisor over the real FakeRig (the `test_flow_a` composition: only the
 planner and the publisher are stubbed) and read the slot back through the
 one read door.
 
-Run: p -m pytest inspection/tests/test_live_fit.py
+Run: p -m pytest vbti/inspection/tests/test_live_fit.py
 """
 import numpy as np
 

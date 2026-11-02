@@ -2,7 +2,7 @@
 extracted after each step (e04's settings: scene scope, same truncation, weight threshold, crop).
 
 So capture k shows the geometry of steps 0..k only (step 0 = the survey that boots V).
-Cached per (run, mm) in inspection/data/iwm/e07_update_loop/<run>/<mm>mm/V_after_step<id>.ply.
+Cached per (run, mm) in vbti/inspection/data/iwm/e07_update_loop/<run>/<mm>mm/V_after_step<id>.ply.
 """
 import numpy as np
 import open3d as o3d

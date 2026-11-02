@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the existing two-phase bake: first compute one `(N, S, S, D)` per-frame feature tensor, then rewrite dataset parquets. Change only the parquet rewrite boundary so each source parquet is written in row chunks, limiting the `tensor -> nested Python list -> Arrow array` expansion to a bounded number of rows.
 
-**Tech Stack:** Python 3.10/3.12, PyTorch tensors, PyArrow parquet writer, LeRobot dataset format, `vbti.logic.dataset.add_video_features`.
+**Tech Stack:** Python 3.10/3.12, PyTorch tensors, PyArrow parquet writer, LeRobot dataset format, `vla.logic.dataset.add_video_features`.
 
 ---
 
@@ -37,7 +37,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import torch
 
-from vbti.logic.dataset.add_video_features import _build_dataset_copy
+from vla.logic.dataset.add_video_features import _build_dataset_copy
 
 
 def _write_source_dataset(root: Path) -> None:
@@ -267,7 +267,7 @@ Change the call to include:
 Append to `tests/logic/dataset/test_add_video_features.py`:
 
 ```python
-from vbti.logic.dataset.add_video_features import DEFAULT_REWRITE_CHUNK_ROWS
+from vla.logic.dataset.add_video_features import DEFAULT_REWRITE_CHUNK_ROWS
 
 
 def test_default_rewrite_chunk_rows_is_bounded() -> None:
@@ -383,7 +383,7 @@ Expected after approval: partial 22GB output removed.
 Run:
 
 ```bash
-ssh vbti@10.11.100.156 'tmux new-session -d -s uva_bake "bash -lc '\''source /home/vbti/anton/env/bin/activate && cd /home/vbti/anton/robotics && python -m vbti.logic.dataset.add_video_features --dataset eternalmay33/duck_cup_v020_all --root /home/vbti/anton/data/eternalmay33/duck_cup_v020_all --teacher /home/vbti/anton/data/uva_teacher_v020_150k --layer siglip_output --spatial-size 4 --t-future 4 --target-camera observation.images.gripper --batch-size 32 --dtype fp16 --rewrite-chunk-rows 256 --output /home/vbti/anton/data/eternalmay33/duck_cup_v020_all_uva > /home/vbti/anton/data/uva_bake.log 2>&1; echo UVA_BAKE_EXIT:$? >> /home/vbti/anton/data/uva_bake.log'\''"'
+ssh vbti@10.11.100.156 'tmux new-session -d -s uva_bake "bash -lc '\''source /home/vbti/anton/env/bin/activate && cd /home/vbti/anton/robotics && python -m vla.logic.dataset.add_video_features --dataset eternalmay33/duck_cup_v020_all --root /home/vbti/anton/data/eternalmay33/duck_cup_v020_all --teacher /home/vbti/anton/data/uva_teacher_v020_150k --layer siglip_output --spatial-size 4 --t-future 4 --target-camera observation.images.gripper --batch-size 32 --dtype fp16 --rewrite-chunk-rows 256 --output /home/vbti/anton/data/eternalmay33/duck_cup_v020_all_uva > /home/vbti/anton/data/uva_bake.log 2>&1; echo UVA_BAKE_EXIT:$? >> /home/vbti/anton/data/uva_bake.log'\''"'
 ```
 
 Expected: tmux session `uva_bake` starts.
@@ -441,7 +441,7 @@ Expected: all five configs use `repo_id: eternalmay33/duck_cup_v020_all_uva`, `t
 Run:
 
 ```bash
-python -m vbti.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name lerobot_output_r2
+python -m vla.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name lerobot_output_r2
 ```
 
 Expected: chain dispatches to remote tmux and does not wait on a missing bake session.

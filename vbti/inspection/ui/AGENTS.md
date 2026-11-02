@@ -1,4 +1,4 @@
-# inspection/ui — the frontend and its contract with the backend
+# vbti/inspection/ui — the frontend and its contract with the backend
 
 The operator-facing UI for the inspection loop. Six panels, built on **porthole**
 (`~/projects/porthole`), talking to Python over the porthole bus.
@@ -15,7 +15,7 @@ have to wait for the UI to re-enable is not a stop). The judgment `run/decider.p
 `TerminalDecider` used to own is deferred to v2-AI (`decider.py` is parked);
 today it is in the operator's head, exercised through the same two-press
 request/confirm pattern for every view. See
-`inspection/docs/2026-08-20-ui-driven-loop-design.md`.
+`vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md`.
 
 **Nothing in `run/` imports from here.** The existing contract ("nothing imports
 from run/") is preserved in both directions: `publisher.py` takes plain data —
@@ -258,7 +258,7 @@ could see.
 bit of run state, plus its worker threads (`_plan_worker`, `_preview_worker`,
 `_exec_worker`) which call back into it via `self.events`, never directly.
 Read `Supervisor` (module docstring + `_publish_views`/`_publish_all`/
-`_set_phase`) and `inspection/docs/2026-08-20-ui-driven-loop-design.md` ("State
+`_set_phase`) and `vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md` ("State
 machine & commands") for exactly when each `pub.*` call happens — a call
 table here would drift the next time a worker changes; the design doc and
 the code are the source of truth.
@@ -284,15 +284,15 @@ method swallows and logs.
 
 ```bash
 cd ~/projects/porthole && npm run build -w @porthole/framework   # after any porthole change
-cd ~/projects/robotics/inspection/ui && npm install && npm run build
+cd ~/projects/robotics/vbti/inspection/ui && npm install && npm run build
 
-p inspection/run/app.py run --outdir=data/runs/r1   # the real thing: bus + window + Supervisor + RealRig
-p inspection/ui/app.py mock                          # bus + window + Supervisor + FakeRig, no hardware
-p inspection/ui/app.py serve --run_dir=data/...      # window only; some other process owns the bus
+p vbti/inspection/run/app.py run --outdir=data/runs/r1   # the real thing: bus + window + Supervisor + RealRig
+p vbti/inspection/ui/app.py mock                          # bus + window + Supervisor + FakeRig, no hardware
+p vbti/inspection/ui/app.py serve --run_dir=data/...      # window only; some other process owns the bus
 npm run check                                        # headless render + PNG checks (tools/verify-ui.mjs)
 ```
 
-`mock` (`inspection/ui/mock.py`'s `start_mock`) wires an ordinary `Supervisor`
+`mock` (`vbti/inspection/ui/mock.py`'s `start_mock`) wires an ordinary `Supervisor`
 to an ordinary `FakeRig` behind an ordinary bus — the same dispatcher,
 planner, IK, viewsphere and reachability code a real run uses. Only the arm
 and camera are faked (a slow-interpolating fake arm so `executing` is
@@ -303,7 +303,7 @@ hardware.
 
 `serve` starts **no bus**: there can be one bus on a port and it belongs to
 whoever owns the robot. `serve` is for pointing a window at a bus some other
-process already owns — and that is exactly how `inspection/run/app.py run`
+process already owns — and that is exactly how `vbti/inspection/run/app.py run`
 opens its own window: it spawns `serve` as a **child process**. pywebview
 refuses to start off the main thread, and the loop's main thread is the
 dispatcher (also the only thread that may take a signal), so the window gets

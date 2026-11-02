@@ -15,7 +15,7 @@ from lerobot.motors import MotorCalibration
 from lerobot.robots.so_follower.config_so_follower import SOFollowerRobotConfig
 from lerobot.robots.so_follower.so_follower import SOFollower
 
-from vbti.logic.servos.profiles import (
+from vla.logic.servos.profiles import (
     JOINT_NAMES,
     LEROBOT_CALIB_DIR,
     _calib_path,

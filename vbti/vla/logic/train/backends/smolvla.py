@@ -17,10 +17,10 @@ from lerobot.policies.smolvla.configuration_smolvla import SmolVLAConfig
 from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
 from lerobot.policies.factory import make_pre_post_processors
 
-from vbti.logic.dataset import load_and_split_dataset, create_dataloaders
-from vbti.logic.dataset.depth_transform import GripperDepthDecoder
-from vbti.logic.dataset.loading_utils import _resolve_root
-from vbti.logic.train.backends.base import TrainingBackend, ModelBundle
+from vla.logic.dataset import load_and_split_dataset, create_dataloaders
+from vla.logic.dataset.depth_transform import GripperDepthDecoder
+from vla.logic.dataset.loading_utils import _resolve_root
+from vla.logic.train.backends.base import TrainingBackend, ModelBundle
 
 
 # Substring(s) used to identify packed-depth image features that need

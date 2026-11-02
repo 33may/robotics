@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""publisher v2: pending/previewing/survey in views/state. Run: p inspection/tests/test_publisher_v2.py"""
+"""publisher v2: pending/previewing/survey in views/state. Run: p vbti/inspection/tests/test_publisher_v2.py"""
 import numpy as np
 from inspection.ui.publisher import InspectionPublisher, STATE_COLOR
 

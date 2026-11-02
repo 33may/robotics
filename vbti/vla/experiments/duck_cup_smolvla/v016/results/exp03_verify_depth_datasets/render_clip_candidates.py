@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
-from vbti.logic.depth.colorize import colorize_fixed_clip
+from vla.logic.depth.colorize import colorize_fixed_clip
 
 
 REPO = "eternalmay33/04_05_06_07_merged_may-sim_depth"

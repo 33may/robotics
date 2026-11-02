@@ -37,11 +37,11 @@ from lerobot.processor.pipeline import PolicyProcessorPipeline
 
 # ------------------------------------------------------------------ paths
 CKPT = Path(
-    "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/"
+    "/home/may33/projects/ml_portfolio/robotics/vbti/vla/experiments/"
     "duck_cup_smolvla/v014/lerobot_output_r1/checkpoints/020000/pretrained_model"
 )
 V014_DIR = Path(
-    "/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v014"
+    "/home/may33/projects/ml_portfolio/robotics/vbti/vla/experiments/duck_cup_smolvla/v014"
 )
 PLOTS_DIR = V014_DIR / "sensitivity_plots"
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -406,7 +406,7 @@ md = f"""# v014 SmolVLA — input sensitivity ablation
 {tldr}
 
 ## Method
-- Checkpoint: `vbti/experiments/duck_cup_smolvla/v014/lerobot_output_r1/checkpoints/020000/pretrained_model`
+- Checkpoint: `vbti/vla/experiments/duck_cup_smolvla/v014/lerobot_output_r1/checkpoints/020000/pretrained_model`
 - Dataset: `{DATASET_REPO}` ({len(ds)} frames)
 - N = {N_SAMPLES} samples, evenly spaced indices in `[0, {len(ds)-1}]`, seed={SEED}
 - Action mean (deg) from `policy_preprocessor_step_5_normalizer_processor.safetensors`:

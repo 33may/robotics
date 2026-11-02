@@ -3,7 +3,7 @@
 ## Capture Real D405 Sample
 
 ```bash
-python -m vbti.logic.depth.capture_gripper_sample \
+python -m vla.logic.depth.capture_gripper_sample \
   --serial 123622270367 \
   --seconds 5 \
   --width 640 --height 480 --fps 30 \
@@ -26,7 +26,7 @@ histogram.png
 Preferred new artifact form:
 
 ```bash
-python -m vbti.logic.depth.bake_packed_depth \
+python -m vla.logic.depth.bake_packed_depth \
   --repo_id=<source_repo> \
   --out-repo-id=<output_repo> \
   --depth-key=observation.images.gripper_depth \
@@ -40,7 +40,7 @@ python -m vbti.logic.depth.bake_packed_depth \
 Historical command:
 
 ```bash
-python -m vbti.logic.depth.bake_packed_depth \
+python -m vla.logic.depth.bake_packed_depth \
   --repo_id=eternalmay33/04_05_06_07_merged_may-sim_depth \
   --out-repo-id=eternalmay33/04_05_06_07_merged_may-sim_depth_turbo \
   --depth-key=observation.images.gripper_depth \
@@ -52,7 +52,7 @@ Warning: omitting `--out-repo-id` may perform an in-place temp/swap. Prefer `--o
 ## Add Estimated Gripper Depth
 
 ```bash
-python -m vbti.logic.depth.add_gripper_depth \
+python -m vla.logic.depth.add_gripper_depth \
   --src <src_repo> \
   --dst <dst_repo> \
   --gripper-key observation.images.gripper \
@@ -76,7 +76,7 @@ Modes:
 ## Compare Real Vs Estimated
 
 ```bash
-python -m vbti.logic.depth.compare_real_vs_estimated \
+python -m vla.logic.depth.compare_real_vs_estimated \
   --d405-dir /path/to/d405_sample \
   --src-dataset eternalmay33/01_02_03_merged_may-sim_detection \
   --n-est-samples 12 \
@@ -96,7 +96,7 @@ plots/panel_*.png
 ## Runtime API
 
 ```python
-from vbti.logic.depth.realtime_prepare import depth_uint16_to_turbo_rgb
+from vla.logic.depth.realtime_prepare import depth_uint16_to_turbo_rgb
 
 rgb = depth_uint16_to_turbo_rgb(depth_u16)
 ```

@@ -1,6 +1,6 @@
 """Realtime equivalent of ``bake_packed_depth.py`` — single-frame uint16 → turbo RGB.
 
-The dataset prep pipeline (``vbti.logic.depth.bake_packed_depth``) reads each
+The dataset prep pipeline (``vla.logic.depth.bake_packed_depth``) reads each
 parquet's packed-PNG depth, unpacks to uint16, multiplies by ``depth_scale_m``
 to get meters, clips to ``[clip_min_m, clip_max_m]``, normalizes, and applies
 the turbo colormap → 3-channel uint8 RGB stored back as a PNG. That's what the
@@ -23,10 +23,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from vbti.logic.depth.colorize import colorize_fixed_clip
+from vla.logic.depth.colorize import colorize_fixed_clip
 # Single source of truth for the canonical clip + scale. Imported (not redefined)
 # so any future tweak in ``depth_transform.py`` flows here automatically.
-from vbti.logic.dataset.depth_transform import (
+from vla.logic.dataset.depth_transform import (
     DEFAULT_CLIP_MIN_M,
     DEFAULT_CLIP_MAX_M,
     DEFAULT_DEPTH_SCALE_M,

@@ -7,7 +7,7 @@ is a stub — rendering poses drags pinocchio/hppfcl geometry into a test that
 is about bytes on disk, and this sandbox's hppfcl trips over it
 ('Convex' object has no attribute 'halfSide').
 
-Run: p -m pytest inspection/tests/test_flow_a.py
+Run: p -m pytest vbti/inspection/tests/test_flow_a.py
 """
 import time
 

@@ -1,6 +1,6 @@
 """e05: the report's tables, read from evidence/*.json (never typed from a terminal).
 
-Run:  p inspection/investigation/iwm/e05_parts_in_v/numbers.py
+Run:  p vbti/inspection/investigation/iwm/e05_parts_in_v/numbers.py
 """
 import json
 

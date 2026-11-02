@@ -17,7 +17,7 @@ logic/reconstruct/cosmos_transfer.py
 Extract episode frames:
 
 ```bash
-python -m vbti.logic.reconstruct.cosmos_transfer extract \
+python -m vla.logic.reconstruct.cosmos_transfer extract \
   --episode 0 \
   --dataset_file ./datasets/vbti_table_v2_cosmos/raw.hdf5
 ```
@@ -25,13 +25,13 @@ python -m vbti.logic.reconstruct.cosmos_transfer extract \
 Process PNGs to videos/edges:
 
 ```bash
-python -m vbti.logic.reconstruct.cosmos_transfer process --episode 0 --fps 30
+python -m vla.logic.reconstruct.cosmos_transfer process --episode 0 --fps 30
 ```
 
 Generate config:
 
 ```bash
-python -m vbti.logic.reconstruct.cosmos_transfer config \
+python -m vla.logic.reconstruct.cosmos_transfer config \
   --episode 0 \
   --camera side_cam \
   --prompt "photorealistic scene, natural lighting" \
@@ -41,14 +41,14 @@ python -m vbti.logic.reconstruct.cosmos_transfer config \
 Call API:
 
 ```bash
-python -m vbti.logic.reconstruct.cosmos_transfer transfer \
+python -m vla.logic.reconstruct.cosmos_transfer transfer \
   --config_file ./datasets/vbti_table_v2_cosmos/cosmos/configs/episode_000_side_cam_default.json
 ```
 
 Batch prepare:
 
 ```bash
-python -m vbti.logic.reconstruct.cosmos_transfer prepare \
+python -m vla.logic.reconstruct.cosmos_transfer prepare \
   --dataset_file ./datasets/vbti_table_v2_cosmos/raw.hdf5 \
   --output_dir ./datasets/vbti_table_v2_cosmos/cosmos/cosmos_ready
 ```

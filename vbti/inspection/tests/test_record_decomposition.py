@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """decomposition.json — one polymorphic slot per step, method declared inside.
-Run: p inspection/tests/test_record_decomposition.py
+Run: p vbti/inspection/tests/test_record_decomposition.py
 """
 import numpy as np
 import pytest

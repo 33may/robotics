@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The named cognition factories — no GPU, no weights, no network, no key.
 
-Run: p inspection/tests/test_cognition.py
+Run: p vbti/inspection/tests/test_cognition.py
 """
 import contextlib
 import os

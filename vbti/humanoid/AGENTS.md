@@ -25,7 +25,7 @@ Two containers talk only through a Communication Protocol, and the **Robot never
 
 ## Commands
 
-Run from `humanoid/`; `p` = python.
+Run from `vbti/humanoid/`; `p` = python.
 
 ```bash
 p logic/oli/launcher.py --sim isaac  --mode glide --dev-app   # drive Oli, live cameras
@@ -72,4 +72,4 @@ Per-module rules live in each module's own `AGENTS.md` (with a one-line `CLAUDE.
 
 ## Conventions
 
-Branches `33may/` prefix · run from `humanoid/` with `p` · agent memory is GLOBAL + tree-organized at `~/.claude/agent-memory/humanoid/` (root index `MEMORY.md`), injected each turn by the `recall` hook — read leaves on demand, save via `/reflect` · daily notes in vault `vbti/humanoid/daily/` · session capture is its own repo — integrate, don't duplicate.
+Branches `33may/` prefix · run from `vbti/humanoid/` with `p` · agent memory is GLOBAL + tree-organized at `~/.claude/agent-memory/humanoid/` (root index `MEMORY.md`), injected each turn by the `recall` hook — read leaves on demand, save via `/reflect` · daily notes in vault `vbti/humanoid/daily/` · session capture is its own repo — integrate, don't duplicate.

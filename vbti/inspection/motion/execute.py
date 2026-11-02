@@ -12,9 +12,9 @@ Requires the pendant in Remote Control mode (top-right icon in PolyScope).
 State reads work in any mode; motion does not.
 
 Usage (from repo root, robo env active):
-    p inspection/motion/execute.py preflight          # read-only gate report
-    p inspection/motion/execute.py bringup            # power on + brake release
-    p inspection/motion/execute.py demo               # +-5 deg wrist_3 wiggle
+    p vbti/inspection/motion/execute.py preflight          # read-only gate report
+    p vbti/inspection/motion/execute.py bringup            # power on + brake release
+    p vbti/inspection/motion/execute.py demo               # +-5 deg wrist_3 wiggle
 """
 
 import logging

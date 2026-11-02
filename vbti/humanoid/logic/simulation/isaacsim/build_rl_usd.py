@@ -5,7 +5,7 @@ achilles — confirmed by LimX's parallel_joint_mapping doc + the `_rl` URDF). T
 `assets/oli/usd/HU_D04_01_rl.usd` so `Oli` loads the *training* model instead of the
 shipped deploy USD. One-time:
 
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/build_rl_usd.py
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/build_rl_usd.py
 """
 
 from __future__ import annotations

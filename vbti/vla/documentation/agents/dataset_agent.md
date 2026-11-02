@@ -50,40 +50,40 @@ Read first:
 Inspect:
 
 ```bash
-python -m vbti.logic.dataset.check_utils ls
-python -m vbti.logic.dataset.check_utils report <repo_id_or_path>
-python -m vbti.logic.dataset.check_utils cameras <repo_id_or_path>
-python -m vbti.logic.dataset.hdf5_utils report /path/to/data.hdf5
+python -m vla.logic.dataset.check_utils ls
+python -m vla.logic.dataset.check_utils report <repo_id_or_path>
+python -m vla.logic.dataset.check_utils cameras <repo_id_or_path>
+python -m vla.logic.dataset.hdf5_utils report /path/to/data.hdf5
 ```
 
 Convert:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils discover /path/to/data.hdf5
-python -m vbti.logic.dataset.convert_utils convert /path/to/data.hdf5 <repo_id> "task text"
-python -m vbti.logic.dataset.convert_utils verify <repo_id_or_path>
+python -m vla.logic.dataset.convert_utils discover /path/to/data.hdf5
+python -m vla.logic.dataset.convert_utils convert /path/to/data.hdf5 <repo_id> "task text"
+python -m vla.logic.dataset.convert_utils verify <repo_id_or_path>
 ```
 
 Depth:
 
 ```bash
-python -m vbti.logic.depth.bake_packed_depth --repo_id=<src> --out-repo-id=<dst> --depth-key=observation.images.gripper_depth --clip-min-m=0.05 --clip-max-m=0.20
-python -m vbti.logic.depth.add_gripper_depth --src <src> --dst <dst> --mode per-frame-norm
-python -m vbti.logic.dataset.add_zero_depth_turbo --src <src> --dst <dst> --reference <depth_dataset>
+python -m vla.logic.depth.bake_packed_depth --repo_id=<src> --out-repo-id=<dst> --depth-key=observation.images.gripper_depth --clip-min-m=0.05 --clip-max-m=0.20
+python -m vla.logic.depth.add_gripper_depth --src <src> --dst <dst> --mode per-frame-norm
+python -m vla.logic.dataset.add_zero_depth_turbo --src <src> --dst <dst> --reference <depth_dataset>
 ```
 
 Detection/phase:
 
 ```bash
-python -m vbti.logic.detection.process_dataset <repo_id_or_path>
-python -m vbti.logic.detection.phases <repo_id_or_path>
-python -m vbti.logic.dataset.augment <repo_id_or_path> --augmentations detection phase -o <output_repo_id>
+python -m vla.logic.detection.process_dataset <repo_id_or_path>
+python -m vla.logic.detection.phases <repo_id_or_path>
+python -m vla.logic.dataset.augment <repo_id_or_path> --augmentations detection phase -o <output_repo_id>
 ```
 
 UVA:
 
 ```bash
-python -m vbti.logic.dataset.add_video_features --dataset <repo_id> --teacher <pretrained_model> --layer siglip_output --spatial-size 4 --t-future 4 --target-camera observation.images.gripper --output <new_dataset>
+python -m vla.logic.dataset.add_video_features --dataset <repo_id> --teacher <pretrained_model> --layer siglip_output --spatial-size 4 --t-future 4 --target-camera observation.images.gripper --output <new_dataset>
 ```
 
 ## Safety Rules

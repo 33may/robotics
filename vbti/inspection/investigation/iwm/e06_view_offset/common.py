@@ -4,7 +4,7 @@ Orientation rule (e03/e04): rgb / depth_aligned / mask on disk are upright; T_ba
 depth_raw and the intrinsics are raw; on rgb_rotation_deg == 180 steps the upright arrays
 are flipped back to raw before any geometry. Everything here works in RAW orientation.
 
-Smoke:  p inspection/investigation/iwm/e06_view_offset/common.py
+Smoke:  p vbti/inspection/investigation/iwm/e06_view_offset/common.py
 """
 import json
 import subprocess

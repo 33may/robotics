@@ -17,7 +17,7 @@ Commands:
 import json
 from pathlib import Path
 
-from vbti.logic.train.experiment_utils import (
+from vla.logic.train.experiment_utils import (
     _resolve_experiment, _resolve_version, _version_dir, load_config,
 )
 
@@ -376,7 +376,7 @@ def compare(v1: str, v2: str, metric: str = "train_loss",
     experiment = _resolve_experiment(experiment)
 
     # Config diff
-    from vbti.logic.train.config_utils import TrainConfig
+    from vla.logic.train.config_utils import TrainConfig
     cfg1 = TrainConfig.from_dict(load_config(experiment, v1))
     cfg2 = TrainConfig.from_dict(load_config(experiment, v2))
     diff = cfg1.diff(cfg2)

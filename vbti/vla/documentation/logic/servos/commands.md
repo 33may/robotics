@@ -3,7 +3,7 @@
 ## Scan All Ports
 
 ```bash
-python -m vbti.logic.servos.scan_all
+python -m vla.logic.servos.scan_all
 ```
 
 Scans sorted `/dev/ttyACM*` ports and prints each expected motor ID with:
@@ -23,8 +23,8 @@ Use voltage to identify arms:
 ## List And Show Profiles
 
 ```bash
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles show frodeo-test
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles show frodeo-test
 ```
 
 `show` prints calibration values per joint: ID, homing offset, min/max ranges, and degree limits.
@@ -32,7 +32,7 @@ python -m vbti.logic.servos.profiles show frodeo-test
 ## Load Calibration Profile
 
 ```bash
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
 ```
 
 This writes calibration values to the motors. Treat it as an EEPROM-writing operation.
@@ -40,7 +40,7 @@ This writes calibration values to the motors. Treat it as an EEPROM-writing oper
 Backward-compatible wrapper:
 
 ```bash
-python -m vbti.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frodeo-test
+python -m vla.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frodeo-test
 ```
 
 If `robot_id` is omitted, it uses the active/default profile.
@@ -67,9 +67,9 @@ Pass `--port` explicitly. Defaults differ from other scripts and may not match t
 ## Active Workflow Before Evaluation
 
 ```bash
-python -m vbti.logic.servos.scan_all
-python -m vbti.logic.servos.profiles list
-python -m vbti.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
+python -m vla.logic.servos.scan_all
+python -m vla.logic.servos.profiles list
+python -m vla.logic.servos.profiles load frodeo-test --port /dev/ttyACM1
 python /home/may33/projects/ml_portfolio/robotics/vbti/logic/servos/rest.py --port=/dev/ttyACM1
 ```
 

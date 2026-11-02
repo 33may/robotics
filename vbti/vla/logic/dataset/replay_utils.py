@@ -4,9 +4,9 @@ Used for validating sim-to-real conversion: replay sim-converted actions
 on the real arm and visually verify the motions match the simulation.
 
 Usage:
-    python vbti/logic/dataset/replay_utils.py replay datasets/so101_v1_mix/sim/duck_cup_130eps 33 --port /dev/ttyACM0
-    python vbti/logic/dataset/replay_utils.py replay datasets/so101_v1_mix/sim/duck_cup_130eps 33 --dry_run
-    python vbti/logic/dataset/replay_utils.py show datasets/so101_v1_mix/sim/duck_cup_130eps 33
+    python vbti/vla/logic/dataset/replay_utils.py replay datasets/so101_v1_mix/sim/duck_cup_130eps 33 --port /dev/ttyACM0
+    python vbti/vla/logic/dataset/replay_utils.py replay datasets/so101_v1_mix/sim/duck_cup_130eps 33 --dry_run
+    python vbti/vla/logic/dataset/replay_utils.py show datasets/so101_v1_mix/sim/duck_cup_130eps 33
 """
 import time
 
@@ -33,7 +33,7 @@ def _load_episode(dataset_path: str, episode_idx: int) -> tuple[np.ndarray, np.n
         (actions [n_frames, 6], states [n_frames, 6], fps)
     """
     import json
-    from vbti.logic.dataset import resolve_dataset_path
+    from vla.logic.dataset import resolve_dataset_path
     ds = resolve_dataset_path(dataset_path)
     info = json.load(open(ds / "meta" / "info.json"))
     fps = info["fps"]
@@ -234,7 +234,7 @@ def replay(
     # Connect to robot
     from lerobot.robots.so_follower.config_so_follower import SOFollowerRobotConfig
     from lerobot.robots.so_follower.so_follower import SOFollower
-    from vbti.logic.servos.profiles import get_active_profile
+    from vla.logic.servos.profiles import get_active_profile
 
     if robot_id is None:
         robot_id = get_active_profile()
@@ -313,7 +313,7 @@ def replay(
     except KeyboardInterrupt:
         print("\n\nAborted!")
     finally:
-        from vbti.logic.servos.rest import move_to_rest
+        from vla.logic.servos.rest import move_to_rest
         move_to_rest(robot)
         robot.disconnect()
         print("Robot disconnected.")
@@ -339,7 +339,7 @@ def goto(
     """
     from lerobot.robots.so_follower.config_so_follower import SOFollowerRobotConfig
     from lerobot.robots.so_follower.so_follower import SOFollower
-    from vbti.logic.servos.profiles import get_active_profile
+    from vla.logic.servos.profiles import get_active_profile
 
     if robot_id is None:
         robot_id = get_active_profile()
@@ -370,7 +370,7 @@ def goto(
     except KeyboardInterrupt:
         print("\nAborted!")
     finally:
-        from vbti.logic.servos.rest import move_to_rest
+        from vla.logic.servos.rest import move_to_rest
         move_to_rest(robot)
         robot.disconnect()
         print("Robot disconnected.")

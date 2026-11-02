@@ -23,8 +23,8 @@ import torchvision.transforms.functional as TF
 
 # ── Config ──────────────────────────────────────────────────────────────────
 
-CACHE_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/research/how_to_mask_right/cached_frames")
-OUT_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/research/how_to_mask_right/exp02_clip_surgery")
+CACHE_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/vla/research/how_to_mask_right/cached_frames")
+OUT_DIR = Path("/home/may33/projects/ml_portfolio/robotics/vbti/vla/research/how_to_mask_right/exp02_clip_surgery")
 MODEL_ID = "google/siglip-so400m-patch14-384"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 

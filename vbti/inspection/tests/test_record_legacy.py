@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Legacy adapter — 27 pre-schema runs readable through the same surface,
-adapt-on-read, never writing a byte. Run: p inspection/tests/test_record_legacy.py
+adapt-on-read, never writing a byte. Run: p vbti/inspection/tests/test_record_legacy.py
 """
 import json
 

@@ -11,10 +11,10 @@ perception, cell, view, motion — and wire them together.
   (plan/preview/exec) talk back only via events on a queue. Commands:
   `view/request`, `view/confirm`, `run/stop`, `run/exit`, all validated
   backend-side (a stale button can never move the arm). Spec:
-  `inspection/docs/2026-08-20-ui-driven-loop-design.md`.
+  `vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md`.
 - `app.py` — composition root. `run` (bus + window + `Supervisor` +
   `RealRig`, SIGINT-safe shutdown) and `teach` (freedrive-then-save the
-  survey pose). The native window is a child process (`inspection/ui/app.py
+  survey pose). The native window is a child process (`vbti/inspection/ui/app.py
   serve`), not a thread: pywebview needs a main thread and this one belongs
   to the dispatcher. Teardown order is the design's:
   `stop_event` → `sup.join_workers(bounded)` → `stopJ` → save → close
@@ -33,9 +33,9 @@ perception, cell, view, motion — and wire them together.
   leg calls. Lives HERE because `cell/geometry.py` may not import `eyes`
   (cycle via `eyes/tools.py`) and `perception/` is barred from it too — the
   run tier is the only one above both. Backend is injected, so tests use
-  `StubBackend` and never touch a GPU. `p inspection/tests/test_segmenter.py`.
+  `StubBackend` and never touch a GPU. `p vbti/inspection/tests/test_segmenter.py`.
 - `decider.py` — parked for v2-AI; not wired into the run path since loop
-  v2 (see `inspection/docs/2026-08-20-ui-driven-loop-design.md`). Still holds
+  v2 (see `vbti/inspection/docs/2026-08-20-ui-driven-loop-design.md`). Still holds
   the egocentric menu-gloss helpers (`gloss`, `build_menu`) and the v1
   terminal implementation (`Console`, `TerminalDecider`), kept for when
   an AI decider slots into the request/confirm seam.

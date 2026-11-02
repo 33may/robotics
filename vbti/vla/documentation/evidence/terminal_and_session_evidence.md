@@ -7,18 +7,18 @@ This appendix summarizes repo-relevant commands found in zsh history and Claude 
 Remote training was repeatedly launched through:
 
 ```bash
-python -m vbti.logic.train.remote train --experiment=duck_cup_smolvla --version=v017 --run_name=lerobot_output_r1
-python -m vbti.logic.train.remote train --experiment=duck_cup_smolvla --version=v018 --run_name=lerobot_output_r1
-python -m vbti.logic.train.remote train --run_name=lerobot_output_r1 --dry_run
-python -m vbti.logic.train.remote status --experiment=duck_cup_smolvla --version=v018
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000
+python -m vla.logic.train.remote train --experiment=duck_cup_smolvla --version=v017 --run_name=lerobot_output_r1
+python -m vla.logic.train.remote train --experiment=duck_cup_smolvla --version=v018 --run_name=lerobot_output_r1
+python -m vla.logic.train.remote train --run_name=lerobot_output_r1 --dry_run
+python -m vla.logic.train.remote status --experiment=duck_cup_smolvla --version=v018
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=v020 --checkpoint=step_080000
 ```
 
 Sequential UVA/data-efficiency work used:
 
 ```bash
-python -m vbti.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name lerobot_output_r2
-python -m vbti.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name=lerobot_output_r4_aux0003 --wait_for_session uva_bake
+python -m vla.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name lerobot_output_r2
+python -m vla.logic.train.chain_remote --versions v025,v026,v027,v028,v029 --run_name=lerobot_output_r4_aux0003 --wait_for_session uva_bake
 ```
 
 Repeated session conclusion: remote training uses `lerobot-train`; local `SmolVLABackend` changes do not affect remote runs.
@@ -28,7 +28,7 @@ Repeated session conclusion: remote training uses `lerobot-train`; local `SmolVL
 Packed depth baking:
 
 ```bash
-python -m vbti.logic.depth.bake_packed_depth \
+python -m vla.logic.depth.bake_packed_depth \
   --repo_id=eternalmay33/04_05_06_07_merged_may-sim_depth \
   --depth-key=observation.images.gripper_depth \
   --clip-min-m=0.05 --clip-max-m=0.20 --overwrite
@@ -37,7 +37,7 @@ python -m vbti.logic.depth.bake_packed_depth \
 Preferred new-artifact bake:
 
 ```bash
-python -m vbti.logic.depth.bake_packed_depth \
+python -m vla.logic.depth.bake_packed_depth \
   --repo_id=eternalmay33/04_05_06_07_merged_may-sim_depth \
   --out-repo-id=eternalmay33/04_05_06_07_merged_may-sim_depth_turbo \
   --depth-key=observation.images.gripper_depth \
@@ -47,7 +47,7 @@ python -m vbti.logic.depth.bake_packed_depth \
 Estimated gripper depth:
 
 ```bash
-python -m vbti.logic.depth.add_gripper_depth \
+python -m vla.logic.depth.add_gripper_depth \
   --src eternalmay33/01_02_03_merged_may-sim_detection \
   --dst eternalmay33/01_02_03_merged_may-sim_detection_gripper-depth \
   --gripper-key observation.images.gripper \
@@ -58,7 +58,7 @@ python -m vbti.logic.depth.add_gripper_depth \
 Real D405 sample capture:
 
 ```bash
-python -m vbti.logic.depth.capture_gripper_sample \
+python -m vla.logic.depth.capture_gripper_sample \
   --serial 130523070141 \
   --seconds 5 \
   --out /home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v016/data/d405_gripper_sample
@@ -78,10 +78,10 @@ python vbti/logic/inference/eval_engine.py --checkpoint=v18-20k --protocol=dual_
 Session analysis:
 
 ```bash
-python -m vbti.logic.inference.eval_helpers ls
-python -m vbti.logic.inference.eval_helpers info latest
-python -m vbti.logic.inference.eval_helpers info latest --group_by=pointing_at_cup
-python -m vbti.logic.inference.eval_helpers play latest 3
+python -m vla.logic.inference.eval_helpers ls
+python -m vla.logic.inference.eval_helpers info latest
+python -m vla.logic.inference.eval_helpers info latest --group_by=pointing_at_cup
+python -m vla.logic.inference.eval_helpers play latest 3
 ```
 
 The sessions and docs repeatedly use fixed protocols such as `dual_cup_30`, `dual_cup_60`, and `checkpoint_sweep` as the comparison basis.
@@ -101,7 +101,7 @@ python vbti/logic/inference/run_real_inference.py run \
 Remote UVA feature baking:
 
 ```bash
-python -m vbti.logic.dataset.add_video_features \
+python -m vla.logic.dataset.add_video_features \
   --dataset eternalmay33/duck_cup_v020_all \
   --root /home/vbti/anton/data/eternalmay33/duck_cup_v020_all \
   --teacher /home/vbti/anton/data/uva_teacher_v020_150k \

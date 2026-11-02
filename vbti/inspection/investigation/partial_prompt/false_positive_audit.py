@@ -20,8 +20,8 @@ that, three ways:
    rendered as overlays, so the worst thing the policy ever did is a
    picture, not a percentile.
 
-    p inspection/investigation/partial_prompt/false_positive_audit.py
-    p inspection/investigation/partial_prompt/false_positive_audit.py --runs 1009-lan1
+    p vbti/inspection/investigation/partial_prompt/false_positive_audit.py
+    p vbti/inspection/investigation/partial_prompt/false_positive_audit.py --runs 1009-lan1
 
 Writes /tmp/partial_prompt_audit/{audit.json,worst_*.png,tempt_*.png}.
 """

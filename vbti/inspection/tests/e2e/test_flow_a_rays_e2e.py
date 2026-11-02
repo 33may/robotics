@@ -26,8 +26,8 @@ worked around. Using the real planner here is the point: a stubbed
 nothing about ray transactions.
 
 Run:
-    p -m pytest inspection/tests/e2e/test_flow_a_rays_e2e.py -m e2e -q
-    p inspection/tests/e2e/test_flow_a_rays_e2e.py
+    p -m pytest vbti/inspection/tests/e2e/test_flow_a_rays_e2e.py -m e2e -q
+    p vbti/inspection/tests/e2e/test_flow_a_rays_e2e.py
 """
 from __future__ import annotations
 

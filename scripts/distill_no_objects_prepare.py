@@ -28,8 +28,8 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from vbti.logic.dataset import resolve_dataset_path
-from vbti.logic.detection.process_dataset import (
+from vla.logic.dataset import resolve_dataset_path
+from vla.logic.detection.process_dataset import (
     VideoReader,
     get_video_path,
     load_dataset_meta,

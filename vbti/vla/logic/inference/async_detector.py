@@ -30,7 +30,7 @@ from typing import Optional
 
 import numpy as np
 
-from vbti.logic.detection.detect import StudentDetector
+from vla.logic.detection.detect import StudentDetector
 
 
 @dataclass

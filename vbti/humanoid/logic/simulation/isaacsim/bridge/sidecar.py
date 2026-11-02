@@ -15,7 +15,7 @@ See:
 Usage (standalone for smoke testing):
 
     /home/may33/miniconda3/envs/limx/bin/python \\
-        /home/may33/projects/ml_portfolio/robotics/humanoid/logic/simulation/isaacsim/bridge/sidecar.py \\
+        /home/may33/projects/ml_portfolio/robotics/vbti/humanoid/logic/simulation/isaacsim/bridge/sidecar.py \\
         --ip 127.0.0.1 --socket /tmp/limx-isaac-bridge.sock [--debug]
 
 Normally launched indirectly by ``OliBridge.spawn_sidecar(...)`` (Phase 6).

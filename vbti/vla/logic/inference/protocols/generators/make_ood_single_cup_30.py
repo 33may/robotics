@@ -31,7 +31,7 @@ Pixel-to-cm scale, from id_zone: 154 px / 20 cm ≈ 7.7 px/cm. Reach = 81 px
     RIGHT block zone: x ∈ [505, 540]   (table extreme, ducks rejected)
 
 Run:
-  python vbti/logic/inference/protocols/generators/make_ood_single_cup_30.py
+  python vbti/vla/logic/inference/protocols/generators/make_ood_single_cup_30.py
 """
 
 import json
@@ -40,7 +40,7 @@ import random
 from collections import Counter
 from pathlib import Path
 
-from vbti.logic.inference.protocols.render_protocol import render_positions
+from vla.logic.inference.protocols.render_protocol import render_positions
 
 PROTO_DIR = Path(__file__).resolve().parent.parent  # protocols/
 OUT_PATH  = PROTO_DIR / "ood_single_cup_30.json"
@@ -182,7 +182,7 @@ def main():
         "px_per_cm": PX_PER_CM,
         "constraints": {"min_duck_to_cup": MIN_DUCK_TO_CUP,
                         "duck_block_for": ["duck"]},
-        "_generated_by": "vbti/logic/inference/protocols/generators/make_ood_single_cup_30.py",
+        "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_ood_single_cup_30.py",
     }
 
     OUT_PATH.write_text(json.dumps(proto, indent=2))

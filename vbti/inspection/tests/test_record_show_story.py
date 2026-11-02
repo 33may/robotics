@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """show (Rerun projection) + story (AI trace reader) + CLI surface.
-Run: p inspection/tests/test_record_show_story.py
+Run: p vbti/inspection/tests/test_record_show_story.py
 """
 import json
 

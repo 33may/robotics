@@ -6,8 +6,8 @@ no search — either this exact motion is provably clear, or the caller escalate
 to tier 2 (sampling search). Measured ~75% of viewpoint moves land here.
 
 Usage (from repo root, robo env active):
-    p inspection/motion/direct.py          # headless: plan to a pose over the table
-    p inspection/motion/direct.py --demo   # meshcat: ghost-replay the chosen path
+    p vbti/inspection/motion/direct.py          # headless: plan to a pose over the table
+    p vbti/inspection/motion/direct.py --demo   # meshcat: ghost-replay the chosen path
 """
 
 import argparse

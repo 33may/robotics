@@ -3,7 +3,7 @@
 actually lives in. 2026-08-31: wrist_2 wound to -5.05 rad made the survey
 "unplannable" — every +-pi-wrapped goal branch was a 380 deg unwind away,
 through the tool_cable_loop/forearm collision belt, while the 2pi-alias of the
-same pose was a straight 20 deg move. Run: p inspection/tests/test_ik_branches.py"""
+same pose was a straight 20 deg move. Run: p vbti/inspection/tests/test_ik_branches.py"""
 import numpy as np
 
 from inspection.motion.ik import UR5eIK

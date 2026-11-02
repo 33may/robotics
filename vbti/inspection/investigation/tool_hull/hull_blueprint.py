@@ -12,8 +12,8 @@ Anything the USD does NOT contain (Anton's camera brackets, the blue plate,
 cables) is drawn from `cell.yaml`'s measured height only, and marked as
 unverified along X — that gap is the whole safety question.
 
-    p inspection/investigation/tool_hull/hull_blueprint.py
-    p inspection/investigation/tool_hull/hull_blueprint.py --refresh   # re-read the USD
+    p vbti/inspection/investigation/tool_hull/hull_blueprint.py
+    p vbti/inspection/investigation/tool_hull/hull_blueprint.py --refresh   # re-read the USD
 """
 import argparse
 import json

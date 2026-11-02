@@ -3,18 +3,18 @@
 
 Usage:
     # Step 1: Load frodeo-test calibration
-    python -m vbti.logic.servos.profiles load frodeo-test
+    python -m vla.logic.servos.profiles load frodeo-test
 
     # Step 2: Physically move each joint to where sim's 0 should be
     # (torque off, move by hand)
 
     # Step 3: Read positions and compute new calibration
-    python vbti/logic/servos/quick_recalib.py --port=/dev/ttyACM1 \
+    python vbti/vla/logic/servos/quick_recalib.py --port=/dev/ttyACM1 \
         --old_profile=frodeo-test --new_profile=sim_accurate
 
     # Step 4: Load and test
-    python -m vbti.logic.servos.profiles load sim_accurate
-    python vbti/logic/dataset/replay_utils.py goto --robot_id=sim_accurate \
+    python -m vla.logic.servos.profiles load sim_accurate
+    python vbti/vla/logic/dataset/replay_utils.py goto --robot_id=sim_accurate \
         --wrist_roll=0 --shoulder_lift=0 --elbow_flex=0 --wrist_flex=0 --gripper=0 --hold
 """
 import json

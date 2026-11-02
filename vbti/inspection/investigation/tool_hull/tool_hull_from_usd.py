@@ -15,8 +15,8 @@ Does NOT include the camera bracket / blue plate — those are Anton's
 additions and not in Antonio's USD. Measure those separately and add them as
 their own box; a hull is only safe if it covers what is physically bolted on.
 
-    p inspection/investigation/tool_hull/tool_hull_from_usd.py
-    p inspection/investigation/tool_hull/tool_hull_from_usd.py --bins 6
+    p vbti/inspection/investigation/tool_hull/tool_hull_from_usd.py
+    p vbti/inspection/investigation/tool_hull/tool_hull_from_usd.py --bins 6
 """
 import argparse
 import sys

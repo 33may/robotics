@@ -7,8 +7,8 @@ REAL D405 intrinsics, and measure the pixel bounding box. Answers the question
 the design formula hand-waves: "object fills f of the frame" — which extent,
 measured how, and how much does it swing between cells?
 
-    p inspection/investigation/view_framing/fill_probe.py --run 2408-seeded --r 0.35
-    p inspection/investigation/view_framing/fill_probe.py --run 2408-seeded --fill 0.45
+    p vbti/inspection/investigation/view_framing/fill_probe.py --run 2408-seeded --r 0.35
+    p vbti/inspection/investigation/view_framing/fill_probe.py --run 2408-seeded --fill 0.45
 """
 import argparse
 import json

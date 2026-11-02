@@ -18,7 +18,7 @@ v018-style config sets ``use_imagenet_stats: true`` for vision so these are unus
 they only need to be valid shape.
 
 Usage:
-    conda run -n lerobot python -m vbti.logic.dataset.add_zero_depth_turbo \\
+    conda run -n lerobot python -m vla.logic.dataset.add_zero_depth_turbo \\
         --src=eternalmay33/01_02_03_merged_may-sim \\
         --dst=eternalmay33/01_02_03_merged_may-sim_padded \\
         --reference=eternalmay33/04_red_cup_depth \\

@@ -2,8 +2,8 @@
 """Unlock EEPROM on all servos so lerobot can write calibration/config.
 
 Usage:
-    python vbti/logic/servos/unlock_all.py                    # all ports
-    python vbti/logic/servos/unlock_all.py --port=/dev/ttyACM0  # specific port
+    python vbti/vla/logic/servos/unlock_all.py                    # all ports
+    python vbti/vla/logic/servos/unlock_all.py --port=/dev/ttyACM0  # specific port
 """
 import glob
 import argparse

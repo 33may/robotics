@@ -10,8 +10,8 @@ Photographs are not CAD. This produces numbers with a stated scale reference
 and an error bar; a hull built from them must still be inflated, never
 trimmed to the measured value. Under-modelling a tool is how you crash one.
 
-    p inspection/investigation/tool_hull/tool_measure.py --grid       # overlay to read off
-    p inspection/investigation/tool_hull/tool_measure.py --crop 900 400 1700 1100
+    p vbti/inspection/investigation/tool_hull/tool_measure.py --grid       # overlay to read off
+    p vbti/inspection/investigation/tool_hull/tool_measure.py --crop 900 400 1700 1100
 """
 import argparse
 import sys

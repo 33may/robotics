@@ -5,7 +5,7 @@ Draccus dataclasses — typed, serializable to YAML/JSON, CLI-overridable.
 Each model backend translates these into its native config format.
 
 Usage:
-    from vbti.logic.train.configs import TrainConfig, SmolVLAModelConfig
+    from vla.logic.train.configs import TrainConfig, SmolVLAModelConfig
 
     config = TrainConfig(
         model=SmolVLAModelConfig(chunk_size=50),
@@ -313,14 +313,14 @@ def _create(model: str = "smolvla", output: str | None = None, **overrides):
     """Create a typed config with dotted overrides.
 
     Usage:
-        python -m vbti.logic.train.config_utils create smolvla \\
+        python -m vla.logic.train.config_utils create smolvla \\
             --dataset.repo_id=eternalmay33/lift_cube_3cams \\
             --training.lr=3e-5 \\
             --training.steps=20000 \\
             -o path/to/config.yaml
 
         # With dataset sources:
-        python -m vbti.logic.train.config_utils create smolvla \\
+        python -m vla.logic.train.config_utils create smolvla \\
             --dataset.repo_id=eternalmay33/lift_cube_3cams \\
             --dataset.source=sim
 

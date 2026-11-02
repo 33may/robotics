@@ -5,19 +5,19 @@ Use local training mainly for smoke tests, backend development, or LeRobot comma
 ## 1. Inspect Active Status
 
 ```bash
-python -m vbti.logic.train.engine status
+python -m vla.logic.train.engine status
 ```
 
 ## 2. Show Config
 
 ```bash
-python -m vbti.logic.train.config_utils show experiments/duck_cup_smolvla/vNNN/config.yaml
+python -m vla.logic.train.config_utils show experiments/duck_cup_smolvla/vNNN/config.yaml
 ```
 
 ## 3. Generate LeRobot Command
 
 ```bash
-python -m vbti.logic.train.engine train-lerobot \
+python -m vla.logic.train.engine train-lerobot \
   --experiment=duck_cup_smolvla \
   --version=vNNN \
   --dry_run
@@ -28,7 +28,7 @@ Use this before remote training to validate command translation.
 ## 4. Local Engine Training
 
 ```bash
-python -m vbti.logic.train.engine train \
+python -m vla.logic.train.engine train \
   --experiment=duck_cup_smolvla \
   --version=vNNN
 ```
@@ -36,8 +36,8 @@ python -m vbti.logic.train.engine train \
 Resume:
 
 ```bash
-python -m vbti.logic.train.engine train --resume
-python -m vbti.logic.train.engine train --resume --reset_lr
+python -m vla.logic.train.engine train --resume
+python -m vla.logic.train.engine train --resume --reset_lr
 ```
 
 ## 5. When Not To Use Local Engine

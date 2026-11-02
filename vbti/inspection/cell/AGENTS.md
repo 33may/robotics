@@ -19,7 +19,7 @@ nothing from sibling packages.
   tool envelope on the flange + cell boxes + keep-in volume. Queries:
   `is_colliding(q)`, `path_valid(path)`, `min_distance(q)`,
   `first_collision(q)` (diagnosis). Visuals: `show(q)` (verdict-tinted),
-  `replay(path)` (freeze at impact). Smoke: `p inspection/cell/world.py`.
+  `replay(path)` (freeze at impact). Smoke: `p vbti/inspection/cell/world.py`.
 - `viewer.py` — meshcat live preview of the cell (boxes + keep-in ghost).
 - `usd_preview.py` — measurement rig for Antonio's Isaac USD (done its job).
 
@@ -31,7 +31,7 @@ nothing from sibling packages.
   DISTANCE, and on run 2408-cup2 view 003 a cable passed behind the cup
   within 20 mm: genuinely adjacent, so distance had nothing to say and the
   object extent went to 175.8 mm. Masked, the same frames give 91.2 mm.
-  Verify with `p inspection/investigation/mask_probe.py --run <run>`, which
+  Verify with `p vbti/inspection/investigation/mask_probe.py --run <run>`, which
   drives the shipped `run.segmenter.object_view`, not a copy of it.
 - **`WORKSPACE` filters the SCENE, never the OBJECT** (Anton 2026-08-24).
   It exists to cut the far room so the table-plane fit and the depth fallback

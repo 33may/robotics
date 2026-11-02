@@ -22,7 +22,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from vbti.logic.cameras.cameras import (
+from vla.logic.cameras.cameras import (
     CAMERA_PRESETS,
     init_cameras,
     capture_frames,

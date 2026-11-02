@@ -2,7 +2,7 @@
 Evaluation engine — protocol-driven real-robot eval.
 
 Usage:
-    python vbti/logic/inference/eval_engine.py run \
+    python vbti/vla/logic/inference/eval_engine.py run \
         --checkpoint=v001/checkpoints/best \
         --protocol=checkpoint_sweep
 
@@ -34,7 +34,7 @@ import cv2
 from datetime import datetime
 from pathlib import Path
 
-from vbti.logic.inference.run_real_inference import (
+from vla.logic.inference.run_real_inference import (
     _load_policy,
     _init_robot,
     _init_cameras,
@@ -49,11 +49,11 @@ from vbti.logic.inference.run_real_inference import (
     JOINT_NAMES,
     CAMERA_PRESETS,
 )
-from vbti.logic.cameras.cameras import get_latest_depth
-from vbti.logic.depth.realtime_prepare import depth_uint16_to_turbo_rgb
-from vbti.logic.inference.async_chunk_runner import AsyncChunkRunner
-from vbti.logic.servos.rest import move_to_rest
-from vbti.logic.train.experiment_utils import (
+from vla.logic.cameras.cameras import get_latest_depth
+from vla.logic.depth.realtime_prepare import depth_uint16_to_turbo_rgb
+from vla.logic.inference.async_chunk_runner import AsyncChunkRunner
+from vla.logic.servos.rest import move_to_rest
+from vla.logic.train.experiment_utils import (
     _resolve_experiment,
     _resolve_version,
     _version_dir,
@@ -76,7 +76,7 @@ def _resolve_ckpt_path(spec: str | int, experiment: str) -> Path:
         raw path    → used directly if it exists
         named       → falls back to existing resolve_checkpoint()
     """
-    from vbti.logic.train.experiment_utils import EXPERIMENTS_ROOT, resolve_checkpoint
+    from vla.logic.train.experiment_utils import EXPERIMENTS_ROOT, resolve_checkpoint
 
     # Fire parses bare numeric CLI values like ``--checkpoint=111960`` as int.
     # Treat every checkpoint spec as text before path/shorthand resolution.
@@ -122,12 +122,12 @@ def _resolve_ckpt_path(spec: str | int, experiment: str) -> Path:
 
     # 30k  /  30000  /  last  (uses active version)
     if re.fullmatch(r"\d+k?|last", spec, re.IGNORECASE):
-        from vbti.logic.train.experiment_utils import _resolve_version
+        from vla.logic.train.experiment_utils import _resolve_version
         active_ver = _resolve_version(experiment, None)
         return _resolve_in_ver(active_ver, spec)
 
     # 3. Named specifier (best / final / step_030000)
-    from vbti.logic.train.experiment_utils import _resolve_experiment, _resolve_version
+    from vla.logic.train.experiment_utils import _resolve_experiment, _resolve_version
     exp  = _resolve_experiment(experiment)
     ver  = _resolve_version(exp, None)
     paths = resolve_checkpoint(spec, exp, ver)

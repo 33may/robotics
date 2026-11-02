@@ -8,7 +8,7 @@ VALIDATION (never used to fit s):
   V3 the named parts: compute demo5 c5.2 / c5.6 (e05 truth pairs, e02 masks, own depth),
      plus unmasked SIFT pairs for compute demo5 steps 2/6/7 and box demo1 steps 1/4.
 
-Run:  p inspection/investigation/iwm/e06_view_offset/fit.py
+Run:  p vbti/inspection/investigation/iwm/e06_view_offset/fit.py
 Out:  evidence/fit.json, evidence/fit.png
 """
 import itertools

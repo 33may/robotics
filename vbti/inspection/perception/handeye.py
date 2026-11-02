@@ -7,8 +7,8 @@ native depth lives in. (D405 color is UNRECTIFIED; never feed its factory
 coefficients to solvePnP.)
 
 Usage:
-    p inspection/perception/handeye.py collect --outdir=data/inspection/handeye_ur
-    p inspection/perception/handeye.py solve   --outdir=data/inspection/handeye_ur
+    p vbti/inspection/perception/handeye.py collect --outdir=data/inspection/handeye_ur
+    p vbti/inspection/perception/handeye.py solve   --outdir=data/inspection/handeye_ur
 
 Collect flow: FREEDRIVE, hands-free auto-capture. You hold the freedrive
 button and pose the arm; whenever the arm has been still for DWELL_S and the
@@ -216,7 +216,7 @@ def collect(outdir: str, serial: str = WRIST_SERIAL,
         pipe.stop()
         cv2.destroyAllWindows()
     print(f"\n{idx} pairs total. Solve with:\n"
-          f"  p inspection/perception/handeye.py solve --outdir={outdir}")
+          f"  p vbti/inspection/perception/handeye.py solve --outdir={outdir}")
 
 
 # ── Solve ───────────────────────────────────────────────────────────────────

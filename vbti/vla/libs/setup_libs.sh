@@ -1,6 +1,6 @@
 #!/bin/bash
 # Setup vendored libraries for VBTI pipeline
-# Run from repo root: bash vbti/libs/setup_libs.sh
+# Run from repo root: bash vbti/vla/libs/setup_libs.sh
 
 set -e
 

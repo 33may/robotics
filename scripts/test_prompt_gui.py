@@ -7,14 +7,14 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "vbti"  # holds the vla package
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import cv2
 import numpy as np
 
-from vbti.logic.inference.prompt_gui import FullInferenceGui, PromptGuiStatus
+from vla.logic.inference.prompt_gui import FullInferenceGui, PromptGuiStatus
 
 RED_PROMPT = "Pick up the duck and place it in the red cup"
 BLACK_PROMPT = "Pick up the duck and place it in the black cup"

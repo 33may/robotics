@@ -8,14 +8,14 @@ Everything else (vision unfrozen, aug, BS=12, epochs=12, etc.) is inherited from
 
 Run once; review the generated config.yaml files; commit them; then launch the chain:
     python scripts/gen_data_eff_configs.py
-    python -m vbti.logic.train.chain --versions v021,v022,v023,v024
+    python -m vla.logic.train.chain --versions v021,v022,v023,v024
 """
 
 from __future__ import annotations
 
 import yaml
 
-from vbti.logic.train.chain import EXP_ROOT, n_frames_for
+from vla.logic.train.chain import EXP_ROOT, n_frames_for
 
 
 BASE_VERSION   = "v020"

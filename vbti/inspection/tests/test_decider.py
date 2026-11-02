@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the decider data model. Run: p inspection/tests/test_decider.py"""
+"""Tests for the decider data model. Run: p vbti/inspection/tests/test_decider.py"""
 import queue
 import time
 

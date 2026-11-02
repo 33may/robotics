@@ -2,12 +2,12 @@
 """Eval session inspection and comparison utilities.
 
 Usage:
-    python -m vbti.logic.inference.eval_helpers ls
-    python -m vbti.logic.inference.eval_helpers ls --detailed
-    python -m vbti.logic.inference.eval_helpers info latest
-    python -m vbti.logic.inference.eval_helpers info v18-20k
-    python -m vbti.logic.inference.eval_helpers info latest --group_by=scene
-    python -m vbti.logic.inference.eval_helpers play latest 3
+    python -m vla.logic.inference.eval_helpers ls
+    python -m vla.logic.inference.eval_helpers ls --detailed
+    python -m vla.logic.inference.eval_helpers info latest
+    python -m vla.logic.inference.eval_helpers info v18-20k
+    python -m vla.logic.inference.eval_helpers info latest --group_by=scene
+    python -m vla.logic.inference.eval_helpers play latest 3
 """
 import json
 import re
@@ -15,7 +15,7 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 
-from vbti.logic.train.experiment_utils import (
+from vla.logic.train.experiment_utils import (
     _resolve_experiment,
     _resolve_version,
     _version_dir,

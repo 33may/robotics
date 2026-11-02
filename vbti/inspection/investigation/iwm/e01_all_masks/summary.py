@@ -1,7 +1,7 @@
 """e01 numbers for the report: masks per set, nodes/depth/conflicts per tree.
 
 Writes evidence/tree_stats.json and prints a markdown table.
-Run:  p inspection/investigation/iwm/e01_all_masks/summary.py
+Run:  p vbti/inspection/investigation/iwm/e01_all_masks/summary.py
 """
 import json
 

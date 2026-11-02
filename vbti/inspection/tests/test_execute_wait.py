@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""_wait_async poll logic, no robot. Run: p inspection/tests/test_execute_wait.py"""
+"""_wait_async poll logic, no robot. Run: p vbti/inspection/tests/test_execute_wait.py"""
 import threading
 import time
 

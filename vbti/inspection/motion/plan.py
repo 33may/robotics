@@ -12,8 +12,8 @@ solved 0/11 hard cases here, because the safe shell around an object sitting on
 a table is mostly inside the table. See git history if it is ever needed.
 
 Usage (from repo root, robo env active):
-    p inspection/motion/plan.py           # headless: ladder stats over 40 samples
-    p inspection/motion/plan.py --demo    # meshcat: orbit a fake cup, execute all
+    p vbti/inspection/motion/plan.py           # headless: ladder stats over 40 samples
+    p vbti/inspection/motion/plan.py --demo    # meshcat: orbit a fake cup, execute all
 """
 
 import argparse

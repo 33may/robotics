@@ -8,12 +8,12 @@ Rule (turn 1):
      parent(B) = the smallest A containing B; root if none
   5. conflicts = pairs that overlap (>= 30 % of the smaller) without containment
 
-Outputs  inspection/data/iwm/e01_all_masks/trees/<frame>/<name>/tree.json, tree.txt
+Outputs  vbti/inspection/data/iwm/e01_all_masks/trees/<frame>/<name>/tree.json, tree.txt
          evidence/<frame>_<name>_levels.png   one panel per depth, masks at that depth
          evidence/<frame>_<name>_nested.png   outlines coloured by depth
          evidence/<frame>_<name>_gallery.png  every node as a crop, by depth
 
-Run:  p inspection/investigation/iwm/e01_all_masks/tree.py --frame c5.6 --sets sam3_obj3_32 sam3_text
+Run:  p vbti/inspection/investigation/iwm/e01_all_masks/tree.py --frame c5.6 --sets sam3_obj3_32 sam3_text
       (several --sets are merged; the tree is named a+b)
 """
 import argparse

@@ -5,7 +5,7 @@ Answers, offline and before any live wiring: when does the stability gate
 open, and what does the resolution ladder achieve per face?
 
 Usage (repo root, robo env):
-    p inspection/investigation/face_replay.py run 1409-lan-ai_bench1
+    p vbti/inspection/investigation/face_replay.py run 1409-lan-ai_bench1
 """
 import sys
 from pathlib import Path

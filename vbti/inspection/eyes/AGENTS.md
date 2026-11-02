@@ -25,13 +25,13 @@ accumulating in the orchestrator's context over a 5–30 step run.
   (newest view of a cell), `views_near` (4-connected; an uncaptured
   neighbour returns None and is logged as a note), `get_view` → `ViewImage`
   (pixels **and** text), `crop` (clipped), `coverage` (ASCII + count), `note`.
-  Debug CLI: `p inspection/eyes/tools.py inspection/data/runs/2408-seeded`.
+  Debug CLI: `p vbti/inspection/eyes/tools.py vbti/inspection/data/runs/2408-seeded`.
 - `verbs_local.py` — the subagent's local verbs: `LocalVerbs(backend)` with
   `detect` (text → boxes), `segment` (box → frame-sized mask), `read_text`.
   Policy (thresholds, clipping, ordering) lives in `LocalVerbs` and is tested
   on `StubBackend` with no GPU; `Sam3Backend` and `PaddleOcrBackend` hold only
   model I/O. Measured on the 5090: SAM 3 63–74 ms/frame warm, PP-OCRv6 ~16 ms.
-  `p inspection/eyes/verbs_local.py <run_dir> <h> <v>`.
+  `p vbti/inspection/eyes/verbs_local.py <run_dir> <h> <v>`.
 - `env_check.py` — preflight for the model stack (sm_120, a real bf16 matmul,
   transformers ≥5, HF token, and a genuine gated-file fetch for `facebook/sam3`).
 
@@ -41,8 +41,8 @@ now (`record/run.py:Run.load`, `.captured`, `.at()`), legacy layouts
 included. Debug a run without writing code: `p -m inspection.record card
 <id>` (`record/__main__.py`), or `Run.load(run_dir)` from a REPL.
 
-Tests (no pytest): `p inspection/tests/test_eyes_store.py`,
-`p inspection/tests/test_record_run_port.py`.
+Tests (no pytest): `p vbti/inspection/tests/test_eyes_store.py`,
+`p vbti/inspection/tests/test_record_run_port.py`.
 
 ## Contracts & decisions
 - **Three trust levels, enforced by construction.** `FactWriter` is the only

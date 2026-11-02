@@ -5,9 +5,9 @@ Use after recording or after creating a transformed dataset.
 ## 1. Inspect Dataset
 
 ```bash
-python -m vbti.logic.dataset.check_utils report <repo_id_or_path>
-python -m vbti.logic.dataset.check_utils cameras <repo_id_or_path>
-python -m vbti.logic.dataset.check_utils plot_actions <repo_id_or_path> --save=/tmp/actions.png
+python -m vla.logic.dataset.check_utils report <repo_id_or_path>
+python -m vla.logic.dataset.check_utils cameras <repo_id_or_path>
+python -m vla.logic.dataset.check_utils plot_actions <repo_id_or_path> --save=/tmp/actions.png
 ```
 
 Write down:
@@ -36,14 +36,14 @@ Look for:
 Inspect:
 
 ```bash
-python -m vbti.logic.dataset.hdf5_utils report /path/to/data.hdf5
-python -m vbti.logic.dataset.convert_utils discover /path/to/data.hdf5
+python -m vla.logic.dataset.hdf5_utils report /path/to/data.hdf5
+python -m vla.logic.dataset.convert_utils discover /path/to/data.hdf5
 ```
 
 Convert:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils convert \
+python -m vla.logic.dataset.convert_utils convert \
   /path/to/data.hdf5 \
   eternalmay33/<converted_dataset> \
   "Pick up the duck and place it in the cup"
@@ -52,8 +52,8 @@ python -m vbti.logic.dataset.convert_utils convert \
 Verify:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils verify eternalmay33/<converted_dataset>
-python -m vbti.logic.dataset.check_utils report eternalmay33/<converted_dataset>
+python -m vla.logic.dataset.convert_utils verify eternalmay33/<converted_dataset>
+python -m vla.logic.dataset.check_utils report eternalmay33/<converted_dataset>
 ```
 
 ## 4. Add/Bake Depth If Needed
@@ -61,7 +61,7 @@ python -m vbti.logic.dataset.check_utils report eternalmay33/<converted_dataset>
 Preferred packed-depth bake:
 
 ```bash
-python -m vbti.logic.depth.bake_packed_depth \
+python -m vla.logic.depth.bake_packed_depth \
   --repo_id=<source_depth_dataset> \
   --out-repo-id=<output_turbo_dataset> \
   --depth-key=observation.images.gripper_depth \
@@ -73,7 +73,7 @@ python -m vbti.logic.depth.bake_packed_depth \
 Add black placeholder depth for schema compatibility:
 
 ```bash
-python -m vbti.logic.dataset.add_zero_depth_turbo \
+python -m vla.logic.dataset.add_zero_depth_turbo \
   --src=<no_depth_dataset> \
   --dst=<padded_dataset> \
   --reference=<depth_dataset>
@@ -82,7 +82,7 @@ python -m vbti.logic.dataset.add_zero_depth_turbo \
 ## 5. Subsample For Data-Efficiency Experiments
 
 ```bash
-python -m vbti.logic.dataset.subsample \
+python -m vla.logic.dataset.subsample \
   --src=<source_dataset> \
   --stride=4 \
   --dst=<output_dataset> \
@@ -101,9 +101,9 @@ Common strides:
 Only for detection-state experiments:
 
 ```bash
-python -m vbti.logic.detection.process_dataset <dataset>
-python -m vbti.logic.detection.phases <dataset>
-python -m vbti.logic.dataset.augment <dataset> --augmentations detection phase -o <augmented_dataset>
+python -m vla.logic.detection.process_dataset <dataset>
+python -m vla.logic.detection.phases <dataset>
+python -m vla.logic.dataset.augment <dataset> --augmentations detection phase -o <augmented_dataset>
 ```
 
 Verify `observation.state` dimension after augmentation.
@@ -111,7 +111,7 @@ Verify `observation.state` dimension after augmentation.
 ## 7. UVA Feature Bake If Needed
 
 ```bash
-python -m vbti.logic.dataset.add_video_features \
+python -m vla.logic.dataset.add_video_features \
   --dataset <source_dataset> \
   --teacher <teacher_pretrained_model> \
   --layer siglip_output \
@@ -126,8 +126,8 @@ For remote training, bake where the remote can access the result or sync it afte
 ## 8. Final Verification
 
 ```bash
-python -m vbti.logic.dataset.check_utils report <final_dataset>
-python -m vbti.logic.dataset.check_utils cameras <final_dataset>
+python -m vla.logic.dataset.check_utils report <final_dataset>
+python -m vla.logic.dataset.check_utils cameras <final_dataset>
 ```
 
 Do not create a training version until the final dataset report is sane.

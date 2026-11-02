@@ -1,11 +1,11 @@
-"""CLI over the record layer. Run: p inspection/record/__main__.py <cmd>
+"""CLI over the record layer. Run: p vbti/inspection/record/__main__.py <cmd>
 
-  p inspection/record/__main__.py ls [--data | --all] [--object O] [--status S]
+  p vbti/inspection/record/__main__.py ls [--data | --all] [--object O] [--status S]
                                 [--source S] [--rig R]
-  p inspection/record/__main__.py card ID [--root R]
-  p inspection/record/__main__.py validate [ID | --all] [--deep] [--root R]
-  p inspection/record/__main__.py show ID [--out F.rrd] [--noopen] [--root R]
-  p inspection/record/__main__.py story ID [--root R]
+  p vbti/inspection/record/__main__.py card ID [--root R]
+  p vbti/inspection/record/__main__.py validate [ID | --all] [--deep] [--root R]
+  p vbti/inspection/record/__main__.py show ID [--out F.rrd] [--noopen] [--root R]
+  p vbti/inspection/record/__main__.py story ID [--root R]
 
 Two archives, one CLI: `ls` reads data/runs/ (real inspection runs), `ls
 --data` reads data/datasets/ (collection sweeps), `ls --all` reads both.

@@ -4,7 +4,7 @@ For each run, one contact sheet (evidence/frames_<run>.jpg) with every captured
 step: thumbnail, step id, view address, camera-to-object distance, object size in
 the frame. Plus evidence/frames_catalogue.json with the same numbers.
 
-Run:  p inspection/investigation/iwm/e01_all_masks/frames.py
+Run:  p vbti/inspection/investigation/iwm/e01_all_masks/frames.py
 Reads recordings only; writes to evidence/.
 """
 import json

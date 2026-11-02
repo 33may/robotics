@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from vbti.logic.reconstruct import gs_milo_utils
+from vla.logic.reconstruct import gs_milo_utils
 
 
 def test_milo_dir_resolves_from_package_root():

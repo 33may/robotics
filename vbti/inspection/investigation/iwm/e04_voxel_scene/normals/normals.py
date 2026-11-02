@@ -24,7 +24,7 @@ flatness lambda0 / sum(lambda); RANSAC inlier ratio.
 Outputs  evidence/normals/<frame>_<mm>mm_field.jpg   arrows on the face per method
          evidence/normals/angle_vs_radius_<mm>mm.jpg
          evidence/normals/normals.json
-Run:  p inspection/investigation/iwm/e04_voxel_scene/normals/normals.py [--sizes 2 1]
+Run:  p vbti/inspection/investigation/iwm/e04_voxel_scene/normals/normals.py [--sizes 2 1]
 """
 import argparse
 import json

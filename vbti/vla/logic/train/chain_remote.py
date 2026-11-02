@@ -12,10 +12,10 @@ Features:
 
 Usage:
     # Run immediately:
-    python -m vbti.logic.train.chain_remote --versions v021,v022,v023
+    python -m vla.logic.train.chain_remote --versions v021,v022,v023
 
     # Schedule to wait for an existing run to finish first (4 hour max wait):
-    python -m vbti.logic.train.chain_remote --versions v021,v022 --wait_for_session train_duck_cup_smolvla_v020_lerobot_output
+    python -m vla.logic.train.chain_remote --versions v021,v022 --wait_for_session train_duck_cup_smolvla_v020_lerobot_output
 """
 
 import argparse
@@ -24,10 +24,10 @@ import os
 import sys
 from pathlib import Path
 
-from vbti.logic.train.chain import derive_from_config, MIN_SAFETENSORS_BYTES
-from vbti.logic.train.engine import _build_lerobot_command, resolve_config_and_version
-from vbti.logic.train.experiment_utils import active
-from vbti.logic.train.remote import _load_remote_config, _ssh, _rsync_to_remote, push_data
+from vla.logic.train.chain import derive_from_config, MIN_SAFETENSORS_BYTES
+from vla.logic.train.engine import _build_lerobot_command, resolve_config_and_version
+from vla.logic.train.experiment_utils import active
+from vla.logic.train.remote import _load_remote_config, _ssh, _rsync_to_remote, push_data
 
 
 def _shell_quote(a: str) -> str:
@@ -235,7 +235,7 @@ def run_remote_chain(
     print(f"Log file on remote: {log_file}")
     print(f"Tmux session:       {tmux_session}")
     print(f"\nWhen you return, pull your results with:")
-    print(f"  python -m vbti.logic.train.remote pull --checkpoint=all --run_name={run_name} --version=vXXX")
+    print(f"  python -m vla.logic.train.remote pull --checkpoint=all --run_name={run_name} --version=vXXX")
 
 
 def main():

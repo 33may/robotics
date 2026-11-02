@@ -10,18 +10,18 @@ and only recomputes what's missing.
 
 Usage:
     # Detection only (auto-finds/merges source parquets for merged datasets):
-    python -m vbti.logic.dataset.augment eternalmay33/01_02_03_merged_may-sim \\
+    python -m vla.logic.dataset.augment eternalmay33/01_02_03_merged_may-sim \\
         --augmentations detection --drop top_duck
 
     # Detection + phase:
-    python -m vbti.logic.dataset.augment eternalmay33/02_black_full_center \\
+    python -m vla.logic.dataset.augment eternalmay33/02_black_full_center \\
         --augmentations detection phase
 
     # Dry run:
-    python -m vbti.logic.dataset.augment eternalmay33/02_black_full_center --dry-run
+    python -m vla.logic.dataset.augment eternalmay33/02_black_full_center --dry-run
 
     # Add phase to an already-augmented dataset that has detection:
-    python -m vbti.logic.dataset.augment eternalmay33/02_aug_v1 \\
+    python -m vla.logic.dataset.augment eternalmay33/02_aug_v1 \\
         --augmentations phase -o eternalmay33/02_aug_v2
 """
 
@@ -40,7 +40,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from vbti.logic.dataset import LEROBOT_CACHE, resolve_dataset_path
+from vla.logic.dataset import LEROBOT_CACHE, resolve_dataset_path
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -248,7 +248,7 @@ class DetectionAugmentation(Augmentation):
 
         # 3. Run OWLv2 detection from scratch
         print(f"[detection] No sources found, running OWLv2 detection...")
-        from vbti.logic.detection.process_dataset import process_dataset
+        from vla.logic.detection.process_dataset import process_dataset
         result_path = process_dataset(
             dataset_path=str(dataset_path),
             cameras=self.cameras,
@@ -368,7 +368,7 @@ class PhaseAugmentation(Augmentation):
 
         # Run phase detection from scratch
         print(f"[phase] No sources found, computing phase labels...")
-        from vbti.logic.detection.phases import process_phases_dataset
+        from vla.logic.detection.phases import process_phases_dataset
         result_path = process_phases_dataset(str(dataset_path))
         return Path(result_path)
 

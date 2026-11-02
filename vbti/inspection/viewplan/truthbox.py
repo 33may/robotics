@@ -6,9 +6,9 @@ accumulated cloud — the GT for the surface-completion benchmark. The box
 is seeded from `min_yaw_aabb` (or a previously saved truth), its bottom
 face pinned to the probed table plane; he only micro-adjusts.
 
-    p inspection/viewplan/truthbox.py edit --run 0809-box2
-    p inspection/viewplan/truthbox.py edit --all
-    p inspection/viewplan/truthbox.py seed --run 0809-box2   # print, no UI
+    p vbti/inspection/viewplan/truthbox.py edit --run 0809-box2
+    p vbti/inspection/viewplan/truthbox.py edit --all
+    p vbti/inspection/viewplan/truthbox.py seed --run 0809-box2   # print, no UI
 
 Viewer: meshcat (URL printed — open in browser). Terminal keys:
 

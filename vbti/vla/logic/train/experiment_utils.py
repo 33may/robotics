@@ -39,7 +39,7 @@ import json
 import yaml
 
 
-EXPERIMENTS_ROOT = Path("~/projects/ml_portfolio/robotics/vbti/experiments").expanduser()
+EXPERIMENTS_ROOT = Path("~/projects/ml_portfolio/robotics/vbti/vla/experiments").expanduser()
 STATE_FILE = EXPERIMENTS_ROOT / "state.json"
 
 

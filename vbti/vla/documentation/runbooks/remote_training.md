@@ -9,8 +9,8 @@ Run `create_experiment_version.md` first.
 Minimum checks:
 
 ```bash
-python -m vbti.logic.train.config_utils show experiments/duck_cup_smolvla/vNNN/config.yaml
-python -m vbti.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --version=vNNN --dry_run
+python -m vla.logic.train.config_utils show experiments/duck_cup_smolvla/vNNN/config.yaml
+python -m vla.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --version=vNNN --dry_run
 ```
 
 ## 2. Ensure Dataset Is Available
@@ -18,7 +18,7 @@ python -m vbti.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --
 If dataset is local and should be pushed:
 
 ```bash
-python -m vbti.logic.train.remote push-data --repo_id=<dataset_repo_id>
+python -m vla.logic.train.remote push-data --repo_id=<dataset_repo_id>
 ```
 
 `remote.py train` can also auto-sync when it detects missing/incomplete data.
@@ -26,7 +26,7 @@ python -m vbti.logic.train.remote push-data --repo_id=<dataset_repo_id>
 ## 3. Launch Training
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=vNNN \
   --run_name=lerobot_output_r1
@@ -35,7 +35,7 @@ python -m vbti.logic.train.remote train \
 Non-streaming launch for autonomous/background workflows:
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=vNNN \
   --run_name=lerobot_output_r1 \
@@ -45,7 +45,7 @@ python -m vbti.logic.train.remote train \
 ## 4. Resume From Checkpoint
 
 ```bash
-python -m vbti.logic.train.remote train \
+python -m vla.logic.train.remote train \
   --experiment=duck_cup_smolvla \
   --version=vNNN \
   --run_name=lerobot_output_r2 \
@@ -55,8 +55,8 @@ python -m vbti.logic.train.remote train \
 ## 5. Monitor
 
 ```bash
-python -m vbti.logic.train.remote status --experiment=duck_cup_smolvla --version=vNNN
-python -m vbti.logic.train.remote logs --experiment=duck_cup_smolvla --version=vNNN --lines=100
+python -m vla.logic.train.remote status --experiment=duck_cup_smolvla --version=vNNN
+python -m vla.logic.train.remote logs --experiment=duck_cup_smolvla --version=vNNN --lines=100
 ```
 
 If these do not show logs, inspect `remote_session.json` and the remote version directory; current code may look at a different log path than the launcher writes.
@@ -66,13 +66,13 @@ If these do not show logs, inspect `remote_session.json` and the remote version 
 All outputs:
 
 ```bash
-python -m vbti.logic.train.remote pull --experiment=duck_cup_smolvla --version=vNNN
+python -m vla.logic.train.remote pull --experiment=duck_cup_smolvla --version=vNNN
 ```
 
 Specific checkpoint:
 
 ```bash
-python -m vbti.logic.train.remote pull \
+python -m vla.logic.train.remote pull \
   --experiment=duck_cup_smolvla \
   --version=vNNN \
   --checkpoint=step_080000
@@ -81,7 +81,7 @@ python -m vbti.logic.train.remote pull \
 Pretrained model only:
 
 ```bash
-python -m vbti.logic.train.remote pull \
+python -m vla.logic.train.remote pull \
   --experiment=duck_cup_smolvla \
   --version=vNNN \
   --checkpoint=step_080000 \

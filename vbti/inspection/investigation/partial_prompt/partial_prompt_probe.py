@@ -30,8 +30,8 @@ converge), identical across candidates, and never fed to any prompt.
 recall = GT pixels the mask covers; spill = mask pixels far outside the GT
 box (grabbing the mouse/table would show here).
 
-    p inspection/investigation/partial_prompt/partial_prompt_probe.py --run 1009-lan1
-    p inspection/investigation/partial_prompt/partial_prompt_probe.py --run 1009-lan1 --overlays all
+    p vbti/inspection/investigation/partial_prompt/partial_prompt_probe.py --run 1009-lan1
+    p vbti/inspection/investigation/partial_prompt/partial_prompt_probe.py --run 1009-lan1 --overlays all
 
 Writes /tmp/partial_prompt_probe/<run>/{metrics.json,overlay_NNN.png}.
 Recorded runs are read-only; everything lands in /tmp.

@@ -4,7 +4,7 @@
 Delegates to profiles.load(). Kept for backward compatibility.
 
 Usage:
-    python -m vbti.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frodeo-test
+    python -m vla.logic.servos.load_calibration --port /dev/ttyACM1 --robot_id frodeo-test
 """
 from .profiles import load, get_active_profile
 

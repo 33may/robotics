@@ -9,14 +9,14 @@ Features:
 
 Usage:
     # Real robot
-    python vbti/logic/inference/run_real_inference.py run \
-        --checkpoint=vbti/experiments/duck_cup_smolvla/v001/checkpoints/best \
+    python vbti/vla/logic/inference/run_real_inference.py run \
+        --checkpoint=vbti/vla/experiments/duck_cup_smolvla/v001/checkpoints/best \
         --port=/dev/ttyACM0 \
         --task="pick up the duck and place it in the cup" \
         --max_relative_target=5.0
 
     # Camera preview only
-    python vbti/logic/inference/run_real_inference.py preview
+    python vbti/vla/logic/inference/run_real_inference.py preview
 """
 
 import os
@@ -63,7 +63,7 @@ REAL_LIMITS_DEG = [
 
 # ── Camera setup (shared module) ─────────────────────────────────────────────
 
-from vbti.logic.cameras.cameras import (
+from vla.logic.cameras.cameras import (
     CAMERA_PRESETS,
     init_cameras as _init_cameras,
     capture_frames as _capture_frames,
@@ -72,8 +72,8 @@ from vbti.logic.cameras.cameras import (
     build_grid_frame as _build_grid_frame,
     show_camera_grid as _show_camera_grid_raw,
 )
-from vbti.logic.depth.realtime_prepare import depth_uint16_to_turbo_rgb as _depth_to_turbo
-from vbti.logic.inference.async_chunk_runner import AsyncChunkRunner
+from vla.logic.depth.realtime_prepare import depth_uint16_to_turbo_rgb as _depth_to_turbo
+from vla.logic.inference.async_chunk_runner import AsyncChunkRunner
 
 DEFAULT_CAMERAS = CAMERA_PRESETS["realsense"]
 
@@ -148,7 +148,7 @@ def _show_camera_grid(frames, camera_names, step, action=None,
 
 def _init_detector(device: str = "cuda"):
     """Load student detector for live detection overlay."""
-    from vbti.logic.detection.detect import StudentDetector
+    from vla.logic.detection.detect import StudentDetector
     detector = StudentDetector(device=device)
     vram_mb = torch.cuda.memory_allocated() / 1e6
     print(f"[detection] StudentDetector loaded — total VRAM: {vram_mb:.0f} MB")
@@ -277,7 +277,7 @@ def _save_video_ffmpeg(frames: list[np.ndarray], output_path: Path, fps: int):
 
 def _init_robot(port: str, robot_id: str | None = None, max_relative_target: float = 10.0):
     """Connect to SO-101 follower arm."""
-    from vbti.logic.servos.profiles import get_active_profile
+    from vla.logic.servos.profiles import get_active_profile
     if robot_id is None:
         robot_id = get_active_profile()
 
@@ -304,7 +304,7 @@ def _get_state(robot) -> np.ndarray:
     return np.array([obs[f"{name}.pos"] for name in JOINT_NAMES])
 
 
-from vbti.logic.servos.rest import move_to_rest
+from vla.logic.servos.rest import move_to_rest
 
 
 # ── Policy loading ────────────────────────────────────────────────────────────
@@ -587,7 +587,7 @@ def run(
         print(f"[voice] {text!r}")
 
     if voice_prompt:
-        from vbti.logic.inference.voice_prompt import VoicePromptListener
+        from vla.logic.inference.voice_prompt import VoicePromptListener
         voice_listener = VoicePromptListener(
             on_text=_apply_voice_text,
             model_name=voice_model,
@@ -598,7 +598,7 @@ def run(
         voice_status = "ready"
 
     if prompt_gui:
-        from vbti.logic.inference.prompt_gui import FullInferenceGui, PromptGuiStatus
+        from vla.logic.inference.prompt_gui import FullInferenceGui, PromptGuiStatus
 
         def _gui_status():
             p, v, src = prompt_state.snapshot()
@@ -894,7 +894,7 @@ def _resolve_checkpoint_list(checkpoint: str, experiment: str, version: str) -> 
         "step_002000,step_004000,best" → specific list
         "2000,4000"                    → shorthand steps
     """
-    from vbti.logic.train.experiment_utils import resolve_checkpoint
+    from vla.logic.train.experiment_utils import resolve_checkpoint
 
     # Comma-separated → resolve each independently
     if "," in checkpoint:
@@ -945,7 +945,7 @@ def eval(
     """
     import sys
     sys.path.insert(0, str(Path(__file__).parents[3]))
-    from vbti.logic.train.experiment_utils import _resolve_experiment, _resolve_version, _version_dir
+    from vla.logic.train.experiment_utils import _resolve_experiment, _resolve_version, _version_dir
 
     cam_config = CAMERA_PRESETS.get(cameras, CAMERA_PRESETS["realsense"])
 

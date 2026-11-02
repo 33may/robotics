@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """catalog — cards + filters over run.json files; files are the truth.
-Run: p inspection/tests/test_record_catalog.py
+Run: p vbti/inspection/tests/test_record_catalog.py
 """
 import json
 import os

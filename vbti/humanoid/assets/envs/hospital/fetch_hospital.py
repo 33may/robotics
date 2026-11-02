@@ -12,7 +12,7 @@ sky). That `../../../` climbs to `Assets/Isaac/5.0/`, a level ABOVE `Isaac/`, so
 warehouse we root the local mirror at `Assets/Isaac/5.0/` (DEST = this dir): `Isaac/...` and
 `NVIDIA/...` both land at the right relative offsets and the sky ref resolves untouched.
 
-    conda run -n isaac python humanoid/assets/envs/hospital/fetch_hospital.py
+    conda run -n isaac python vbti/humanoid/assets/envs/hospital/fetch_hospital.py
     # (download is stdlib-only; any python3 works — isaac env only needed to validate)
 
 Re-runnable: files already present with the right size are skipped. ~1.05 GB, ~620 files

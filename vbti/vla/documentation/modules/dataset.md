@@ -54,25 +54,25 @@ Camera names and order matter because SmolVLA builds its input interface from da
 ## Dataset Inspection Commands
 
 ```bash
-python -m vbti.logic.dataset.check_utils ls
-python -m vbti.logic.dataset.check_utils info eternalmay33/duck_cup_v020_all
-python -m vbti.logic.dataset.check_utils cameras eternalmay33/duck_cup_v020_all
-python -m vbti.logic.dataset.check_utils report eternalmay33/duck_cup_v020_all
-python -m vbti.logic.dataset.check_utils plot_actions eternalmay33/duck_cup_v020_all --save=/tmp/actions.png
+python -m vla.logic.dataset.check_utils ls
+python -m vla.logic.dataset.check_utils info eternalmay33/duck_cup_v020_all
+python -m vla.logic.dataset.check_utils cameras eternalmay33/duck_cup_v020_all
+python -m vla.logic.dataset.check_utils report eternalmay33/duck_cup_v020_all
+python -m vla.logic.dataset.check_utils plot_actions eternalmay33/duck_cup_v020_all --save=/tmp/actions.png
 ```
 
 Compare action distributions:
 
 ```bash
-python -m vbti.logic.dataset.check_utils compare_actions --datasets='{"real":"/path/real","sim":"/path/sim"}'
+python -m vla.logic.dataset.check_utils compare_actions --datasets='{"real":"/path/real","sim":"/path/sim"}'
 ```
 
 HDF5 inspection:
 
 ```bash
-python -m vbti.logic.dataset.hdf5_utils info /path/to/data.hdf5
-python -m vbti.logic.dataset.hdf5_utils report /path/to/data.hdf5
-python -m vbti.logic.dataset.hdf5_utils view /path/to/data.hdf5 0 all --sensor all
+python -m vla.logic.dataset.hdf5_utils info /path/to/data.hdf5
+python -m vla.logic.dataset.hdf5_utils report /path/to/data.hdf5
+python -m vla.logic.dataset.hdf5_utils view /path/to/data.hdf5 0 all --sensor all
 ```
 
 ## HDF5 To LeRobot
@@ -80,13 +80,13 @@ python -m vbti.logic.dataset.hdf5_utils view /path/to/data.hdf5 0 all --sensor a
 Discover schema:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils discover /path/to/data.hdf5
+python -m vla.logic.dataset.convert_utils discover /path/to/data.hdf5
 ```
 
 Convert:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils convert \
+python -m vla.logic.dataset.convert_utils convert \
   /path/to/data.hdf5 \
   eternalmay33/my_dataset \
   "Pick up the duck and place it in the cup"
@@ -95,7 +95,7 @@ python -m vbti.logic.dataset.convert_utils convert \
 With camera map:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils convert \
+python -m vla.logic.dataset.convert_utils convert \
   /path/to/data.hdf5 \
   eternalmay33/my_dataset \
   "Pick up the duck and place it in the cup" \
@@ -105,16 +105,16 @@ python -m vbti.logic.dataset.convert_utils convert \
 Verify:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils verify ~/.cache/huggingface/lerobot/eternalmay33/my_dataset
+python -m vla.logic.dataset.convert_utils verify ~/.cache/huggingface/lerobot/eternalmay33/my_dataset
 ```
 
 Other helpers:
 
 ```bash
-python -m vbti.logic.dataset.convert_utils to_delta <source> <output>
-python -m vbti.logic.dataset.convert_utils recalibrate <source> <old_calib> <new_calib>
-python -m vbti.logic.dataset.convert_utils link <dataset_path> <repo_id>
-python -m vbti.logic.dataset.convert_utils ls
+python -m vla.logic.dataset.convert_utils to_delta <source> <output>
+python -m vla.logic.dataset.convert_utils recalibrate <source> <old_calib> <new_calib>
+python -m vla.logic.dataset.convert_utils link <dataset_path> <repo_id>
+python -m vla.logic.dataset.convert_utils ls
 ```
 
 ## Dataset Aggregation And Slicing
@@ -122,7 +122,7 @@ python -m vbti.logic.dataset.convert_utils ls
 Aggregate datasets:
 
 ```bash
-python -m vbti.logic.dataset.loading_utils aggregate \
+python -m vla.logic.dataset.loading_utils aggregate \
   --datasets="eternalmay33/ds1,eternalmay33/ds2" \
   --output="eternalmay33/mix_name"
 ```
@@ -130,7 +130,7 @@ python -m vbti.logic.dataset.loading_utils aggregate \
 Subsample every Nth episode:
 
 ```bash
-python -m vbti.logic.dataset.subsample \
+python -m vla.logic.dataset.subsample \
   --src=eternalmay33/duck_cup_v020_all \
   --stride=4 \
   --dst=eternalmay33/duck_cup_v020_every4 \
@@ -146,7 +146,7 @@ Current code uses Grounding DINO as the teacher detector, with optional student 
 Process dataset detections:
 
 ```bash
-python -m vbti.logic.detection.process_dataset eternalmay33/duck_cup_v020_all \
+python -m vla.logic.detection.process_dataset eternalmay33/duck_cup_v020_all \
   --stride 30 \
   --gripper-stride 10 \
   --batch-size 4 \
@@ -165,7 +165,7 @@ Output:
 Generate phase labels:
 
 ```bash
-python -m vbti.logic.detection.phases eternalmay33/duck_cup_v020_all --fps 30
+python -m vla.logic.detection.phases eternalmay33/duck_cup_v020_all --fps 30
 ```
 
 Output:
@@ -177,7 +177,7 @@ Output:
 Bake detection/phase into `observation.state`:
 
 ```bash
-python -m vbti.logic.dataset.augment eternalmay33/duck_cup_v020_all \
+python -m vla.logic.dataset.augment eternalmay33/duck_cup_v020_all \
   --augmentations detection phase \
   -o eternalmay33/duck_cup_v020_all_aug \
   --cameras left right top gripper \
@@ -198,13 +198,13 @@ Use `--detection=true` in inference/eval only for models trained with that augme
 Export Grounding DINO ONNX:
 
 ```bash
-python -m vbti.logic.detection.distill.export_onnx --output ~/.cache/vbti/grounding_dino_base.onnx
+python -m vla.logic.detection.distill.export_onnx --output ~/.cache/vbti/grounding_dino_base.onnx
 ```
 
 Stage 1 labels:
 
 ```bash
-python -m vbti.logic.detection.distill.distill_stage1 \
+python -m vla.logic.detection.distill.distill_stage1 \
   --dataset eternalmay33/duck_cup_v020_all \
   --output /path/detection_labels_stage1.parquet
 ```
@@ -212,7 +212,7 @@ python -m vbti.logic.detection.distill.distill_stage1 \
 Stage 2 cleanup:
 
 ```bash
-python -m vbti.logic.detection.distill.distill_stage2 \
+python -m vla.logic.detection.distill.distill_stage2 \
   --input /path/stage1.parquet \
   --output /path/stage2.parquet \
   --max-gap 30 \
@@ -222,7 +222,7 @@ python -m vbti.logic.detection.distill.distill_stage2 \
 Final filtering/galleries:
 
 ```bash
-python -m vbti.logic.detection.distill.distill_filter \
+python -m vla.logic.detection.distill.distill_filter \
   --dataset eternalmay33/duck_cup_v020_all \
   --output /path/detection_labels_final.parquet \
   --gallery-dir /path/data_analysis \
@@ -232,9 +232,9 @@ python -m vbti.logic.detection.distill.distill_filter \
 Train/eval student:
 
 ```bash
-python -m vbti.logic.detection.distill.distill cache --force
-python -m vbti.logic.detection.distill.distill train --all --run m1_baseline --max-epochs 40 --batch-size 128 --model mobilenet_v3_small
-python -m vbti.logic.detection.distill.distill eval --cam left --checkpoint /path/best.pt
+python -m vla.logic.detection.distill.distill cache --force
+python -m vla.logic.detection.distill.distill train --all --run m1_baseline --max-epochs 40 --batch-size 128 --model mobilenet_v3_small
+python -m vla.logic.detection.distill.distill eval --cam left --checkpoint /path/best.pt
 ```
 
 ## Depth Workflows
@@ -250,7 +250,7 @@ The preferred model interface is turbo RGB depth with the same shape as normal R
 ### Capture Real D405 Depth Sample
 
 ```bash
-python -m vbti.logic.depth.capture_gripper_sample \
+python -m vla.logic.depth.capture_gripper_sample \
   --serial 123622270367 \
   --seconds 5 \
   --width 640 --height 480 --fps 30 \
@@ -267,7 +267,7 @@ Outputs:
 ### Bake Packed Depth To Turbo RGB
 
 ```bash
-python -m vbti.logic.depth.bake_packed_depth \
+python -m vla.logic.depth.bake_packed_depth \
   --repo_id=eternalmay33/04_05_06_07_merged_may-sim_depth \
   --out-repo-id=eternalmay33/04_05_06_07_merged_may-sim_depth_turbo \
   --depth-key=observation.images.gripper_depth \
@@ -282,7 +282,7 @@ Important: if `--out-repo-id` is omitted, the script may do an in-place temp/swa
 ### Add Estimated Gripper Depth
 
 ```bash
-python -m vbti.logic.depth.add_gripper_depth \
+python -m vla.logic.depth.add_gripper_depth \
   --src eternalmay33/01_02_03_merged_may-sim_detection \
   --dst eternalmay33/01_02_03_merged_may-sim_detection_gripper-depth \
   --gripper-key observation.images.gripper \
@@ -295,7 +295,7 @@ Default model is Depth Anything V2 Metric Indoor Small. Caveat: DA-V2 absolute d
 ### Add Zero Depth Feature For Merge Compatibility
 
 ```bash
-python -m vbti.logic.dataset.add_zero_depth_turbo \
+python -m vla.logic.dataset.add_zero_depth_turbo \
   --src eternalmay33/no_depth_dataset \
   --dst eternalmay33/no_depth_dataset_padded \
   --reference eternalmay33/depth_dataset \
@@ -308,15 +308,15 @@ This creates a black “no depth signal” feature so schemas match for merging/
 ### View Depth
 
 ```bash
-python -m vbti.logic.dataset.depth_viewer raw /path/to/packed.png --out=/tmp/depth.png
-python -m vbti.logic.dataset.depth_viewer frame eternalmay33/depth_dataset --episode 0 --frame 50 --out=/tmp/frame.png
-python -m vbti.logic.dataset.depth_viewer replay eternalmay33/depth_dataset --episode 0
+python -m vla.logic.dataset.depth_viewer raw /path/to/packed.png --out=/tmp/depth.png
+python -m vla.logic.dataset.depth_viewer frame eternalmay33/depth_dataset --episode 0 --frame 50 --out=/tmp/frame.png
+python -m vla.logic.dataset.depth_viewer replay eternalmay33/depth_dataset --episode 0
 ```
 
 ### Compare Real Vs Estimated Depth
 
 ```bash
-python -m vbti.logic.depth.compare_real_vs_estimated \
+python -m vla.logic.depth.compare_real_vs_estimated \
   --d405-dir /path/to/d405_sample \
   --src-dataset eternalmay33/01_02_03_merged_may-sim_detection \
   --n-est-samples 12 \
@@ -332,7 +332,7 @@ Outputs: `summary.json`, histogram plots, and candidate panels.
 Bake teacher SigLIP/UVA features:
 
 ```bash
-python -m vbti.logic.dataset.add_video_features \
+python -m vla.logic.dataset.add_video_features \
   --dataset eternalmay33/duck_cup_v020_all \
   --teacher /path/to/pretrained_model \
   --layer siglip_output \
@@ -348,7 +348,7 @@ python -m vbti.logic.dataset.add_video_features \
 Remote evidence used:
 
 ```bash
-python -m vbti.logic.dataset.add_video_features \
+python -m vla.logic.dataset.add_video_features \
   --dataset eternalmay33/duck_cup_v020_all \
   --root /home/vbti/anton/data/eternalmay33/duck_cup_v020_all \
   --teacher /home/vbti/anton/data/uva_teacher_v020_150k \

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Single Recording contract — pydantic models. Run: p inspection/tests/test_record_schema.py
+"""Single Recording contract — pydantic models. Run: p vbti/inspection/tests/test_record_schema.py
 
 The schema IS the spec: docs and diagrams are generated from these models, so
 every rule the disk must obey is asserted here first (TDD).

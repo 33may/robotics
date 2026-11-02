@@ -7,19 +7,19 @@ The local engine exists and can train through backend classes, but the main larg
 ## Commands
 
 ```bash
-python -m vbti.logic.train.engine status
-python -m vbti.logic.train.engine train --config=/path/to/config.yaml --experiment=duck_cup_smolvla
-python -m vbti.logic.train.engine train --experiment=duck_cup_smolvla --version=v020
-python -m vbti.logic.train.engine train --resume
-python -m vbti.logic.train.engine train --resume --reset_lr
+python -m vla.logic.train.engine status
+python -m vla.logic.train.engine train --config=/path/to/config.yaml --experiment=duck_cup_smolvla
+python -m vla.logic.train.engine train --experiment=duck_cup_smolvla --version=v020
+python -m vla.logic.train.engine train --resume
+python -m vla.logic.train.engine train --resume --reset_lr
 ```
 
 ## LeRobot Dry Run
 
 ```bash
-python -m vbti.logic.train.engine train-lerobot --config=/path/to/config.yaml --experiment=duck_cup_smolvla --dry_run
-python -m vbti.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --version=v020 --dry_run
-python -m vbti.logic.train.engine train-lerobot
+python -m vla.logic.train.engine train-lerobot --config=/path/to/config.yaml --experiment=duck_cup_smolvla --dry_run
+python -m vla.logic.train.engine train-lerobot --experiment=duck_cup_smolvla --version=v020 --dry_run
+python -m vla.logic.train.engine train-lerobot
 ```
 
 This prints/builds the `lerobot-train` command used by remote training.

@@ -4,26 +4,26 @@ Remote training CLI — launch and manage training jobs on a remote GPU machine.
 The remote machine runs lerobot-train inside a tmux session.
 Local machine handles experiment versioning, config, and checkpoint storage.
 
-Config: vbti/remote.yaml
+Config: vbti/vla/remote.yaml
 
 Usage:
     # Sync a dataset to remote (once per dataset):
-    python -m vbti.logic.train.remote push-data --repo_id=eternalmay33/08-merged
+    python -m vla.logic.train.remote push-data --repo_id=eternalmay33/08-merged
 
     # Launch training — run_name sets the output subdir (mirrors local lerobot_output_rN naming):
-    python -m vbti.logic.train.remote train --run_name=lerobot_output_r3
-    python -m vbti.logic.train.remote train --run_name=lerobot_output_r3 --resume_from=lerobot_output_r2/checkpoints/030000
-    python -m vbti.logic.train.remote train --run_name=lerobot_output_r3 --experiment=duck_cup_smolvla --version=v007
+    python -m vla.logic.train.remote train --run_name=lerobot_output_r3
+    python -m vla.logic.train.remote train --run_name=lerobot_output_r3 --resume_from=lerobot_output_r2/checkpoints/030000
+    python -m vla.logic.train.remote train --run_name=lerobot_output_r3 --experiment=duck_cup_smolvla --version=v007
 
     # Check if training is running:
-    python -m vbti.logic.train.remote status
+    python -m vla.logic.train.remote status
 
     # Pull run outputs (checkpoints + logs) back to local version dir:
-    python -m vbti.logic.train.remote pull
-    python -m vbti.logic.train.remote pull --checkpoint=step_010000
+    python -m vla.logic.train.remote pull
+    python -m vla.logic.train.remote pull --checkpoint=step_010000
 
     # Stream live training logs:
-    python -m vbti.logic.train.remote logs
+    python -m vla.logic.train.remote logs
 """
 
 import json
@@ -36,7 +36,7 @@ import yaml
 
 # ── Config loading ────────────────────────────────────────────────────────────
 
-REMOTE_CONFIG_PATH = Path(__file__).parents[3] / "vbti" / "remote.yaml"
+REMOTE_CONFIG_PATH = Path(__file__).parents[2] / "remote.yaml"  # vbti/vla/remote.yaml
 
 
 def _load_remote_config() -> dict:
@@ -88,7 +88,7 @@ def _rsync_from_remote(remote_cfg: dict, remote_path: str, local_path: str):
 # ── Experiment utils ──────────────────────────────────────────────────────────
 
 def _resolve_version_dir(experiment: str | None, version: str | None) -> Path:
-    from vbti.logic.train.experiment_utils import active, use, get_version_dir
+    from vla.logic.train.experiment_utils import active, use, get_version_dir
     if experiment and version:
         use(experiment, version)
     elif experiment or version:
@@ -105,7 +105,7 @@ def push_data(repo_id: str, remote_cfg: dict = None):
     It lands at:                {remote.data_dir}/{org}/{name}/
 
     Example:
-        python -m vbti.logic.train.remote push-data --repo_id=eternalmay33/08-merged
+        python -m vla.logic.train.remote push-data --repo_id=eternalmay33/08-merged
     """
     if remote_cfg is None:
         remote_cfg = _load_remote_config()
@@ -148,11 +148,11 @@ def train(
     A remote_session.json is saved to the local version dir so `pull`, `status`, `logs` know where to look.
 
     Example:
-        python -m vbti.logic.train.remote train --run_name=lerobot_output_r3
-        python -m vbti.logic.train.remote train --run_name=lerobot_output_r3 --resume_from=lerobot_output_r2/checkpoints/030000
+        python -m vla.logic.train.remote train --run_name=lerobot_output_r3
+        python -m vla.logic.train.remote train --run_name=lerobot_output_r3 --resume_from=lerobot_output_r2/checkpoints/030000
     """
-    from vbti.logic.train.engine import _build_lerobot_command, resolve_config_and_version
-    from vbti.logic.train.experiment_utils import active
+    from vla.logic.train.engine import _build_lerobot_command, resolve_config_and_version
+    from vla.logic.train.experiment_utils import active
 
     remote_cfg = _load_remote_config()
 
@@ -335,15 +335,15 @@ def train(
         subprocess.run(tail_cmd)
     except KeyboardInterrupt:
         print("\n\nDetached from logs.")
-        print(f"  Re-attach: python -m vbti.logic.train.remote logs")
-        print(f"  Pull:      python -m vbti.logic.train.remote pull")
+        print(f"  Re-attach: python -m vla.logic.train.remote logs")
+        print(f"  Pull:      python -m vla.logic.train.remote pull")
 
 
 def status(experiment: str = None, version: str = None):
     """Check if remote training session is running.
 
     Example:
-        python -m vbti.logic.train.remote status
+        python -m vla.logic.train.remote status
     """
     remote_cfg = _load_remote_config()
     version_dir = _resolve_version_dir(experiment, version)
@@ -373,8 +373,8 @@ def logs(experiment: str = None, version: str = None, lines: int = 50):
     """Stream live training logs from remote.
 
     Example:
-        python -m vbti.logic.train.remote logs
-        python -m vbti.logic.train.remote logs --lines=100
+        python -m vla.logic.train.remote logs
+        python -m vla.logic.train.remote logs --lines=100
     """
     remote_cfg = _load_remote_config()
     version_dir = _resolve_version_dir(experiment, version)
@@ -414,9 +414,9 @@ def pull(
                          (model weights for inference, ~50% smaller — skips optimizer/scheduler state).
 
     Example:
-        python -m vbti.logic.train.remote pull
-        python -m vbti.logic.train.remote pull --checkpoint=step_080000
-        python -m vbti.logic.train.remote pull --checkpoint=step_080000 --run_name=lerobot_output_r7 --pretrained_only=true
+        python -m vla.logic.train.remote pull
+        python -m vla.logic.train.remote pull --checkpoint=step_080000
+        python -m vla.logic.train.remote pull --checkpoint=step_080000 --run_name=lerobot_output_r7 --pretrained_only=true
     """
     remote_cfg = _load_remote_config()
     version_dir = _resolve_version_dir(experiment, version)

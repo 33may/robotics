@@ -19,13 +19,13 @@ Verify pre/postprocessor files are present.
 ## 3. Preview Cameras
 
 ```bash
-python -m vbti.logic.inference.run_real_inference preview
+python -m vla.logic.inference.run_real_inference preview
 ```
 
 ## 4. Run RGB Policy
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/absolute/path/to/pretrained_model \
   --port=/dev/ttyACM1 \
   --cameras=realsense \
@@ -41,7 +41,7 @@ python -m vbti.logic.inference.run_real_inference run \
 Only if trained with `gripper_depth`:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/absolute/path/to/pretrained_model \
   --port=/dev/ttyACM1 \
   --cameras=opencv_depth \
@@ -54,7 +54,7 @@ python -m vbti.logic.inference.run_real_inference run \
 Only if trained with 22D detection state:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/absolute/path/to/pretrained_model \
   --port=/dev/ttyACM1 \
   --detection=true \

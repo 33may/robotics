@@ -8,11 +8,11 @@ what makes the survey plan refuse). The elbow row also flags a sign flip
 path from the flipped branch). Freedrive until every row is green-ish,
 then start collect.
 
-Target = inspection/run/survey_pose.json (the pose `collect` plans to).
+Target = vbti/inspection/run/survey_pose.json (the pose `collect` plans to).
 wrist_2 keeps the close-pass arc warning (2026-08-31 posture — the arc
 moves if the big joints move; treat as a hint, not gospel).
 
-Run: p inspection/motion/wrist_watch.py [ip]     Ctrl-C to stop.
+Run: p vbti/inspection/motion/wrist_watch.py [ip]     Ctrl-C to stop.
 """
 import json
 import sys

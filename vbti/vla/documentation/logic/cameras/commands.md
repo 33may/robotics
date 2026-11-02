@@ -3,10 +3,10 @@
 ## Live Viewer
 
 ```bash
-python -m vbti.logic.cameras.view_cameras
-python -m vbti.logic.cameras.view_cameras --preset realsense_depth
-python -m vbti.logic.cameras.view_cameras --preset opencv --fps 15
-python -m vbti.logic.cameras.view_cameras --preset opencv --width 320 --height 240
+python -m vla.logic.cameras.view_cameras
+python -m vla.logic.cameras.view_cameras --preset realsense_depth
+python -m vla.logic.cameras.view_cameras --preset opencv --fps 15
+python -m vla.logic.cameras.view_cameras --preset opencv --width 320 --height 240
 ```
 
 Arguments:
@@ -25,9 +25,9 @@ Controls:
 ## Snapshot Capture
 
 ```bash
-python -m vbti.logic.cameras.capture --save_dir ./captures/cup_center
-python -m vbti.logic.cameras.capture --save_dir ./captures/no_cup
-python -m vbti.logic.cameras.capture --save_dir ./captures/cup_left --preset opencv
+python -m vla.logic.cameras.capture --save_dir ./captures/cup_center
+python -m vla.logic.cameras.capture --save_dir ./captures/no_cup
+python -m vla.logic.cameras.capture --save_dir ./captures/cup_left --preset opencv
 ```
 
 Arguments:
@@ -55,9 +55,9 @@ Outputs per capture index:
 ## Visual Alignment Overlay
 
 ```bash
-python -m vbti.logic.cameras.calibrate --ref_dir /tmp/current_cams
-python -m vbti.logic.cameras.calibrate --ref_dir /tmp/current_cams --camera top
-python -m vbti.logic.cameras.calibrate --ref_dir /tmp/current_cams --preset opencv
+python -m vla.logic.cameras.calibrate --ref_dir /tmp/current_cams
+python -m vla.logic.cameras.calibrate --ref_dir /tmp/current_cams --camera top
+python -m vla.logic.cameras.calibrate --ref_dir /tmp/current_cams --preset opencv
 ```
 
 Arguments:
@@ -82,7 +82,7 @@ This is for visual placement drift, not intrinsic calibration.
 ## USB Diagnostics
 
 ```bash
-python -m vbti.logic.cameras.check_usb
+python -m vla.logic.cameras.check_usb
 ```
 
 Reports:

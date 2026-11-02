@@ -59,7 +59,7 @@ Fields:
 - `parent`: Optional, which profile this was derived from
 - `status`: `active` or `archived`
 
-### CLI — `vbti.logic.servos.profiles`
+### CLI — `vla.logic.servos.profiles`
 
 | Command | Action |
 |---------|--------|
@@ -68,7 +68,7 @@ Fields:
 | `profiles show <name>` | Print calibration values per joint |
 | `profiles export <name>` | Copy JSON from cache to `calibration/profiles/` for version control |
 
-All commands use `python -m vbti.logic.servos.profiles <command>`.
+All commands use `python -m vla.logic.servos.profiles <command>`.
 
 The `load` command:
 1. Reads JSON from LeRobot cache
@@ -88,7 +88,7 @@ On first run of `profiles list`, if `calibration/registry.json` doesn't exist, s
 ### Entry point
 
 ```bash
-python -m vbti.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=frodeo-v2
+python -m vla.logic.servos.calibrate_interactive --port=/dev/ttyACM1 --name=frodeo-v2
 ```
 
 If `--name` already exists, loads it as starting point (edit mode). Otherwise starts fresh.

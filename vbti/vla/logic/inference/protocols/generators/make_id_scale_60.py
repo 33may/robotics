@@ -9,7 +9,7 @@ Design:
   - Seed=13 for v013, deterministic.
 
 Run:
-  python vbti/logic/inference/protocols/generators/make_id_scale_60.py
+  python vbti/vla/logic/inference/protocols/generators/make_id_scale_60.py
 """
 
 import json
@@ -114,7 +114,7 @@ def main():
         "trials": trials,
         "cup_positions": CUP_POSITIONS,
         "cup_groups": [N_PER_CUP] * len(CUP_POSITIONS),
-        "_generated_by": "vbti/logic/inference/protocols/generators/make_id_scale_60.py",
+        "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_id_scale_60.py",
     }
 
     OUT_PATH.write_text(json.dumps(proto, indent=2))

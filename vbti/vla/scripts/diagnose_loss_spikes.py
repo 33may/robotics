@@ -4,9 +4,9 @@ Loads a checkpoint, runs forward passes over each dataset separately,
 and reports per-dataset and per-episode loss distributions.
 
 Usage:
-    python vbti/scripts/diagnose_loss_spikes.py \
-        --checkpoint vbti/experiments/duck_cup_smolvla/v005/checkpoints/step_006000 \
-        --config vbti/experiments/duck_cup_smolvla/v005/config.yaml \
+    python vbti/vla/scripts/diagnose_loss_spikes.py \
+        --checkpoint vbti/vla/experiments/duck_cup_smolvla/v005/checkpoints/step_006000 \
+        --config vbti/vla/experiments/duck_cup_smolvla/v005/config.yaml \
         --n_batches 50
 """
 
@@ -27,8 +27,8 @@ from lerobot.policies.smolvla.configuration_smolvla import SmolVLAConfig
 from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
 from lerobot.policies.factory import make_pre_post_processors
 
-from vbti.logic.train.config_utils import TrainConfig
-from vbti.logic.dataset.loading_utils import _resolve_root
+from vla.logic.train.config_utils import TrainConfig
+from vla.logic.dataset.loading_utils import _resolve_root
 
 
 def load_model_and_preprocessor(config, checkpoint_path):

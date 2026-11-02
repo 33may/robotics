@@ -10,7 +10,7 @@ copies of one part is the projection + pose error that a merge would have to abs
            facing the part and grazing along it, with the centroid gap in mm
   evidence/pairs_3d.json: every matched pair, its gap, and the gap along the face normal
 
-Run:  p inspection/investigation/iwm/e03_tree_3d/pair3d.py [--pairs c5.6:c5.2 b1.1:b1.4]
+Run:  p vbti/inspection/investigation/iwm/e03_tree_3d/pair3d.py [--pairs c5.6:c5.2 b1.1:b1.4]
 """
 import argparse
 import json

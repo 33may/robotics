@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from vbti.logic.detection.process_dataset import VideoReader, get_video_path, load_dataset_meta
+from vla.logic.detection.process_dataset import VideoReader, get_video_path, load_dataset_meta
 
 DS_PATH = Path("/home/may33/.cache/huggingface/lerobot/eternalmay33/distill_no_objects")
 CLEAN_PARQUET = Path(DS_PATH / "detection_results_clean.parquet")

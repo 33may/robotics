@@ -21,12 +21,12 @@ NO interpolation. NO rescue. NO v10 cy-shift. Per-(cam, obj) independent:
 a frame with top_duck rejected can still have left_duck accepted.
 
 Usage:
-    python -m vbti.logic.detection.distill_stage1 \\
+    python -m vla.logic.detection.distill_stage1 \\
         --dataset eternalmay33/01_02_03_merged_may-sim \\
         --output /home/may33/.cache/vbti/detection_labels_stage1.parquet
 
     # Visually verify with the viewer:
-    python -m vbti.logic.dataset.viewer eternalmay33/01_02_03_merged_may-sim \\
+    python -m vla.logic.dataset.viewer eternalmay33/01_02_03_merged_may-sim \\
         --parq /home/may33/.cache/vbti/detection_labels_stage1.parquet
 """
 from __future__ import annotations
@@ -38,9 +38,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from vbti.logic.dataset import resolve_dataset_path
-from vbti.logic.detection.process_dataset import load_dataset_meta
-from vbti.logic.detection.distill.distill_filter import (
+from vla.logic.dataset import resolve_dataset_path
+from vla.logic.detection.process_dataset import load_dataset_meta
+from vla.logic.detection.distill.distill_filter import (
     CAMERAS,
     CONF_THRESH_DEFAULT,
     CONF_THRESH_GRIPPER_DUCK,

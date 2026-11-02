@@ -61,8 +61,8 @@ Use symlinks instead of numeric `/dev/video*` paths. Numeric video devices can c
 There is historical evidence of a gripper/left serial mismatch between `cameras.py` and udev memory/rules. Before important data collection or evaluation, verify physical view with:
 
 ```bash
-python -m vbti.logic.cameras.view_cameras --preset realsense
-python -m vbti.logic.cameras.view_cameras --preset opencv
+python -m vla.logic.cameras.view_cameras --preset realsense
+python -m vla.logic.cameras.view_cameras --preset opencv
 ```
 
 Do not assume the mapping is correct just because the code opens all cameras.

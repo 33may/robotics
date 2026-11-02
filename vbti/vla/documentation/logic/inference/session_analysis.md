@@ -3,28 +3,28 @@
 ## List Sessions
 
 ```bash
-python -m vbti.logic.inference.eval_helpers ls
-python -m vbti.logic.inference.eval_helpers ls --detailed
+python -m vla.logic.inference.eval_helpers ls
+python -m vla.logic.inference.eval_helpers ls --detailed
 ```
 
 ## Inspect Session
 
 ```bash
-python -m vbti.logic.inference.eval_helpers info latest
-python -m vbti.logic.inference.eval_helpers info v020-150k
-python -m vbti.logic.inference.eval_helpers info v020-150k --group_by=scene
+python -m vla.logic.inference.eval_helpers info latest
+python -m vla.logic.inference.eval_helpers info v020-150k
+python -m vla.logic.inference.eval_helpers info v020-150k --group_by=scene
 ```
 
 ## Play Trial Video
 
 ```bash
-python -m vbti.logic.inference.eval_helpers play latest 3
+python -m vla.logic.inference.eval_helpers play latest 3
 ```
 
 ## Render Heatmap
 
 ```bash
-python -m vbti.logic.inference.eval_render heatmap /path/to/session --output=/tmp/heatmap.png
+python -m vla.logic.inference.eval_render heatmap /path/to/session --output=/tmp/heatmap.png
 ```
 
 Other render modes include `grid` and `pooled` if available in current CLI.

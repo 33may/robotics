@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verb surface over the run structure. Run: p inspection/tests/test_eyes_tools.py"""
+"""Verb surface over the run structure. Run: p vbti/inspection/tests/test_eyes_tools.py"""
 import tempfile
 from pathlib import Path
 
@@ -82,7 +82,7 @@ def test_coverage_text():
 
 
 def test_seeded_run_if_present():
-    real = Path("inspection/data/runs/2408-seeded")
+    real = Path("vbti/inspection/data/runs/2408-seeded")
     if not (real / "run.json").exists():
         print("  (skip: 2408-seeded not present)"); return
     tools = ViewTools(Run.load(real))

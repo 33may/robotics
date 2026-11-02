@@ -7,7 +7,7 @@ Random states are deterministic: seed = MASK_SEED + dataset_idx + cam_idx.
 Any script can reproduce the exact mask from these values.
 
 Usage:
-    python vbti/research/how_to_mask_right/run_masking_analysis.py \
+    python vbti/vla/research/how_to_mask_right/run_masking_analysis.py \
         --n_masked 500 --embed_batch 64
 """
 from __future__ import annotations

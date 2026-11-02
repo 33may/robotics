@@ -18,7 +18,7 @@ It deploys trained policies on the real robot and turns physical trials into str
 Main command:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/path/to/checkpoint/pretrained_model \
   --port=/dev/ttyACM1 \
   --cameras=realsense \
@@ -32,13 +32,13 @@ python -m vbti.logic.inference.run_real_inference run \
 Preview cameras:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference preview
+python -m vla.logic.inference.run_real_inference preview
 ```
 
 Legacy eval wrapper:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference eval \
+python -m vla.logic.inference.run_real_inference eval \
   --checkpoint=all \
   --experiment=duck_cup_smolvla \
   --version=v020 \
@@ -83,7 +83,7 @@ Use `--depth=true` only when the checkpoint was trained with `observation.images
 Examples:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/path/to/pretrained_model \
   --cameras=opencv_depth \
   --depth=true
@@ -102,7 +102,7 @@ OpenCV cannot provide D405 depth. Hybrid presets use OpenCV for fixed RGB camera
 Use only for models trained on augmented state:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference run \
+python -m vla.logic.inference.run_real_inference run \
   --checkpoint=/path/to/pretrained_model \
   --detection=true
 ```
@@ -120,7 +120,7 @@ Live detector input is already RGB; do not BGR-swap before detection.
 Main command:
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=dual_cup_60 \
   --experiment=duck_cup_smolvla \
@@ -229,12 +229,12 @@ Entity protocols support multiple cups, per-trial task text, and tags for analys
 ## Protocol Tools
 
 ```bash
-python -m vbti.logic.inference.protocols.protocols render id_scale_60
-python -m vbti.logic.inference.protocols.protocols verify id_scale_60
-python -m vbti.logic.inference.protocols.protocols edit id_scale_60
-python -m vbti.logic.inference.protocols.render_protocol dual_cup_60
-python -m vbti.logic.inference.protocols.generators.make_checkpoint_sweep
-python -m vbti.logic.inference.protocols.generators.make_dual_cup_60
+python -m vla.logic.inference.protocols.protocols render id_scale_60
+python -m vla.logic.inference.protocols.protocols verify id_scale_60
+python -m vla.logic.inference.protocols.protocols edit id_scale_60
+python -m vla.logic.inference.protocols.render_protocol dual_cup_60
+python -m vla.logic.inference.protocols.generators.make_checkpoint_sweep
+python -m vla.logic.inference.protocols.generators.make_dual_cup_60
 ```
 
 Outputs go under `logic/inference/protocols/renders/` and protocol JSON files.
@@ -244,27 +244,27 @@ Outputs go under `logic/inference/protocols/renders/` and protocol JSON files.
 List sessions:
 
 ```bash
-python -m vbti.logic.inference.eval_helpers ls
-python -m vbti.logic.inference.eval_helpers ls --detailed
+python -m vla.logic.inference.eval_helpers ls
+python -m vla.logic.inference.eval_helpers ls --detailed
 ```
 
 Inspect:
 
 ```bash
-python -m vbti.logic.inference.eval_helpers info latest
-python -m vbti.logic.inference.eval_helpers info v020-150k --group_by=scene
+python -m vla.logic.inference.eval_helpers info latest
+python -m vla.logic.inference.eval_helpers info v020-150k --group_by=scene
 ```
 
 Open video:
 
 ```bash
-python -m vbti.logic.inference.eval_helpers play latest 3
+python -m vla.logic.inference.eval_helpers play latest 3
 ```
 
 Render heatmap:
 
 ```bash
-python -m vbti.logic.inference.eval_render heatmap /path/to/session --output=/tmp/heatmap.png
+python -m vla.logic.inference.eval_render heatmap /path/to/session --output=/tmp/heatmap.png
 ```
 
 ## Result Anchors

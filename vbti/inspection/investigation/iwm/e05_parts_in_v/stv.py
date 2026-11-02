@@ -7,7 +7,7 @@ Part: a node of T; it holds a sorted array of rows; children's rows lie inside t
 a row claimed by two unrelated parts keeps its first label and the pair is recorded in
 `conflicts` (merging is not decided here).
 
-Real-V check:  p inspection/investigation/iwm/e05_parts_in_v/stv.py 2209-compute-ray-demo5 1
+Real-V check:  p vbti/inspection/investigation/iwm/e05_parts_in_v/stv.py 2209-compute-ray-demo5 1
 """
 import json
 import sys

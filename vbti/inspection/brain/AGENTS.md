@@ -17,7 +17,7 @@ Loop shape (Anton, 2026-08-25):
   turn, stamped), the `PreToolUse` safety gate, the survey declaration before
   the opening, the answer-time evidence hunts with bounce-on-miss, the system
   prompt and the run budget. CLI:
-  `p inspection/brain/loop.py inspection/data/runs/2408-cup1 "is there a logo on the cup?"`
+  `p vbti/inspection/brain/loop.py vbti/inspection/data/runs/2408-cup1 "is there a logo on the cup?"`
 - `render.py` — everything the planner reads that a model did not write:
   `state_block`, `moves_block`, `survey_bearing_line`, `gloss`, `opening`.
 

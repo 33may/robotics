@@ -7,7 +7,7 @@ centered convention — verified 2026-08-14 — so no frame mapping is needed.
 Follower goals are clamped to its own EEPROM limits and rate-limited.
 
 Usage:
-    python -m vbti.logic.servos.teleop run            # mirror until Ctrl+C
+    python -m vla.logic.servos.teleop run            # mirror until Ctrl+C
 """
 
 import threading
@@ -15,7 +15,7 @@ import time
 
 import numpy as np
 
-from vbti.logic.servos.so101 import (
+from vla.logic.servos.so101 import (
     SO101, JOINT_NAMES, JOINT_IDS, ADDR_GOAL_POSITION,
 )
 

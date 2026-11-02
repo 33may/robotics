@@ -9,8 +9,8 @@ Features:
   - On save: applies box rotation to mesh so scene comes out axis-aligned
 
 Usage:
-    python -m vbti.logic.reconstruct.clean_mesh.py \
-        --mesh vbti/data/vbti_table/gs/milo_output/mesh_learnable_sdf.ply
+    python -m vla.logic.reconstruct.clean_mesh.py \
+        --mesh vbti/vla/data/vbti_table/gs/milo_output/mesh_learnable_sdf.ply
 """
 
 import argparse

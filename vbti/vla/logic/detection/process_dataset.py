@@ -4,8 +4,8 @@ Decodes video files with ffmpeg, runs Grounding DINO detection,
 interpolates skipped frames, and saves results as a parquet file.
 
 Usage:
-    python -m vbti.logic.detection.process_dataset eternalmay33/01_black_gripper_front
-    python -m vbti.logic.detection.process_dataset eternalmay33/01_black_gripper_front --stride 3
+    python -m vla.logic.detection.process_dataset eternalmay33/01_black_gripper_front
+    python -m vla.logic.detection.process_dataset eternalmay33/01_black_gripper_front --stride 3
 """
 
 import argparse
@@ -19,8 +19,8 @@ import pandas as pd
 import pyarrow.parquet as pq
 from tqdm import tqdm
 
-from vbti.logic.dataset import resolve_dataset_path
-from vbti.logic.detection.detect import create_detector, StudentDetector, DEFAULT_MAX_AREA, GRIPPER_MAX_AREA
+from vla.logic.dataset import resolve_dataset_path
+from vla.logic.detection.detect import create_detector, StudentDetector, DEFAULT_MAX_AREA, GRIPPER_MAX_AREA
 
 DEFAULT_CAMERAS = ["left", "right", "top", "gripper"]
 OBJECTS = ["duck", "cup"]

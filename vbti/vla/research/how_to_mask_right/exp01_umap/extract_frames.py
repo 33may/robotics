@@ -4,7 +4,7 @@ Each shard holds one DataLoader batch (~256 frames × 4 cameras).
 Never more than one batch in RAM at a time.
 
 Usage:
-    python vbti/research/how_to_mask_right/extract_frames.py \
+    python vbti/vla/research/how_to_mask_right/extract_frames.py \
         --n_frames 3000 --batch_size 256
 """
 import argparse

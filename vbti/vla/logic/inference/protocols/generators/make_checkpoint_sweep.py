@@ -13,7 +13,7 @@ import random
 from collections import Counter
 from pathlib import Path
 
-from vbti.logic.inference.protocols.render_protocol import render
+from vla.logic.inference.protocols.render_protocol import render
 
 
 PROTO_DIR = Path(__file__).resolve().parent.parent
@@ -160,7 +160,7 @@ def main():
         "robot_nogo_bbox": list(ROBOT_NOGO_BBOX),
         "duck_nogo_bbox": list(DUCK_NOGO_BBOX),
         "scene_counts": dict(Counter(t["tags"]["scene"] for t in trials)),
-        "_generated_by": "vbti/logic/inference/protocols/generators/make_checkpoint_sweep.py",
+        "_generated_by": "vbti/vla/logic/inference/protocols/generators/make_checkpoint_sweep.py",
     }, indent=2))
     print(f"Wrote {OUT_PATH} ({len(trials)} trials)")
     print("scene", dict(Counter(t["tags"]["scene"] for t in trials)))

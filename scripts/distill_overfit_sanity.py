@@ -45,8 +45,8 @@ print(f"Output dir: {OUT_DIR}")
 print("=" * 60)
 
 # ---- imports from pipeline ----
-from vbti.logic.detection.distill_model import DistilledDetector, count_params
-from vbti.logic.detection.distill import (
+from vla.logic.detection.distill_model import DistilledDetector, count_params
+from vla.logic.detection.distill import (
     DistillDataset,
     load_all_labels,
     CACHE_ROOT,
@@ -59,7 +59,7 @@ from vbti.logic.detection.distill import (
     _cache_paths,
     _count_total_frames,
 )
-from vbti.logic.detection.process_dataset import load_dataset_meta
+from vla.logic.detection.process_dataset import load_dataset_meta
 
 # ---- build dataset ----
 print("\n[1] Loading labels...")

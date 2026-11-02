@@ -16,7 +16,7 @@ SAM 3 notes that cost real time to learn (2026-08-21):
 - Inputs are resized to a square 1008, so our 848x480 is upscaled: good for
   small logos, and the reason latency is worth measuring rather than assuming.
 
-Run (needs weights): p inspection/eyes/verbs_local.py <run_dir> <h> <v>
+Run (needs weights): p vbti/inspection/eyes/verbs_local.py <run_dir> <h> <v>
 """
 from dataclasses import dataclass
 

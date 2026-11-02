@@ -44,14 +44,14 @@ Read first:
 Preview/run:
 
 ```bash
-python -m vbti.logic.inference.run_real_inference preview
-python -m vbti.logic.inference.run_real_inference run --checkpoint=/path/to/pretrained_model --port=/dev/ttyACM1 --task="Pick up the duck and place it in the red cup"
+python -m vla.logic.inference.run_real_inference preview
+python -m vla.logic.inference.run_real_inference run --checkpoint=/path/to/pretrained_model --port=/dev/ttyACM1 --task="Pick up the duck and place it in the red cup"
 ```
 
 Evaluate:
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=dual_cup_60 \
   --experiment=duck_cup_smolvla \
@@ -63,7 +63,7 @@ python -m vbti.logic.inference.eval_engine \
 Resume:
 
 ```bash
-python -m vbti.logic.inference.eval_engine \
+python -m vla.logic.inference.eval_engine \
   --checkpoint=v020-150k \
   --protocol=dual_cup_60 \
   --experiment=duck_cup_smolvla \
@@ -75,11 +75,11 @@ python -m vbti.logic.inference.eval_engine \
 Analyze:
 
 ```bash
-python -m vbti.logic.inference.eval_helpers ls --detailed
-python -m vbti.logic.inference.eval_helpers info latest
-python -m vbti.logic.inference.eval_helpers info v020-150k --group_by=scene
-python -m vbti.logic.inference.eval_helpers play latest 3
-python -m vbti.logic.inference.eval_render heatmap /path/to/session --output=/tmp/heatmap.png
+python -m vla.logic.inference.eval_helpers ls --detailed
+python -m vla.logic.inference.eval_helpers info latest
+python -m vla.logic.inference.eval_helpers info v020-150k --group_by=scene
+python -m vla.logic.inference.eval_helpers play latest 3
+python -m vla.logic.inference.eval_render heatmap /path/to/session --output=/tmp/heatmap.png
 ```
 
 ## Evaluation Rules

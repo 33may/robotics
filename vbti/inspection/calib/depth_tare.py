@@ -5,11 +5,11 @@ Protocol (Anton 2026-10-13, memory project/depth-calib-validation-protocol): per
 at several heights over the board, ONE Tare candidate per height, nothing written to the camera
 here. Candidates are scored on cell views (depth_val.py); only the winner is written (`apply`).
 
-  p inspection/calib/depth_tare.py measure                   # no motion, no Tare: depth error here
-  p inspection/calib/depth_tare.py scan                      # board in view, pendant in Remote
-  p inspection/calib/depth_tare.py scan --heights='[0.18,0.24]'
-  p inspection/calib/depth_tare.py apply --cand=<h*.json> --yes
-  p inspection/calib/depth_tare.py restore --backup=<backup.json> --yes   | restore --factory --yes
+  p vbti/inspection/calib/depth_tare.py measure                   # no motion, no Tare: depth error here
+  p vbti/inspection/calib/depth_tare.py scan                      # board in view, pendant in Remote
+  p vbti/inspection/calib/depth_tare.py scan --heights='[0.18,0.24]'
+  p vbti/inspection/calib/depth_tare.py apply --cand=<h*.json> --yes
+  p vbti/inspection/calib/depth_tare.py restore --backup=<backup.json> --yes   | restore --factory --yes
 
 Per height:
   1. normal mode (1280x720 ir_left + depth, the depth frame IS the left imager): ChArUco PnP ->
@@ -19,7 +19,7 @@ Per height:
   2. Tare mode (depth only 256x144@90, colour off — firmware calibration mode):
      run_tare_calibration(GT rounded to mm; the SDK truncates) -> candidate table + health.
   3. quick check: candidate set VOLATILE, depth error re-measured at the same pose, backup restored.
-Out: inspection/calib/d405_tare/<MMDD-HHMM>/{backup.json, h<mm>.json, scan.json, *_ir.png}
+Out: vbti/inspection/calib/d405_tare/<MMDD-HHMM>/{backup.json, h<mm>.json, scan.json, *_ir.png}
 """
 import json
 import time

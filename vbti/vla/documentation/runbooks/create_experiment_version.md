@@ -62,14 +62,14 @@ Check at minimum:
 ## 4. Inspect Config
 
 ```bash
-python -m vbti.logic.train.config_utils show experiments/duck_cup_smolvla/vNNN/config.yaml
+python -m vla.logic.train.config_utils show experiments/duck_cup_smolvla/vNNN/config.yaml
 ```
 
 ## 5. Verify Dataset Schema Against Config
 
 ```bash
-python -m vbti.logic.dataset.check_utils report <dataset_repo_or_path>
-python -m vbti.logic.dataset.check_utils cameras <dataset_repo_or_path>
+python -m vla.logic.dataset.check_utils report <dataset_repo_or_path>
+python -m vla.logic.dataset.check_utils cameras <dataset_repo_or_path>
 ```
 
 Ensure camera names in config match dataset features.
@@ -77,7 +77,7 @@ Ensure camera names in config match dataset features.
 ## 6. Dry-Run Training Command
 
 ```bash
-python -m vbti.logic.train.engine train-lerobot \
+python -m vla.logic.train.engine train-lerobot \
   --experiment=duck_cup_smolvla \
   --version=vNNN \
   --dry_run

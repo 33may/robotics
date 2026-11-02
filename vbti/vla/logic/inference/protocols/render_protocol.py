@@ -19,10 +19,10 @@ tall but not extreme).
 Marker sizes are tuned for 220×170 thumbnail size — visible at a glance.
 
 Usage:
-  python vbti/logic/inference/protocols/render_protocol.py <protocol-name>
-  python vbti/logic/inference/protocols/render_protocol.py dual_cup_30
-  python vbti/logic/inference/protocols/render_protocol.py id_scale_60
-  python vbti/logic/inference/protocols/render_protocol.py checkpoint_sweep_no_ood
+  python vbti/vla/logic/inference/protocols/render_protocol.py <protocol-name>
+  python vbti/vla/logic/inference/protocols/render_protocol.py dual_cup_30
+  python vbti/vla/logic/inference/protocols/render_protocol.py id_scale_60
+  python vbti/vla/logic/inference/protocols/render_protocol.py checkpoint_sweep_no_ood
 """
 
 import json

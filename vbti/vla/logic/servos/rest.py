@@ -2,9 +2,9 @@
 """Move SO-101 arm to resting position.
 
 Usage:
-    python vbti/logic/servos/rest.py
-    python vbti/logic/servos/rest.py --port=/dev/ttyACM1
-    python vbti/logic/servos/rest.py --speed=5.0
+    python vbti/vla/logic/servos/rest.py
+    python vbti/vla/logic/servos/rest.py --port=/dev/ttyACM1
+    python vbti/vla/logic/servos/rest.py --speed=5.0
 """
 
 import time
@@ -68,7 +68,7 @@ def rest(port: str = "/dev/ttyACM0", robot_id: str | None = None,
     """
     from lerobot.robots.so_follower.config_so_follower import SOFollowerRobotConfig
     from lerobot.robots.so_follower.so_follower import SOFollower
-    from vbti.logic.servos.profiles import get_active_profile
+    from vla.logic.servos.profiles import get_active_profile
 
     if robot_id is None:
         robot_id = get_active_profile()

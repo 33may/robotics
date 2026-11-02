@@ -21,7 +21,7 @@ Implications for the ``--mode`` flag:
                      visual treatment. Recommended for the v016 first pass.
 
 Usage:
-    conda run -n lerobot python -m vbti.logic.depth.add_gripper_depth \\
+    conda run -n lerobot python -m vla.logic.depth.add_gripper_depth \\
         --src eternalmay33/01_02_03_merged_may-sim_detection \\
         --dst eternalmay33/01_02_03_merged_may-sim_detection_gripper-depth \\
         --gripper-key observation.images.gripper \\
@@ -41,7 +41,7 @@ import torch
 from PIL import Image
 from tqdm import tqdm
 
-from vbti.logic.depth.colorize import colorize_fixed_clip, colorize_per_frame_norm
+from vla.logic.depth.colorize import colorize_fixed_clip, colorize_per_frame_norm
 
 DEFAULT_MODEL = "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf"
 # Canonical clip for v016+ datasets (real D405 only). Tuned 2026-04-30 to put

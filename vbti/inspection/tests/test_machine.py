@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Supervisor: request->planning->previewing, supersede, blocked.
-Run: p inspection/tests/test_machine.py"""
+Run: p vbti/inspection/tests/test_machine.py"""
 import json
 import tempfile
 import threading

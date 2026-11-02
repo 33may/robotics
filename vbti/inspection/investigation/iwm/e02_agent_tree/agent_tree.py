@@ -1,12 +1,12 @@
 """e02: the in-loop vision agent (VlmAgent + Gemini ER-2) builds the IWM tree of one view.
 
-The loop (`inspection/eyes/agents/vlm_agent.py`) is not modified: this script extends
+The loop (`vbti/inspection/eyes/agents/vlm_agent.py`) is not modified: this script extends
 its verb table and dispatcher at import time, for this process only, with the IWM
 verbs over an IwmTree bound to the current frame.
 
 Run (robo env, GPU for find, GEMINI_API_KEY set):
-  p inspection/investigation/iwm/e02_agent_tree/agent_tree.py --frames c5.6 [--without find]
-Outputs: inspection/data/iwm/e02_agent_tree/<frame>/<variant>/  (tree before/after, store,
+  p vbti/inspection/investigation/iwm/e02_agent_tree/agent_tree.py --frames c5.6 [--without find]
+Outputs: vbti/inspection/data/iwm/e02_agent_tree/<frame>/<variant>/  (tree before/after, store,
          transcripts, artifacts, run.json)  and  evidence/<frame>_<variant>_{before,after}.png
 """
 import argparse

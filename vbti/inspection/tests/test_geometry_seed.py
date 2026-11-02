@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""object_in_base on a synthetic scene. Run: p inspection/tests/test_geometry_seed.py"""
+"""object_in_base on a synthetic scene. Run: p vbti/inspection/tests/test_geometry_seed.py"""
 import numpy as np
 
 from inspection.cell.geometry import GROW_EPS_M, grow_from_seed, object_in_base

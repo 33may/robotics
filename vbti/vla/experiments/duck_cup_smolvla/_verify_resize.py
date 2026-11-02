@@ -11,7 +11,7 @@ from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
 from lerobot.policies.factory import make_pre_post_processors
 from lerobot.configs.types import FeatureType
 
-CKPT = "vbti/experiments/duck_cup_smolvla/v019/lerobot_output_r1/checkpoints/005000/pretrained_model"
+CKPT = "vbti/vla/experiments/duck_cup_smolvla/v019/lerobot_output_r1/checkpoints/005000/pretrained_model"
 REPO = "eternalmay33/duck_cup_v019_all"
 RENAME_MAP = {
     "observation.images.top": "observation.images.camera1",

@@ -89,9 +89,9 @@ Watch for:
 ## 7. Post-Recording Inspection
 
 ```bash
-python -m vbti.logic.dataset.check_utils report eternalmay33/<new_dataset_name>
-python -m vbti.logic.dataset.check_utils cameras eternalmay33/<new_dataset_name>
-python -m vbti.logic.dataset.check_utils plot_actions eternalmay33/<new_dataset_name> --save=/tmp/<new_dataset_name>_actions.png
+python -m vla.logic.dataset.check_utils report eternalmay33/<new_dataset_name>
+python -m vla.logic.dataset.check_utils cameras eternalmay33/<new_dataset_name>
+python -m vla.logic.dataset.check_utils plot_actions eternalmay33/<new_dataset_name> --save=/tmp/<new_dataset_name>_actions.png
 ```
 
 Record in notes:

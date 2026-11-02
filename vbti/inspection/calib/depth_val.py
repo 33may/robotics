@@ -14,8 +14,8 @@ Target: one yellow dot on a red object, seen from every captured view.
 
 Same run before / after a calibration = same poses, so the numbers compare directly.
 
-    p inspection/calib/depth_val.py --run=1310-calib-red
-Out: inspection/data/depth_val/<run>/{depth_val.json, dots.jpg}
+    p vbti/inspection/calib/depth_val.py --run=1310-calib-red
+Out: vbti/inspection/data/depth_val/<run>/{depth_val.json, dots.jpg}
 """
 import json
 from pathlib import Path

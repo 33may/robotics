@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """settle_capture: capture -> plane gate -> survey check -> fuse.
-Run: p inspection/tests/test_settle.py"""
+Run: p vbti/inspection/tests/test_settle.py"""
 import threading
 
 from inspection.cell.geometry import CloudAccumulator

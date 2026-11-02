@@ -12,7 +12,7 @@ somebody (researched 2026-08-21), not to a theoretical one:
   has been accepted by the logged-in account, and the failure at load time is
   a 401 deep inside a download, which is easy to misread as a network fault.
 
-Run: p inspection/eyes/env_check.py
+Run: p vbti/inspection/eyes/env_check.py
 """
 SM_BLACKWELL = (12, 0)
 MIN_TRANSFORMERS = (5, 0)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """run/meta: retained topic that tells the frontend what kind of run this is.
-Run: p inspection/tests/test_ui_meta.py"""
+Run: p vbti/inspection/tests/test_ui_meta.py"""
 from inspection.ui.publisher import InspectionPublisher, TOPIC_META
 
 

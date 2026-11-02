@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RTDE freshness guard, no robot. Run: p inspection/tests/test_freshness.py
+"""RTDE freshness guard, no robot. Run: p vbti/inspection/tests/test_freshness.py
 
 The failure this guards against is real and silent: on run 2108-ui the
 receive interface's background thread died mid-run (ur_rtde #307) and every

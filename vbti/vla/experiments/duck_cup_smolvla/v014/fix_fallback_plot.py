@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
-V014 = Path("/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/v014")
+V014 = Path("/home/may33/projects/ml_portfolio/robotics/vbti/vla/experiments/duck_cup_smolvla/v014")
 RAW = V014 / "sensitivity_raw.npz"
 PLOTS = V014 / "sensitivity_plots"
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Freedrive tap logger — press "s", get the TCP point, copy-paste anywhere.
 
-Usage (robo env):  p inspection/calib/tap_probe.py [--ip 192.168.2.50]
+Usage (robo env):  p vbti/inspection/calib/tap_probe.py [--ip 192.168.2.50]
 
 Put the pendant in freedrive with TCP_normal active, kiss the surface with
 the closed tip, press "s" here. Prints:

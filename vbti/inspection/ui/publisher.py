@@ -6,7 +6,7 @@ tuples — and turns it into bus messages. It imports nothing from
 both directions), it never decides anything, and it never raises into a caller
 that might have a robot in the middle of a move.
 
-Contract it implements: ``inspection/ui/AGENTS.md``.
+Contract it implements: ``vbti/inspection/ui/AGENTS.md``.
 Wire protocol: ``~/projects/porthole/docs/scene-protocol.md``.
 
 Typical use, from the dispatcher (`run/machine.py`'s `Supervisor`)::
@@ -94,7 +94,7 @@ FACE_STATE_COLOR = {
     "unreachable": "#3a5a58",
 }
 
-#: Cosmetic only. Mirrors the table in `inspection/cell/viewer.py`, duplicated
+#: Cosmetic only. Mirrors the table in `vbti/inspection/cell/viewer.py`, duplicated
 #: rather than imported because that module pulls meshcat at import time and
 #: this path must not depend on it. If they drift, colours differ; nothing breaks.
 CELL_STYLE = [

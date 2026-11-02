@@ -7,9 +7,9 @@ removes the free-fall window during brain/ONNX bring-up; a stale-cmd watchdog da
 a fail-safe. The brain (separate process, `brain` env) connects in and steers.
 
     # terminal 1 (World):
-    conda run -n isaac python humanoid/logic/simulation/isaacsim/sim_world_main.py
+    conda run -n isaac python vbti/humanoid/logic/simulation/isaacsim/sim_world_main.py
     # terminal 2 (brain):
-    conda run -n brain python humanoid/logic/oli/brain_main.py --walk-after 3 --vx 0.3
+    conda run -n brain python vbti/humanoid/logic/oli/brain_main.py --walk-after 3 --vx 0.3
 """
 
 from __future__ import annotations

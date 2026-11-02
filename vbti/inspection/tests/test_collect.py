@@ -3,7 +3,7 @@
 end to end on the FakeRig — same write path as Flow A (test_flow_a.py),
 same stub-planner workaround for this sandbox's taught keep-outs.
 
-Run: p -m pytest inspection/tests/test_collect.py
+Run: p -m pytest vbti/inspection/tests/test_collect.py
 """
 import threading
 import time

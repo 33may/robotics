@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """derive — idempotent derivations with provenance, explicit per-step failures.
-Run: p inspection/tests/test_record_derive.py
+Run: p vbti/inspection/tests/test_record_derive.py
 """
 import pytest
 

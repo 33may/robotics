@@ -20,7 +20,7 @@ video/photos
 ## Master Commands
 
 ```bash
-python -m vbti.logic.reconstruct.master video_processing \
+python -m vla.logic.reconstruct.master video_processing \
   --video_path data/scene.mp4 \
   --output_dir data/frames \
   --mode count \
@@ -28,20 +28,20 @@ python -m vbti.logic.reconstruct.master video_processing \
 ```
 
 ```bash
-python -m vbti.logic.reconstruct.master gs_reconstruction \
+python -m vla.logic.reconstruct.master gs_reconstruction \
   --frames_dir data/frames \
   --output_dir data/recon \
   --matching_method exhaustive
 ```
 
 ```bash
-python -m vbti.logic.reconstruct.master ply_to_usda \
+python -m vla.logic.reconstruct.master ply_to_usda \
   --mesh_path data/recon/milo/mesh_learnable_sdf.ply \
   --output_path data/scene.usda
 ```
 
 ```bash
-python -m vbti.logic.reconstruct.master scene_composition \
+python -m vla.logic.reconstruct.master scene_composition \
   --scene_usda_path data/scene_composed.usda \
   --task_name vbti_so_v1
 ```

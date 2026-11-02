@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The shared VLM-agent loop. Run: p inspection/tests/test_vlm_agent.py
+"""The shared VLM-agent loop. Run: p vbti/inspection/tests/test_vlm_agent.py
 
 The structural guarantees moved here with the loop (from test_eyes_inspect,
 which keeps pinning the inspect variant's own surface): the tier cannot move,

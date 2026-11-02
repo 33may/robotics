@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The inspection subagent's run loop. Run: p inspection/tests/test_eyes_inspect.py"""
+"""The inspection subagent's run loop. Run: p vbti/inspection/tests/test_eyes_inspect.py"""
 import json
 import tempfile
 from pathlib import Path

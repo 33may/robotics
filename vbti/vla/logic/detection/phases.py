@@ -10,7 +10,7 @@ velocity-based state machine approach:
     4 = release   — gripper opening at drop location
 
 Usage:
-    python -m vbti.logic.detection.phases eternalmay33/02_black_full_center
+    python -m vla.logic.detection.phases eternalmay33/02_black_full_center
 """
 
 from __future__ import annotations
@@ -401,7 +401,7 @@ def process_phases_dataset(
     Returns:
         Path to the output parquet file.
     """
-    from vbti.logic.dataset import resolve_dataset_path
+    from vla.logic.dataset import resolve_dataset_path
 
     ds_path = resolve_dataset_path(dataset_path, root=root)
     output_path = ds_path / "phase_labels.parquet"

@@ -2,11 +2,11 @@
 """LeRobot dataset inspection, comparison, and management utilities.
 
 Usage:
-    python -m vbti.logic.dataset.check_utils ls
-    python -m vbti.logic.dataset.check_utils info may33/duck_cup --root=/path
-    python -m vbti.logic.dataset.check_utils cameras may33/duck_cup --root=/path
-    python -m vbti.logic.dataset.check_utils report /path/to/lerobot/dataset
-    python -m vbti.logic.dataset.check_utils compare_actions --datasets real=/p1 sim=/p2
+    python -m vla.logic.dataset.check_utils ls
+    python -m vla.logic.dataset.check_utils info may33/duck_cup --root=/path
+    python -m vla.logic.dataset.check_utils cameras may33/duck_cup --root=/path
+    python -m vla.logic.dataset.check_utils report /path/to/lerobot/dataset
+    python -m vla.logic.dataset.check_utils compare_actions --datasets real=/p1 sim=/p2
 """
 import json
 import math
@@ -437,7 +437,7 @@ def _load_episodes(repo_id: str, root: str = None, max_files: int = 99) -> tuple
 
 
 def _resolve_dataset_path(repo_id: str, root: str = None) -> Path:
-    from vbti.logic.dataset import resolve_dataset_path
+    from vla.logic.dataset import resolve_dataset_path
     return resolve_dataset_path(repo_id, root)
 
 
@@ -530,7 +530,7 @@ def plot_actions(repo_id: str, root: str = None, save: str = None, alpha: float 
 if __name__ == "__main__":
     import fire
     fire.core.Display = lambda lines, out: print(*lines, file=out)
-    from vbti.logic.dataset import delete_dataset
+    from vla.logic.dataset import delete_dataset
 
     fire.Fire({
         "ls":              ls,
