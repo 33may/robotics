@@ -7,7 +7,7 @@ This document explains exactly what was generated, which data was used, how chec
 All generated artifacts are in:
 
 ```text
-/home/may33/Documents/vbti/vbti/oficial/docs/evaluation
+vbti/vla/docs/research/evaluation
 ```
 
 Generated files:
@@ -30,7 +30,7 @@ The figure directory contains 14 PNG figure files for review. PDF/SVG export is 
 The script parses real-robot checkpoint-sweep `session.json` files from:
 
 ```text
-/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla/<version>/eval_sessions/*/session.json
+vbti/vla/experiments/duck_cup_smolvla/<version>/eval_sessions/*/session.json
 ```
 
 Included model versions:
@@ -263,7 +263,7 @@ The generated plots were visually inspected through the image reader. Specific f
 From any working directory with the same Python environment:
 
 ```bash
-python /home/may33/Documents/vbti/vbti/oficial/docs/evaluation/generate_evaluation_visualizations.py
+python vbti/vla/docs/research/evaluation/generate_evaluation_visualizations.py
 ```
 
 Expected behavior:

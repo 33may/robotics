@@ -24,9 +24,9 @@ JOINT_NAMES = [
 LEROBOT_CALIB_DIR = (
     Path.home() / ".cache/huggingface/lerobot/calibration/robots/so_follower"
 )
-PROJECT_ROOT = Path(__file__).resolve().parents[4]  # vbti/vla/logic/servos -> repo root
-REGISTRY_PATH = PROJECT_ROOT / "calibration" / "registry.json"
-PROFILES_BACKUP_DIR = PROJECT_ROOT / "calibration" / "profiles"
+CALIBRATION_DIR = Path(__file__).resolve().parents[2] / "calibration"  # vbti/vla/calibration
+REGISTRY_PATH = CALIBRATION_DIR / "registry.json"
+PROFILES_BACKUP_DIR = CALIBRATION_DIR / "profiles"
 
 
 def get_active_profile() -> str:

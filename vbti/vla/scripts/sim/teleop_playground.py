@@ -26,6 +26,7 @@ simulation_app = app_launcher.app
 """Rest everything follows."""
 
 import math
+from pathlib import Path
 import torch
 
 import isaaclab.sim as sim_utils
@@ -37,7 +38,7 @@ from isaaclab.actuators import ImplicitActuatorCfg
 # EDIT THIS SECTION — define your scene
 # ══════════════════════════════════════════════════════════════════════════════
 
-ROBOT_USD = "/home/may33/projects/ml_portfolio/robotics/robots/so101_leisaac_vbti/so101_simready_follower_leisaac.usd"
+ROBOT_USD = str(Path(__file__).resolve().parents[2] / "assets/robots/so101_leisaac_vbti/so101_simready_follower_leisaac.usd")
 SCENE_USD = "/home/may33/projects/ml_portfolio/robotics/vbti/vla/data/so_v1/scene/ready_scene_rigid_hdri_v1_no_robot_no_duck.usda"
 # SOFT_DUCK_USD = "/home/may33/projects/ml_portfolio/robotics/vbti/vla/data/so_v1/assets/duck/object_1_soft.usda"
 SCENE_WITH_DUCK_USD = "/home/may33/projects/ml_portfolio/robotics/vbti/vla/data/so_v1/scene/ready_scene_rigid_hdri_v1_no_robot.usda"

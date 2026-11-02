@@ -13,6 +13,6 @@
 	ignore = untracked
 
 [submodule "robots/SO-ARM101"]
-	path = robots/SO-ARM101
+	path = vbti/vla/assets/robots/SO-ARM101
 	url = git@github.com:TheRobotStudio/SO-ARM100.git
 	ignore = untracked

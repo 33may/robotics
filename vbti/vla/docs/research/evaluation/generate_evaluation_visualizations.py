@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Patch
 
-EXP_ROOT = Path('/home/may33/projects/ml_portfolio/robotics/vbti/experiments/duck_cup_smolvla')
+EXP_ROOT = Path(__file__).resolve().parents[3] / 'experiments' / 'duck_cup_smolvla'  # vbti/vla/experiments
 OUT = Path(__file__).resolve().parent
 FIG = OUT / 'figures'
 FIG_V2 = OUT / 'figures_v2'

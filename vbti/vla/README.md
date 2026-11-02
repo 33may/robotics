@@ -42,10 +42,10 @@ docs/
   modules/      reference per code module, mirrors logic/ — commands, arguments, contracts
   blueprints/   how each subsystem is designed and why — dataset, training, evaluation, hardware, reconstruction; C4 model in design/
   agents/       instructions for the specialist agents (dataset, hardware, training, evaluation, reconstruction)
-  research/     background: SmolVLA / GR00T training internals, camera handling, Cosmos transfer, domain randomization
+  research/     background: SmolVLA / GR00T training internals, camera handling, Cosmos transfer, domain randomization; evaluation/ v020-v024 checkpoint-sweep analysis
   case-study/   duck-cup with SmolVLA: the process we followed and what we got
 ```
 
 **How to read:** start with `tutorial/` on the real hardware. When you start a concrete task, open its runbook. Go to `modules/` for exact commands and arguments, and to `blueprints/` before changing how a subsystem works. `case-study/` shows the whole loop used end to end.
 
-**Code layout:** `logic/` framework code · `experiments/` versioned experiment configs and eval sessions · `envs/` conda specs · `udev/` camera rules · `research/` past research experiments. Open bugs: `KNOWN_ISSUES.md`.
+**Code layout:** `logic/` framework code · `experiments/` versioned experiment configs and eval sessions · `envs/` conda specs · `udev/` camera rules · `calibration/` servo calibration profiles · `assets/robots/` robot USDs and the SO-ARM101 submodule · `tests/` · `.claude/skills/` Claude Code skills · `research/` past research experiments. Open bugs: `KNOWN_ISSUES.md`.

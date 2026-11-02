@@ -9,10 +9,10 @@ LeRobot cache:
 ~/.cache/huggingface/lerobot/calibration/robots/so_follower
 
 Project registry:
-vbti/calibration/registry.json
+vbti/vla/calibration/registry.json
 
 Project backups:
-vbti/calibration/profiles
+vbti/vla/calibration/profiles
 ```
 
 Known caveat: `quick_recalib.py` references `so101_follower`, while `profiles.py` references `so_follower`. Verify which path your current LeRobot install expects.

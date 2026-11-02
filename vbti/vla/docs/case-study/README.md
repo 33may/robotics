@@ -84,14 +84,14 @@ The same v020 setup was trained on deterministic subsamples and evaluated with t
 | v020 | 765 | 19/20 (95%) | 19/20 (95%) |
 <!-- src: Evidence Report, After the Baseline; tech_blog_v2/13_data_efficiency_sweep.md -->
 
-- Caveat: with n=20 the Wilson intervals are wide. Differences of 5–10 pp mean nothing. Only the broad trend holds. <!-- src: evaluation/evaluation_visualization_audit.md, Confidence intervals -->
-- v020's 19/20 here comes from a different protocol than 30/30 and 56/60. Don't mix the two sets of numbers. <!-- src: evaluation_visualization_audit.md, Known limitations -->
+- Caveat: with n=20 the Wilson intervals are wide. Differences of 5–10 pp mean nothing. Only the broad trend holds. <!-- src: ../research/evaluation/evaluation_visualization_audit.md, Confidence intervals -->
+- v020's 19/20 here comes from a different protocol than 30/30 and 56/60. Don't mix the two sets of numbers. <!-- src: ../research/evaluation/evaluation_visualization_audit.md, Known limitations -->
 - Smaller datasets lost the most on the harder scene types and targets; the drop was not uniform. <!-- src: Evidence Report, After the Baseline -->
 - No universal threshold follows from this: one robot, one task, one model line.
 
 ![Best success vs dataset size](figures/data_efficiency_best_vs_size.png)
 ![Success by dataset size and checkpoint](figures/data_efficiency_heatmap.png)
-*Best observed success with 95% CI, and success per normalized checkpoint. `checkpoint_sweep` protocol, n=20 per cell.* <!-- src: oficial/docs/evaluation/figures_v2/v2_05, v2_01 -->
+*Best observed success with 95% CI, and success per normalized checkpoint. `checkpoint_sweep` protocol, n=20 per cell.* <!-- src: ../research/evaluation/figures_v2/v2_05, v2_01 -->
 
 ### Depth stream (v017 vs v018)
 
